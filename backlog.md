@@ -1,26 +1,2 @@
-# Good Fractions Feature
-We will be studying musical harmony via pattern recognition of simultaneous frequencies, e.g. a major chord as fractions {1, 5/4, 3/2}. 
-The pattern for this set of frequencies loop every 4 iterations of the base wavelength, extending over 4 periods of time. 
-The frequency pattern length (FPL) is the Least Common Multiple (LCM) of the sets denonimators.
-DEFERRED: graph the pattern
-Given the lower frequency hearing threshold for humans of 20hz, such a pattern likely is not recognized/pattern matched if it extends over more than 50ms.
-* E.g. for a fundamental of 100hz the major chord with FPL 4 takes 40ms.
-
-Music (at least orchestra/opera) is mostly played in C2-C6 range (65hz - 1047hz fundamental range, let's say 100hz - 1000hz for simplicity). 
-* Lower frequencies produce longer duration patterns, thus 100hz can be used as a worst case for frequency pattern duration (FPD).
-Denominators of fractions in a set determine the FPL. 
-Music is octave equivalent - all fractions are mapped onto "[1,2)": 
-* Any note in a set may be renormalized as the base wavelength - all resulting fractions less than one are then multiplied by 2 until larger than one 
-** e.g. {1, 5/4, 3/2} -> renormalize with 5/4 as base wavelength 1 {4/5, 1, 12/10} -> octave normalize {8/5, 1, 12/10} -> simplify and sort {1, 6/5, 8/5}.
-* This means numerators effectively have the same constraints as denominators.
-
-Harmony requires multiple different frequencies, which by the above implies there are only so many "good fractions" which can be used to construct frequency patterns.
-* Worst case of 100hz = 10ms means maximum FPL of 5. This is quite low and does not permit many different patterns. Constraint limits are fuzzy and the real FPL is likely higher.
-* Since FPL is decided by LCM, having denominators constructed from small primes (e.g. 2, 3 and 5) is more lenient towards total FPL as they may cancel out with other denominators on renormalization to different base wavelengths.
-
-In view of this, perhaps FPL of up to 24 should be allowed - highly influenced by the fact that the major scale played as a chord (e.g. G13/Cmaj13 for C major) can be expressed as a pattern of FPL 24
-DEFERRED: graph the pattern
-* Common twelve-tone equal temperament (12-TET) has notes approximated notably by largest denominator 15 for semitone (16/15)
-
-Possible good fractions are thus a function of maximum allowed denominator/numerator size (e.g. 24) and highest allowed prime (5).
-TODO: Function which calculates good fractions based on maximum allowed denominator/numerator size and highest allowed prime, printing the result to console.
+# Graphs
+Print graphs showing frequency patterns
