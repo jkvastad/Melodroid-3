@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(echo \"Folder check result: $?\")"
+      "Bash(echo \"Folder check result: $?\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\Code\\\\Melodroid 3\" -Force)",
+      "Bash(Select-Object Name, FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
     ]
   }
 }
