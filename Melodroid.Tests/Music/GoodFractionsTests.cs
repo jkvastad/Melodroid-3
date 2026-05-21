@@ -17,22 +17,24 @@ public class GoodFractionsTests
     }
 
     [Fact]
-    public void Enumerate_24_5_contains_known_just_ratios()
-    {        
+    public void Enumerate_24_5_returns_exactly_known_just_ratios()
+    {
         var result = GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);
-        result.Should().Contain(new Fraction(1, 1));
-        result.Should().Contain(new Fraction(16, 15));
-        result.Should().Contain(new Fraction(10, 9));
-        result.Should().Contain(new Fraction(9, 8));
-        result.Should().Contain(new Fraction(6, 5));
-        result.Should().Contain(new Fraction(5, 4));
-        result.Should().Contain(new Fraction(4, 3));
-        result.Should().Contain(new Fraction(3, 2));
-        result.Should().Contain(new Fraction(8, 5));
-        result.Should().Contain(new Fraction(5, 3));
-        result.Should().Contain(new Fraction(16, 9));
-        result.Should().Contain(new Fraction(9, 5));
-        result.Should().Contain(new Fraction(15, 8));
+
+        result.Should().Equal(
+            new Fraction(1, 1),
+            new Fraction(16, 15),
+            new Fraction(10, 9),
+            new Fraction(9, 8),
+            new Fraction(6, 5),
+            new Fraction(5, 4),
+            new Fraction(4, 3),
+            new Fraction(3, 2),
+            new Fraction(8, 5),
+            new Fraction(5, 3),
+            new Fraction(16, 9),
+            new Fraction(9, 5),
+            new Fraction(15, 8));
     }
 
     [Fact]

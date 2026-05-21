@@ -11,7 +11,9 @@ We will be studying musical harmony via pattern recognition of simultaneous wave
 The pattern for this set of frequencies loop every 4 iterations of the base wavelength, extending over 4 periods of time. 
 The wave pattern length (WPL) is the Least Common Multiple (LCM) of the sets denonimators.
 
-### Assumptions
+### Good Fractions
+When expressing simultaneous musical notes as fractions of a reference note, some fractions will be better than others for creating repeating patterns in simultaneous waves.
+
 Given the lower frequency hearing threshold for humans of 20hz, a wave pattern extending over more than 50ms will likely not be recognized/pattern matched.
 * E.g. for a fundamental of 100hz the major chord with WPL 4 the wave pattern duration (WPD) is 40ms.
 
@@ -31,3 +33,8 @@ In view of this, perhaps WPL of up to 24 should be allowed - highly influenced b
 * Common twelve-tone equal temperament (12-TET) has notes approximated notably by largest denominator 15 for semitone (16/15)
 
 Possible good fractions are thus a function of maximum allowed denominator/numerator size (e.g. 24) and highest allowed prime (5).
+
+### LCM Families
+Given a set of good fractions, each non-empty subset has a set of denominators with some LCM. This LCM can be used to group the subsets into LCM-families. The value of the LCM for an LCM-family is the WPL for the fraction set.
+
+TODO: calculate LCM families

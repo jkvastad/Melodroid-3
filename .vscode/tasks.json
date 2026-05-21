@@ -2,6 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Test Melodroid 3",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["test", "${workspaceFolder}/Melodroid.Tests/Melodroid.Tests.csproj", "--logger", "console;verbosity=normal"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
       "label": "build",
       "command": "dotnet",
       "type": "process",
