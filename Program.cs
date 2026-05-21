@@ -46,8 +46,49 @@ class Program
             return 0;
         });
 
+        var maxLcmOption = new Option<int>("--max-lcm")
+        {
+            Description = "Highest LCM (wave pattern length) to compute families for.",
+            DefaultValueFactory = _ => 24,
+        };
+
+        var lcmFamiliesCommand = new Command(
+            "lcm-families",
+            "For each L ∈ [1, maxLcm], list the max-sized good-fraction subset whose denominators have LCM exactly L.");
+        lcmFamiliesCommand.Add(maxSizeOption);
+        lcmFamiliesCommand.Add(maxPrimeOption);
+        lcmFamiliesCommand.Add(maxLcmOption);
+        lcmFamiliesCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (maxLcm < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            LcmFamilyTableRenderer.Render(families);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
+        tableCommand.Add(lcmFamiliesCommand);
 
         var root = new RootCommand("Melodroid 3 — music research from first principles.");
         root.Add(tableCommand);

@@ -34,7 +34,9 @@ In view of this, perhaps WPL of up to 24 should be allowed - highly influenced b
 
 Possible good fractions are thus a function of maximum allowed denominator/numerator size (e.g. 24) and highest allowed prime (5).
 
-### LCM Families
-Given a set of good fractions, each non-empty subset has a set of denominators with some LCM. This LCM can be used to group the subsets into LCM-families. The value of the LCM for an LCM-family is the WPL for the fraction set.
+Run `dotnet run -- table good-fractions` to print the good fractions. Options: `--max-size` (default 24), `--max-prime` (default 5).
 
-TODO: calculate LCM families
+### LCM Families
+Given a set of good fractions, we can compute the LCM for the denominators of a given non-empty subset (this LCM is the WPL for that fraction set). For a given LCM L, the maximum sized subset of the good fractions whose denominators have LCM L is called the LCM Family (for those good fractions) of size L.
+
+Run `dotnet run -- table lcm-families` to print the LCM families, ordered by ascending LCM, with empty families omitted. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).

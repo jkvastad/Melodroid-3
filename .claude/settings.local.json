@@ -10,7 +10,16 @@
       "PowerShell(Get-ChildItem -Path \"d:\\\\Code\\\\Melodroid 3\" -Recurse -File | Select-Object FullName | Sort-Object FullName | ForEach-Object { $_.FullName })",
       "Bash(ls \"C:/Users/Johan/.claude/plans\" 2>&1 | head -20)",
       "Read(//c/Users/Johan/.claude/plans/**)",
-      "Bash(dir \"C:\\\\Users\\\\Johan\\\\.nuget\\\\packages\\\\system.commandline\\\\3.0.0-preview.4.26230.115\\\\lib\\\\net10.0\")"
+      "Bash(dir \"C:\\\\Users\\\\Johan\\\\.nuget\\\\packages\\\\system.commandline\\\\3.0.0-preview.4.26230.115\\\\lib\\\\net10.0\")",
+      "Bash(dir \"d:\\\\Code\\\\Melodroid 3\" -d)",
+      "Bash(dir \"d:\\\\Code\\\\Melodroid 3\\\\src\" -d)",
+      "Bash(Get-ChildItem \"d:\\\\Code\\\\Melodroid 3\" -Recurse -Directory)",
+      "Bash(Select-Object -First 30 FullName)",
+      "Bash(Get-ChildItem -Recurse -Name *.cs)",
+      "Bash(Select-Object -First 50)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(dotnet run *)"
     ]
   }
 }
