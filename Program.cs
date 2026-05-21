@@ -168,10 +168,10 @@ class Program
         };
         var plotModeOption = new Option<string>("--mode")
         {
-            Description = "What to plot: 'all' (default), 'sum', or 'constituents'.",
+            Description = "What to plot: 'all' (default), 'sum', 'constituents', or 'difference' (requires --subset-lcm).",
             DefaultValueFactory = _ => "all",
         };
-        plotModeOption.AcceptOnlyFromAmong("all", "sum", "constituents");
+        plotModeOption.AcceptOnlyFromAmong("all", "sum", "constituents", "difference");
 
         var subsetLcmOption = new Option<int?>("--subset-lcm")
         {
@@ -222,8 +222,15 @@ class Program
             {
                 "sum" => PlotMode.Sum,
                 "constituents" => PlotMode.Constituents,
+                "difference" => PlotMode.Difference,
                 _ => PlotMode.All,
             };
+
+            if (mode == PlotMode.Difference && subsetLcm is null)
+            {
+                AnsiConsole.MarkupLine("[red]--mode difference requires --subset-lcm.[/]");
+                return 1;
+            }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, lcm);

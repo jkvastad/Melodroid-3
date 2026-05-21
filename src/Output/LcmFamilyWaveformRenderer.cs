@@ -9,6 +9,7 @@ public enum PlotMode
     All,
     Sum,
     Constituents,
+    Difference,
 }
 
 public static class LcmFamilyWaveformRenderer
@@ -33,7 +34,7 @@ public static class LcmFamilyWaveformRenderer
             sharedT ??= t;
             for (var i = 0; i < y.Length; i++) sum[i] += y[i];
 
-            if (mode == PlotMode.Sum) continue;
+            if (mode == PlotMode.Sum || mode == PlotMode.Difference) continue;
 
             var scatter = plot.Add.Scatter(t, y);
             scatter.LegendText = fraction.ToString();
@@ -41,7 +42,7 @@ public static class LcmFamilyWaveformRenderer
             scatter.LineWidth = 1.5f;
         }
 
-        if (sharedT is not null && mode != PlotMode.Constituents)
+        if (sharedT is not null && mode != PlotMode.Constituents && mode != PlotMode.Difference)
         {
             var sumScatter = plot.Add.Scatter(sharedT, sum);
             sumScatter.LegendText = "sum";
@@ -76,17 +77,33 @@ public static class LcmFamilyWaveformRenderer
                 subT ??= t;
                 for (var i = 0; i < y.Length; i++) subSum[i] += y[i];
             }
-            var subScatter = plot.Add.Scatter(subT!, subSum);
-            subScatter.LegendText = $"sum L={sub.Lcm} ({iterations}×)";
-            subScatter.MarkerSize = 0;
-            subScatter.LineWidth = 2.5f;
-            subScatter.Color = Colors.Blue;
+
+            if (mode != PlotMode.Difference)
+            {
+                var subScatter = plot.Add.Scatter(subT!, subSum);
+                subScatter.LegendText = $"sum L={sub.Lcm} ({iterations}×)";
+                subScatter.MarkerSize = 0;
+                subScatter.LineWidth = 2.5f;
+                subScatter.Color = Colors.Blue;
+            }
+
+            if (mode == PlotMode.Difference)
+            {
+                var diff = new double[sum.Length];
+                for (var i = 0; i < diff.Length; i++) diff[i] = sum[i] - subSum[i];
+                var diffScatter = plot.Add.Scatter(subT!, diff);
+                diffScatter.LegendText = $"L={family.Lcm} − sub L={sub.Lcm}";
+                diffScatter.MarkerSize = 0;
+                diffScatter.LineWidth = 3f;
+                diffScatter.Color = Colors.Red;
+            }
         }
 
         var modeSuffix = mode switch
         {
             PlotMode.Sum => " — sum",
             PlotMode.Constituents => " — constituents",
+            PlotMode.Difference => " — difference",
             _ => "",
         };
         var subSuffix = subFamily is null ? "" : $" + sub L={subFamily.Value.Lcm}";
