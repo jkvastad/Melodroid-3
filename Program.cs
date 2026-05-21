@@ -178,6 +178,11 @@ class Program
             Description = "Optional LCM K of a literal-subset family to highlight inside the parent plot. K must divide --lcm.",
             DefaultValueFactory = _ => null,
         };
+        var differenceOnlyOption = new Option<bool>("--difference-only")
+        {
+            Description = "With --mode difference, plot only the residual (no parent / subset reference sums).",
+            DefaultValueFactory = _ => false,
+        };
 
         var plotLcmFamiliesCommand = new Command(
             "lcm-families",
@@ -188,6 +193,7 @@ class Program
         plotLcmFamiliesCommand.Add(samplesPerPeriodOption);
         plotLcmFamiliesCommand.Add(plotModeOption);
         plotLcmFamiliesCommand.Add(subsetLcmOption);
+        plotLcmFamiliesCommand.Add(differenceOnlyOption);
         plotLcmFamiliesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -196,6 +202,7 @@ class Program
             var samplesPerPeriod = parse.GetValue(samplesPerPeriodOption);
             var modeString = parse.GetValue(plotModeOption) ?? "all";
             var subsetLcm = parse.GetValue(subsetLcmOption);
+            var differenceOnly = parse.GetValue(differenceOnlyOption);
 
             if (maxSize < 1)
             {
@@ -229,6 +236,11 @@ class Program
             if (mode == PlotMode.Difference && subsetLcm is null)
             {
                 AnsiConsole.MarkupLine("[red]--mode difference requires --subset-lcm.[/]");
+                return 1;
+            }
+            if (differenceOnly && mode != PlotMode.Difference)
+            {
+                AnsiConsole.MarkupLine("[red]--difference-only is only valid with --mode difference.[/]");
                 return 1;
             }
 
@@ -265,14 +277,15 @@ class Program
 
             var outputDir = Path.Combine("output", "plots");
             Directory.CreateDirectory(outputDir);
+            var modeSlug = mode == PlotMode.Difference && differenceOnly ? "difference-only" : modeString;
             var baseName = mode == PlotMode.All
                 ? $"lcm-family-{lcm}"
-                : $"lcm-family-{lcm}-{modeString}";
+                : $"lcm-family-{lcm}-{modeSlug}";
             var fileName = subFamily is null
                 ? $"{baseName}.png"
                 : $"{baseName}-sub{subFamily.Value.Lcm}.png";
             var outputPath = Path.Combine(outputDir, fileName);
-            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod, mode, subFamily);
+            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod, mode, subFamily, differenceOnly);
 
             AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
             return 0;

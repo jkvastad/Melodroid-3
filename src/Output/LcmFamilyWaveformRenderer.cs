@@ -20,6 +20,7 @@ public static class LcmFamilyWaveformRenderer
         int samplesPerPeriod = 200,
         PlotMode mode = PlotMode.All,
         LcmFamily? subFamily = null,
+        bool differenceOnly = false,
         int width = 1400,
         int height = 800)
     {
@@ -42,7 +43,7 @@ public static class LcmFamilyWaveformRenderer
             scatter.LineWidth = 1.5f;
         }
 
-        if (sharedT is not null && mode != PlotMode.Constituents && mode != PlotMode.Difference)
+        if (sharedT is not null && mode != PlotMode.Constituents && (mode != PlotMode.Difference || !differenceOnly))
         {
             var sumScatter = plot.Add.Scatter(sharedT, sum);
             sumScatter.LegendText = "sum";
@@ -78,7 +79,7 @@ public static class LcmFamilyWaveformRenderer
                 for (var i = 0; i < y.Length; i++) subSum[i] += y[i];
             }
 
-            if (mode != PlotMode.Difference)
+            if (mode != PlotMode.Difference || !differenceOnly)
             {
                 var subScatter = plot.Add.Scatter(subT!, subSum);
                 subScatter.LegendText = $"sum L={sub.Lcm} ({iterations}×)";
@@ -103,7 +104,7 @@ public static class LcmFamilyWaveformRenderer
         {
             PlotMode.Sum => " — sum",
             PlotMode.Constituents => " — constituents",
-            PlotMode.Difference => " — difference",
+            PlotMode.Difference => differenceOnly ? " — difference (only)" : " — difference",
             _ => "",
         };
         var subSuffix = subFamily is null ? "" : $" + sub L={subFamily.Value.Lcm}";
