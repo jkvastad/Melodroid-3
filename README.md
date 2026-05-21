@@ -40,3 +40,8 @@ Run `dotnet run -- table good-fractions` to print the good fractions. Options: `
 Given a set of good fractions, we can compute the LCM for the denominators of a given non-empty subset (this LCM is the WPL for that fraction set). For a given LCM L, the maximum sized subset of the good fractions whose denominators have LCM L is called the LCM Family (for those good fractions) of size L.
 
 Run `dotnet run -- table lcm-families` to print the LCM families, ordered by ascending LCM, with empty families omitted. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
+
+#### Isomorphisms and Subsets
+Some LCM families are naturally subsets of others, e.g. LCM4 {1, 5/4, 3/2} is a subset to LCM8{1/1, 9/8, 5/4, 3/2, 15/8}. Due to octave equivalence, some families are subsets after renormalizing (lcm 18: {1/1, 10/9, 4/3, 3/2, 5/3, 16/9} renormalize to 4/3 -> {1/1, 9/8, 5/4, 4/3, 3/2, 5/3}, subset of 24), or even completely isomorphic (LCM4 {1, 5/4, 3/2} renormalize to 3/2 -> LCM3{1, 4/3, 5/3}).
+
+TODO: Show graph dependence illustrating isomorphisms, subsets and renormalized subsets of all LCM families for given good fractions up to given size LCM L.
