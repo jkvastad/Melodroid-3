@@ -156,9 +156,77 @@ class Program
         var graphCommand = new Command("graph", "Graph-output commands (Mermaid).");
         graphCommand.Add(graphLcmFamiliesCommand);
 
+        var lcmOption = new Option<int>("--lcm")
+        {
+            Description = "LCM (wave pattern length) of the family to plot.",
+            Required = true,
+        };
+        var samplesPerPeriodOption = new Option<int>("--samples-per-period")
+        {
+            Description = "Plot samples per reference period (smoothness).",
+            DefaultValueFactory = _ => 200,
+        };
+
+        var plotLcmFamiliesCommand = new Command(
+            "lcm-families",
+            "Plot in-phase sine waves for the fractions of a given LCM family, with their superposition.");
+        plotLcmFamiliesCommand.Add(maxSizeOption);
+        plotLcmFamiliesCommand.Add(maxPrimeOption);
+        plotLcmFamiliesCommand.Add(lcmOption);
+        plotLcmFamiliesCommand.Add(samplesPerPeriodOption);
+        plotLcmFamiliesCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var lcm = parse.GetValue(lcmOption);
+            var samplesPerPeriod = parse.GetValue(samplesPerPeriodOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (lcm < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]");
+                return 1;
+            }
+            if (samplesPerPeriod < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--samples-per-period must be ≥ 1.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, lcm);
+            var family = families.FirstOrDefault(f => f.Lcm == lcm);
+            if (family.Fractions is null || family.Fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime}. Try raising them.[/]");
+                return 1;
+            }
+
+            var outputDir = Path.Combine("output", "plots");
+            Directory.CreateDirectory(outputDir);
+            var outputPath = Path.Combine(outputDir, $"lcm-family-{lcm}.png");
+            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod);
+
+            AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
+            return 0;
+        });
+
+        var plotCommand = new Command("plot", "Plot-output commands (PNG).");
+        plotCommand.Add(plotLcmFamiliesCommand);
+
         var root = new RootCommand("Melodroid 3 — music research from first principles.");
         root.Add(tableCommand);
         root.Add(graphCommand);
+        root.Add(plotCommand);
 
         return root.Parse(args).Invoke();
     }
