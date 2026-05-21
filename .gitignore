@@ -4,4 +4,4 @@ obj/
 *.user
 *.suo
 .vscode/settings.json
-output/
+/output/

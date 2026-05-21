@@ -19,7 +19,13 @@
       "Bash(Select-Object -First 50)",
       "Bash(dotnet build *)",
       "Bash(dotnet test *)",
-      "Bash(dotnet run *)"
+      "Bash(dotnet run *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Code\\\\Melodroid 3\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(try { dotnet run -- graph lcm-families --mode invalid 2>&1 | Out-String } catch { $_.Exception.Message })",
+      "PowerShell(dotnet run -- graph lcm-families --mode collapsed 2>&1)",
+      "PowerShell(dotnet run -- graph lcm-families 2>&1)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

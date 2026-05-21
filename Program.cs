@@ -90,17 +90,26 @@ class Program
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
 
+        var modeOption = new Option<string>("--mode")
+        {
+            Description = "Output mode: 'full' (one node per family) or 'collapsed' (one node per iso class).",
+            DefaultValueFactory = _ => "full",
+        };
+        modeOption.AcceptOnlyFromAmong("full", "collapsed");
+
         var graphLcmFamiliesCommand = new Command(
             "lcm-families",
             "Emit a Mermaid graph of subset/isomorphism/renormalized-subset relationships between LCM families.");
         graphLcmFamiliesCommand.Add(maxSizeOption);
         graphLcmFamiliesCommand.Add(maxPrimeOption);
         graphLcmFamiliesCommand.Add(maxLcmOption);
+        graphLcmFamiliesCommand.Add(modeOption);
         graphLcmFamiliesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
+            var mode = parse.GetValue(modeOption) ?? "full";
 
             if (maxSize < 1)
             {
@@ -121,11 +130,23 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var relations = FamilyRelations.Compute(families);
-            var markdown = LcmFamilyGraphRenderer.Render(families, relations, maxSize, maxPrime, maxLcm);
+
+            string markdown;
+            string fileName;
+            if (mode == "collapsed")
+            {
+                markdown = LcmFamilyGraphRenderer.RenderCollapsed(families, relations, maxSize, maxPrime, maxLcm);
+                fileName = "lcm-families-collapsed.md";
+            }
+            else
+            {
+                markdown = LcmFamilyGraphRenderer.Render(families, relations, maxSize, maxPrime, maxLcm);
+                fileName = "lcm-families.md";
+            }
 
             var outputDir = Path.Combine("output", "graphs");
             Directory.CreateDirectory(outputDir);
-            var outputPath = Path.Combine(outputDir, "lcm-families.md");
+            var outputPath = Path.Combine(outputDir, fileName);
             File.WriteAllText(outputPath, markdown);
 
             AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
