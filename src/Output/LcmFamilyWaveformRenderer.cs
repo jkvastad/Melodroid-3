@@ -18,6 +18,7 @@ public static class LcmFamilyWaveformRenderer
         string outputPath,
         int samplesPerPeriod = 200,
         PlotMode mode = PlotMode.All,
+        LcmFamily? subFamily = null,
         int width = 1400,
         int height = 800)
     {
@@ -57,13 +58,39 @@ public static class LcmFamilyWaveformRenderer
         repeatLine.LinePattern = LinePattern.Dashed;
         repeatLine.Color = Colors.Gray;
 
+        if (subFamily is { } sub)
+        {
+            var iterations = family.Lcm / sub.Lcm;
+            for (var i = 1; i < iterations; i++)
+            {
+                var line = plot.Add.VerticalLine(i * sub.Lcm);
+                line.LinePattern = LinePattern.Dashed;
+                line.Color = Colors.Blue.WithAlpha(0.5);
+            }
+
+            var subSum = new double[samplesPerPeriod * family.Lcm + 1];
+            double[]? subT = sharedT;
+            foreach (var fraction in sub.Fractions)
+            {
+                var (t, y) = Sine.Samples(fraction.Value, family.Lcm, samplesPerPeriod);
+                subT ??= t;
+                for (var i = 0; i < y.Length; i++) subSum[i] += y[i];
+            }
+            var subScatter = plot.Add.Scatter(subT!, subSum);
+            subScatter.LegendText = $"sum L={sub.Lcm} ({iterations}×)";
+            subScatter.MarkerSize = 0;
+            subScatter.LineWidth = 2.5f;
+            subScatter.Color = Colors.Blue;
+        }
+
         var modeSuffix = mode switch
         {
             PlotMode.Sum => " — sum",
             PlotMode.Constituents => " — constituents",
             _ => "",
         };
-        plot.Title($"LCM family L={family.Lcm} ({n} fractions){modeSuffix}");
+        var subSuffix = subFamily is null ? "" : $" + sub L={subFamily.Value.Lcm}";
+        plot.Title($"LCM family L={family.Lcm} ({n} fractions){modeSuffix}{subSuffix}");
         plot.XLabel("t (reference periods)");
         plot.YLabel("amplitude");
         plot.ShowLegend();

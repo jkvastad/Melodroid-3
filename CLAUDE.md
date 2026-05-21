@@ -58,9 +58,12 @@ dotnet run -- graph lcm-families     [--max-size 24] [--max-prime 5] [--max-lcm 
 dotnet run -- plot  lcm-families --lcm N
                                      [--max-size 24] [--max-prime 5]
                                      [--samples-per-period 200] [--mode all|sum|constituents]
+                                     [--subset-lcm K]
 ```
 
 Each subcommand writes its result under `output/<category>/` and prints the path to stdout. See [README.md](README.md) for what each command produces and how to interpret it.
+
+When adding or changing a CLI command (new subcommand, new option, behaviour change), update [README.md](README.md) alongside the code change. Document the command under the most-relevant theory section (Good Fractions, LCM Families, Isomorphisms and Subsets, Wave Pattern Plots) so the theory and the command that exposes it stay co-located.
 
 ## Build / run / test
 

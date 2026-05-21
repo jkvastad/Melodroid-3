@@ -173,6 +173,12 @@ class Program
         };
         plotModeOption.AcceptOnlyFromAmong("all", "sum", "constituents");
 
+        var subsetLcmOption = new Option<int?>("--subset-lcm")
+        {
+            Description = "Optional LCM K of a literal-subset family to highlight inside the parent plot. K must divide --lcm.",
+            DefaultValueFactory = _ => null,
+        };
+
         var plotLcmFamiliesCommand = new Command(
             "lcm-families",
             "Plot in-phase sine waves for the fractions of a given LCM family, with their superposition.");
@@ -181,6 +187,7 @@ class Program
         plotLcmFamiliesCommand.Add(lcmOption);
         plotLcmFamiliesCommand.Add(samplesPerPeriodOption);
         plotLcmFamiliesCommand.Add(plotModeOption);
+        plotLcmFamiliesCommand.Add(subsetLcmOption);
         plotLcmFamiliesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -188,6 +195,7 @@ class Program
             var lcm = parse.GetValue(lcmOption);
             var samplesPerPeriod = parse.GetValue(samplesPerPeriodOption);
             var modeString = parse.GetValue(plotModeOption) ?? "all";
+            var subsetLcm = parse.GetValue(subsetLcmOption);
 
             if (maxSize < 1)
             {
@@ -226,13 +234,38 @@ class Program
                 return 1;
             }
 
+            LcmFamily? subFamily = null;
+            if (subsetLcm is { } k)
+            {
+                if (k < 1)
+                {
+                    AnsiConsole.MarkupLine("[red]--subset-lcm must be ≥ 1.[/]");
+                    return 1;
+                }
+                if (lcm % k != 0)
+                {
+                    AnsiConsole.MarkupLine($"[red]--subset-lcm {k} must divide --lcm {lcm} (literal subsets require K | N).[/]");
+                    return 1;
+                }
+                var found = families.FirstOrDefault(f => f.Lcm == k);
+                if (found.Fractions is null || found.Fractions.Count == 0)
+                {
+                    AnsiConsole.MarkupLine($"[red]No LCM family exists at L={k} under --max-size {maxSize} / --max-prime {maxPrime}.[/]");
+                    return 1;
+                }
+                subFamily = found;
+            }
+
             var outputDir = Path.Combine("output", "plots");
             Directory.CreateDirectory(outputDir);
-            var fileName = mode == PlotMode.All
-                ? $"lcm-family-{lcm}.png"
-                : $"lcm-family-{lcm}-{modeString}.png";
+            var baseName = mode == PlotMode.All
+                ? $"lcm-family-{lcm}"
+                : $"lcm-family-{lcm}-{modeString}";
+            var fileName = subFamily is null
+                ? $"{baseName}.png"
+                : $"{baseName}-sub{subFamily.Value.Lcm}.png";
             var outputPath = Path.Combine(outputDir, fileName);
-            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod, mode);
+            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod, mode, subFamily);
 
             AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
             return 0;

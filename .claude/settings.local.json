@@ -28,7 +28,8 @@
       "Bash(git check-ignore *)",
       "Bash(dir \"D:\\\\Code\\\\Melodroid 3\\\\output\\\\plots\\\\\" 2>&1)",
       "Bash(echo \"---exit: $?\")",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Bash(echo \"---exit $?---\")"
     ]
   }
 }
