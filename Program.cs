@@ -166,6 +166,12 @@ class Program
             Description = "Plot samples per reference period (smoothness).",
             DefaultValueFactory = _ => 200,
         };
+        var plotModeOption = new Option<string>("--mode")
+        {
+            Description = "What to plot: 'all' (default), 'sum', or 'constituents'.",
+            DefaultValueFactory = _ => "all",
+        };
+        plotModeOption.AcceptOnlyFromAmong("all", "sum", "constituents");
 
         var plotLcmFamiliesCommand = new Command(
             "lcm-families",
@@ -174,12 +180,14 @@ class Program
         plotLcmFamiliesCommand.Add(maxPrimeOption);
         plotLcmFamiliesCommand.Add(lcmOption);
         plotLcmFamiliesCommand.Add(samplesPerPeriodOption);
+        plotLcmFamiliesCommand.Add(plotModeOption);
         plotLcmFamiliesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var lcm = parse.GetValue(lcmOption);
             var samplesPerPeriod = parse.GetValue(samplesPerPeriodOption);
+            var modeString = parse.GetValue(plotModeOption) ?? "all";
 
             if (maxSize < 1)
             {
@@ -202,6 +210,13 @@ class Program
                 return 1;
             }
 
+            var mode = modeString switch
+            {
+                "sum" => PlotMode.Sum,
+                "constituents" => PlotMode.Constituents,
+                _ => PlotMode.All,
+            };
+
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, lcm);
             var family = families.FirstOrDefault(f => f.Lcm == lcm);
@@ -213,8 +228,11 @@ class Program
 
             var outputDir = Path.Combine("output", "plots");
             Directory.CreateDirectory(outputDir);
-            var outputPath = Path.Combine(outputDir, $"lcm-family-{lcm}.png");
-            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod);
+            var fileName = mode == PlotMode.All
+                ? $"lcm-family-{lcm}.png"
+                : $"lcm-family-{lcm}-{modeString}.png";
+            var outputPath = Path.Combine(outputDir, fileName);
+            LcmFamilyWaveformRenderer.Render(family, outputPath, samplesPerPeriod, mode);
 
             AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
             return 0;

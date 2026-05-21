@@ -4,12 +4,20 @@ using ScottPlot;
 
 namespace Melodroid_3.Output;
 
+public enum PlotMode
+{
+    All,
+    Sum,
+    Constituents,
+}
+
 public static class LcmFamilyWaveformRenderer
 {
     public static void Render(
         LcmFamily family,
         string outputPath,
         int samplesPerPeriod = 200,
+        PlotMode mode = PlotMode.All,
         int width = 1400,
         int height = 800)
     {
@@ -24,13 +32,15 @@ public static class LcmFamilyWaveformRenderer
             sharedT ??= t;
             for (var i = 0; i < y.Length; i++) sum[i] += y[i];
 
+            if (mode == PlotMode.Sum) continue;
+
             var scatter = plot.Add.Scatter(t, y);
             scatter.LegendText = fraction.ToString();
             scatter.MarkerSize = 0;
             scatter.LineWidth = 1.5f;
         }
 
-        if (sharedT is not null)
+        if (sharedT is not null && mode != PlotMode.Constituents)
         {
             var sumScatter = plot.Add.Scatter(sharedT, sum);
             sumScatter.LegendText = "sum";
@@ -47,7 +57,13 @@ public static class LcmFamilyWaveformRenderer
         repeatLine.LinePattern = LinePattern.Dashed;
         repeatLine.Color = Colors.Gray;
 
-        plot.Title($"LCM family L={family.Lcm} ({n} fractions)");
+        var modeSuffix = mode switch
+        {
+            PlotMode.Sum => " — sum",
+            PlotMode.Constituents => " — constituents",
+            _ => "",
+        };
+        plot.Title($"LCM family L={family.Lcm} ({n} fractions){modeSuffix}");
         plot.XLabel("t (reference periods)");
         plot.YLabel("amplitude");
         plot.ShowLegend();
