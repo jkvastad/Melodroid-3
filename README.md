@@ -44,4 +44,4 @@ Run `dotnet run -- table lcm-families` to print the LCM families, ordered by asc
 #### Isomorphisms and Subsets
 Some LCM families are naturally subsets of others, e.g. LCM4 {1, 5/4, 3/2} is a subset to LCM8{1/1, 9/8, 5/4, 3/2, 15/8}. Due to octave equivalence, some families are subsets after renormalizing (lcm 18: {1/1, 10/9, 4/3, 3/2, 5/3, 16/9} renormalize to 4/3 -> {1/1, 9/8, 5/4, 4/3, 3/2, 5/3}, subset of 24), or even completely isomorphic (LCM4 {1, 5/4, 3/2} renormalize to 3/2 -> LCM3{1, 4/3, 5/3}).
 
-TODO: Show graph dependence illustrating isomorphisms, subsets and renormalized subsets of all LCM families for given good fractions up to given size LCM L.
+Run `dotnet run -- graph lcm-families` to generate a Mermaid graph at `output/graphs/lcm-families.md` illustrating the three relations (solid arrow = literal subset, thick double-headed arrow = isomorphism, dashed arrow = renormalized subset). Open the file in VSCode and press Ctrl+Shift+V to view the rendered graph. Edges are Hasse-reduced per relation and isomorphic families are grouped into subgraph clusters. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
