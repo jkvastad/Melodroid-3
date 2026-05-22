@@ -84,6 +84,7 @@ public class OctaveSweepTests
         row.Ambiguous.Should().BeTrue();
         row.PostBinLcm.Should().BeNull();
         row.FullMatch.Should().BeFalse();
+        row.AllInputsBinned.Should().BeTrue();
     }
 
     [Fact]
@@ -101,6 +102,7 @@ public class OctaveSweepTests
         var row = rows.Single(r => r.ReferenceRatio == 1.0);
         row.FullMatch.Should().BeFalse();
         row.Ambiguous.Should().BeFalse();
+        row.AllInputsBinned.Should().BeFalse();
         row.PostBinLcm.Should().Be(IntegerMath.Lcm(1, 2));
 
         row.Cells[2].GoodFraction.Should().Be(default(Fraction));
@@ -172,13 +174,24 @@ public class OctaveSweepTests
         {
             cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], false);
         }
-        return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false);
+        return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false, AllInputsBinned: true);
     }
 
     private static OctaveSweepRow MakeNonFullMatchRow(double reference)
     {
         var cells = new[] { new OctaveSweepCell(default, double.NaN, double.NaN, false) };
-        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false);
+        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false, AllInputsBinned: false);
+    }
+
+    private static OctaveSweepRow MakeAmbiguousFullRow(
+        double reference, IReadOnlyList<Fraction> signature, double[] distances)
+    {
+        var cells = new OctaveSweepCell[signature.Count];
+        for (var i = 0; i < signature.Count; i++)
+        {
+            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], true);
+        }
+        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: true, AllInputsBinned: true);
     }
 
     [Fact]
@@ -280,5 +293,58 @@ public class OctaveSweepTests
         var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
 
         centered.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Centered_treats_ambiguous_full_row_as_part_of_block()
+    {
+        // Three contiguous rows with the same signature, the middle one ambiguous.
+        // The middle row has the smallest max-|distance|, so it should win even
+        // though it's the ambiguous one.
+        var rows = new[]
+        {
+            MakeFullMatchRow      (1.10, MajorTriad, new[] {  0.40,  0.30, -0.20 }),
+            MakeAmbiguousFullRow  (1.11, MajorTriad, new[] {  0.05, -0.05,  0.05 }),
+            MakeFullMatchRow      (1.12, MajorTriad, new[] { -0.40, -0.30,  0.20 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1 });
+    }
+
+    [Fact]
+    public void Centered_ambiguous_only_block_yields_its_own_centre()
+    {
+        var rows = new[]
+        {
+            MakeNonFullMatchRow(1.00),
+            MakeAmbiguousFullRow(1.10, MajorTriad, new[] {  0.30,  0.20,  0.10 }),
+            MakeAmbiguousFullRow(1.11, MajorTriad, new[] {  0.00,  0.00,  0.00 }),
+            MakeAmbiguousFullRow(1.12, MajorTriad, new[] { -0.30, -0.20, -0.10 }),
+            MakeNonFullMatchRow(1.20),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 2 });
+    }
+
+    [Fact]
+    public void Centered_block_ends_at_unbinned_row_not_ambiguous_row()
+    {
+        // Ambiguous-only rows extend the block (since AllInputsBinned == true);
+        // a fully-unbinned row closes it.
+        var rows = new[]
+        {
+            MakeFullMatchRow    (1.10, MajorTriad, new[] {  0.20, 0.10, 0.10 }),
+            MakeAmbiguousFullRow(1.11, MajorTriad, new[] {  0.00, 0.00, 0.00 }),
+            MakeNonFullMatchRow (1.12),
+            MakeFullMatchRow    (1.13, MajorTriad, new[] { -0.05, 0.05, 0.05 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1, 3 });
     }
 }

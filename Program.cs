@@ -131,18 +131,18 @@ class Program
         };
         var onlyFullMatchesOption = new Option<bool>("--only-full-matches")
         {
-            Description = "Show only rows where every input ratio binned to a single good fraction.",
+            Description = "Show only rows where every input ratio fell into at least one good-fraction bin. Includes ambiguous-overlap rows (highlighted yellow, marked ?) — they are full matches with an undefined LCM.",
             DefaultValueFactory = _ => false,
         };
         var onlyCenteredFullMatchesOption = new Option<bool>("--only-centered-full-matches")
         {
-            Description = "Show only the centered (smallest worst-cell |distance|) step of each contiguous full-match block. Takes precedence over --only-full-matches.",
+            Description = "Show only the centered (smallest worst-cell |distance|) step of each contiguous all-binned block. Ambiguous-overlap rows participate in blocks alongside strict full matches. Takes precedence over --only-full-matches.",
             DefaultValueFactory = _ => false,
         };
 
         var octaveSweepCommand = new Command(
             "octave-sweep",
-            "Sweep a reference ratio across [1, 2) and bin renormalized input ratios against good fractions; rows with full matches are highlighted green, ambiguous-overlap rows yellow. Use --only-full-matches to suppress non-full-match rows, or --only-centered-full-matches for one row per contiguous full-match block.");
+            "Sweep a reference ratio across [1, 2) and bin renormalized input ratios against good fractions; strict full matches are highlighted green, ambiguous-overlap rows yellow. Use --only-full-matches to keep rows where every input was binned (strict + ambiguous), or --only-centered-full-matches for one row per contiguous all-binned block.");
         octaveSweepCommand.Add(maxSizeOption);
         octaveSweepCommand.Add(maxPrimeOption);
         octaveSweepCommand.Add(ratiosOption);

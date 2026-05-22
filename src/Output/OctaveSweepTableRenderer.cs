@@ -29,16 +29,18 @@ public static class OctaveSweepTableRenderer
         table.AddColumn(new TableColumn("Full?").Centered());
 
         var fullMatchCount = 0;
+        var ambiguousFullCount = 0;
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             var row = rows[rowIndex];
             if (row.FullMatch) fullMatchCount++;
+            else if (row.AllInputsBinned && row.Ambiguous) ambiguousFullCount++;
 
             if (centeredFullMatchesOnly)
             {
                 if (!centered.Contains(rowIndex)) continue;
             }
-            else if (fullMatchesOnly && !row.FullMatch)
+            else if (fullMatchesOnly && !row.AllInputsBinned)
             {
                 continue;
             }
@@ -85,7 +87,7 @@ public static class OctaveSweepTableRenderer
                 : "";
         var fullMatchesClause =
             $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")} " +
-            $"({centered.Count} centered)" +
+            $"({centered.Count} centered, {ambiguousFullCount} ambiguous)" +
             filterClause;
         table.Caption(
             $"{rows.Count} reference{(rows.Count == 1 ? "" : "s")} swept; " +

@@ -11,7 +11,8 @@ public readonly record struct OctaveSweepRow(
     IReadOnlyList<OctaveSweepCell> Cells,
     int? PostBinLcm,
     bool FullMatch,
-    bool Ambiguous);
+    bool Ambiguous,
+    bool AllInputsBinned);
 
 public static class OctaveSweep
 {
@@ -44,6 +45,7 @@ public static class OctaveSweep
         var cells = new OctaveSweepCell[inputRatios.Count];
         var rowAmbiguous = false;
         var allBinned = true;
+        var noMisses = true;
         var foldedLcm = 1;
         var anyBinned = false;
 
@@ -73,6 +75,7 @@ public static class OctaveSweep
             {
                 cells[i] = new OctaveSweepCell(default, normalized, double.NaN, false);
                 allBinned = false;
+                noMisses = false;
             }
             else if (matchCount == 1)
             {
@@ -106,13 +109,16 @@ public static class OctaveSweep
             fullMatch = false;
         }
 
-        return new OctaveSweepRow(reference, cells, postBinLcm, fullMatch, rowAmbiguous);
+        return new OctaveSweepRow(reference, cells, postBinLcm, fullMatch, rowAmbiguous, noMisses);
     }
 
-    // A block is a maximal contiguous run of FullMatch rows that share the same
-    // per-input-position tuple of matched good fractions. Each block contributes
-    // one centered row: the index minimising max |SignedPctDistance| across cells,
-    // ties broken by lowest index.
+    // A block is a maximal contiguous run of rows where every input ratio fell
+    // into at least one good-fraction bin (AllInputsBinned) and that share the same
+    // per-input-position tuple of matched good fractions. Ambiguous-overlap rows
+    // are included alongside strict full matches — their cell signatures use the
+    // first matched fraction, which keeps grouping well-defined. Each block
+    // contributes one centered row: the index minimising max |SignedPctDistance|
+    // across cells, ties broken by lowest index.
     public static IReadOnlyCollection<int> IdentifyCenteredFullMatches(
         IReadOnlyList<OctaveSweepRow> rows)
     {
@@ -125,7 +131,7 @@ public static class OctaveSweep
         {
             var row = rows[i];
 
-            if (!row.FullMatch)
+            if (!row.AllInputsBinned)
             {
                 if (blockStart >= 0)
                 {
