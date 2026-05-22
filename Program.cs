@@ -86,9 +86,37 @@ class Program
             return 0;
         });
 
+        var binOverlapsCommand = new Command(
+            "bin-overlaps",
+            "For each adjacent pair of good fractions (with octave-wrap to 2/1), print the bin radius c at which their JND clusters first overlap.");
+        binOverlapsCommand.Add(maxSizeOption);
+        binOverlapsCommand.Add(maxPrimeOption);
+        binOverlapsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var overlaps = BinOverlaps.Compute(fractions);
+            BinOverlapTableRenderer.Render(overlaps);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
+        tableCommand.Add(binOverlapsCommand);
 
         var modeOption = new Option<string>("--mode")
         {

@@ -31,7 +31,11 @@
       "Bash(echo \"exit:$?\")",
       "Bash(echo \"---exit $?---\")",
       "PowerShell(dotnet test --nologo)",
-      "Bash(echo \"EXIT=$?\")"
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\Code\\\\Melodroid 3\\\\src\\\\Music\" -File)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Code\\\\Melodroid 3\\\\src\\\\Output\\\\\" -File | Select-Object -ExpandProperty Name)",
+      "Bash(grep -E '\\\\.cs$')",
+      "Bash(echo \"exit=$?\")"
     ]
   }
 }
