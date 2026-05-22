@@ -134,16 +134,22 @@ class Program
             Description = "Show only rows where every input ratio binned to a single good fraction.",
             DefaultValueFactory = _ => false,
         };
+        var onlyCenteredFullMatchesOption = new Option<bool>("--only-centered-full-matches")
+        {
+            Description = "Show only the centered (smallest worst-cell |distance|) step of each contiguous full-match block. Takes precedence over --only-full-matches.",
+            DefaultValueFactory = _ => false,
+        };
 
         var octaveSweepCommand = new Command(
             "octave-sweep",
-            "Sweep a reference ratio across [1, 2) and bin renormalized input ratios against good fractions; rows with full matches are highlighted green, ambiguous-overlap rows yellow. Use --only-full-matches to suppress non-full-match rows.");
+            "Sweep a reference ratio across [1, 2) and bin renormalized input ratios against good fractions; rows with full matches are highlighted green, ambiguous-overlap rows yellow. Use --only-full-matches to suppress non-full-match rows, or --only-centered-full-matches for one row per contiguous full-match block.");
         octaveSweepCommand.Add(maxSizeOption);
         octaveSweepCommand.Add(maxPrimeOption);
         octaveSweepCommand.Add(ratiosOption);
         octaveSweepCommand.Add(sweepStepOption);
         octaveSweepCommand.Add(binRadiusOption);
         octaveSweepCommand.Add(onlyFullMatchesOption);
+        octaveSweepCommand.Add(onlyCenteredFullMatchesOption);
         octaveSweepCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -152,6 +158,7 @@ class Program
             var sweepStep = parse.GetValue(sweepStepOption);
             var binRadius = parse.GetValue(binRadiusOption);
             var onlyFullMatches = parse.GetValue(onlyFullMatchesOption);
+            var onlyCenteredFullMatches = parse.GetValue(onlyCenteredFullMatchesOption);
 
             if (maxSize < 1)
             {
@@ -189,7 +196,7 @@ class Program
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var rows = OctaveSweep.Compute(ratios, fractions, sweepStep, binRadius);
-            OctaveSweepTableRenderer.Render(rows, fractions, ratios, binRadius, onlyFullMatches);
+            OctaveSweepTableRenderer.Render(rows, fractions, ratios, binRadius, onlyFullMatches, onlyCenteredFullMatches);
             return 0;
         });
 

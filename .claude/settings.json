@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($proc = Start-Process dotnet -ArgumentList \"run\",\"--\",\"table\",\"octave-sweep\",\"--ratios\",\"1.0\",\"1.25\",\"1.5\",\"--only-full-matches\",\"--only-centered-full-matches\" -PassThru -Wait -NoNewWindow -RedirectStandardOutput \"smoke3.txt\" -RedirectStandardError \"smoke3_err.txt\"; \"ExitCode: $\\($proc.ExitCode\\)\"; $stars = \\(Get-Content smoke3.txt | Select-String -Pattern \"â˜…\"\\).Count; \"star rows \\(both flags\\): $stars\"; Get-Content smoke3.txt | Select-String -Pattern \"swept\" | Select-Object -Last 4)"
+    ]
+  }
+}

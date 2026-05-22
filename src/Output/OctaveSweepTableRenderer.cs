@@ -12,9 +12,12 @@ public static class OctaveSweepTableRenderer
         IReadOnlyList<double> inputRatios,
         double binRadius,
         bool fullMatchesOnly = false,
+        bool centeredFullMatchesOnly = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
 
         var table = new Table();
         table.AddColumn(new TableColumn("Ref").RightAligned());
@@ -26,12 +29,21 @@ public static class OctaveSweepTableRenderer
         table.AddColumn(new TableColumn("Full?").Centered());
 
         var fullMatchCount = 0;
-        foreach (var row in rows)
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
+            var row = rows[rowIndex];
             if (row.FullMatch) fullMatchCount++;
 
-            if (fullMatchesOnly && !row.FullMatch) continue;
+            if (centeredFullMatchesOnly)
+            {
+                if (!centered.Contains(rowIndex)) continue;
+            }
+            else if (fullMatchesOnly && !row.FullMatch)
+            {
+                continue;
+            }
 
+            var isCentered = centered.Contains(rowIndex);
             string? colour = row.FullMatch ? "green" : row.Ambiguous ? "yellow" : null;
 
             var cellStrings = new string[goodFractions.Count + 3];
@@ -43,7 +55,7 @@ public static class OctaveSweepTableRenderer
             }
 
             cellStrings[goodFractions.Count + 1] = row.PostBinLcm?.ToString(CultureInfo.InvariantCulture) ?? "";
-            cellStrings[goodFractions.Count + 2] = row.FullMatch ? "✓" : row.Ambiguous ? "?" : "";
+            cellStrings[goodFractions.Count + 2] = isCentered ? "★" : row.FullMatch ? "✓" : row.Ambiguous ? "?" : "";
 
             if (colour is not null)
             {
@@ -66,9 +78,15 @@ public static class OctaveSweepTableRenderer
 
         var ratiosCsv = string.Join(", ", inputRatios.Select(r => r.ToString("F4", CultureInfo.InvariantCulture)));
         var radiusPct = binRadius.ToString("P3", CultureInfo.InvariantCulture);
+        var filterClause = centeredFullMatchesOnly
+            ? " (filter active: centered full matches only)"
+            : fullMatchesOnly
+                ? " (filter active: showing full matches only)"
+                : "";
         var fullMatchesClause =
-            $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")}" +
-            (fullMatchesOnly ? " (filter active: showing full matches only)" : "");
+            $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")} " +
+            $"({centered.Count} centered)" +
+            filterClause;
         table.Caption(
             $"{rows.Count} reference{(rows.Count == 1 ? "" : "s")} swept; " +
             $"bin radius = {binRadius.ToString("G4", CultureInfo.InvariantCulture)} ({radiusPct}); " +

@@ -154,4 +154,131 @@ public class OctaveSweepTests
         rows[0].ReferenceRatio.Should().BeApproximately(1.0, 1e-12);
         rows[^1].ReferenceRatio.Should().BeApproximately(1.99, 1e-12);
     }
+
+    // Centered full match identification — unit tests over synthetic OctaveSweepRow
+    // arrays, so the algorithm is exercised independently of bin radius / sweep step.
+
+    private static readonly Fraction[] MajorTriad =
+        { new(1, 1), new(5, 4), new(3, 2) };
+
+    private static readonly Fraction[] MinorTriad =
+        { new(1, 1), new(6, 5), new(3, 2) };
+
+    private static OctaveSweepRow MakeFullMatchRow(
+        double reference, IReadOnlyList<Fraction> signature, double[] distances)
+    {
+        var cells = new OctaveSweepCell[signature.Count];
+        for (var i = 0; i < signature.Count; i++)
+        {
+            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], false);
+        }
+        return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false);
+    }
+
+    private static OctaveSweepRow MakeNonFullMatchRow(double reference)
+    {
+        var cells = new[] { new OctaveSweepCell(default, double.NaN, double.NaN, false) };
+        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false);
+    }
+
+    [Fact]
+    public void Centered_empty_input_returns_empty()
+    {
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(Array.Empty<OctaveSweepRow>());
+        centered.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Centered_single_isolated_full_match_is_its_own_centre()
+    {
+        var rows = new[]
+        {
+            MakeNonFullMatchRow(1.00),
+            MakeFullMatchRow(1.10, MajorTriad, new[] { 0.0, 0.0, 0.0 }),
+            MakeNonFullMatchRow(1.20),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1 });
+    }
+
+    [Fact]
+    public void Centered_picks_row_with_smallest_max_absolute_distance()
+    {
+        // Three-row block; row 1 has the smallest max-|distance|.
+        var rows = new[]
+        {
+            MakeFullMatchRow(1.10, MajorTriad, new[] {  0.50,  0.40, -0.30 }),
+            MakeFullMatchRow(1.11, MajorTriad, new[] {  0.10, -0.05,  0.05 }),
+            MakeFullMatchRow(1.12, MajorTriad, new[] { -0.40, -0.50,  0.30 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1 });
+    }
+
+    [Fact]
+    public void Centered_tie_broken_by_lowest_index()
+    {
+        var rows = new[]
+        {
+            MakeFullMatchRow(1.10, MajorTriad, new[] { 0.20,  0.00, 0.00 }),
+            MakeFullMatchRow(1.11, MajorTriad, new[] { 0.20, -0.20, 0.00 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 0 });
+    }
+
+    [Fact]
+    public void Centered_splits_blocks_on_changing_signature()
+    {
+        // Two back-to-back FullMatch runs with different matched-fraction tuples
+        // become two distinct blocks, each producing its own centred row.
+        var rows = new[]
+        {
+            MakeFullMatchRow(1.10, MajorTriad, new[] {  0.30,  0.20,  0.10 }),
+            MakeFullMatchRow(1.11, MajorTriad, new[] {  0.00,  0.00,  0.00 }),
+            MakeFullMatchRow(1.12, MinorTriad, new[] {  0.10, -0.10, -0.10 }),
+            MakeFullMatchRow(1.13, MinorTriad, new[] { -0.30, -0.30, -0.30 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1, 2 });
+    }
+
+    [Fact]
+    public void Centered_block_ends_at_non_full_match_row()
+    {
+        var rows = new[]
+        {
+            MakeFullMatchRow(1.10, MajorTriad, new[] {  0.20, 0.10, 0.10 }),
+            MakeFullMatchRow(1.11, MajorTriad, new[] {  0.00, 0.00, 0.00 }),
+            MakeNonFullMatchRow(1.12),
+            MakeFullMatchRow(1.13, MajorTriad, new[] { -0.05, 0.05, 0.05 }),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEquivalentTo(new[] { 1, 3 });
+    }
+
+    [Fact]
+    public void Centered_no_full_matches_returns_empty()
+    {
+        var rows = new[]
+        {
+            MakeNonFullMatchRow(1.00),
+            MakeNonFullMatchRow(1.10),
+            MakeNonFullMatchRow(1.20),
+        };
+
+        var centered = OctaveSweep.IdentifyCenteredFullMatches(rows);
+
+        centered.Should().BeEmpty();
+    }
 }

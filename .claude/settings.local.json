@@ -38,7 +38,8 @@
       "Bash(echo \"exit=$?\")",
       "Bash(Select-Object -Last 50)",
       "PowerShell(dotnet test --nologo --no-restore)",
-      "PowerShell(dotnet test --nologo --no-restore 2>&1)"
+      "PowerShell(dotnet test --nologo --no-restore 2>&1)",
+      "PowerShell($proc = Start-Process dotnet -ArgumentList \"run\",\"--\",\"table\",\"octave-sweep\",\"--ratios\",\"1.0\",\"1.25\",\"1.5\",\"--only-centered-full-matches\" -PassThru -Wait -NoNewWindow -RedirectStandardOutput \"smoke2.txt\" -RedirectStandardError \"smoke2_err.txt\"; \"ExitCode: $\\($proc.ExitCode\\)\"; Get-Content smoke2.txt | Select-String -Pattern \"â…|★|swept|full match|centered\" | Select-Object -Last 8)"
     ]
   }
 }

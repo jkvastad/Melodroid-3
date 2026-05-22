@@ -109,6 +109,82 @@ public static class OctaveSweep
         return new OctaveSweepRow(reference, cells, postBinLcm, fullMatch, rowAmbiguous);
     }
 
+    // A block is a maximal contiguous run of FullMatch rows that share the same
+    // per-input-position tuple of matched good fractions. Each block contributes
+    // one centered row: the index minimising max |SignedPctDistance| across cells,
+    // ties broken by lowest index.
+    public static IReadOnlyCollection<int> IdentifyCenteredFullMatches(
+        IReadOnlyList<OctaveSweepRow> rows)
+    {
+        var centered = new HashSet<int>();
+        var blockStart = -1;
+        var bestIndex = -1;
+        var bestMaxAbs = double.PositiveInfinity;
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var row = rows[i];
+
+            if (!row.FullMatch)
+            {
+                if (blockStart >= 0)
+                {
+                    centered.Add(bestIndex);
+                    blockStart = -1;
+                }
+                continue;
+            }
+
+            if (blockStart >= 0 && !SameSignature(rows[blockStart].Cells, row.Cells))
+            {
+                centered.Add(bestIndex);
+                blockStart = -1;
+            }
+
+            if (blockStart < 0)
+            {
+                blockStart = i;
+                bestIndex = i;
+                bestMaxAbs = MaxAbsDistance(row.Cells);
+            }
+            else
+            {
+                var maxAbs = MaxAbsDistance(row.Cells);
+                if (maxAbs < bestMaxAbs)
+                {
+                    bestMaxAbs = maxAbs;
+                    bestIndex = i;
+                }
+            }
+        }
+
+        if (blockStart >= 0) centered.Add(bestIndex);
+        return centered;
+    }
+
+    private static bool SameSignature(
+        IReadOnlyList<OctaveSweepCell> a,
+        IReadOnlyList<OctaveSweepCell> b)
+    {
+        if (a.Count != b.Count) return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (a[i].GoodFraction != b[i].GoodFraction) return false;
+        }
+        return true;
+    }
+
+    private static double MaxAbsDistance(IReadOnlyList<OctaveSweepCell> cells)
+    {
+        var max = 0.0;
+        for (var i = 0; i < cells.Count; i++)
+        {
+            var abs = Math.Abs(cells[i].SignedPctDistance);
+            if (abs > max) max = abs;
+        }
+        return max;
+    }
+
     private static double OctaveNormalize(double r)
     {
         while (r < 1.0) r *= 2.0;
