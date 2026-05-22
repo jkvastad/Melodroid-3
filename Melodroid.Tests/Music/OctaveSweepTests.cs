@@ -108,6 +108,40 @@ public class OctaveSweepTests
     }
 
     [Fact]
+    public void Value_just_below_octave_wraps_to_1_over_1_with_small_distance()
+    {
+        var rows = OctaveSweep.Compute(
+            new[] { 1.999 },
+            DefaultGoodFractions,
+            sweepStep: 0.5,
+            binRadius: Unambiguous);
+
+        var first = rows[0];
+        first.ReferenceRatio.Should().Be(1.0);
+        first.Cells[0].GoodFraction.Should().Be(new Fraction(1, 1));
+        first.Cells[0].SignedPctDistance.Should().BeLessThan(0.0);
+        Math.Abs(first.Cells[0].SignedPctDistance).Should().BeLessThan(1.0);
+        first.FullMatch.Should().BeTrue();
+        first.PostBinLcm.Should().Be(1);
+    }
+
+    [Fact]
+    public void Value_just_above_1_wraps_to_high_good_fraction_via_circular_distance()
+    {
+        var rows = OctaveSweep.Compute(
+            new[] { 1.0001 },
+            new[] { new Fraction(47, 24) },
+            sweepStep: 0.5,
+            binRadius: 0.05);
+
+        var first = rows[0];
+        first.Cells[0].GoodFraction.Should().Be(new Fraction(47, 24));
+        first.Cells[0].SignedPctDistance.Should().BeGreaterThan(0.0);
+        Math.Abs(first.Cells[0].SignedPctDistance).Should().BeLessThan(5.0);
+        first.FullMatch.Should().BeTrue();
+    }
+
+    [Fact]
     public void Sweep_step_controls_row_count()
     {
         var rows = OctaveSweep.Compute(

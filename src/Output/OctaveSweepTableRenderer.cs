@@ -79,7 +79,7 @@ public static class OctaveSweepTableRenderer
             if (cell.GoodFraction == column && !double.IsNaN(cell.SignedPctDistance))
             {
                 var distance = cell.SignedPctDistance.ToString(
-                    "+0.000\\ %;-0.000\\ %;0.000\\ %",
+                    "+0.000\\ \\%;-0.000\\ \\%;0.000\\ \\%",
                     CultureInfo.InvariantCulture);
                 return cell.Ambiguous ? "~" + distance : distance;
             }
