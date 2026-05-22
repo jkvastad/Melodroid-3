@@ -28,15 +28,7 @@ public static class BinOverlaps
     {
         var num = b.Numerator * a.Denominator - a.Numerator * b.Denominator;
         var den = b.Numerator * a.Denominator + a.Numerator * b.Denominator;
-        var g = Gcd(num, den);
+        var g = IntegerMath.Gcd(num, den);
         return new Fraction(num / g, den / g);
-    }
-
-    private static int Gcd(int a, int b)
-    {
-        a = Math.Abs(a);
-        b = Math.Abs(b);
-        while (b != 0) (a, b) = (b, a % b);
-        return a == 0 ? 1 : a;
     }
 }

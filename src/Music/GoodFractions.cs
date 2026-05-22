@@ -19,19 +19,13 @@ public static class GoodFractions
             foreach (var p in smooth)
             {
                 if (p < q || p >= 2 * q) continue;
-                if (Gcd(p, q) != 1) continue;
+                if (IntegerMath.Gcd(p, q) != 1) continue;
                 result.Add(new Fraction(p, q));
             }
         }
 
         result.Sort((a, b) => a.Value.CompareTo(b.Value));
         return result;
-    }
-
-    private static int Gcd(int a, int b)
-    {
-        while (b != 0) (a, b) = (b, a % b);
-        return a;
     }
 
     private static bool IsSmooth(int n, int maxPrime)

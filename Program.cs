@@ -113,10 +113,84 @@ class Program
             return 0;
         });
 
+        var ratiosOption = new Option<double[]>("--ratios")
+        {
+            Description = "Input ratios on [1, 2), space-separated (e.g. --ratios 1.0 1.25 1.5).",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var sweepStepOption = new Option<double>("--sweep-step")
+        {
+            Description = "Unitless ratio increment for the reference sweep across [1, 2).",
+            DefaultValueFactory = _ => 0.001,
+        };
+        var binRadiusOption = new Option<double>("--bin-radius")
+        {
+            Description = "Bin radius as a decimal ratio (default ≈ 1/161, the unambiguous threshold).",
+            DefaultValueFactory = _ => 1.0 / 161.0,
+        };
+
+        var octaveSweepCommand = new Command(
+            "octave-sweep",
+            "Sweep a reference ratio across [1, 2) and bin renormalized input ratios against good fractions; rows with full matches are highlighted green, ambiguous-overlap rows yellow.");
+        octaveSweepCommand.Add(maxSizeOption);
+        octaveSweepCommand.Add(maxPrimeOption);
+        octaveSweepCommand.Add(ratiosOption);
+        octaveSweepCommand.Add(sweepStepOption);
+        octaveSweepCommand.Add(binRadiusOption);
+        octaveSweepCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var ratios = parse.GetValue(ratiosOption) ?? Array.Empty<double>();
+            var sweepStep = parse.GetValue(sweepStepOption);
+            var binRadius = parse.GetValue(binRadiusOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (ratios.Length == 0)
+            {
+                AnsiConsole.MarkupLine("[red]--ratios must contain at least one value.[/]");
+                return 1;
+            }
+            foreach (var r in ratios)
+            {
+                if (!(r >= 1.0 && r < 2.0))
+                {
+                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [1, 2).[/]");
+                    return 1;
+                }
+            }
+            if (!(sweepStep > 0.0 && sweepStep < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--sweep-step must be in (0, 1).[/]");
+                return 1;
+            }
+            if (!(binRadius > 0.0 && binRadius < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--bin-radius must be in (0, 1).[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var rows = OctaveSweep.Compute(ratios, fractions, sweepStep, binRadius);
+            OctaveSweepTableRenderer.Render(rows, fractions, ratios, binRadius);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
         tableCommand.Add(binOverlapsCommand);
+        tableCommand.Add(octaveSweepCommand);
 
         var modeOption = new Option<string>("--mode")
         {

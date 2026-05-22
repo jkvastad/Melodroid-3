@@ -19,20 +19,12 @@ public static class LcmFamilies
             {
                 if (l % f.Denominator != 0) continue;
                 members.Add(f);
-                foldedLcm = Lcm(foldedLcm, f.Denominator);
+                foldedLcm = IntegerMath.Lcm(foldedLcm, f.Denominator);
             }
 
             if (foldedLcm == l) result.Add(new LcmFamily(l, members));
         }
 
         return result;
-    }
-
-    private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
-
-    private static int Gcd(int a, int b)
-    {
-        while (b != 0) (a, b) = (b, a % b);
-        return a;
     }
 }
