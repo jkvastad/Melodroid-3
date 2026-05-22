@@ -85,6 +85,44 @@ public class OctaveSweepTests
         row.PostBinLcm.Should().BeNull();
         row.FullMatch.Should().BeFalse();
         row.AllInputsBinned.Should().BeTrue();
+
+        var cell = row.Cells[0];
+        cell.Ambiguous.Should().BeTrue();
+        cell.Matches.Should().HaveCountGreaterThan(1);
+        cell.Matches.Select(m => m.Fraction).Should().Contain(new Fraction(16, 15));
+        cell.Matches.Select(m => m.Fraction).Should().Contain(new Fraction(10, 9));
+    }
+
+    [Fact]
+    public void Ambiguous_cell_carries_every_matched_good_fraction()
+    {
+        // Regression for the 1.1140 scenario: at bin radius 0.01 the normalized
+        // ratios for inputs 1.0 and 1.25 each fall inside two adjacent good-fraction
+        // bins. The cell for each ambiguous input must expose both matches via
+        // Matches so the table renderer can surface the competing interpretations.
+        var step = 0.001;
+        var rows = OctaveSweep.Compute(
+            new[] { 1.0, 1.25, 1.5 },
+            DefaultGoodFractions,
+            sweepStep: step,
+            binRadius: 0.01);
+
+        var row = rows.Single(r => Math.Abs(r.ReferenceRatio - 1.114) < step / 2);
+        row.Ambiguous.Should().BeTrue();
+        row.AllInputsBinned.Should().BeTrue();
+        row.PostBinLcm.Should().BeNull();
+
+        var input1Matches = row.Cells[0].Matches.Select(m => m.Fraction).ToArray();
+        input1Matches.Should().BeEquivalentTo(new[] { new Fraction(16, 9), new Fraction(9, 5) });
+        row.Cells[0].Ambiguous.Should().BeTrue();
+
+        var input125Matches = row.Cells[1].Matches.Select(m => m.Fraction).ToArray();
+        input125Matches.Should().BeEquivalentTo(new[] { new Fraction(10, 9), new Fraction(9, 8) });
+        row.Cells[1].Ambiguous.Should().BeTrue();
+
+        var input15Matches = row.Cells[2].Matches.Select(m => m.Fraction).ToArray();
+        input15Matches.Should().BeEquivalentTo(new[] { new Fraction(4, 3) });
+        row.Cells[2].Ambiguous.Should().BeFalse();
     }
 
     [Fact]
@@ -172,14 +210,15 @@ public class OctaveSweepTests
         var cells = new OctaveSweepCell[signature.Count];
         for (var i = 0; i < signature.Count; i++)
         {
-            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], false);
+            var matches = new[] { new OctaveSweepMatch(signature[i], distances[i]) };
+            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], false, matches);
         }
         return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false, AllInputsBinned: true);
     }
 
     private static OctaveSweepRow MakeNonFullMatchRow(double reference)
     {
-        var cells = new[] { new OctaveSweepCell(default, double.NaN, double.NaN, false) };
+        var cells = new[] { new OctaveSweepCell(default, double.NaN, double.NaN, false, Array.Empty<OctaveSweepMatch>()) };
         return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false, AllInputsBinned: false);
     }
 
@@ -189,7 +228,8 @@ public class OctaveSweepTests
         var cells = new OctaveSweepCell[signature.Count];
         for (var i = 0; i < signature.Count; i++)
         {
-            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], true);
+            var matches = new[] { new OctaveSweepMatch(signature[i], distances[i]) };
+            cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], true, matches);
         }
         return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: true, AllInputsBinned: true);
     }

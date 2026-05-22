@@ -102,12 +102,15 @@ public static class OctaveSweepTableRenderer
     {
         foreach (var cell in row.Cells)
         {
-            if (cell.GoodFraction == column && !double.IsNaN(cell.SignedPctDistance))
+            foreach (var match in cell.Matches)
             {
-                var distance = cell.SignedPctDistance.ToString(
-                    "+0.000\\ \\%;-0.000\\ \\%;0.000\\ \\%",
-                    CultureInfo.InvariantCulture);
-                return cell.Ambiguous ? "~" + distance : distance;
+                if (match.Fraction == column)
+                {
+                    var distance = match.SignedPctDistance.ToString(
+                        "+0.000\\ \\%;-0.000\\ \\%;0.000\\ \\%",
+                        CultureInfo.InvariantCulture);
+                    return cell.Ambiguous ? "~" + distance : distance;
+                }
             }
         }
         return "";

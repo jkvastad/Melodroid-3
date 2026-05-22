@@ -1,10 +1,15 @@
 namespace Melodroid_3.Music;
 
+public readonly record struct OctaveSweepMatch(
+    Fraction Fraction,
+    double SignedPctDistance);
+
 public readonly record struct OctaveSweepCell(
     Fraction GoodFraction,
     double NormalizedRatio,
     double SignedPctDistance,
-    bool Ambiguous);
+    bool Ambiguous,
+    IReadOnlyList<OctaveSweepMatch> Matches);
 
 public readonly record struct OctaveSweepRow(
     double ReferenceRatio,
@@ -53,39 +58,34 @@ public static class OctaveSweep
         {
             var normalized = OctaveNormalize(inputRatios[i] / reference);
 
-            Fraction matched = default;
-            var matchedDistance = double.NaN;
-            var matchCount = 0;
+            var matches = new List<OctaveSweepMatch>();
 
             foreach (var gf in goodFractions)
             {
                 var signedRel = CircularSignedRelative(normalized, gf.Value);
                 if (Math.Abs(signedRel) <= binRadius)
                 {
-                    if (matchCount == 0)
-                    {
-                        matched = gf;
-                        matchedDistance = signedRel * 100.0;
-                    }
-                    matchCount++;
+                    matches.Add(new OctaveSweepMatch(gf, signedRel * 100.0));
                 }
             }
 
-            if (matchCount == 0)
+            if (matches.Count == 0)
             {
-                cells[i] = new OctaveSweepCell(default, normalized, double.NaN, false);
+                cells[i] = new OctaveSweepCell(default, normalized, double.NaN, false, matches);
                 allBinned = false;
                 noMisses = false;
             }
-            else if (matchCount == 1)
+            else if (matches.Count == 1)
             {
-                cells[i] = new OctaveSweepCell(matched, normalized, matchedDistance, false);
+                var primary = matches[0];
+                cells[i] = new OctaveSweepCell(primary.Fraction, normalized, primary.SignedPctDistance, false, matches);
                 anyBinned = true;
-                foldedLcm = IntegerMath.Lcm(foldedLcm, matched.Denominator);
+                foldedLcm = IntegerMath.Lcm(foldedLcm, primary.Fraction.Denominator);
             }
             else
             {
-                cells[i] = new OctaveSweepCell(matched, normalized, matchedDistance, true);
+                var primary = matches[0];
+                cells[i] = new OctaveSweepCell(primary.Fraction, normalized, primary.SignedPctDistance, true, matches);
                 rowAmbiguous = true;
                 allBinned = false;
             }
