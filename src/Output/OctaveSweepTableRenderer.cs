@@ -11,6 +11,7 @@ public static class OctaveSweepTableRenderer
         IReadOnlyList<Fraction> goodFractions,
         IReadOnlyList<double> inputRatios,
         double binRadius,
+        bool fullMatchesOnly = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -28,6 +29,8 @@ public static class OctaveSweepTableRenderer
         foreach (var row in rows)
         {
             if (row.FullMatch) fullMatchCount++;
+
+            if (fullMatchesOnly && !row.FullMatch) continue;
 
             string? colour = row.FullMatch ? "green" : row.Ambiguous ? "yellow" : null;
 
@@ -63,10 +66,13 @@ public static class OctaveSweepTableRenderer
 
         var ratiosCsv = string.Join(", ", inputRatios.Select(r => r.ToString("F4", CultureInfo.InvariantCulture)));
         var radiusPct = binRadius.ToString("P3", CultureInfo.InvariantCulture);
+        var fullMatchesClause =
+            $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")}" +
+            (fullMatchesOnly ? " (filter active: showing full matches only)" : "");
         table.Caption(
             $"{rows.Count} reference{(rows.Count == 1 ? "" : "s")} swept; " +
             $"bin radius = {binRadius.ToString("G4", CultureInfo.InvariantCulture)} ({radiusPct}); " +
-            $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")}; " +
+            $"{fullMatchesClause}; " +
             $"input ratios = {{{ratiosCsv}}}");
 
         console.Write(table);
