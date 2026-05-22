@@ -15,11 +15,27 @@ public class BinOverlapsTests
 
         result[0].Lower.Should().Be(new Fraction(1, 1));
         result[0].Upper.Should().Be(new Fraction(3, 2));
-        result[0].Radius.Should().BeApproximately((1.5 - 1.0) / (1.5 + 1.0), 1e-12);
+        // (3/2 - 1) / (3/2 + 1) = (1/2) / (5/2) = 1/5
+        result[0].Radius.Should().Be(new Fraction(1, 5));
 
         result[1].Lower.Should().Be(new Fraction(3, 2));
         result[1].Upper.Should().Be(new Fraction(2, 1));
-        result[1].Radius.Should().BeApproximately((2.0 - 1.5) / (2.0 + 1.5), 1e-12);
+        // (2 - 3/2) / (2 + 3/2) = (1/2) / (7/2) = 1/7
+        result[1].Radius.Should().Be(new Fraction(1, 7));
+    }
+
+    [Fact]
+    public void Compute_radius_is_returned_in_reduced_form()
+    {
+        // 10/9 → 9/8: (9/8 - 10/9)/(9/8 + 10/9) = (1/72)/(161/72) = 1/161.
+        // Pre-reduction the numerator/denominator would be (9*9 - 10*8, 9*9 + 10*8) = (1, 161),
+        // already coprime — but pick a case where reduction matters too.
+        var coprime = BinOverlaps.Compute(new[] { new Fraction(10, 9), new Fraction(9, 8) });
+        coprime[0].Radius.Should().Be(new Fraction(1, 161));
+
+        // 1/1 → 9/8: (9 - 8)/(9 + 8) = 1/17, already coprime.
+        var ones = BinOverlaps.Compute(new[] { new Fraction(1, 1), new Fraction(9, 8) });
+        ones[0].Radius.Should().Be(new Fraction(1, 17));
     }
 
     [Fact]
@@ -40,7 +56,7 @@ public class BinOverlapsTests
         result.Should().HaveCount(1);
         result[0].Lower.Should().Be(new Fraction(1, 1));
         result[0].Upper.Should().Be(new Fraction(2, 1));
-        result[0].Radius.Should().BeApproximately(1.0 / 3.0, 1e-12);
+        result[0].Radius.Should().Be(new Fraction(1, 3));
     }
 
     [Fact]
@@ -63,18 +79,29 @@ public class BinOverlapsTests
 
         for (var i = 0; i < fractions.Count - 1; i++)
         {
-            var a = fractions[i].Value;
-            var b = fractions[i + 1].Value;
-            var expected = (b - a) / (b + a);
             overlaps[i].Lower.Should().Be(fractions[i]);
             overlaps[i].Upper.Should().Be(fractions[i + 1]);
-            overlaps[i].Radius.Should().BeApproximately(expected, 1e-12);
+            overlaps[i].Radius.Should().Be(ExpectedRadius(fractions[i], fractions[i + 1]));
         }
 
-        var last = fractions[^1].Value;
-        var expectedWrap = (2.0 - last) / (2.0 + last);
         overlaps[^1].Lower.Should().Be(fractions[^1]);
         overlaps[^1].Upper.Should().Be(new Fraction(2, 1));
-        overlaps[^1].Radius.Should().BeApproximately(expectedWrap, 1e-12);
+        overlaps[^1].Radius.Should().Be(ExpectedRadius(fractions[^1], new Fraction(2, 1)));
+    }
+
+    private static Fraction ExpectedRadius(Fraction a, Fraction b)
+    {
+        var num = b.Numerator * a.Denominator - a.Numerator * b.Denominator;
+        var den = b.Numerator * a.Denominator + a.Numerator * b.Denominator;
+        var g = Gcd(num, den);
+        return new Fraction(num / g, den / g);
+    }
+
+    private static int Gcd(int a, int b)
+    {
+        a = Math.Abs(a);
+        b = Math.Abs(b);
+        while (b != 0) (a, b) = (b, a % b);
+        return a == 0 ? 1 : a;
     }
 }

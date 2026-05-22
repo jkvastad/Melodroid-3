@@ -13,14 +13,16 @@ public static class BinOverlapTableRenderer
         var table = new Table()
             .AddColumn(new TableColumn("Lower").RightAligned())
             .AddColumn(new TableColumn("Upper").RightAligned())
-            .AddColumn(new TableColumn("c").RightAligned());
+            .AddColumn(new TableColumn("c").RightAligned())
+            .AddColumn(new TableColumn("c %").RightAligned());
 
         foreach (var o in overlaps)
         {
             table.AddRow(
                 o.Lower.ToString(),
                 o.Upper.ToString(),
-                o.Radius.ToString("P3", CultureInfo.InvariantCulture));
+                o.Radius.ToString(),
+                o.Radius.Value.ToString("P3", CultureInfo.InvariantCulture));
         }
 
         if (overlaps.Count == 0)
@@ -32,12 +34,12 @@ public static class BinOverlapTableRenderer
             var min = overlaps[0];
             for (var i = 1; i < overlaps.Count; i++)
             {
-                if (overlaps[i].Radius < min.Radius) min = overlaps[i];
+                if (overlaps[i].Radius.Value < min.Radius.Value) min = overlaps[i];
             }
-            var minStr = min.Radius.ToString("P3", CultureInfo.InvariantCulture);
+            var minPct = min.Radius.Value.ToString("P3", CultureInfo.InvariantCulture);
             table.Caption(
                 $"{overlaps.Count} adjacent-pair overlap{(overlaps.Count == 1 ? "" : "s")}; " +
-                $"minimum c = {minStr} at ({min.Lower} → {min.Upper})");
+                $"minimum c = {min.Radius} ({minPct}) at ({min.Lower} → {min.Upper})");
         }
 
         console.Write(table);

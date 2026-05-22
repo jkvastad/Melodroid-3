@@ -1,6 +1,6 @@
 namespace Melodroid_3.Music;
 
-public readonly record struct BinOverlap(Fraction Lower, Fraction Upper, double Radius);
+public readonly record struct BinOverlap(Fraction Lower, Fraction Upper, Fraction Radius);
 
 public static class BinOverlaps
 {
@@ -13,15 +13,30 @@ public static class BinOverlaps
         {
             var a = fractions[i];
             var b = fractions[i + 1];
-            var c = (b.Value - a.Value) / (b.Value + a.Value);
-            result.Add(new BinOverlap(a, b, c));
+            result.Add(new BinOverlap(a, b, OverlapRadius(a, b)));
         }
 
         var last = fractions[^1];
         var two = new Fraction(2, 1);
-        var wrapC = (2.0 - last.Value) / (2.0 + last.Value);
-        result.Add(new BinOverlap(last, two, wrapC));
+        result.Add(new BinOverlap(last, two, OverlapRadius(last, two)));
 
         return result;
+    }
+
+    // c = (b - a) / (b + a), expressed exactly as a reduced fraction.
+    private static Fraction OverlapRadius(Fraction a, Fraction b)
+    {
+        var num = b.Numerator * a.Denominator - a.Numerator * b.Denominator;
+        var den = b.Numerator * a.Denominator + a.Numerator * b.Denominator;
+        var g = Gcd(num, den);
+        return new Fraction(num / g, den / g);
+    }
+
+    private static int Gcd(int a, int b)
+    {
+        a = Math.Abs(a);
+        b = Math.Abs(b);
+        while (b != 0) (a, b) = (b, a % b);
+        return a == 0 ? 1 : a;
     }
 }
