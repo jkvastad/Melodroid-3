@@ -5,10 +5,9 @@ A program for exploring music.
 Investigating the boundary conditions around which musical perception evolved.
 Analogous to studying cuisine - knowledge of e.g. taste buds can inspire great recipes.
 
-
 ## Harmony as pattern recognition of simultaneous waves
 We will be studying musical harmony via pattern recognition of simultaneous waves. For example a major chord can be expressed as fractions {1, 5/4, 3/2}. 
-The pattern for this set of frequencies loop every 4 iterations of the base wavelength, extending over 4 periods of time. 
+The pattern for this set of frequencies loops every 4 iterations of the base wavelength, extending over 4 periods of time. 
 The wave pattern length (WPL) is the Least Common Multiple (LCM) of the sets denonimators.
 
 ### Good Fractions
@@ -98,9 +97,11 @@ Centered rows are marked `★` in the `Full?` column (instead of `✓`) and the 
 ### Playing Fractions
 To play music, an instrument is needed. One one end we have instruments which can produce arbitray frequencies, such as violins and the human voice, allowing full expression of sound. Such freedom of expression also comes with a high complexity as the choices are only limited by the resolution of frequencies.
 
-The current hypothesis builds on the idea of clustering imperfect ratios to good fractions, meaning that perfect expression is not necessarily needed for perfect harmony, nor perhaps even desirable. Supposing there are only specific frequency relations of importance means adding meaningless frequencies to an instrument is unnecessary. This is a point in favor of studying instruments with keys, producing a subset of all possible frequencies, removing unnecessary complexity.
+The current hypothesis builds on the idea of clustering imperfect ratios to good fractions, meaning that perfect expression is not necessarily needed for perfect harmony, nor perhaps even desirable. Supposing there are only specific frequency relations of importance means adding meaningless frequencies to an instrument is unnecessary. This is a point in favor of studying instruments with keys, producing a subset of all possible frequencies, removing unnecessary complexity. 
+
+As a counterpoint, sometimes a great work needs contrast, meaning dissonance itself might be desirable. This idea is similar to how chili, a toxin, is indisputably popular in cuisine. A naive culinary model could reasonably label all toxins as undesireable, and we might do likewise were we to label all non-harmonious ratios undesirable.
 
 #### A Good Keyboard
-A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals but still producing the same harmonies. For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point necessitates equal temperament tonal systems, where the ratio of any two adjacent keys is the same, as only then are all fundamentals equal.
+A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point necessitates equal temperament tonal systems, where the ratio of any two adjacent keys is the same, as only then are all fundamentals equal.
 
 Combining the need for equal temperament tuning with the need for octave equivalency, we are now looking at instruments producing frequencies of the form (f_0*2^(n/k)), where f_0 is some arbitrary frequency (e.g. the Standard Pitch at 440Hz), n is the distance in number of keys from the middle key, and k is the number of keys in the tuning. For instance, setting k to 12 produces the well known 12-tet tuning.
