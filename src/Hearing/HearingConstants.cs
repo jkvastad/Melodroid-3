@@ -15,6 +15,12 @@ public static class HearingConstants
     public const double PitchJndFractionSine = 0.006;
 
     /// <summary>
+    /// Maximum bin radius for standard good fractions with max size 24 and max prime 5. 
+    /// Note that it is basically JND with 1/161 ~0.00621, about a 10th of a 12-tet semitone.
+    /// </summary>
+    public const double MaxUniqueStandardBinRadius = 1/161;
+
+    /// <summary>
     /// Action-to-sound latency JND: maximum delay between a triggering action
     /// (e.g. key press) and the resulting sound before it feels detached.
     /// </summary>
@@ -29,5 +35,5 @@ public static class HearingConstants
     /// <summary>
     /// Upper frequency at which auditory-nerve firing can phase-lock to individual cycles.    
     /// </summary>
-    public const double PhaseLockingThresholdHz = 1000.0;
+    public const double PhaseLockingThresholdHz = 1000.0;    
 }

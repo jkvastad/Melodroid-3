@@ -99,9 +99,41 @@ To play music, an instrument is needed. One one end we have instruments which ca
 
 The current hypothesis builds on the idea of clustering imperfect ratios to good fractions, meaning that perfect expression is not necessarily needed for perfect harmony, nor perhaps even desirable. Supposing there are only specific frequency relations of importance means adding meaningless frequencies to an instrument is unnecessary. This is a point in favor of studying instruments with keys, producing a subset of all possible frequencies, removing unnecessary complexity. 
 
-As a counterpoint, sometimes a great work needs contrast, meaning dissonance itself might be desirable. This idea is similar to how chili, a toxin, is indisputably popular in cuisine. A naive culinary model could reasonably label all toxins as undesireable, and we might do likewise were we to label all non-harmonious ratios undesirable.
+As a counterpoint, sometimes a great work needs contrast. Dissonance itself might be desirable: this idea is similar to how chili, a toxin, is indisputably popular in cuisine. A naive culinary model could reasonably label all toxins as undesireable, and we might do likewise were we to label all non-harmonious ratios undesirable.
+
+Which frequency relations are important, and ultimately, which ratios are necessary for an instrument?
 
 #### A Good Keyboard
-A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point necessitates equal temperament tonal systems, where the ratio of any two adjacent keys is the same, as only then are all fundamentals equal.
+A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. 
+
+For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point necessitates equal temperament tonal systems, where the ratio of any two adjacent keys is the same, as only then are all fundamentals equal.
 
 Combining the need for equal temperament tuning with the need for octave equivalency, we are now looking at instruments producing frequencies of the form (f_0*2^(n/k)), where f_0 is some arbitrary frequency (e.g. the Standard Pitch at 440Hz), n is the distance in number of keys from the middle key, and k is the number of keys in the tuning. For instance, setting k to 12 produces the well known 12-tet tuning.
+
+##### How many keys are needed?
+To answer the question of how many keys are needed, let’s begin by listing the requirements set by the theory to see indeed what the keys are needed for:
+
+* Modular good fractions: 
+It must be possible to play all the good fractions using any key as reference point. This means that relative to any arbitrary key in the equal tuning, all good fractions must bin to at least one key.
+Having infinite keys technically solves the problem, but maximizes complexity.
+Having a single key violates the requirement of binning unless the binning radius is set to half an octave, way outside any JND interpretation.
+
+* No unplayable virtual reference points
+A set of frequencies might produce a legal LCM with a virtual reference point, e.g. a Major Chord (1, 5/4, 3/2) has a full match of LCM 8 at 4/3.
+Such a virtual reference point should be playable, and so we want to include a key for it
+
+* As few keys as possible - no unnecessary complexity
+
+The above requirements would allow us to play all the good fractions from any key and physically sound any reference point creating a full match.
+
+A subtle yet important point - what does it mean to "play a good fraction using a key"? Previously we looked at arbitrary ratio sets and sampled reference points to search for full matches. With a keyboard our ratio sets are defined by the ratios between keys (which is just a smaller set of possible ratios). However, we are no longer free to arbitrarily sound a reference point - it must also correspond to a key.
+
+For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of they key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? 
+
+For playable reference points we first look at the full matches of a single frequency. Since all good fractions have an octave equivalent inverse (e.g. 3/2 <-> 4/3, 9/8 <-> 16/9), whenever the octave sweep for a single frequency finds a (perfect) full match, the reference point must be at the inverse of that good fraction. The full matching reference points for a single key are thus the good fractions themselves. If we only play one key at a time it is then sufficient for the keyboard to bin all good fractions.
+
+For any given set of frequencies, if it has any full match, by definition this means that every renormalized ratio in the set bins to a good fraction relative to some reference point. 
+
+The requirement to play modulating good fractions, meaning every good fraction can be played from every key, is thus a sufficient requirement for no unreachable virtual reference points  (a supposed virtual reference point must be a good fraction relative to all the frequencies in the set for a full match, but then it must have been playable and thus cannot have been virtual).
+
+For playing good fractions while keeping modularity we can select a binning radius and then try larger and larger tonal systems until all good fractions bin relative to an arbitrary key 0.
