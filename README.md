@@ -132,7 +132,8 @@ For a given keyboard with a given a set of keys which have a full match, the ref
 
 With such a definition of "playing a good fraction using a key", namely the sounded key frequency expressed as a ratio must bin to the target ideal good fraction, let's construct our keyboard.
 
-To satisfy the requirement of modulartiy we can look at a k-tet system. Given a reference key each good fraction must have at least one key in the k-tet within bin radius. There are two parameters affecting this: bin radius and number of keys. For a given number of keys, there will be a good fraction which needs the largest radius to bin its nearest key. This bin radius is `c_k = |2^(n/k) − g_k*| / g_k*` — the worst-case multiplicative distance "caused" by `g_k*`.
+###### Modulation
+To satisfy the requirement of modulation we can look at a k-tet system. Given a reference key each good fraction must have at least one key in the k-tet within bin radius. There are two parameters affecting this: bin radius and number of keys. For a given number of keys, there will be a good fraction which needs the largest radius to bin its nearest key. This bin radius is `c_k = |2^(n/k) − g_k*| / g_k*` — the worst-case multiplicative distance "caused" by `g_k*`.
 
 Run `dotnet run -- table ktet-cutoffs` to list, for each `k` from 1 to `--max-k`, the cutoff `c_k`, the limiting fraction `g_k`, and the nearest k-tet key (index `n` and ratio `2^(n/k)`). Green rows mark where `c_k` strictly improves over every smaller k. Add `--only-strictly-improving` to keep only those green rows; the caption still reports the full active k sequence and adds a `(filter: only strictly improving)` clause. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-k` (default 50), `--only-strictly-improving` (default off).
 
@@ -147,3 +148,11 @@ Notably for standard good fractions (max size 24, max prime 5), we get
 │ 34 │ 0.004547 │  0.4547 % │ 9/8               │         6 │ 1.130116 │
 
 Since JND is almost 1%, at k=11 the bin radius is about 3x JND but suddenly drops to JND at k=12. This only improves (slightly, some 20% smaller) at k=19, and then again at 31, 34 - just around the threshold for unique good fraction bin radii. Thus k=12 with about 63% of the keys for k=19 seems like a good compromise. This is quite remarkable as we have just recovered a (in some sense the) modern popular tuning system from first principles of biology and physics.
+
+###### Full Expression
+To satisfy the requirement of full expression any set of keys on our keyboard which has a full match must be able to play a key which bins to the reference point of that full match. Since our solution for modulation makes sure that every key can function as a reference point to every good fraction, this requirement is also fulfilled by k-tets with sufficiently low bin radii.
+
+###### Minimal Complexity
+To satisfy the requirement of minimal complexity, we need as few keys as possible when fulfilling the other requirements. Since modulation was solved with this in mind, our ktet choices seem to be between 12, 19, 31 and 34 keys. This would favor 12-tet as the optimal solution, with two caveats:
+* The bin radius might be to large and require 19 or even 34 (unique binnings) keys.
+* The solution might be too perfect - basically we might allow too little dissonance (see discussion of cuisine and chili in section "Playing Fractions"). In music we have effects such as bending strings on guitar which slides between notes. Perhaps the effect is popular due to introducing the right amount of dissonance, or perhaps it is simply the novelty of a sliding frequency - perhaps both.
