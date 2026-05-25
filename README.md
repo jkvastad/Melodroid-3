@@ -114,9 +114,9 @@ Combining equal temperament tuning with the need for octave equivalency, we are 
 To answer the question of how many keys are needed, let’s begin by listing the requirements set by the theory to see indeed what the keys are needed for:
 
 * Modulation: 
-It must be possible to play all the good fractions using any key as reference point. This means that relative to any arbitrary key in the equal tuning, all good fractions must bin to at least one key.
-Having infinite keys technically solves the problem, but maximizes complexity.
-Having a single key violates the requirement of binning unless the binning radius is set to half an octave, way outside any JND interpretation.
+It must be possible to play all the good fractions using any key as reference point. This means that relative to any arbitrary key in the equal tuning, for each good fraction there must be at least one key within the fraction's bin radius.
+On one hand having infinite keys technically solves the problem, but maximizes complexity.
+On the other hand having a single key with bin radius set to half an octave also technically works, but is way outside any JND interpretation.
 
 * Full Expression - No unplayable virtual reference points
 A set of keys might produce a full match with a virtual reference point, one which is not in the set of played keys. For example a Major Chord (1, 5/4, 3/2) has a full match of LCM 8 at 4/3.
@@ -128,23 +128,11 @@ The above requirements would allow us to play all the good fractions from any ke
 
 Here we encounter a subtle yet important point: what does it mean to "play a good fraction using a key"? Previously we looked at arbitrary ratio sets on [1,2) and sampled reference points to search for full matches. With a keyboard our ratio sets are defined by the fixed ratios between keys (which is just a smaller set of possible ratios). However, we are no longer free to arbitrarily sound a reference point - it must also correspond to a key.
 
-For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of the key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? Since full matches are based on the concept of binning real ratios to ideal fractions, using the bin radius to bin the reference point to a key seems appropriate.
+For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of the key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? Since full matches are based on the concept of binning real ratios to ideal fractions, using the bin radius to bin the closest key to the reference point seems appropriate.
 
 With such a definition of "playing a good fraction using a key", namely the sounded key frequency expressed as a ratio must bin to the target ideal good fraction, let's construct our keyboard.
 
-To satisfy the requirement of modulartiy we can look at a k-tet system. For all good fractions to bin to at least one key given a reference key, each good fraction must bin to at least one key in the k-tet. There are two parameters affecting this: bin radius and number of keys.
+To satisfy the requirement of modulartiy we can look at a k-tet system. Given a reference key each good fraction must have at least one key in the k-tet within bin radius. There are two parameters affecting this: bin radius and number of keys.
 
-TODO: Subcommand which calculates the minimum number of keys needed to bin all good fractions. Given
-* a set of good fractions (expressed via max prime and max size) .
-* a maximum bin radius.
-* a radius increment step.
- Starting from the bin radius which produces unique binnings for the good fractions (needs to be calculated per good fraction set - see cluster ranges and the "table bin-overlaps" command), increment bin radius up to maximum and output the minimum number of keys needed to bin all the good fractions from some arbitrary reference point (ratio 1, equal temperament means all reference points produce same analysis).
-
---- theory sketch below, disregard
-For playable reference points we first look at the full matches of a single frequency. Since all good fractions have an octave equivalent inverse (e.g. 3/2 <-> 4/3, 9/8 <-> 16/9), whenever the octave sweep for a single frequency finds a (perfect) full match, the reference point must be at the inverse of that good fraction. The full matching reference points for a single key are thus the good fractions themselves. If we only play one key at a time it is then sufficient for the keyboard to bin all good fractions.
-
-For any given set of frequencies, if it has any full match, by definition this means that every renormalized ratio in the set bins to a good fraction relative to some reference point. 
-
-The requirement to play modulating good fractions, meaning every good fraction can be played from every key, is thus a sufficient requirement for no unreachable virtual reference points  (a supposed virtual reference point must be a good fraction relative to all the frequencies in the set for a full match, but then it must have been playable and thus cannot have been virtual).
-
-For playing good fractions while keeping modularity we can select a binning radius and then try larger and larger tonal systems until all good fractions bin relative to an arbitrary key 0.
+Run `dotnet run -- table ktet-min-keys` to sweep bin radius from the unambiguous threshold (the minimum `c` of `table bin-overlaps`, where adjacent good-fraction bins first start touching) up to `--max-bin-radius` in `--radius-step` increments, and for each radius report the smallest `k` such that every good fraction has at least one k-tet key within bin radius (reference key at ratio 1; multiplicative circular distance, so the octave wrap to keys near `2/1 ≡ 1/1` is honored).
+Each row shows the swept radius (decimal and percent) and `Min k`. A row is coloured green when its `Min k` is strictly less than every prior row's — these mark the radii at which a tighter k-tet first becomes feasible (e.g. the row where `Min k` first drops to 12 is where 12-TET becomes sufficient). Rows where no `k ≤ --max-k` covers all good fractions report `—` and are coloured red. The caption summarises the sweep (start/max/step radii), the good-fraction parameters, and the overall minimum `k` reached. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-bin-radius` (default 0.02), `--radius-step` (default 0.0005), `--max-k` (default 1000, the safety cap on the linear `k` search).

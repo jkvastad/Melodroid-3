@@ -200,11 +200,92 @@ class Program
             return 0;
         });
 
+        var maxBinRadiusOption = new Option<double>("--max-bin-radius")
+        {
+            Description = "Upper end of the bin-radius sweep (decimal ratio).",
+            DefaultValueFactory = _ => 0.02,
+        };
+        var radiusStepOption = new Option<double>("--radius-step")
+        {
+            Description = "Increment between successive bin-radius samples in the sweep.",
+            DefaultValueFactory = _ => 0.0005,
+        };
+        var maxKOption = new Option<int>("--max-k")
+        {
+            Description = "Safety cap on the linear search for k; rows where no k ≤ --max-k covers all good fractions report '—'.",
+            DefaultValueFactory = _ => 1000,
+        };
+
+        var ktetMinKeysCommand = new Command(
+            "ktet-min-keys",
+            "Sweep bin radius from the unambiguous threshold (min c of bin-overlaps) up to --max-bin-radius and report the minimum k of a k-tet keyboard whose key ratios bin every good fraction.");
+        ktetMinKeysCommand.Add(maxSizeOption);
+        ktetMinKeysCommand.Add(maxPrimeOption);
+        ktetMinKeysCommand.Add(maxBinRadiusOption);
+        ktetMinKeysCommand.Add(radiusStepOption);
+        ktetMinKeysCommand.Add(maxKOption);
+        ktetMinKeysCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxBinRadius = parse.GetValue(maxBinRadiusOption);
+            var radiusStep = parse.GetValue(radiusStepOption);
+            var maxK = parse.GetValue(maxKOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (!(maxBinRadius > 0.0 && maxBinRadius < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--max-bin-radius must be in (0, 1).[/]");
+                return 1;
+            }
+            if (!(radiusStep > 0.0 && radiusStep < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--radius-step must be in (0, 1).[/]");
+                return 1;
+            }
+            if (maxK < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-k must be ≥ 1.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            if (fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No good fractions under --max-size {maxSize} --max-prime {maxPrime}.[/]");
+                return 1;
+            }
+
+            var overlaps = BinOverlaps.Compute(fractions);
+            var startBinRadius = overlaps.Min(o => o.Radius.Value);
+
+            if (maxBinRadius < startBinRadius)
+            {
+                AnsiConsole.MarkupLine(
+                    $"[red]--max-bin-radius {maxBinRadius} is below the unambiguous threshold {startBinRadius:G6} (min c from bin-overlaps); nothing to sweep.[/]");
+                return 1;
+            }
+
+            var rows = KeysNeeded.Compute(fractions, startBinRadius, maxBinRadius, radiusStep, maxK);
+            KeysNeededTableRenderer.Render(rows, maxSize, maxPrime, startBinRadius, maxBinRadius, radiusStep, maxK);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
         tableCommand.Add(binOverlapsCommand);
         tableCommand.Add(octaveSweepCommand);
+        tableCommand.Add(ktetMinKeysCommand);
 
         var modeOption = new Option<string>("--mode")
         {
