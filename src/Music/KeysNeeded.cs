@@ -1,7 +1,5 @@
 namespace Melodroid_3.Music;
 
-public readonly record struct KeysNeededRow(double BinRadius, int? MinK);
-
 public readonly record struct KtetNearestKey(int N, double KeyRatio, double SignedRelative);
 
 public readonly record struct KtetCutoffRow(
@@ -13,26 +11,6 @@ public readonly record struct KtetCutoffRow(
 
 public static class KeysNeeded
 {
-    public static IReadOnlyList<KeysNeededRow> Compute(
-        IReadOnlyList<Fraction> goodFractions,
-        double startBinRadius,
-        double maxBinRadius,
-        double radiusStep,
-        int maxK)
-    {
-        var rows = new List<KeysNeededRow>();
-        if (radiusStep <= 0.0 || maxBinRadius < startBinRadius) return rows;
-
-        var stepCount = (int)Math.Floor((maxBinRadius - startBinRadius) / radiusStep) + 1;
-        for (var i = 0; i < stepCount; i++)
-        {
-            var radius = startBinRadius + i * radiusStep;
-            var minK = FindMinK(goodFractions, radius, maxK);
-            rows.Add(new KeysNeededRow(radius, minK));
-        }
-        return rows;
-    }
-
     public static bool IsKtetCoverage(
         IReadOnlyList<Fraction> goodFractions, int k, double binRadius)
     {
@@ -100,15 +78,6 @@ public static class KeysNeeded
             rows.Add(WorstCaseForK(goodFractions, k));
         }
         return rows;
-    }
-
-    private static int? FindMinK(IReadOnlyList<Fraction> goodFractions, double radius, int maxK)
-    {
-        for (var k = 1; k <= maxK; k++)
-        {
-            if (IsKtetCoverage(goodFractions, k, radius)) return k;
-        }
-        return null;
     }
 
     private static bool IsFractionCovered(double gValue, int k, double radius)
