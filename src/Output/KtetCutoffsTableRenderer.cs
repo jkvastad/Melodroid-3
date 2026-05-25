@@ -11,6 +11,7 @@ public static class KtetCutoffsTableRenderer
         int maxSize,
         int maxPrime,
         int maxK,
+        bool onlyStrictlyImproving = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -34,6 +35,8 @@ public static class KtetCutoffsTableRenderer
                 activeKs.Add(row.K);
             }
 
+            if (onlyStrictlyImproving && !isActive) continue;
+
             var cells = new[]
             {
                 row.K.ToString(CultureInfo.InvariantCulture),
@@ -56,10 +59,11 @@ public static class KtetCutoffsTableRenderer
         var activeClause = activeKs.Count == 0
             ? "no active k (empty fraction set)"
             : "active k sequence: " + string.Join(" → ", activeKs);
+        var filterClause = onlyStrictlyImproving ? " (filter: only strictly improving)" : "";
         table.Caption(
             $"{rows.Count} k value{(rows.Count == 1 ? "" : "s")}; " +
             $"good fractions from --max-size {maxSize} --max-prime {maxPrime}; " +
-            $"--max-k {maxK}; {activeClause}");
+            $"--max-k {maxK}; {activeClause}{filterClause}");
 
         console.Write(table);
     }

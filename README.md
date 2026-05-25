@@ -134,4 +134,16 @@ With such a definition of "playing a good fraction using a key", namely the soun
 
 To satisfy the requirement of modulartiy we can look at a k-tet system. Given a reference key each good fraction must have at least one key in the k-tet within bin radius. There are two parameters affecting this: bin radius and number of keys. For a given number of keys, there will be a good fraction which needs the largest radius to bin its nearest key. This bin radius is `c_k = |2^(n/k) − g_k*| / g_k*` — the worst-case multiplicative distance "caused" by `g_k*`.
 
-Run `dotnet run -- table ktet-cutoffs` to list, for each `k` from 1 to `--max-k`, the cutoff `c_k`, the limiting fraction `g_k`, and the nearest k-tet key (index `n` and ratio `2^(n/k)`). Green rows mark where `c_k` strictly improves over every smaller k. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-k` (default 50).
+Run `dotnet run -- table ktet-cutoffs` to list, for each `k` from 1 to `--max-k`, the cutoff `c_k`, the limiting fraction `g_k`, and the nearest k-tet key (index `n` and ratio `2^(n/k)`). Green rows mark where `c_k` strictly improves over every smaller k. Add `--only-strictly-improving` to keep only those green rows; the caption still reports the full active k sequence and adds a `(filter: only strictly improving)` clause. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-k` (default 50), `--only-strictly-improving` (default off).
+
+Notably for standard good fractions (max size 24, max prime 5), we get
+┌────┬──────────┬───────────┬───────────────────┬───────────┬──────────┐
+│  k │      c_k │     c_k % │ Limiting Fraction │ Nearest n │  2^(n/k) │
+├────┼──────────┼───────────┼───────────────────┼───────────┼──────────┤
+│ 11 │ 0.029332 │  2.9332 % │ 5/4               │         4 │ 1.286665 │
+│ 12 │ 0.010216 │  1.0216 % │ 10/9              │         2 │ 1.122462 │
+│ 19 │ 0.008460 │  0.8460 % │ 16/15             │         2 │ 1.075691 │
+│ 31 │ 0.006458 │  0.6458 % │ 10/9              │         5 │ 1.118287 │
+│ 34 │ 0.004547 │  0.4547 % │ 9/8               │         6 │ 1.130116 │
+
+Since JND is almost 1%, at k=11 the bin radius is about 3x JND but suddenly drops to JND at k=12. This only improves (slightly, some 20% smaller) at k=19, and then again at 31, 34 - just around the threshold for unique good fraction bin radii. Thus k=12 with about 63% of the keys for k=19 seems like a good compromise. This is quite remarkable as we have just recovered a (in some sense the) modern popular tuning system from first principles of biology and physics.

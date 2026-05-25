@@ -205,18 +205,25 @@ class Program
             Description = "Largest k to list. Each row is the worst-case multiplicative error c_k for that k-tet keyboard against the good fractions.",
             DefaultValueFactory = _ => 50,
         };
+        var onlyStrictlyImprovingOption = new Option<bool>("--only-strictly-improving")
+        {
+            Description = "Show only rows where c_k strictly improves over every smaller k (the green-highlighted rows).",
+            DefaultValueFactory = _ => false,
+        };
 
         var ktetCutoffsCommand = new Command(
             "ktet-cutoffs",
-            "For each k in [1, --max-k], report the exact bin radius c_k at which k-tet first covers every good fraction, the limiting good fraction g_k* (argmax of distance), and the nearest k-tet key to g_k*. Green rows mark active k's — those where c_k strictly improves over every smaller k.");
+            "For each k in [1, --max-k], report the exact bin radius c_k at which k-tet first covers every good fraction, the limiting good fraction g_k* (argmax of distance), and the nearest k-tet key to g_k*. Green rows mark active k's — those where c_k strictly improves over every smaller k. Use --only-strictly-improving to keep only those rows.");
         ktetCutoffsCommand.Add(maxSizeOption);
         ktetCutoffsCommand.Add(maxPrimeOption);
         ktetCutoffsCommand.Add(cutoffsMaxKOption);
+        ktetCutoffsCommand.Add(onlyStrictlyImprovingOption);
         ktetCutoffsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxK = parse.GetValue(cutoffsMaxKOption);
+            var onlyStrictlyImproving = parse.GetValue(onlyStrictlyImprovingOption);
 
             if (maxSize < 1)
             {
@@ -242,7 +249,7 @@ class Program
             }
 
             var rows = KeysNeeded.ComputeCutoffs(fractions, maxK);
-            KtetCutoffsTableRenderer.Render(rows, maxSize, maxPrime, maxK);
+            KtetCutoffsTableRenderer.Render(rows, maxSize, maxPrime, maxK, onlyStrictlyImproving);
             return 0;
         });
 
