@@ -169,6 +169,120 @@ public class KeysNeededTests
         rows[0].MinK.Should().NotBeNull();
     }
 
+    [Theory]
+    [InlineData(1.5, 12)]
+    [InlineData(1.25, 12)]
+    [InlineData(5.0 / 3.0, 19)]
+    [InlineData(15.0 / 8.0, 31)]
+    [InlineData(47.0 / 24.0, 53)]
+    [InlineData(1.0, 7)]
+    public void NearestKey_signed_relative_matches_min_over_all_n_oracle(double g, int k)
+    {
+        var nk = KeysNeeded.NearestKey(g, k);
+
+        var oracle = NearestKeyOracle(g, k);
+        nk.N.Should().Be(oracle.N);
+        nk.KeyRatio.Should().BeApproximately(oracle.KeyRatio, 1e-12);
+        Math.Abs(nk.SignedRelative).Should()
+            .BeApproximately(Math.Abs(oracle.SignedRelative), 1e-12);
+    }
+
+    [Theory]
+    [InlineData(12)]
+    [InlineData(19)]
+    [InlineData(31)]
+    [InlineData(34)]
+    public void WorstCaseForK_radius_equals_max_over_g_of_nearest_distance(int k)
+    {
+        var row = KeysNeeded.WorstCaseForK(DefaultGoodFractions, k);
+
+        var (oracleRadius, oracleFraction) = WorstCaseOracle(DefaultGoodFractions, k);
+        row.Radius.Should().BeApproximately(oracleRadius, 1e-12);
+        row.LimitingFraction.Should().Be(oracleFraction);
+    }
+
+    [Theory]
+    [InlineData(12)]
+    [InlineData(19)]
+    [InlineData(31)]
+    public void WorstCaseForK_radius_is_tight_against_IsKtetCoverage(int k)
+    {
+        var row = KeysNeeded.WorstCaseForK(DefaultGoodFractions, k);
+        // c_k is the exact threshold: at radius = c_k coverage is achieved (≤),
+        // and infinitesimally below it must fail.
+        KeysNeeded.IsKtetCoverage(DefaultGoodFractions, k, row.Radius).Should().BeTrue();
+        KeysNeeded.IsKtetCoverage(DefaultGoodFractions, k, row.Radius - 1e-9).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ComputeCutoffs_min_k_matches_ktet_min_keys_sweep()
+    {
+        // For any radius r, Min_k(r) from KeysNeeded.Compute should equal
+        // min { k : c_k <= r } derived from ComputeCutoffs.
+        const int maxK = 60;
+        var cutoffs = KeysNeeded.ComputeCutoffs(DefaultGoodFractions, maxK);
+
+        var sweep = KeysNeeded.Compute(
+            DefaultGoodFractions,
+            startBinRadius: 1.0 / 161.0,
+            maxBinRadius: 0.02,
+            radiusStep: 0.0005,
+            maxK: maxK);
+
+        foreach (var row in sweep)
+        {
+            int? expected = null;
+            foreach (var c in cutoffs)
+            {
+                if (c.Radius <= row.BinRadius) { expected = c.K; break; }
+            }
+            row.MinK.Should().Be(expected,
+                because: $"radius {row.BinRadius}: cutoffs and sweep must agree");
+        }
+    }
+
+    private static KtetNearestKey NearestKeyOracle(double g, int k)
+    {
+        var bestN = 0;
+        var bestRel = double.PositiveInfinity;
+        var bestRatio = 1.0;
+        for (var n = 0; n < k; n++)
+        {
+            var keyRatio = Math.Pow(2.0, (double)n / k);
+            var direct = (keyRatio - g) / g;
+            var wrapUp = (2.0 * keyRatio - g) / g;
+            var wrapDn = (keyRatio - 2.0 * g) / g;
+            var best = direct;
+            if (Math.Abs(wrapUp) < Math.Abs(best)) best = wrapUp;
+            if (Math.Abs(wrapDn) < Math.Abs(best)) best = wrapDn;
+            if (Math.Abs(best) < Math.Abs(bestRel))
+            {
+                bestRel = best;
+                bestN = n;
+                bestRatio = keyRatio;
+            }
+        }
+        return new KtetNearestKey(bestN, bestRatio, bestRel);
+    }
+
+    private static (double Radius, Fraction LimitingFraction) WorstCaseOracle(
+        IReadOnlyList<Fraction> fractions, int k)
+    {
+        var worst = -1.0;
+        var worstFraction = fractions[0];
+        foreach (var g in fractions)
+        {
+            var nk = NearestKeyOracle(g.Value, k);
+            var dist = Math.Abs(nk.SignedRelative);
+            if (dist > worst)
+            {
+                worst = dist;
+                worstFraction = g;
+            }
+        }
+        return (worst, worstFraction);
+    }
+
     // Independent brute-force oracle: enumerate every n ∈ [0, k) and test the
     // multiplicative circular distance to each good fraction inline. Reimplements
     // the binning predicate from scratch so the production code is checked against

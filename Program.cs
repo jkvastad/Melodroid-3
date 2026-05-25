@@ -280,12 +280,59 @@ class Program
             return 0;
         });
 
+        var cutoffsMaxKOption = new Option<int>("--max-k")
+        {
+            Description = "Largest k to list. Each row is the worst-case multiplicative error c_k for that k-tet keyboard against the good fractions.",
+            DefaultValueFactory = _ => 50,
+        };
+
+        var ktetCutoffsCommand = new Command(
+            "ktet-cutoffs",
+            "For each k in [1, --max-k], report the exact bin radius c_k at which k-tet first covers every good fraction, the limiting good fraction g_k* (argmax of distance), and the nearest k-tet key to g_k*. Green rows mark active k's — those where c_k strictly improves over every smaller k (these are the k's that ever appear as Min_k in ktet-min-keys).");
+        ktetCutoffsCommand.Add(maxSizeOption);
+        ktetCutoffsCommand.Add(maxPrimeOption);
+        ktetCutoffsCommand.Add(cutoffsMaxKOption);
+        ktetCutoffsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxK = parse.GetValue(cutoffsMaxKOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (maxK < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-k must be ≥ 1.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            if (fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No good fractions under --max-size {maxSize} --max-prime {maxPrime}.[/]");
+                return 1;
+            }
+
+            var rows = KeysNeeded.ComputeCutoffs(fractions, maxK);
+            KtetCutoffsTableRenderer.Render(rows, maxSize, maxPrime, maxK);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
         tableCommand.Add(binOverlapsCommand);
         tableCommand.Add(octaveSweepCommand);
         tableCommand.Add(ktetMinKeysCommand);
+        tableCommand.Add(ktetCutoffsCommand);
 
         var modeOption = new Option<string>("--mode")
         {
