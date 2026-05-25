@@ -104,32 +104,43 @@ As a counterpoint, sometimes a great work needs contrast. Dissonance itself migh
 Which frequency relations are important, and ultimately, which ratios are necessary for an instrument?
 
 #### A Good Keyboard
-A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. 
+A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. More formally we can say that akeyboard can express all possible full matches from every key.
 
-For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point necessitates equal temperament tonal systems, where the ratio of any two adjacent keys is the same, as only then are all fundamentals equal.
+For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point can be solved by equal temperament tonal systems, where the ratio of any two adjacent keys is the same, making all fundamentals equal.
 
-Combining the need for equal temperament tuning with the need for octave equivalency, we are now looking at instruments producing frequencies of the form (f_0*2^(n/k)), where f_0 is some arbitrary frequency (e.g. the Standard Pitch at 440Hz), n is the distance in number of keys from the middle key, and k is the number of keys in the tuning. For instance, setting k to 12 produces the well known 12-tet tuning.
+Combining equal temperament tuning with the need for octave equivalency, we are now looking at instruments producing frequencies of the form (f_0*2^(n/k)), where f_0 is some arbitrary frequency (e.g. the Standard Pitch at 440Hz), n is the distance in number of keys from the middle key, and k is the number of keys in the tuning. Setting k to 12 in this k-tone equal temperament (k-tet) system we get the well known 12-tet tuning.
 
 ##### How many keys are needed?
 To answer the question of how many keys are needed, let’s begin by listing the requirements set by the theory to see indeed what the keys are needed for:
 
-* Modular good fractions: 
+* Modulation: 
 It must be possible to play all the good fractions using any key as reference point. This means that relative to any arbitrary key in the equal tuning, all good fractions must bin to at least one key.
 Having infinite keys technically solves the problem, but maximizes complexity.
 Having a single key violates the requirement of binning unless the binning radius is set to half an octave, way outside any JND interpretation.
 
-* No unplayable virtual reference points
-A set of frequencies might produce a legal LCM with a virtual reference point, e.g. a Major Chord (1, 5/4, 3/2) has a full match of LCM 8 at 4/3.
-Such a virtual reference point should be playable, and so we want to include a key for it
+* Full Expression - No unplayable virtual reference points
+A set of keys might produce a full match with a virtual reference point, one which is not in the set of played keys. For example a Major Chord (1, 5/4, 3/2) has a full match of LCM 8 at 4/3.
+Such a virtual reference point should be playable from a key on the keyboard.
 
-* As few keys as possible - no unnecessary complexity
+* Minimal Complexity - as few keys as possible
 
-The above requirements would allow us to play all the good fractions from any key and physically sound any reference point creating a full match.
+The above requirements would allow us to play all the good fractions from any key and physically sound any reference point creating a full match with minimal key clutter.
 
-A subtle yet important point - what does it mean to "play a good fraction using a key"? Previously we looked at arbitrary ratio sets and sampled reference points to search for full matches. With a keyboard our ratio sets are defined by the ratios between keys (which is just a smaller set of possible ratios). However, we are no longer free to arbitrarily sound a reference point - it must also correspond to a key.
+Here we encounter a subtle yet important point: what does it mean to "play a good fraction using a key"? Previously we looked at arbitrary ratio sets on [1,2) and sampled reference points to search for full matches. With a keyboard our ratio sets are defined by the fixed ratios between keys (which is just a smaller set of possible ratios). However, we are no longer free to arbitrarily sound a reference point - it must also correspond to a key.
 
-For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of they key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? 
+For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of the key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? Since full matches are based on the concept of binning real ratios to ideal fractions, using the bin radius to bin the reference point to a key seems appropriate.
 
+With such a definition of "playing a good fraction using a key", namely the sounded key frequency expressed as a ratio must bin to the target ideal good fraction, let's construct our keyboard.
+
+To satisfy the requirement of modulartiy we can look at a k-tet system. For all good fractions to bin to at least one key given a reference key, each good fraction must bin to at least one key in the k-tet. There are two parameters affecting this: bin radius and number of keys.
+
+TODO: Subcommand which calculates the minimum number of keys needed to bin all good fractions. Given
+* a set of good fractions (expressed via max prime and max size) .
+* a maximum bin radius.
+* a radius increment step.
+ Starting from the bin radius which produces unique binnings for the good fractions (needs to be calculated per good fraction set - see cluster ranges and the "table bin-overlaps" command), increment bin radius up to maximum and output the minimum number of keys needed to bin all the good fractions from some arbitrary reference point (ratio 1, equal temperament means all reference points produce same analysis).
+
+--- theory sketch below, disregard
 For playable reference points we first look at the full matches of a single frequency. Since all good fractions have an octave equivalent inverse (e.g. 3/2 <-> 4/3, 9/8 <-> 16/9), whenever the octave sweep for a single frequency finds a (perfect) full match, the reference point must be at the inverse of that good fraction. The full matching reference points for a single key are thus the good fractions themselves. If we only play one key at a time it is then sufficient for the keyboard to bin all good fractions.
 
 For any given set of frequencies, if it has any full match, by definition this means that every renormalized ratio in the set bins to a good fraction relative to some reference point. 
