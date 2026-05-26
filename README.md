@@ -182,9 +182,48 @@ Now that we have a k-tet tuning system which can sound all possible full matches
 
 #### Voicings and bases
 In a k-tet tuning the reference point for a full match of som lcm will be mapped to a key. We can notate a full match with lcm a with reference point (or "Base" for short) on b as a@b, e.g. 24@0.
-When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. If we count pitch C as key 0, this allows us to use familiar expressions from modern music theory such as chords and keys, and we can say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
+When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising, let's use them as default unless otherwise specified. If we count pitch C as key 0, this allows us to use familiar expressions from modern music theory such as chords and keys, and we can say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
 Sometimes we need to be more explicit and state the form of a chord, such as "24@0 voiced as {7 11 2 5 9 0 4}" - Also known as the G13 chord. This is called a Voicing and is important for e.g. avoiding excessive Helmholtz dissonance from adjacent keys (e.g. a drawn out semitone chord voiced as {0,1} versus the less dissonant {0,13}).
 
 Looking back at the isomorphisms and subsets of lcm families, we can map lcm families onto keys:
 
-Run `dotnet run -- table lcm-family-keys --ktet 12` to print each LCM family together with the nearest k-tet key for each of its fractions. Columns are `LCM | Count | Fractions | Keys (k-tet)`; for `--ktet 12` and default good fractions you'll see e.g. `LCM 4 → 0 4 7` (C major triad) and `LCM 24 → 0 2 4 5 7 9 11` (C major scale). Keys are listed in the same order as their fractions and duplicates are kept verbatim — so two fractions sharing a nearest key (e.g. on small k like `--ktet 1`, where every fraction collapses to key 0) appear as repeated indices, making the collision visible. Always uses the unconstrained nearest key: cross-reference `table ktet-cutoffs` if you want to know how far a given fraction sits from its key under the chosen k. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24), `--ktet` (required).
+Run `dotnet run -- table lcm-family-keys --ktet 12` to print each LCM family together with the nearest k-tet key for each of its fractions. Columns are `LCM | Count | Fractions | Keys (k-tet)`; for `--ktet 12` and default good fractions you'll see e.g. `LCM 4 → 0 4 7` (C major triad) and `LCM 24 → 0 2 4 5 7 9 11` (C major scale). Keys are listed in the same order as their fractions and duplicates are kept verbatim — so two fractions sharing a nearest key (e.g. on small k like `--ktet 1`, where every fraction collapses to key 0) appear as repeated indices, making the collision visible. Always uses the unconstrained nearest key: cross-reference `table ktet-cutoffs` if you want to know how far a given fraction sits from its key under the chosen k. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24), `--ktet` (required), `--mode` (default `full`; use `collapsed` to fold isomorphism classes — see below).
+
+┌─────┬───────┬─────────────────────────────────────┬────────────────┐
+│ LCM │ Count │ Fractions                           │ Keys (12-tet)  │
+├─────┼───────┼─────────────────────────────────────┼────────────────┤
+│   1 │     1 │ 1/1                                 │ 0              │
+│   2 │     2 │ 1/1, 3/2                            │ 0 7            │
+│   3 │     3 │ 1/1, 4/3, 5/3                       │ 0 5 9          │
+│   4 │     3 │ 1/1, 5/4, 3/2                       │ 0 4 7          │
+│   5 │     4 │ 1/1, 6/5, 8/5, 9/5                  │ 0 3 8 10       │
+│   6 │     4 │ 1/1, 4/3, 3/2, 5/3                  │ 0 5 7 9        │
+│   8 │     5 │ 1/1, 9/8, 5/4, 3/2, 15/8            │ 0 2 4 7 11     │
+│   9 │     5 │ 1/1, 10/9, 4/3, 5/3, 16/9           │ 0 2 5 9 10     │
+│  10 │     5 │ 1/1, 6/5, 3/2, 8/5, 9/5             │ 0 3 7 8 10     │
+│  12 │     5 │ 1/1, 5/4, 4/3, 3/2, 5/3             │ 0 4 5 7 9      │
+│  15 │     7 │ 1/1, 16/15, 6/5, 4/3, 8/5, 5/3, 9/5 │ 0 1 3 5 8 9 10 │
+│  18 │     6 │ 1/1, 10/9, 4/3, 3/2, 5/3, 16/9      │ 0 2 5 7 9 10   │
+│  20 │     6 │ 1/1, 6/5, 5/4, 3/2, 8/5, 9/5        │ 0 3 4 7 8 10   │
+│  24 │     7 │ 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8  │ 0 2 4 5 7 9 11 │
+└─────┴───────┴─────────────────────────────────────┴────────────────┘
+
+Or, reduced by isomorphism:
+
+Add `--mode collapsed` to fold each isomorphism class into a single row, keyed on the lowest-LCM representative. The extra `Iso Class` column lists the member LCMs (e.g. `{3, 4}` for the C-major-triad shape, `{8, 9, 10, 12}` for its 5-fraction relatives, `{24}` for singletons), making the collapse transparent. Useful when scanning for *distinct musical shapes* available on the chosen k-tet rather than every numeric LCM — the 14-row default table collapses to 9 iso classes on `--ktet 12`.
+
+┌─────┬───────┬─────────────────────────────────────┬────────────────┬────────────────┐
+│ LCM │ Count │ Fractions                           │ Keys (12-tet)  │ Iso Class      │
+├─────┼───────┼─────────────────────────────────────┼────────────────┼────────────────┤
+│   1 │     1 │ 1/1                                 │ 0              │ {1}            │
+│   2 │     2 │ 1/1, 3/2                            │ 0 7            │ {2}            │
+│   3 │     3 │ 1/1, 4/3, 5/3                       │ 0 5 9          │ {3, 4}         │
+│   5 │     4 │ 1/1, 6/5, 8/5, 9/5                  │ 0 3 8 10       │ {5, 6}         │
+│   8 │     5 │ 1/1, 9/8, 5/4, 3/2, 15/8            │ 0 2 4 7 11     │ {8, 9, 10, 12} │
+│  15 │     7 │ 1/1, 16/15, 6/5, 4/3, 8/5, 5/3, 9/5 │ 0 1 3 5 8 9 10 │ {15}           │
+│  18 │     6 │ 1/1, 10/9, 4/3, 3/2, 5/3, 16/9      │ 0 2 5 7 9 10   │ {18}           │
+│  20 │     6 │ 1/1, 6/5, 5/4, 3/2, 8/5, 9/5        │ 0 3 4 7 8 10   │ {20}           │
+│  24 │     7 │ 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8  │ 0 2 4 5 7 9 11 │ {24}           │
+└─────┴───────┴─────────────────────────────────────┴────────────────┴────────────────┘
+
+Note that the collapsed row picks the *lowest* LCM, so the LCM 3 row shows `0 5 9` (the keys for `1/1, 4/3, 5/3`) rather than the more familiar C-major-triad `0 4 7` from LCM 4 — both are the same musical shape, just rooted on different keys.

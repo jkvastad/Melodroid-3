@@ -109,6 +109,33 @@ public static class FamilyRelations
         return null;
     }
 
+    public static IReadOnlyList<IReadOnlyList<int>> BuildIsoClasses(
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<FamilyRelation> relations)
+    {
+        var parent = new Dictionary<int, int>();
+        foreach (var f in families) parent[f.Lcm] = f.Lcm;
+
+        int Find(int x)
+        {
+            while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+            return x;
+        }
+
+        foreach (var r in relations)
+        {
+            if (r.Kind != RelationKind.Isomorphism) continue;
+            parent[Find(r.FromLcm)] = Find(r.ToLcm);
+        }
+
+        return families
+            .Select(f => f.Lcm)
+            .GroupBy(Find)
+            .Select(g => (IReadOnlyList<int>)g.OrderBy(x => x).ToList())
+            .OrderBy(g => g[0])
+            .ToList();
+    }
+
     private static List<(int From, int To)> HasseReduce(List<(int From, int To)> edges)
     {
         var adj = new Dictionary<int, HashSet<int>>();

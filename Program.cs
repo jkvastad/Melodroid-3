@@ -351,6 +351,13 @@ class Program
             return 0;
         });
 
+        var lcmFamilyKeysModeOption = new Option<string>("--mode")
+        {
+            Description = "Output mode: 'full' (one row per family) or 'collapsed' (one row per iso class, lowest-LCM representative).",
+            DefaultValueFactory = _ => "full",
+        };
+        lcmFamilyKeysModeOption.AcceptOnlyFromAmong("full", "collapsed");
+
         var lcmFamilyKeysCommand = new Command(
             "lcm-family-keys",
             "For each LCM family, list its fractions alongside their nearest k-tet key indices.");
@@ -358,12 +365,14 @@ class Program
         lcmFamilyKeysCommand.Add(maxPrimeOption);
         lcmFamilyKeysCommand.Add(maxLcmOption);
         lcmFamilyKeysCommand.Add(ktetOption);
+        lcmFamilyKeysCommand.Add(lcmFamilyKeysModeOption);
         lcmFamilyKeysCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var k = parse.GetValue(ktetOption);
+            var mode = parse.GetValue(lcmFamilyKeysModeOption) ?? "full";
 
             if (maxSize < 1)
             {
@@ -388,8 +397,17 @@ class Program
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var rows = LcmFamilyKeys.Compute(families, k);
-            LcmFamilyKeysTableRenderer.Render(rows, k);
+            if (mode == "collapsed")
+            {
+                var relations = FamilyRelations.Compute(families);
+                var collapsedRows = LcmFamilyKeys.ComputeCollapsed(families, relations, k);
+                LcmFamilyKeysTableRenderer.RenderCollapsed(collapsedRows, k);
+            }
+            else
+            {
+                var rows = LcmFamilyKeys.Compute(families, k);
+                LcmFamilyKeysTableRenderer.Render(rows, k);
+            }
             return 0;
         });
 
