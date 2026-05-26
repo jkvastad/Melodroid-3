@@ -53,7 +53,7 @@ public static class OctaveSweepTableRenderer
 
             for (var c = 0; c < goodFractions.Count; c++)
             {
-                cellStrings[c + 1] = FormatCell(row, goodFractions[c]);
+                cellStrings[c + 1] = FormatCell(row.Cells, goodFractions[c]);
             }
 
             cellStrings[goodFractions.Count + 1] = row.PostBinLcm?.ToString(CultureInfo.InvariantCulture) ?? "";
@@ -98,9 +98,9 @@ public static class OctaveSweepTableRenderer
         console.Write(table);
     }
 
-    private static string FormatCell(OctaveSweepRow row, Fraction column)
+    internal static string FormatCell(IReadOnlyList<OctaveSweepCell> cells, Fraction column)
     {
-        foreach (var cell in row.Cells)
+        foreach (var cell in cells)
         {
             foreach (var match in cell.Matches)
             {

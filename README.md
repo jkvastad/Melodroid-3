@@ -104,6 +104,8 @@ As a counterpoint, sometimes a great work needs contrast. Dissonance itself migh
 Which frequency relations are important, and ultimately, which ratios are necessary for an instrument?
 
 #### A Good Keyboard
+Deciding ratios for an instrument creates a tuning system. Since this involves well defined frequencies I will discuss it in the form of a keyboard for familiarity. 
+
 A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. More formally we can say that akeyboard can express all possible full matches from every key.
 
 For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point can be solved by equal temperament tonal systems, where the ratio of any two adjacent keys is the same, making all fundamentals equal.
@@ -156,3 +158,19 @@ To satisfy the requirement of full expression any set of keys on our keyboard wh
 To satisfy the requirement of minimal complexity, we need as few keys as possible when fulfilling the other requirements. Since modulation was solved with this in mind, our ktet choices seem to be between 12, 19, 31 and 34 keys. This would favor 12-tet as the optimal solution, with two caveats:
 * The bin radius might be to large and require 19 or even 34 (unique binnings) keys.
 * The solution might be too perfect - basically we might allow too little dissonance (see discussion of cuisine and chili in section "Playing Fractions"). In music we have effects such as bending strings on guitar which slides between notes. Perhaps the effect is popular due to introducing the right amount of dissonance, or perhaps it is simply the novelty of a sliding frequency - perhaps both. 12-tet does allow for some dissonance - none of the 13 standard good fractions map to key 6 (the tritone, a.k.a. the Devil's interval), and key 2 (10/9, 9/8) and 10 (16/9, 9/5) have ambigous mappings.
+
+##### Key Sweep
+Working with keys rather than arbitrary ratios means finding full matches is restricted to our set of keys rather than arbitrary ratios on [1,2). Thus instead of an octave sweep we can employ a Key Sweep - same principle as an octave sweep, but the sweep steps are replaced with the keys of our tonal system.
+
+Run `dotnet run -- table key-sweep --ktet 12 --ratios 1.0 1.25 1.5` to sweep through the `k` keys of a `--ktet` equal-tempered system and bin each renormalized input ratio against the good fractions. The reference for row `n` is the key ratio `2^(n/k)`, so the table has exactly `k` rows (one per key, `n = 0..k-1`).
+
+Each row shows:
+* The key index `n`
+* The key ratio `2^(n/k)`
+* One cell per good-fraction column (signed percentage distance if the renormalized input fell inside that fraction's bin, otherwise empty)
+* The LCM of the denominators of the good fractions that received a binning
+* A `Full?` marker (`✓` for strict full match, `?` for ambiguous-overlap)
+
+Rows are highlighted green for strict full matches and yellow for ambiguous-overlap rows, following the same conventions as the octave sweep. Unlike the octave sweep there is no "centered full match" notion — for any reasonable `k` the step `2^(1/k) - 1` is much larger than the bin radius, so every block is a single key.
+
+Options: `--ratios` (required, space-separated decimals on `[1, 2)`), `--ktet` (required, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).

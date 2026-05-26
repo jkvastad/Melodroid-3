@@ -41,7 +41,7 @@ public static class OctaveSweep
         return rows;
     }
 
-    private static OctaveSweepRow ComputeRow(
+    public static OctaveSweepRow ComputeRow(
         double reference,
         IReadOnlyList<double> inputRatios,
         IReadOnlyList<Fraction> goodFractions,

@@ -253,12 +253,88 @@ class Program
             return 0;
         });
 
+        var ktetOption = new Option<int>("--ktet")
+        {
+            Description = "Number of equally-tempered keys per octave. The sweep emits one row per key (n = 0..k-1).",
+            Required = true,
+        };
+        var keySweepBinRadiusOption = new Option<double?>("--bin-radius")
+        {
+            Description = "Optional override. Default: c_k, the exact worst-case k-tet covering radius for the chosen --ktet (every good fraction has a binnable key at this radius).",
+        };
+
+        var keySweepCommand = new Command(
+            "key-sweep",
+            "Sweep through the k keys of a --ktet equal-tempered system, treating each key as the reference, and bin renormalized input ratios against good fractions. Default --bin-radius is the c_k cutoff so every good fraction has a binnable key by construction.");
+        keySweepCommand.Add(maxSizeOption);
+        keySweepCommand.Add(maxPrimeOption);
+        keySweepCommand.Add(ratiosOption);
+        keySweepCommand.Add(ktetOption);
+        keySweepCommand.Add(keySweepBinRadiusOption);
+        keySweepCommand.Add(onlyFullMatchesOption);
+        keySweepCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var ratios = parse.GetValue(ratiosOption) ?? Array.Empty<double>();
+            var k = parse.GetValue(ktetOption);
+            var binRadiusOverride = parse.GetValue(keySweepBinRadiusOption);
+            var onlyFullMatches = parse.GetValue(onlyFullMatchesOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (ratios.Length == 0)
+            {
+                AnsiConsole.MarkupLine("[red]--ratios must contain at least one value.[/]");
+                return 1;
+            }
+            foreach (var r in ratios)
+            {
+                if (!(r >= 1.0 && r < 2.0))
+                {
+                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [1, 2).[/]");
+                    return 1;
+                }
+            }
+            if (k < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]");
+                return 1;
+            }
+            if (binRadiusOverride is double overrideValue && !(overrideValue > 0.0 && overrideValue < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--bin-radius must be in (0, 1).[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            if (fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No good fractions under --max-size {maxSize} --max-prime {maxPrime}.[/]");
+                return 1;
+            }
+
+            var effectiveRadius = binRadiusOverride ?? KeysNeeded.WorstCaseForK(fractions, k).Radius;
+            var rows = KeySweep.Compute(ratios, fractions, k, effectiveRadius);
+            KeySweepTableRenderer.Render(rows, fractions, ratios, k, effectiveRadius, onlyFullMatches);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
         tableCommand.Add(binOverlapsCommand);
         tableCommand.Add(octaveSweepCommand);
         tableCommand.Add(ktetCutoffsCommand);
+        tableCommand.Add(keySweepCommand);
 
         var modeOption = new Option<string>("--mode")
         {
