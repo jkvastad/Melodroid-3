@@ -155,7 +155,7 @@ Since JND is almost 1%, at k=11 the bin radius is about 3x JND but suddenly drop
 To satisfy the requirement of full expression any set of keys on our keyboard which has a full match must be able to play a key which bins to the reference point of that full match. Since our solution for modulation makes sure that every key can function as a reference point to every good fraction, this requirement is also fulfilled by k-tets with sufficiently low bin radii.
 
 ###### Minimal Complexity
-To satisfy the requirement of minimal complexity, we need as few keys as possible when fulfilling the other requirements. Since modulation was solved with this in mind, our ktet choices seem to be between 12, 19, 31 and 34 keys. This would favor 12-tet as the optimal solution, with two caveats:
+To satisfy the requirement of minimal complexity, we need as few keys as possible when fulfilling the other requirements. Since modulation was solved with this in mind, our k-tet choices seem to be between 12, 19, 31 and 34 keys. This would favor 12-tet as the optimal solution, with two caveats:
 * The bin radius might be to large and require 19 or even 34 (unique binnings) keys.
 * The solution might be too perfect - basically we might allow too little dissonance (see discussion of cuisine and chili in section "Playing Fractions"). In music we have effects such as bending strings on guitar which slides between notes. Perhaps the effect is popular due to introducing the right amount of dissonance, or perhaps it is simply the novelty of a sliding frequency - perhaps both. 12-tet does allow for some dissonance - none of the 13 standard good fractions map to key 6 (the tritone, a.k.a. the Devil's interval), and key 2 (10/9, 9/8) and 10 (16/9, 9/5) have ambigous mappings.
 
@@ -176,3 +176,15 @@ Each row shows:
 Rows are highlighted green for strict full matches and yellow for ambiguous-overlap rows, following the same conventions as the octave sweep. Unlike the octave sweep there is no "centered full match" notion — for any reasonable `k` the step `2^(1/k) - 1` is much larger than the bin radius, so every block is a single key.
 
 Options: `--keys` (space-separated key indices, each in `[0, k-1]`; converted to `2^(i/k)`), `--ratios` (space-separated decimals on `[1, 2)`) — at least one of `--keys` / `--ratios` is required, and both may be supplied together, `--ktet` (required, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).
+
+### The sound of music
+Now that we have a k-tet tuning system which can sound all possible full matches let's start creating music and verifying the model empirically - how does it sound?
+
+#### Voicings and bases
+In a k-tet tuning the reference point for a full match of som lcm will be mapped to a key. We can notate a full match with lcm a with reference point (or "Base" for short) on b as a@b, e.g. 24@0.
+When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. If we count pitch C as key 0, this allows us to use familiar expressions from modern music theory such as chords and keys, and we can say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
+Sometimes we need to be more explicit and state the form of a chord, such as "24@0 voiced as {7 11 2 5 9 0 4}" - Also known as the G13 chord. This is called a Voicing and is important for e.g. avoiding excessive Helmholtz dissonance from adjacent keys (e.g. a drawn out semitone chord voiced as {0,1} versus the less dissonant {0,13}).
+
+Looking back at the isomorphisms and subsets of lcm families, we can map lcm families onto keys:
+
+TODO: command which calculates the fractions of lcm families for a set of given good fractions and maps them onto k-tet keys for some given k. user wants to see e.g. LCM 4: 0 4 7

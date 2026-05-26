@@ -1,17 +1,14 @@
-# Cleanup
-"Key Sweep" README.md section should front the --keys option rather than the --ratios option to the reader
+### The sound of music
+Investigate the sound of all basic lcms.
+Investigate sound of key sets with no small lcm which sound good, primarily the harmonic minor which is close to lcm 15 (with reference point at key 0 swap out key 8 for key 6).
 
 # General
 Cleanup program for hints, e.g. collection initializations can be simplified (lots of oververbose calls)
 
+# Key Sweep
+Max LCM option to only show rows with LCM below a certain threshold
+
 # Octave sweep
-## Full Matches
-### Competing Centered Full Matches
-Since centered full matches convey the idea of tuning our given ratios to our good fractions, sort of like tuning into a radio station, we might run into a problem where two tunings compete - if a centered full match has an associated interval, two centered full matches might have directly adjacent intervals, producing one large interval with one resulting centered full match. Such a competing block requires adjacent sweep steps producing full matches with differing sets of good fractions (else it would just be the same interval) and so might be distinguished based on the good fractions present in the interval.
-
-### Better discovery for full matches
-Currently if the bin radius is too small (e.g. default 0.006211) some important potential full matches are missed, e.g. {1.0 1.25 1.33 1.5 1.8} which matches 24 at 1.33 for slightly higher bin radius c (how high?). Perhaps some kind of bootstrap algorithm would be nice, where we start with high bin radius and look for full matches. This produces some amount of centered full matches. Then we lower in radius in increments and note where full matches dissapear. 
-
 ## Animated octave sweep
 Animated plot with play button and slider (for choosing sweep position) which shows the octave being swept, moving the reference point along good fractions with surrounding bins and noting when full matches occur
 * Possibly interactive input of bin radius, updating the sweep
