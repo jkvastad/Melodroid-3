@@ -179,7 +179,7 @@ class Program
             {
                 if (!(r >= 1.0 && r < 2.0))
                 {
-                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [1, 2).[/]");
+                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [[1, 2).[/]");
                     return 1;
                 }
             }
@@ -317,7 +317,7 @@ class Program
             {
                 if (!(r >= 1.0 && r < 2.0))
                 {
-                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [1, 2).[/]");
+                    AnsiConsole.MarkupLine($"[red]--ratios value {r} is outside [[1, 2).[/]");
                     return 1;
                 }
             }
