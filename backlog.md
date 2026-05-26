@@ -1,6 +1,4 @@
 # Cleanup
-Something about "A pre-existing Spectre-markup bug in the --ratios out-of-range error (lines 182 and 320 — unescaped [1, 2)) is unrelated and left untouched per the "no unrelated cleanup" rule. Happy to fix it in a follow-up if you want."
-
 "Key Sweep" README.md section should front the --keys option rather than the --ratios option to the reader
 
 # General
