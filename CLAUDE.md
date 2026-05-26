@@ -59,6 +59,8 @@ dotnet run -- plot  lcm-families --lcm N
                                      [--max-size 24] [--max-prime 5]
                                      [--samples-per-period 200] [--mode all|sum|constituents]
                                      [--subset-lcm K]
+dotnet run -- table lcm-family-keys --ktet K
+                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
 Each subcommand writes its result under `output/<category>/` and prints the path to stdout. See [README.md](README.md) for what each command produces and how to interpret it.

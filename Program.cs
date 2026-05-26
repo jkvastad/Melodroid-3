@@ -351,6 +351,48 @@ class Program
             return 0;
         });
 
+        var lcmFamilyKeysCommand = new Command(
+            "lcm-family-keys",
+            "For each LCM family, list its fractions alongside their nearest k-tet key indices.");
+        lcmFamilyKeysCommand.Add(maxSizeOption);
+        lcmFamilyKeysCommand.Add(maxPrimeOption);
+        lcmFamilyKeysCommand.Add(maxLcmOption);
+        lcmFamilyKeysCommand.Add(ktetOption);
+        lcmFamilyKeysCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
+                return 1;
+            }
+            if (maxPrime < 2)
+            {
+                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
+                return 1;
+            }
+            if (maxLcm < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]");
+                return 1;
+            }
+            if (k < 1)
+            {
+                AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var rows = LcmFamilyKeys.Compute(families, k);
+            LcmFamilyKeysTableRenderer.Render(rows, k);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
@@ -358,6 +400,7 @@ class Program
         tableCommand.Add(octaveSweepCommand);
         tableCommand.Add(ktetCutoffsCommand);
         tableCommand.Add(keySweepCommand);
+        tableCommand.Add(lcmFamilyKeysCommand);
 
         var modeOption = new Option<string>("--mode")
         {
