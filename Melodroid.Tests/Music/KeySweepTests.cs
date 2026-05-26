@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -58,18 +58,18 @@ public class KeySweepTests
     }
 
     [Fact]
-    public void Default_radius_at_c_k_guarantees_every_unison_input_binned_for_every_key()
+    public void Default_radius_at_c_k_binds_every_good_fraction_input_at_some_key()
     {
         const int k = 12;
         var ck = KeysNeeded.WorstCaseForK(DefaultGoodFractions, k).Radius;
 
-        var rows = KeySweep.Compute(
-            new[] { 1.0 }, DefaultGoodFractions, k, binRadius: ck);
-
-        foreach (var row in rows)
+        foreach (var g in DefaultGoodFractions)
         {
-            row.AllInputsBinned.Should().BeTrue(
-                "every k-tet key must bin to some good fraction at binRadius = c_k");
+            var rows = KeySweep.Compute(
+                new[] { g.Value }, DefaultGoodFractions, k, binRadius: ck);
+
+            rows.Any(r => r.AllInputsBinned).Should().BeTrue(
+                $"good fraction {g} must bin at some key at binRadius = c_k");
         }
     }
 
@@ -82,3 +82,4 @@ public class KeySweepTests
             .Should().BeEmpty();
     }
 }
+

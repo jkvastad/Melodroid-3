@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -61,7 +61,7 @@ public class KeysNeededTests
     public void WorstCaseForK_radius_is_tight_against_IsKtetCoverage(int k)
     {
         var row = KeysNeeded.WorstCaseForK(DefaultGoodFractions, k);
-        // c_k is the exact threshold: at radius = c_k coverage is achieved (≤),
+        // c_k is the exact threshold: at radius = c_k coverage is achieved (â‰¤),
         // and infinitesimally below it must fail.
         KeysNeeded.IsKtetCoverage(DefaultGoodFractions, k, row.Radius).Should().BeTrue();
         KeysNeeded.IsKtetCoverage(DefaultGoodFractions, k, row.Radius - 1e-9).Should().BeFalse();
@@ -109,7 +109,7 @@ public class KeysNeededTests
         return (worst, worstFraction);
     }
 
-    // Independent brute-force oracle: enumerate every n ∈ [0, k) and test the
+    // Independent brute-force oracle: enumerate every n âˆˆ [0, k) and test the
     // multiplicative circular distance to each good fraction inline. Reimplements
     // the binning predicate from scratch so the production code is checked against
     // an independent route, not a refactor of itself.
@@ -135,3 +135,4 @@ public class KeysNeededTests
     }
 
 }
+

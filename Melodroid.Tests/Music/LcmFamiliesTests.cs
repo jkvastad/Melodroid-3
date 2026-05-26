@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -154,3 +154,4 @@ public class LcmFamiliesTests
         return a;
     }
 }
+

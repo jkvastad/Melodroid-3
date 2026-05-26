@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -94,7 +94,7 @@ public class GoodFractionsTests
     public void Enumerate_24_2_returns_only_unison_since_no_other_powers_of_two_fit_half_open_octave()
     {
         // Powers of 2 up to 24: 1, 2, 4, 8, 16. Coprime p/q in [1, 2) with both p,q powers of 2
-        // requires gcd(p,q)=1, which forces q=1 → p in [1, 2) → p=1.
+        // requires gcd(p,q)=1, which forces q=1 â†’ p in [1, 2) â†’ p=1.
         GoodFractions.Enumerate(maxSize: 24, maxPrime: 2)
             .Should().Equal(new Fraction(1, 1));
     }
@@ -135,3 +135,4 @@ public class GoodFractionsTests
         return true;
     }
 }
+

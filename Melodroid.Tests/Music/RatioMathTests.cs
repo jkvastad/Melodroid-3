@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -68,8 +68,8 @@ public class RatioMathTests
     [Fact]
     public void CircularSignedRelative_picks_wrap_when_closer()
     {
-        // v ≈ 1.0001 and g ≈ 1.9999 — they almost identify across the octave wrap.
-        // wrapUp = (2*1.0001 - 1.9999) / 1.9999 ≈ +0.000150; direct = (1.0001 - 1.9999)/1.9999 ≈ -0.499.
+        // v â‰ˆ 1.0001 and g â‰ˆ 1.9999 â€” they almost identify across the octave wrap.
+        // wrapUp = (2*1.0001 - 1.9999) / 1.9999 â‰ˆ +0.000150; direct = (1.0001 - 1.9999)/1.9999 â‰ˆ -0.499.
         var r = RatioMath.CircularSignedRelative(1.0001, 1.9999);
         Math.Abs(r).Should().BeLessThan(0.001);
         r.Should().BeGreaterThan(0.0); // wrapUp is positive (v above g via wrap)
@@ -78,9 +78,10 @@ public class RatioMathTests
     [Fact]
     public void CircularSignedRelative_wrap_down_when_v_high_g_low()
     {
-        // v ≈ 1.9999 and g ≈ 1.0001 — wrapDn = (1.9999 - 2*1.0001)/1.0001 ≈ -0.000300.
+        // v â‰ˆ 1.9999 and g â‰ˆ 1.0001 â€” wrapDn = (1.9999 - 2*1.0001)/1.0001 â‰ˆ -0.000300.
         var r = RatioMath.CircularSignedRelative(1.9999, 1.0001);
         Math.Abs(r).Should().BeLessThan(0.001);
         r.Should().BeLessThan(0.0); // wrapDn is negative
     }
 }
+

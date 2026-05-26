@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -51,3 +51,4 @@ public class IntegerMathTests
         return a == 0 ? 1 : a;
     }
 }
+

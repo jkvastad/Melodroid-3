@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Output;
 
 namespace Melodroid_3.Tests.Output;
@@ -8,7 +8,7 @@ public class LcmFamilyGraphRendererTests
     [Fact]
     public void Singleton_lcm_to_singleton_lcm_yields_one_class_edge()
     {
-        // L=1 → class 1, L=2 → class 2. Single family edge 1→2 collapses to one class edge 1→2.
+        // L=1 â†’ class 1, L=2 â†’ class 2. Single family edge 1â†’2 collapses to one class edge 1â†’2.
         var lcmToClass = new Dictionary<int, int> { [1] = 1, [2] = 2 };
         var familyEdges = new[] { (FromLcm: 1, ToLcm: 2) };
 
@@ -20,7 +20,7 @@ public class LcmFamilyGraphRendererTests
     [Fact]
     public void Parallel_family_edges_between_same_class_pair_collapse_to_one()
     {
-        // L=3 and L=4 share class 1; L=5 and L=6 share class 2. Two family edges (3→5, 4→6) → one class edge 1→2.
+        // L=3 and L=4 share class 1; L=5 and L=6 share class 2. Two family edges (3â†’5, 4â†’6) â†’ one class edge 1â†’2.
         var lcmToClass = new Dictionary<int, int> { [3] = 1, [4] = 1, [5] = 2, [6] = 2 };
         var familyEdges = new[] { (FromLcm: 3, ToLcm: 5), (FromLcm: 4, ToLcm: 6) };
 
@@ -32,7 +32,7 @@ public class LcmFamilyGraphRendererTests
     [Fact]
     public void Intra_class_family_edge_is_dropped()
     {
-        // L=3 and L=4 are in the same class 1. A family edge 3→4 collapses to a self-loop and should disappear.
+        // L=3 and L=4 are in the same class 1. A family edge 3â†’4 collapses to a self-loop and should disappear.
         var lcmToClass = new Dictionary<int, int> { [3] = 1, [4] = 1 };
         var familyEdges = new[] { (FromLcm: 3, ToLcm: 4) };
 
@@ -44,7 +44,7 @@ public class LcmFamilyGraphRendererTests
     [Fact]
     public void Transitive_class_edge_is_hasse_reduced()
     {
-        // Class edges A→B, B→C, A→C of the same kind. The direct A→C should be dropped.
+        // Class edges Aâ†’B, Bâ†’C, Aâ†’C of the same kind. The direct Aâ†’C should be dropped.
         var lcmToClass = new Dictionary<int, int> { [1] = 1, [2] = 2, [3] = 3 };
         var familyEdges = new[]
         {
@@ -65,7 +65,7 @@ public class LcmFamilyGraphRendererTests
     [Fact]
     public void Different_edge_kinds_are_reduced_independently()
     {
-        // Even when a kind-B chain A→B→C exists, a kind-A direct edge A→C must survive
+        // Even when a kind-B chain Aâ†’Bâ†’C exists, a kind-A direct edge Aâ†’C must survive
         // because CollapseAndReduce is called separately per kind.
         var lcmToClass = new Dictionary<int, int> { [1] = 1, [2] = 2, [3] = 3 };
 
@@ -87,3 +87,4 @@ public class LcmFamilyGraphRendererTests
         });
     }
 }
+

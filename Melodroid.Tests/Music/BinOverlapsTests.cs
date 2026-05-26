@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -27,13 +27,13 @@ public class BinOverlapsTests
     [Fact]
     public void Compute_radius_is_returned_in_reduced_form()
     {
-        // 10/9 → 9/8: (9/8 - 10/9)/(9/8 + 10/9) = (1/72)/(161/72) = 1/161.
+        // 10/9 â†’ 9/8: (9/8 - 10/9)/(9/8 + 10/9) = (1/72)/(161/72) = 1/161.
         // Pre-reduction the numerator/denominator would be (9*9 - 10*8, 9*9 + 10*8) = (1, 161),
-        // already coprime — but pick a case where reduction matters too.
+        // already coprime â€” but pick a case where reduction matters too.
         var coprime = BinOverlaps.Compute(new[] { new Fraction(10, 9), new Fraction(9, 8) });
         coprime[0].Radius.Should().Be(new Fraction(1, 161));
 
-        // 1/1 → 9/8: (9 - 8)/(9 + 8) = 1/17, already coprime.
+        // 1/1 â†’ 9/8: (9 - 8)/(9 + 8) = 1/17, already coprime.
         var ones = BinOverlaps.Compute(new[] { new Fraction(1, 1), new Fraction(9, 8) });
         ones[0].Radius.Should().Be(new Fraction(1, 17));
     }
@@ -105,3 +105,4 @@ public class BinOverlapsTests
         return a == 0 ? 1 : a;
     }
 }
+

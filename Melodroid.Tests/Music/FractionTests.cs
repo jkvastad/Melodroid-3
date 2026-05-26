@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -17,3 +17,4 @@ public class FractionTests
         new Fraction(5, 4).ToString().Should().Be("5/4");
     }
 }
+

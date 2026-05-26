@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -26,7 +26,7 @@ public class RenormalizationTests
     [Fact]
     public void Renormalize_readme_example_major_chord_by_third_yields_minor_chord()
     {
-        // README line 25: {1, 5/4, 3/2} renormalize with 5/4 as base → {1, 6/5, 8/5}.
+        // README line 25: {1, 5/4, 3/2} renormalize with 5/4 as base â†’ {1, 6/5, 8/5}.
         var family = new[] { new Fraction(1, 1), new Fraction(5, 4), new Fraction(3, 2) };
 
         var result = Renormalization.Renormalize(family, new Fraction(5, 4));
@@ -40,7 +40,7 @@ public class RenormalizationTests
     [Fact]
     public void Renormalize_lcm4_to_base_three_halves_yields_lcm3_family()
     {
-        // README line 45: LCM4 {1, 5/4, 3/2} renormalize to 3/2 → LCM3 {1, 4/3, 5/3}.
+        // README line 45: LCM4 {1, 5/4, 3/2} renormalize to 3/2 â†’ LCM3 {1, 4/3, 5/3}.
         var family = new[] { new Fraction(1, 1), new Fraction(5, 4), new Fraction(3, 2) };
 
         var result = Renormalization.Renormalize(family, new Fraction(3, 2));
@@ -55,7 +55,7 @@ public class RenormalizationTests
     public void Renormalize_lcm18_to_base_four_thirds_yields_subset_of_lcm24()
     {
         // README line 45: lcm 18 {1, 10/9, 4/3, 3/2, 5/3, 16/9} renormalize to 4/3
-        // → {1, 9/8, 5/4, 4/3, 3/2, 5/3}, subset of lcm 24.
+        // â†’ {1, 9/8, 5/4, 4/3, 3/2, 5/3}, subset of lcm 24.
         var family = new[]
         {
             new Fraction(1, 1), new Fraction(10, 9), new Fraction(4, 3),
@@ -105,3 +105,4 @@ public class RenormalizationTests
         }
     }
 }
+

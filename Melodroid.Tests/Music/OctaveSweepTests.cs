@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -86,8 +86,8 @@ public class OctaveSweepTests
         row.AllInputsBinned.Should().BeTrue();
 
         // Candidate LCM picks the minimum across the competing denominators.
-        // At radius 0.05 the input 1.075 overlaps 16/15, 10/9 and 9/8 — denominators
-        // {15, 9, 8} — so the minimum-LCM selection chooses 9/8 → 8. This protects
+        // At radius 0.05 the input 1.075 overlaps 16/15, 10/9 and 9/8 â€” denominators
+        // {15, 9, 8} â€” so the minimum-LCM selection chooses 9/8 â†’ 8. This protects
         // against any future "pick first match" shortcut, since 16/15 is listed
         // first (sorted by value).
         row.PostBinLcm.Should().Be(8);
@@ -119,8 +119,8 @@ public class OctaveSweepTests
         row.Ambiguous.Should().BeTrue();
         row.AllInputsBinned.Should().BeTrue();
 
-        // Candidate denominators per cell: {9, 5} × {9, 8} × {3}. Possible LCMs:
-        // lcm(9,9,3)=9, lcm(9,8,3)=72, lcm(5,9,3)=45, lcm(5,8,3)=120 → min is 9.
+        // Candidate denominators per cell: {9, 5} Ã— {9, 8} Ã— {3}. Possible LCMs:
+        // lcm(9,9,3)=9, lcm(9,8,3)=72, lcm(5,9,3)=45, lcm(5,8,3)=120 â†’ min is 9.
         row.PostBinLcm.Should().Be(9);
         row.LcmIsCandidate.Should().BeTrue();
 
@@ -207,7 +207,7 @@ public class OctaveSweepTests
         rows[^1].ReferenceRatio.Should().BeApproximately(1.99, 1e-12);
     }
 
-    // Centered full match identification — unit tests over synthetic OctaveSweepRow
+    // Centered full match identification â€” unit tests over synthetic OctaveSweepRow
     // arrays, so the algorithm is exercised independently of bin radius / sweep step.
 
     private static readonly Fraction[] MajorTriad =
@@ -400,3 +400,4 @@ public class OctaveSweepTests
         centered.Should().BeEquivalentTo(new[] { 1, 3 });
     }
 }
+

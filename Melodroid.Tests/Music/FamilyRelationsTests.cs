@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using AwesomeAssertions;
 using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
@@ -16,7 +16,7 @@ public class FamilyRelationsTests
             r.Kind == RelationKind.Isomorphism &&
             ((r.FromLcm == 3 && r.ToLcm == 4) || (r.FromLcm == 4 && r.ToLcm == 3)));
         iso.Base.Should().NotBeNull();
-        // Either (3,4) with base 4/3, or (4,3) with base 3/2 — both valid; we canonicalize From<To.
+        // Either (3,4) with base 4/3, or (4,3) with base 3/2 â€” both valid; we canonicalize From<To.
         iso.FromLcm.Should().Be(3);
         iso.ToLcm.Should().Be(4);
         iso.Base!.Value.Should().Be(new Fraction(4, 3));
@@ -148,3 +148,4 @@ public class FamilyRelationsTests
         return LcmFamilies.Compute(fractions, maxLcm: 24);
     }
 }
+
