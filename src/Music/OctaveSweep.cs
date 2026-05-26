@@ -17,7 +17,8 @@ public readonly record struct OctaveSweepRow(
     int? PostBinLcm,
     bool FullMatch,
     bool Ambiguous,
-    bool AllInputsBinned);
+    bool AllInputsBinned,
+    bool LcmIsCandidate);
 
 public static class OctaveSweep
 {
@@ -93,10 +94,19 @@ public static class OctaveSweep
 
         int? postBinLcm;
         bool fullMatch;
+        bool lcmIsCandidate = false;
         if (rowAmbiguous)
         {
-            postBinLcm = null;
             fullMatch = false;
+            if (noMisses)
+            {
+                postBinLcm = MinimumCandidateLcm(cells);
+                lcmIsCandidate = true;
+            }
+            else
+            {
+                postBinLcm = null;
+            }
         }
         else if (allBinned)
         {
@@ -109,7 +119,33 @@ public static class OctaveSweep
             fullMatch = false;
         }
 
-        return new OctaveSweepRow(reference, cells, postBinLcm, fullMatch, rowAmbiguous, noMisses);
+        return new OctaveSweepRow(reference, cells, postBinLcm, fullMatch, rowAmbiguous, noMisses, lcmIsCandidate);
+    }
+
+    private static int MinimumCandidateLcm(IReadOnlyList<OctaveSweepCell> cells)
+    {
+        var best = int.MaxValue;
+        Enumerate(cells, 0, 1, ref best);
+        return best;
+    }
+
+    private static void Enumerate(
+        IReadOnlyList<OctaveSweepCell> cells,
+        int index,
+        int runningLcm,
+        ref int best)
+    {
+        if (runningLcm >= best) return;
+        if (index == cells.Count)
+        {
+            best = runningLcm;
+            return;
+        }
+        foreach (var match in cells[index].Matches)
+        {
+            var next = IntegerMath.Lcm(runningLcm, match.Fraction.Denominator);
+            Enumerate(cells, index + 1, next, ref best);
+        }
     }
 
     // A block is a maximal contiguous run of rows where every input ratio fell

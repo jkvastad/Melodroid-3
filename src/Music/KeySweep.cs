@@ -7,7 +7,8 @@ public readonly record struct KeySweepRow(
     int? PostBinLcm,
     bool FullMatch,
     bool Ambiguous,
-    bool AllInputsBinned);
+    bool AllInputsBinned,
+    bool LcmIsCandidate);
 
 public static class KeySweep
 {
@@ -31,7 +32,8 @@ public static class KeySweep
                 row.PostBinLcm,
                 row.FullMatch,
                 row.Ambiguous,
-                row.AllInputsBinned));
+                row.AllInputsBinned,
+                row.LcmIsCandidate));
         }
 
         return rows;

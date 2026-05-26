@@ -56,7 +56,9 @@ public static class OctaveSweepTableRenderer
                 cellStrings[c + 1] = FormatCell(row.Cells, goodFractions[c]);
             }
 
-            cellStrings[goodFractions.Count + 1] = row.PostBinLcm?.ToString(CultureInfo.InvariantCulture) ?? "";
+            cellStrings[goodFractions.Count + 1] = row.PostBinLcm is int lcm
+                ? lcm.ToString(CultureInfo.InvariantCulture) + (row.LcmIsCandidate ? "?" : "")
+                : "";
             cellStrings[goodFractions.Count + 2] = isCentered ? "★" : row.FullMatch ? "✓" : row.Ambiguous ? "?" : "";
 
             if (colour is not null)

@@ -47,7 +47,9 @@ public static class KeySweepTableRenderer
                 cellStrings[c + 2] = OctaveSweepTableRenderer.FormatCell(row.Cells, goodFractions[c]);
             }
 
-            cellStrings[goodFractions.Count + 2] = row.PostBinLcm?.ToString(CultureInfo.InvariantCulture) ?? "";
+            cellStrings[goodFractions.Count + 2] = row.PostBinLcm is int lcm
+                ? lcm.ToString(CultureInfo.InvariantCulture) + (row.LcmIsCandidate ? "?" : "")
+                : "";
             cellStrings[goodFractions.Count + 3] = row.FullMatch ? "✓" : row.Ambiguous ? "?" : "";
 
             if (colour is not null)

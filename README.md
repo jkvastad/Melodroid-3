@@ -80,7 +80,7 @@ Each row shows:
 * One cell per good-fraction column (signed percentage distance relative the good fraction if the renormalized input ratio fell inside that fraction's bin, otherwise empty)
 * The LCM of the denominators of the good fractions that received a binning
 * A `Full?` marker. 
-Rows where every input ratio bins to exactly one good fraction (Full Match) are highlighted green. If any renormalized ratio falls inside two overlapping bins (only possible at bin radius ≥ 1/161), the entire row is flagged ambiguous: each competing good-fraction column is filled in for that input (one rendered cell per match), all with a `~` prefix so the conflict is visible at a glance; the `LCM` cell is blank, and the row is highlighted yellow. Ambiguous-overlap rows are still treated as full matches by the filter — every input *did* land in a bin, only the LCM is undefined — so `--only-full-matches` keeps them too.
+Rows where every input ratio bins to exactly one good fraction (Full Match) are highlighted green. If any renormalized ratio falls inside two overlapping bins (only possible at bin radius ≥ 1/161), the entire row is flagged ambiguous: each competing good-fraction column is filled in for that input (one rendered cell per match), all with a `~` prefix so the conflict is visible at a glance, and the row is highlighted yellow. For ambiguous rows where every input still landed in *some* bin, the `LCM` cell shows the **minimum** LCM across all candidate selections (one fraction per ambiguous cell) followed by a `?` suffix, e.g. `9?` — signalling that this is the floor of several competing readings rather than a unique LCM. Ambiguous-overlap rows are still treated as full matches by the filter, so `--only-full-matches` keeps them too.
 Options: `--ratios` (required, space-separated decimals on `[1, 2)`), `--sweep-step` (default `0.001`, unitless ratio increment — 1000 rows across the octave), `--bin-radius` (default `1/161 ≈ 0.00621`, the unambiguous threshold), `--only-full-matches` (default off; suppress rows where any input fell outside every bin — strict full matches and ambiguous-overlap rows are both kept; the caption still reports the full sweep count and the ambiguous tally), `--max-size` (default 24), `--max-prime` (default 5).
 
 Some common ratios for reference:
@@ -168,7 +168,7 @@ Each row shows:
 * The key index `n`
 * The key ratio `2^(n/k)`
 * One cell per good-fraction column (signed percentage distance if the renormalized input fell inside that fraction's bin, otherwise empty)
-* The LCM of the denominators of the good fractions that received a binning
+* The LCM of the denominators of the good fractions that received a binning (suffixed `?` for ambiguous full matches — see the octave-sweep section on candidate LCMs)
 * A `Full?` marker (`✓` for strict full match, `?` for ambiguous-overlap)
 
 Rows are highlighted green for strict full matches and yellow for ambiguous-overlap rows, following the same conventions as the octave sweep. Unlike the octave sweep there is no "centered full match" notion — for any reasonable `k` the step `2^(1/k) - 1` is much larger than the bin radius, so every block is a single key.

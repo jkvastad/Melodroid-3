@@ -82,15 +82,23 @@ public class OctaveSweepTests
 
         var row = rows.Single(r => r.ReferenceRatio == 1.0);
         row.Ambiguous.Should().BeTrue();
-        row.PostBinLcm.Should().BeNull();
         row.FullMatch.Should().BeFalse();
         row.AllInputsBinned.Should().BeTrue();
+
+        // Candidate LCM picks the minimum across the competing denominators.
+        // At radius 0.05 the input 1.075 overlaps 16/15, 10/9 and 9/8 — denominators
+        // {15, 9, 8} — so the minimum-LCM selection chooses 9/8 → 8. This protects
+        // against any future "pick first match" shortcut, since 16/15 is listed
+        // first (sorted by value).
+        row.PostBinLcm.Should().Be(8);
+        row.LcmIsCandidate.Should().BeTrue();
 
         var cell = row.Cells[0];
         cell.Ambiguous.Should().BeTrue();
         cell.Matches.Should().HaveCountGreaterThan(1);
         cell.Matches.Select(m => m.Fraction).Should().Contain(new Fraction(16, 15));
         cell.Matches.Select(m => m.Fraction).Should().Contain(new Fraction(10, 9));
+        cell.Matches.Select(m => m.Fraction).Should().Contain(new Fraction(9, 8));
     }
 
     [Fact]
@@ -110,7 +118,11 @@ public class OctaveSweepTests
         var row = rows.Single(r => Math.Abs(r.ReferenceRatio - 1.114) < step / 2);
         row.Ambiguous.Should().BeTrue();
         row.AllInputsBinned.Should().BeTrue();
-        row.PostBinLcm.Should().BeNull();
+
+        // Candidate denominators per cell: {9, 5} × {9, 8} × {3}. Possible LCMs:
+        // lcm(9,9,3)=9, lcm(9,8,3)=72, lcm(5,9,3)=45, lcm(5,8,3)=120 → min is 9.
+        row.PostBinLcm.Should().Be(9);
+        row.LcmIsCandidate.Should().BeTrue();
 
         var input1Matches = row.Cells[0].Matches.Select(m => m.Fraction).ToArray();
         input1Matches.Should().BeEquivalentTo(new[] { new Fraction(16, 9), new Fraction(9, 5) });
@@ -213,13 +225,13 @@ public class OctaveSweepTests
             var matches = new[] { new OctaveSweepMatch(signature[i], distances[i]) };
             cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], false, matches);
         }
-        return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false, AllInputsBinned: true);
+        return new OctaveSweepRow(reference, cells, 4, FullMatch: true, Ambiguous: false, AllInputsBinned: true, LcmIsCandidate: false);
     }
 
     private static OctaveSweepRow MakeNonFullMatchRow(double reference)
     {
         var cells = new[] { new OctaveSweepCell(default, double.NaN, double.NaN, false, Array.Empty<OctaveSweepMatch>()) };
-        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false, AllInputsBinned: false);
+        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: false, AllInputsBinned: false, LcmIsCandidate: false);
     }
 
     private static OctaveSweepRow MakeAmbiguousFullRow(
@@ -231,7 +243,7 @@ public class OctaveSweepTests
             var matches = new[] { new OctaveSweepMatch(signature[i], distances[i]) };
             cells[i] = new OctaveSweepCell(signature[i], 1.0, distances[i], true, matches);
         }
-        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: true, AllInputsBinned: true);
+        return new OctaveSweepRow(reference, cells, null, FullMatch: false, Ambiguous: true, AllInputsBinned: true, LcmIsCandidate: false);
     }
 
     [Fact]
