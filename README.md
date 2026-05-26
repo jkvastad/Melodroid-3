@@ -164,6 +164,8 @@ Working with keys rather than arbitrary ratios means finding full matches is res
 
 Run `dotnet run -- table key-sweep --ktet 12 --ratios 1.0 1.25 1.5` to sweep through the `k` keys of a `--ktet` equal-tempered system and bin each renormalized input ratio against the good fractions. The reference for row `n` is the key ratio `2^(n/k)`, so the table has exactly `k` rows (one per key, `n = 0..k-1`).
 
+Since on a k-tet keyboard only the k key ratios are actually playable, you typically care about which *keys* you are pressing rather than arbitrary decimal ratios. Use `--keys` to supply key indices directly: `dotnet run -- table key-sweep --ktet 12 --keys 0 4 7` sweeps a 12-tet major-triad approximation (key i becomes the ratio `2^(i/k)`, so this is equivalent to `--ratios 1.0 1.2599210498948732 1.4983070768766815`). `--keys` and `--ratios` may be combined — their union is the swept input set.
+
 Each row shows:
 * The key index `n`
 * The key ratio `2^(n/k)`
@@ -173,4 +175,4 @@ Each row shows:
 
 Rows are highlighted green for strict full matches and yellow for ambiguous-overlap rows, following the same conventions as the octave sweep. Unlike the octave sweep there is no "centered full match" notion — for any reasonable `k` the step `2^(1/k) - 1` is much larger than the bin radius, so every block is a single key.
 
-Options: `--ratios` (required, space-separated decimals on `[1, 2)`), `--ktet` (required, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).
+Options: `--ratios` (space-separated decimals on `[1, 2)`), `--keys` (space-separated key indices, each in `[0, k-1]`; converted to `2^(i/k)`) — at least one of `--ratios` / `--keys` is required, and both may be supplied together, `--ktet` (required, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).

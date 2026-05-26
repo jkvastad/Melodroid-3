@@ -9,6 +9,7 @@ public static class KeySweepTableRenderer
     public static void Render(
         IReadOnlyList<KeySweepRow> rows,
         IReadOnlyList<Fraction> goodFractions,
+        IReadOnlyList<int> inputKeys,
         IReadOnlyList<double> inputRatios,
         int k,
         double binRadius,
@@ -70,15 +71,26 @@ public static class KeySweepTableRenderer
             table.AddRow(cellStrings);
         }
 
-        var ratiosCsv = string.Join(", ", inputRatios.Select(r => r.ToString("F4", CultureInfo.InvariantCulture)));
         var radiusPct = binRadius.ToString("P4", CultureInfo.InvariantCulture);
         var filterClause = fullMatchesOnly ? " (filter active: showing full matches only)" : "";
+        var inputSegments = new List<string>();
+        if (inputKeys.Count > 0)
+        {
+            var keysCsv = string.Join(", ", inputKeys.Select(i => i.ToString(CultureInfo.InvariantCulture)));
+            inputSegments.Add($"input keys = {{{keysCsv}}}");
+        }
+        if (inputRatios.Count > 0)
+        {
+            var ratiosCsv = string.Join(", ", inputRatios.Select(r => r.ToString("F4", CultureInfo.InvariantCulture)));
+            inputSegments.Add($"input ratios = {{{ratiosCsv}}}");
+        }
+        var inputClause = string.Join("; ", inputSegments);
         table.Caption(
             $"k = {k}-tet; {rows.Count} key{(rows.Count == 1 ? "" : "s")} swept; " +
             $"bin radius = {binRadius.ToString("G4", CultureInfo.InvariantCulture)} ({radiusPct}); " +
             $"{fullMatchCount} full match{(fullMatchCount == 1 ? "" : "es")} " +
             $"({ambiguousFullCount} ambiguous){filterClause}; " +
-            $"input ratios = {{{ratiosCsv}}}");
+            $"{inputClause}");
 
         console.Write(table);
     }

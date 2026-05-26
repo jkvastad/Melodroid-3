@@ -262,13 +262,24 @@ class Program
         {
             Description = "Optional override. Default: c_k, the exact worst-case k-tet covering radius for the chosen --ktet (every good fraction has a binnable key at this radius).",
         };
+        var keySweepRatiosOption = new Option<double[]>("--ratios")
+        {
+            Description = "Input ratios on [1, 2), space-separated. Combined with --keys if both are given. At least one of --keys / --ratios is required.",
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var keySweepKeysOption = new Option<int[]>("--keys")
+        {
+            Description = "Key indices on a --ktet keyboard (0 to k-1), space-separated. Each key i is converted to ratio 2^(i/k). Combined with --ratios if both are given. At least one of --keys / --ratios is required.",
+            AllowMultipleArgumentsPerToken = true,
+        };
 
         var keySweepCommand = new Command(
             "key-sweep",
             "Sweep through the k keys of a --ktet equal-tempered system, treating each key as the reference, and bin renormalized input ratios against good fractions. Default --bin-radius is the c_k cutoff so every good fraction has a binnable key by construction.");
         keySweepCommand.Add(maxSizeOption);
         keySweepCommand.Add(maxPrimeOption);
-        keySweepCommand.Add(ratiosOption);
+        keySweepCommand.Add(keySweepRatiosOption);
+        keySweepCommand.Add(keySweepKeysOption);
         keySweepCommand.Add(ktetOption);
         keySweepCommand.Add(keySweepBinRadiusOption);
         keySweepCommand.Add(onlyFullMatchesOption);
@@ -276,7 +287,8 @@ class Program
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
-            var ratios = parse.GetValue(ratiosOption) ?? Array.Empty<double>();
+            var ratios = parse.GetValue(keySweepRatiosOption) ?? Array.Empty<double>();
+            var keys = parse.GetValue(keySweepKeysOption) ?? Array.Empty<int>();
             var k = parse.GetValue(ktetOption);
             var binRadiusOverride = parse.GetValue(keySweepBinRadiusOption);
             var onlyFullMatches = parse.GetValue(onlyFullMatchesOption);
@@ -291,9 +303,14 @@ class Program
                 AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
                 return 1;
             }
-            if (ratios.Length == 0)
+            if (k < 1)
             {
-                AnsiConsole.MarkupLine("[red]--ratios must contain at least one value.[/]");
+                AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]");
+                return 1;
+            }
+            if (ratios.Length == 0 && keys.Length == 0)
+            {
+                AnsiConsole.MarkupLine("[red]must provide at least one of --keys or --ratios.[/]");
                 return 1;
             }
             foreach (var r in ratios)
@@ -304,10 +321,13 @@ class Program
                     return 1;
                 }
             }
-            if (k < 1)
+            foreach (var key in keys)
             {
-                AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]");
-                return 1;
+                if (key < 0 || key >= k)
+                {
+                    AnsiConsole.MarkupLine($"[red]--keys value {key} is outside [[0, {k - 1}]].[/]");
+                    return 1;
+                }
             }
             if (binRadiusOverride is double overrideValue && !(overrideValue > 0.0 && overrideValue < 1.0))
             {
@@ -322,9 +342,12 @@ class Program
                 return 1;
             }
 
+            var combinedRatios = ratios
+                .Concat(keys.Select(i => Math.Pow(2.0, (double)i / k)))
+                .ToArray();
             var effectiveRadius = binRadiusOverride ?? KeysNeeded.WorstCaseForK(fractions, k).Radius;
-            var rows = KeySweep.Compute(ratios, fractions, k, effectiveRadius);
-            KeySweepTableRenderer.Render(rows, fractions, ratios, k, effectiveRadius, onlyFullMatches);
+            var rows = KeySweep.Compute(combinedRatios, fractions, k, effectiveRadius);
+            KeySweepTableRenderer.Render(rows, fractions, keys, ratios, k, effectiveRadius, onlyFullMatches);
             return 0;
         });
 
