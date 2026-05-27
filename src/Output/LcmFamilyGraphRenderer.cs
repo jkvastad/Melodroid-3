@@ -27,7 +27,7 @@ public static class LcmFamilyGraphRenderer
         sb.AppendLine();
 
         var isoEdges = relations.Where(r => r.Kind == RelationKind.Isomorphism).ToList();
-        var classes = FamilyRelations.BuildIsoClasses(families, relations);
+        var classes = BuildIsoClasses(families, relations);
 
         sb.AppendLine("```mermaid");
         sb.AppendLine("flowchart TD");
@@ -78,7 +78,7 @@ public static class LcmFamilyGraphRenderer
         int maxPrime,
         int maxLcm)
     {
-        var classes = FamilyRelations.BuildIsoClasses(families, relations);
+        var classes = BuildIsoClasses(families, relations);
         var lcmToClass = new Dictionary<int, int>();
         for (var i = 0; i < classes.Count; i++)
         {
@@ -198,4 +198,30 @@ public static class LcmFamilyGraphRenderer
         return $"L{family.Lcm}[\"LCM={family.Lcm}<br/>{{{fractions}}}\"]";
     }
 
+    private static IReadOnlyList<IReadOnlyList<int>> BuildIsoClasses(
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<FamilyRelation> relations)
+    {
+        var parent = new Dictionary<int, int>();
+        foreach (var f in families) parent[f.Lcm] = f.Lcm;
+
+        int Find(int x)
+        {
+            while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+            return x;
+        }
+
+        foreach (var r in relations)
+        {
+            if (r.Kind != RelationKind.Isomorphism) continue;
+            parent[Find(r.FromLcm)] = Find(r.ToLcm);
+        }
+
+        return families
+            .Select(f => f.Lcm)
+            .GroupBy(Find)
+            .Select(g => (IReadOnlyList<int>)g.OrderBy(x => x).ToList())
+            .OrderBy(g => g[0])
+            .ToList();
+    }
 }

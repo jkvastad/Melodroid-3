@@ -351,63 +351,154 @@ class Program
             return 0;
         });
 
-        var lcmFamilyKeysModeOption = new Option<string>("--mode")
+        var placementLcmOption = new Option<int>("--lcm")
         {
-            Description = "Output mode: 'full' (one row per family) or 'collapsed' (one row per iso class, lowest-LCM representative).",
-            DefaultValueFactory = _ => "full",
+            Description = "LCM (wave pattern length) of the family to place.",
+            Required = true,
         };
-        lcmFamilyKeysModeOption.AcceptOnlyFromAmong("full", "collapsed");
+        var placementAtOption = new Option<int>("--at")
+        {
+            Description = "Key index on a --ktet keyboard at which to anchor the family (must be in [0, ktet-1]).",
+            Required = true,
+        };
 
-        var lcmFamilyKeysCommand = new Command(
-            "lcm-family-keys",
-            "For each LCM family, list its fractions alongside their nearest k-tet key indices.");
-        lcmFamilyKeysCommand.Add(maxSizeOption);
-        lcmFamilyKeysCommand.Add(maxPrimeOption);
-        lcmFamilyKeysCommand.Add(maxLcmOption);
-        lcmFamilyKeysCommand.Add(ktetOption);
-        lcmFamilyKeysCommand.Add(lcmFamilyKeysModeOption);
-        lcmFamilyKeysCommand.SetAction(parse =>
+        var placementCommand = new Command(
+            "placement",
+            "Map the fractions of one LCM family to k-tet keys with the family anchored on a chosen key.");
+        placementCommand.Add(maxSizeOption);
+        placementCommand.Add(maxPrimeOption);
+        placementCommand.Add(maxLcmOption);
+        placementCommand.Add(placementLcmOption);
+        placementCommand.Add(placementAtOption);
+        placementCommand.Add(ktetOption);
+        placementCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
+            var lcm = parse.GetValue(placementLcmOption);
+            var at = parse.GetValue(placementAtOption);
             var k = parse.GetValue(ktetOption);
-            var mode = parse.GetValue(lcmFamilyKeysModeOption) ?? "full";
 
-            if (maxSize < 1)
-            {
-                AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]");
-                return 1;
-            }
-            if (maxPrime < 2)
-            {
-                AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]");
-                return 1;
-            }
-            if (maxLcm < 1)
-            {
-                AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]");
-                return 1;
-            }
-            if (k < 1)
-            {
-                AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]");
-                return 1;
-            }
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+            if (at < 0 || at >= k) { AnsiConsole.MarkupLine($"[red]--at value {at} is outside [[0, {k - 1}]].[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            if (mode == "collapsed")
+            var family = families.FirstOrDefault(f => f.Lcm == lcm);
+            if (family.Fractions is null || family.Fractions.Count == 0)
             {
-                var relations = FamilyRelations.Compute(families);
-                var collapsedRows = LcmFamilyKeys.ComputeCollapsed(families, relations, k);
-                LcmFamilyKeysTableRenderer.RenderCollapsed(collapsedRows, k);
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                return 1;
             }
-            else
+
+            var placement = Placements.Compute(family, at, k);
+            PlacementTableRenderer.Render(placement, family.Fractions, k);
+            return 0;
+        });
+
+        var lcmSweepOption = new Option<int>("--lcm-sweep")
+        {
+            Description = "LCM of family A — swept across all k placements (at = 0..ktet-1).",
+            Required = true,
+        };
+        var lcmRefOption = new Option<int>("--lcm-ref")
+        {
+            Description = "LCM of family B — held at @0 as the reference for overlap.",
+            Required = true,
+        };
+
+        var familyOverlapCommand = new Command(
+            "family-overlap",
+            "Sweep all k placements of family A and report the key intersection with family B held at @0.");
+        familyOverlapCommand.Add(maxSizeOption);
+        familyOverlapCommand.Add(maxPrimeOption);
+        familyOverlapCommand.Add(maxLcmOption);
+        familyOverlapCommand.Add(lcmSweepOption);
+        familyOverlapCommand.Add(lcmRefOption);
+        familyOverlapCommand.Add(ktetOption);
+        familyOverlapCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var lcmSweep = parse.GetValue(lcmSweepOption);
+            var lcmRef = parse.GetValue(lcmRefOption);
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (lcmSweep < 1) { AnsiConsole.MarkupLine("[red]--lcm-sweep must be ≥ 1.[/]"); return 1; }
+            if (lcmRef < 1) { AnsiConsole.MarkupLine("[red]--lcm-ref must be ≥ 1.[/]"); return 1; }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var familyA = families.FirstOrDefault(f => f.Lcm == lcmSweep);
+            if (familyA.Fractions is null || familyA.Fractions.Count == 0)
             {
-                var rows = LcmFamilyKeys.Compute(families, k);
-                LcmFamilyKeysTableRenderer.Render(rows, k);
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcmSweep} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                return 1;
             }
+            var familyB = families.FirstOrDefault(f => f.Lcm == lcmRef);
+            if (familyB.Fractions is null || familyB.Fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcmRef} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                return 1;
+            }
+
+            var (bKeysAtZero, rows) = Placements.OverlapSweep(familyA, familyB, k);
+            FamilyOverlapTableRenderer.Render(lcmSweep, lcmRef, k, bKeysAtZero, rows);
+            return 0;
+        });
+
+        var keySupersetsKeysOption = new Option<int[]>("--keys")
+        {
+            Description = "Target key indices on a --ktet keyboard (each in [0, ktet-1]), space-separated. Duplicates are folded.",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var keySupersetsCommand = new Command(
+            "key-supersets",
+            "Enumerate every (lcm, at) placement whose k-tet keys are a superset of the given --keys; ranked by smallest extra-keys count.");
+        keySupersetsCommand.Add(maxSizeOption);
+        keySupersetsCommand.Add(maxPrimeOption);
+        keySupersetsCommand.Add(maxLcmOption);
+        keySupersetsCommand.Add(keySupersetsKeysOption);
+        keySupersetsCommand.Add(ktetOption);
+        keySupersetsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var keys = parse.GetValue(keySupersetsKeysOption) ?? Array.Empty<int>();
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (keys.Length == 0) { AnsiConsole.MarkupLine("[red]--keys must contain at least one value.[/]"); return 1; }
+            foreach (var key in keys)
+            {
+                if (key < 0 || key >= k)
+                {
+                    AnsiConsole.MarkupLine($"[red]--keys value {key} is outside [[0, {k - 1}]].[/]");
+                    return 1;
+                }
+            }
+
+            var dedupKeys = keys.Distinct().OrderBy(x => x).ToList();
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var rows = Placements.FindSupersets(dedupKeys, families, k);
+            KeySupersetsTableRenderer.Render(dedupKeys, k, rows);
             return 0;
         });
 
@@ -418,7 +509,9 @@ class Program
         tableCommand.Add(octaveSweepCommand);
         tableCommand.Add(ktetCutoffsCommand);
         tableCommand.Add(keySweepCommand);
-        tableCommand.Add(lcmFamilyKeysCommand);
+        tableCommand.Add(placementCommand);
+        tableCommand.Add(familyOverlapCommand);
+        tableCommand.Add(keySupersetsCommand);
 
         var modeOption = new Option<string>("--mode")
         {

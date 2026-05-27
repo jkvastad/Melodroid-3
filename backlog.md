@@ -1,4 +1,16 @@
 ### The sound of music
+table placement: 
+* show key column first, fractions last
+table family-overlap
+* Show overlap cells in same style as "A keys @ At"
+* Rename column "A keys @ At" to Placement, "At" to Key,  ∩ to Overlap
+table key-supersets
+* Column "At" rename to Key
+* Highlight the subset keys as green in the keys column
+* Remove the fractions column (we can check the fractions constituting an lcm with other commands)
+
+---Deferred:
+
 Investigate the sound of all basic lcms.
 Investigate sound of key sets with no small lcm which sound good, primarily the harmonic minor which is close to lcm 15 (with reference point at key 0 swap out key 8 for key 6).
 
