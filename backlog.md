@@ -1,13 +1,11 @@
 ### The sound of music
-table placement: 
-* show key column first, fractions last
 table family-overlap
-* Show overlap cells in same style as "A keys @ At"
-* Rename column "A keys @ At" to Placement, "At" to Key,  ∩ to Overlap
+* Columns lack names now, should be "Key, Placement, Overlap"
+* Green row if full overlap
 table key-supersets
-* Column "At" rename to Key
-* Highlight the subset keys as green in the keys column
-* Remove the fractions column (we can check the fractions constituting an lcm with other commands)
+* Extra column can show the actual extra keys rather than the number of extra keys
+
+Update README to reflect changes.
 
 ---Deferred:
 

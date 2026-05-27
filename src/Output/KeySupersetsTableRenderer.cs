@@ -15,21 +15,21 @@ public static class KeySupersetsTableRenderer
 
         var table = new Table()
             .AddColumn(new TableColumn("LCM").RightAligned())
-            .AddColumn(new TableColumn("At").RightAligned())
+            .AddColumn(new TableColumn("Key").RightAligned())
             .AddColumn(new TableColumn($"Keys ({ktet}-tet)").LeftAligned())
-            .AddColumn(new TableColumn("Extra").RightAligned())
-            .AddColumn(new TableColumn("Fractions").LeftAligned());
+            .AddColumn(new TableColumn("Extra").LeftAligned());
 
+        var requestedSet = requestedKeys.ToHashSet();
         foreach (var row in rows)
         {
-            var keysStr = string.Join(" ", row.Placement.Keys);
-            var fractionsStr = string.Join(", ", row.Fractions.Select(f => f.ToString()));
+            var keysStr = string.Join(" ", row.Placement.Keys.Select(k =>
+                requestedSet.Contains(k) ? $"[green]{k}[/]" : k.ToString()));
+            var extraStr = string.Join(" ", row.Placement.Keys.Where(k => !requestedSet.Contains(k)));
             table.AddRow(
                 row.Placement.Lcm.ToString(),
                 row.Placement.At.ToString(),
                 keysStr,
-                row.ExtraKeysCount.ToString(),
-                fractionsStr);
+                extraStr);
         }
 
         var requestedStr = "{" + string.Join(", ", requestedKeys.OrderBy(k => k)) + "}";

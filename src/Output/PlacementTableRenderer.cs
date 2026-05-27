@@ -16,12 +16,12 @@ public static class PlacementTableRenderer
         var table = new Table()
             .AddColumn(new TableColumn("LCM").RightAligned())
             .AddColumn(new TableColumn("At").RightAligned())
-            .AddColumn(new TableColumn("Fractions").LeftAligned())
-            .AddColumn(new TableColumn($"Keys ({ktet}-tet)").LeftAligned());
+            .AddColumn(new TableColumn($"Keys ({ktet}-tet)").LeftAligned())
+            .AddColumn(new TableColumn("Fractions").LeftAligned());
 
         var fractionsStr = string.Join(", ", fractions.Select(f => f.ToString()));
         var keysStr = string.Join(" ", placement.Keys);
-        table.AddRow(placement.Lcm.ToString(), placement.At.ToString(), fractionsStr, keysStr);
+        table.AddRow(placement.Lcm.ToString(), placement.At.ToString(), keysStr, fractionsStr);
 
         table.Caption($"placement: {placement.Lcm}@{placement.At} · {ktet}-tet");
         console.Write(table);

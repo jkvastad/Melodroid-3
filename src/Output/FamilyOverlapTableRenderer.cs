@@ -16,15 +16,24 @@ public static class FamilyOverlapTableRenderer
         console ??= AnsiConsole.Console;
 
         var table = new Table()
-            .AddColumn(new TableColumn("At").RightAligned())
-            .AddColumn(new TableColumn($"A keys @ At").LeftAligned())
-            .AddColumn(new TableColumn("∩").LeftAligned());
+            .AddColumn(new TableColumn("Key").RightAligned())
+            .AddColumn(new TableColumn("Placement").LeftAligned())
+            .AddColumn(new TableColumn("Overlap").LeftAligned());
 
         foreach (var row in rows)
         {
             var aKeysStr = string.Join(" ", row.AKeys);
-            var intersectionStr = "{" + string.Join(", ", row.Intersection) + "}";
-            table.AddRow(row.At.ToString(), aKeysStr, intersectionStr);
+            var intersectionStr = string.Join(" ", row.Intersection);
+            var isFullOverlap = row.Intersection.Count == row.AKeys.Distinct().Count();
+            var cells = new[] { row.At.ToString(), aKeysStr, intersectionStr };
+            if (isFullOverlap)
+            {
+                for (var c = 0; c < cells.Length; c++)
+                {
+                    cells[c] = $"[green]{cells[c]}[/]";
+                }
+            }
+            table.AddRow(cells);
         }
 
         var bKeysStr = "{" + string.Join(", ", bKeysAtZero) + "}";
