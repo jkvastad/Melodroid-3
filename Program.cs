@@ -517,19 +517,26 @@ class Program
             return 0;
         });
 
-        var voicingsLcmOption = new Option<int>("--lcm")
+        var voicingsLcmOption = new Option<int?>("--lcm")
         {
-            Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of.",
-            Required = true,
+            Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of. Mutually exclusive with --keys.",
+            DefaultValueFactory = _ => null,
+        };
+
+        var voicingsKeysOption = new Option<int[]>("--keys")
+        {
+            Description = "Key indices on a --ktet keyboard (each in [0, ktet-1]), space-separated. Duplicates are folded. Mutually exclusive with --lcm.",
+            AllowMultipleArgumentsPerToken = true,
         };
 
         var voicingsCommand = new Command(
             "voicings",
-            "Enumerate ascending voicings of the L@0 placement that avoid the semitone (interval 1) and visit each placement key exactly once. Per root, only the lowest-penalty voicings are emitted; penalty is 0 for triadic intervals {3,4}, 1 for {2,5}, and (i-4) for i≥6 wides.");
+            "Enumerate ascending voicings of an L@0 placement (via --lcm) or a direct key set (via --keys). Voicings avoid the semitone (interval 1) and visit each key exactly once. Per root, only the lowest-penalty voicings are emitted; penalty is 0 for triadic intervals {3,4}, 1 for {2,5}, and (i-4) for i≥6 wides.");
         voicingsCommand.Add(maxSizeOption);
         voicingsCommand.Add(maxPrimeOption);
         voicingsCommand.Add(maxLcmOption);
         voicingsCommand.Add(voicingsLcmOption);
+        voicingsCommand.Add(voicingsKeysOption);
         voicingsCommand.Add(ktetOption);
         voicingsCommand.SetAction(parse =>
         {
@@ -537,12 +544,39 @@ class Program
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var lcm = parse.GetValue(voicingsLcmOption);
+            var keys = parse.GetValue(voicingsKeysOption) ?? Array.Empty<int>();
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+
+            var hasLcm = lcm.HasValue;
+            var hasKeys = keys.Length > 0;
+            if (hasLcm == hasKeys)
+            {
+                AnsiConsole.MarkupLine("[red]must provide exactly one of --lcm or --keys.[/]");
+                return 1;
+            }
+
+            if (hasKeys)
+            {
+                foreach (var key in keys)
+                {
+                    if (key < 0 || key >= k)
+                    {
+                        AnsiConsole.MarkupLine($"[red]--keys value {key} is outside [[0, {k - 1}]].[/]");
+                        return 1;
+                    }
+                }
+
+                var dedupKeys = keys.Distinct().OrderBy(x => x).ToList();
+                var voicings = Voicings.EnumerateBestPerRoot(dedupKeys, k);
+                VoicingsTableRenderer.Render(lcm: null, at: null, k, dedupKeys, voicings);
+                return 0;
+            }
+
             if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
@@ -555,8 +589,8 @@ class Program
             }
 
             var placement = Placements.Compute(family, at: 0, k);
-            var voicings = Voicings.EnumerateBestPerRoot(placement.Keys, k);
-            VoicingsTableRenderer.Render(lcm, at: 0, k, placement.Keys, voicings);
+            var familyVoicings = Voicings.EnumerateBestPerRoot(placement.Keys, k);
+            VoicingsTableRenderer.Render(lcm, at: 0, k, placement.Keys, familyVoicings);
             return 0;
         });
 

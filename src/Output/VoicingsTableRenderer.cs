@@ -6,8 +6,8 @@ namespace Melodroid_3.Output;
 public static class VoicingsTableRenderer
 {
     public static void Render(
-        int lcm,
-        int at,
+        int? lcm,
+        int? at,
         int ktet,
         IReadOnlyList<int> placementKeys,
         IReadOnlyList<Voicing> voicings,
@@ -33,9 +33,12 @@ public static class VoicingsTableRenderer
         }
 
         var placementStr = string.Join(" ", placementKeys);
-        table.Caption(
-            $"voicings: {lcm}@{at} · {ktet}-tet · placement {{{placementStr}}} · " +
-            $"{voicings.Count} voicings (lowest-penalty per root)");
+        var caption = lcm.HasValue
+            ? $"voicings: {lcm}@{at} · {ktet}-tet · placement {{{placementStr}}} · " +
+              $"{voicings.Count} voicings (lowest-penalty per root)"
+            : $"voicings: keys {{{placementStr}}} · {ktet}-tet · " +
+              $"{voicings.Count} voicings (lowest-penalty per root)";
+        table.Caption(caption);
         console.Write(table);
     }
 }

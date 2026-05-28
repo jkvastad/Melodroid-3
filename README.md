@@ -216,14 +216,14 @@ To rank voicings we can score each interval and sum:
 
 A pure-triadic voicing scores `0`; the score grows as the voicing is forced to use nears and then wides.
 
-Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Options: `--lcm` (required, must be an existing LCM family), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
+Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set directly — e.g. `dotnet run -- table voicings --keys 0 4 7 --ktet 12` for a C major triad, or `dotnet run -- table voicings --keys 0 1 3 5 8 9 10 --ktet 12` for LCM 15@0. Options: exactly one of `--lcm` (must be an existing LCM family) or `--keys` (each value in `[0, ktet-1]`, duplicates folded), plus `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24). `--max-size`/`--max-prime`/`--max-lcm` only apply to the `--lcm` lookup path; `--keys` feeds the keys straight to the voicings enumerator.
 
 For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, intervals `4 4 3 4 3`, penalty `0`), while other roots reach penalty `1` or `2`.
 
 These voicings sound ok but not great - there is a lot of tension in them. Since the tension arises from the semitone clusters, let's look at subsets
 
 LCM 15@0 with keys 0 1 3 5 8 9 10
-* Removing the 8 creates the subset {0 1 3 5 8 9 10} with only supers 15@0
+* Removing the 8 creates the subset {0 1 3 5 9 10} with only supers 15@0
 * Removing the 9 creates the subset {0 1 3 5 8 10} which is 18@3, a subset of 24@1 and 24@8
 * Removing the 10 creates the subset {0 1 3 5 8 9} which is 20@5
 
