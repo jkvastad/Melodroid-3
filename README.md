@@ -208,3 +208,12 @@ Looking back at the LCM families for our good fractions we see that their placem
 │ 24         │ Major 13      │
 └────────────┴───────────────┘
 Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scale.
+
+Finding a voicing for lcm 15 which sounds good is difficult, perhaps impossible, due to the 8 9 10 cluster.
+* Removing the 8 creates the subset {0 1 3 5 8 9 10} with only supers 15@0
+* Removing the 9 creates the subset {0 1 3 5 8 10} which is 18@3, a subset of 24@1 and 24@8
+* Removing the 10 creates the subset {0 1 3 5 8 9} which is 20@5
+
+Finding a voicing for lcm 20 which sounds good...
+
+TODO: Given an lcm, find all voicings for the keys of lcm@0 which has no explicit interval of length 1. We want to go through every key in the placement and see if it can act as root for a compact chord. No interval should exceed the keyboards k.
