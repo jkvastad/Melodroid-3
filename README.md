@@ -181,13 +181,30 @@ Options: `--keys` (space-separated key indices, each in `[0, k-1]`; converted to
 Now that we have a k-tet tuning system which can sound all possible full matches let's start creating music and verifying the model empirically - how does it sound?
 
 #### Voicings and Placements
-In a k-tet tuning the reference point for a full match of som lcm will be mapped to a key. We can notate a full match with lcm a with reference point on key b as a@b, e.g. 24@0. This is called a Placement on Key b as we have "placed" the lcm on key b.
+In a k-tet tuning the reference point for a full match of an lcm will be mapped to a key. We can notate a full match with lcm "a" with reference point on key "b" as a@b, e.g. 24@0. This is called a Placement on Key b as we have "placed" the lcm on key b.
 
-When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising, let's use them as default unless otherwise specified. If we count pitch C as key 0, this allows us to use familiar expressions from modern music theory such as chords and keys, and we can say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
+When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising I will refer to them unless otherwise specified. If we count pitch C as key 0 this allows us to use familiar expressions from modern music theory such as chords and keys. We can then say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
 Sometimes we need to be more explicit and state the form of a chord, such as "24@0 voiced as {7 11 2 5 9 0 4}" - Also known as the G13 chord. This is called a Voicing and is important for e.g. avoiding excessive Helmholtz dissonance from adjacent keys (e.g. a drawn out semitone chord voiced as {0,1} versus the less dissonant {0,13}).
 
-Run `dotnet run -- table placement --lcm 4 --at 0 --ktet 12` to print the placement `4@0` (keys `0 4 7`, the C major triad). Switch to `--at 7` for `4@7` (keys `7 11 2`, the G major triad). Columns are `LCM | At | Keys (k-tet) | Fractions`. Options: `--lcm` (required, must be an existing LCM family given the specified good fractions and maximum allowed LCM), `--at` (required, in `[0, ktet-1]`), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
+Run `dotnet run -- table placement --lcm 4 --at 0 --ktet 12` to print the placement `4@0` (keys `0 4 7`, the C major triad). Switch to `--at 7` for `4@7` (keys `7 11 2`, the G major triad). Pass multiple LCMs space-separated — `--lcm 3 5 15 --at 0 --ktet 12` — to render one row per LCM at the same anchor (useful for comparing isomorphic placements side-by-side); rows appear in the order given and duplicates are kept. Columns are `LCM | At | Keys (k-tet) | Fractions`. Options: `--lcm` (required, one or more values; each must be an existing LCM family given the specified good fractions and maximum allowed LCM), `--at` (required, in `[0, ktet-1]`), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
 
 Run `dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12` to sweep the major-triad shape (LCM 4) against the C major scale (LCM 24 @ 0 = `{0, 2, 4, 5, 7, 9, 11}`). At `Key=0` the overlap is `0 4 7` (the triad sits wholly inside the scale); at `Key=5` the F major triad keys `5 9 0` still overlap the C major scale as `0 5 9`. Columns are `Key | Placement | Overlap`, Placement and Overlap render keys as space-separated indices for direct visual comparison. Rows where the placement sits wholly inside B (i.e. Overlap matches Placement as a set) are highlighted green — these are the keys from which A can be played without leaving B's pitch set. Options: `--lcm-sweep` (required), `--lcm-ref` (required), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
 
 Run `dotnet run -- table key-supersets --keys 0 4 7 --ktet 12` to list every placement whose keys contain the C major triad. The `Extra` column lists the keys the placement adds beyond the requested set (empty = tightest fit, the placement is exactly the requested keys); rows are sorted by `(extra count asc, LCM asc, Key asc)` so the tightest fits appear first. For `{0, 4, 7}` the top rows are the isomorphic triad placements `(LCM 3, Key 7)` and `(LCM 4, Key 0)` both with an empty `Extra`, followed by larger families like `(LCM 8, Key 0)` with `Extra = 2 11`, `(LCM 12, Key 0)` with `Extra = 5 9`, and `(LCM 24, Key 0)` with `Extra = 2 5 9 11` that contain the triad as a proper subset. Columns are `LCM | Key | Keys | Extra`; the requested subset keys are highlighted green inside the Keys cell so the extras pop out by contrast, and the same extras are listed explicitly in the `Extra` column. Use `table placement --lcm L --at K` to look up the fractions backing any row. Options: `--keys` (required, space-separated indices in `[0, ktet-1]`, duplicates folded), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
+
+#### Chords, Scales and LCM Families
+Looking back at the LCM families for our good fractions we see that their placements correspond to traditional chords and scales.
+┌────────────┬───────────────┐
+│ LCM        │ Name          │
+├────────────┼───────────────┤
+│ 1          │ Unison        │
+│ 2          │ Perfect Fifth │
+│ 3,4        │ Major Third   │
+│ 5,6        │ Add 9         │
+│ 8,9,10,12  │ Major 9       │
+│ 15         │               │
+│ 18         │ Minor 11      │
+│ 20         │               │
+│ 24         │ Major 13      │
+└────────────┴───────────────┘
+Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scale.

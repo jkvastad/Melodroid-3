@@ -351,10 +351,11 @@ class Program
             return 0;
         });
 
-        var placementLcmOption = new Option<int>("--lcm")
+        var placementLcmOption = new Option<int[]>("--lcm")
         {
-            Description = "LCM (wave pattern length) of the family to place.",
+            Description = "LCM(s) (wave pattern length) of the families to place — one row per value, in the order given.",
             Required = true,
+            AllowMultipleArgumentsPerToken = true,
         };
         var placementAtOption = new Option<int>("--at")
         {
@@ -376,7 +377,7 @@ class Program
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
-            var lcm = parse.GetValue(placementLcmOption);
+            var lcms = parse.GetValue(placementLcmOption) ?? Array.Empty<int>();
             var at = parse.GetValue(placementAtOption);
             var k = parse.GetValue(ktetOption);
 
@@ -384,20 +385,34 @@ class Program
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
-            if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+            if (lcms.Length == 0) { AnsiConsole.MarkupLine("[red]--lcm must contain at least one value.[/]"); return 1; }
+            var badLcms = lcms.Where(v => v < 1).ToList();
+            if (badLcms.Count > 0) { AnsiConsole.MarkupLine($"[red]--lcm values must be ≥ 1; got {string.Join(", ", badLcms)}.[/]"); return 1; }
             if (at < 0 || at >= k) { AnsiConsole.MarkupLine($"[red]--at value {at} is outside [[0, {k - 1}]].[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var family = families.FirstOrDefault(f => f.Lcm == lcm);
-            if (family.Fractions is null || family.Fractions.Count == 0)
+
+            var rows = new List<(LcmFamily family, Placement placement)>(lcms.Length);
+            var missing = new List<int>();
+            foreach (var lcm in lcms)
             {
-                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                var family = families.FirstOrDefault(f => f.Lcm == lcm);
+                if (family.Fractions is null || family.Fractions.Count == 0)
+                {
+                    missing.Add(lcm);
+                    continue;
+                }
+                rows.Add((family, Placements.Compute(family, at, k)));
+            }
+
+            if (missing.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={string.Join(", ", missing)} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
                 return 1;
             }
 
-            var placement = Placements.Compute(family, at, k);
-            PlacementTableRenderer.Render(placement, family.Fractions, k);
+            PlacementTableRenderer.Render(rows, k);
             return 0;
         });
 

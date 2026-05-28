@@ -59,7 +59,7 @@ dotnet run -- plot  lcm-families --lcm N
                                      [--max-size 24] [--max-prime 5]
                                      [--samples-per-period 200] [--mode all|sum|constituents]
                                      [--subset-lcm K]
-dotnet run -- table placement       --lcm L --at B --ktet K
+dotnet run -- table placement       --lcm L [L...] --at B --ktet K
                                      [--max-size 24] [--max-prime 5] [--max-lcm 24]
 dotnet run -- table family-overlap  --lcm-sweep A --lcm-ref B --ktet K
                                      [--max-size 24] [--max-prime 5] [--max-lcm 24]

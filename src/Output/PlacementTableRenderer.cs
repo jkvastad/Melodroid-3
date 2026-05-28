@@ -6,8 +6,7 @@ namespace Melodroid_3.Output;
 public static class PlacementTableRenderer
 {
     public static void Render(
-        Placement placement,
-        IReadOnlyList<Fraction> fractions,
+        IReadOnlyList<(LcmFamily family, Placement placement)> rows,
         int ktet,
         IAnsiConsole? console = null)
     {
@@ -19,11 +18,16 @@ public static class PlacementTableRenderer
             .AddColumn(new TableColumn($"Keys ({ktet}-tet)").LeftAligned())
             .AddColumn(new TableColumn("Fractions").LeftAligned());
 
-        var fractionsStr = string.Join(", ", fractions.Select(f => f.ToString()));
-        var keysStr = string.Join(" ", placement.Keys);
-        table.AddRow(placement.Lcm.ToString(), placement.At.ToString(), keysStr, fractionsStr);
+        foreach (var (family, placement) in rows)
+        {
+            var fractionsStr = string.Join(", ", family.Fractions.Select(f => f.ToString()));
+            var keysStr = string.Join(" ", placement.Keys);
+            table.AddRow(placement.Lcm.ToString(), placement.At.ToString(), keysStr, fractionsStr);
+        }
 
-        table.Caption($"placement: {placement.Lcm}@{placement.At} · {ktet}-tet");
+        var at = rows.Count > 0 ? rows[0].placement.At : 0;
+        var lcmsStr = string.Join(",", rows.Select(r => r.placement.Lcm));
+        table.Caption($"placement: {lcmsStr}@{at} · {ktet}-tet");
         console.Write(table);
     }
 }
