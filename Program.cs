@@ -517,6 +517,49 @@ class Program
             return 0;
         });
 
+        var voicingsLcmOption = new Option<int>("--lcm")
+        {
+            Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of.",
+            Required = true,
+        };
+
+        var voicingsCommand = new Command(
+            "voicings",
+            "Enumerate ascending voicings of the L@0 placement that avoid the semitone (interval 1) and visit each placement key exactly once. Per root, only the lowest-penalty voicings are emitted; penalty is 0 for triadic intervals {3,4}, 1 for {2,5}, and (i-4) for i≥6 wides.");
+        voicingsCommand.Add(maxSizeOption);
+        voicingsCommand.Add(maxPrimeOption);
+        voicingsCommand.Add(maxLcmOption);
+        voicingsCommand.Add(voicingsLcmOption);
+        voicingsCommand.Add(ktetOption);
+        voicingsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var lcm = parse.GetValue(voicingsLcmOption);
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var family = families.FirstOrDefault(f => f.Lcm == lcm);
+            if (family.Fractions is null || family.Fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                return 1;
+            }
+
+            var placement = Placements.Compute(family, at: 0, k);
+            var voicings = Voicings.EnumerateBestPerRoot(placement.Keys, k);
+            VoicingsTableRenderer.Render(lcm, at: 0, k, placement.Keys, voicings);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
@@ -527,6 +570,7 @@ class Program
         tableCommand.Add(placementCommand);
         tableCommand.Add(familyOverlapCommand);
         tableCommand.Add(keySupersetsCommand);
+        tableCommand.Add(voicingsCommand);
 
         var modeOption = new Option<string>("--mode")
         {

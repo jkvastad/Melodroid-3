@@ -207,7 +207,22 @@ Looking back at the LCM families for our good fractions we see that their placem
 │ 20         │               │
 │ 24         │ Major 13      │
 └────────────┴───────────────┘
-Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scale.
+Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scale but they might still have consonant voicings. Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet):
+
+To rank voicings we can score each interval and sum:
+* intervals in `{3, 4}` (triadic) cost `0`
+* intervals in `{2, 5}` (near-triadic) cost `1`
+* intervals `i ≥ 6` (wide) cost `i − 4` (so `6 → 2`, `7 → 3`, …, `k-1 → k-5`)
+
+A pure-triadic voicing scores `0`; the score grows as the voicing is forced to use nears and then wides.
+
+Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Options: `--lcm` (required, must be an existing LCM family), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
+
+For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing through at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, intervals `4 4 3 4 3`, penalty `0`), while other roots reach penalty `1` or `2`. The penalty column makes the cost of the unavoidable cluster visible at a glance.
+
+These voicings sound ok but not great - there is a lot of tension in them. 
+
+Since the tension arises from the semitone clusters, let's look at subsets
 
 Finding a voicing for lcm 15 which sounds good is difficult, perhaps impossible, due to the 8 9 10 cluster.
 * Removing the 8 creates the subset {0 1 3 5 8 9 10} with only supers 15@0
@@ -215,5 +230,3 @@ Finding a voicing for lcm 15 which sounds good is difficult, perhaps impossible,
 * Removing the 10 creates the subset {0 1 3 5 8 9} which is 20@5
 
 Finding a voicing for lcm 20 which sounds good...
-
-TODO: Given an lcm, find all voicings for the keys of lcm@0 which has no explicit interval of length 1. We want to go through every key in the placement and see if it can act as root for a compact chord. No interval should exceed the keyboards k.
