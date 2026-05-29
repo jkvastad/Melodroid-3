@@ -117,6 +117,114 @@ public class PlacementsTests
         }
     }
 
+    [Fact]
+    public void FindMaximalContaining_triad_returns_15_at_4_7_11_and_24_at_0_5_7()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
+
+        placements
+            .Select(p => (p.Lcm, p.At))
+            .Should().Equal(new[] { (15, 4), (15, 7), (15, 11), (24, 0), (24, 5), (24, 7) });
+    }
+
+    [Fact]
+    public void FindMaximalContaining_full_C_major_scale_returns_only_24_at_0()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        var placements = Placements.FindMaximalContaining(
+            new[] { 0, 2, 4, 5, 7, 9, 11 }, families, relations, ktet: 12);
+
+        placements.Should().HaveCount(1);
+        placements[0].Lcm.Should().Be(24);
+        placements[0].At.Should().Be(0);
+    }
+
+    [Fact]
+    public void FindMaximalContaining_dim7_returns_empty()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        // Dim7 {0, 3, 6, 9} is the symmetric 12/4 cycle and per the README is
+        // not present in any LCM family — must yield zero maximal placements.
+        var placements = Placements.FindMaximalContaining(new[] { 0, 3, 6, 9 }, families, relations, ktet: 12);
+
+        placements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void FindMaximalContaining_rows_sorted_by_lcm_then_at()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
+
+        for (var i = 1; i < placements.Count; i++)
+        {
+            var prev = (placements[i - 1].Lcm, placements[i - 1].At);
+            var cur = (placements[i].Lcm, placements[i].At);
+            Comparer<(int, int)>.Default.Compare(cur, prev).Should().BeGreaterThanOrEqualTo(0);
+        }
+    }
+
+    [Fact]
+    public void MaximalLcms_with_default_params_yields_15_and_24()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        // Independent oracle: an LCM is maximal iff no other family contains it (as literal
+        // subset) and no other family contains its renormalization (as renormalized subset).
+        var familyByLcm = families.ToDictionary(f => f.Lcm);
+        var unity = new Fraction(1, 1);
+        bool IsDominated(int lcm)
+        {
+            var a = familyByLcm[lcm];
+            foreach (var b in families)
+            {
+                if (b.Lcm == lcm) continue;
+                if (a.Fractions.Count < b.Fractions.Count)
+                {
+                    var bSet = new HashSet<Fraction>(b.Fractions);
+                    if (a.Fractions.All(bSet.Contains)) return true;
+                    foreach (var baseFrac in a.Fractions)
+                    {
+                        if (baseFrac == unity) continue;
+                        var ren = Renormalization.Renormalize(a.Fractions, baseFrac);
+                        if (ren.All(bSet.Contains)) return true;
+                    }
+                }
+            }
+            return false;
+        }
+        var expected = families
+            .Select(f => f.Lcm)
+            .Where(lcm => !IsDominated(lcm))
+            .OrderBy(lcm => lcm)
+            .ToList();
+
+        var actual = Placements.MaximalLcms(families, relations);
+
+        actual.Should().Equal(expected);
+        expected.Should().Equal(new[] { 15, 24 });
+    }
+
     private static LcmFamily FamilyFor(int lcm)
     {
         var goodFractions = GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);

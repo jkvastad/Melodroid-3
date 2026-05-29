@@ -78,4 +78,45 @@ public static class Placements
             .ThenBy(r => r.Placement.At)
             .ToList();
     }
+
+    public static IReadOnlyList<int> MaximalLcms(
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<FamilyRelation> relations)
+    {
+        var dominated = new HashSet<int>(relations
+            .Where(r => r.Kind is RelationKind.LiteralSubset or RelationKind.RenormalizedSubset)
+            .Select(r => r.FromLcm));
+        return families
+            .Select(f => f.Lcm)
+            .Where(lcm => !dominated.Contains(lcm))
+            .OrderBy(lcm => lcm)
+            .ToList();
+    }
+
+    public static IReadOnlyList<Placement> FindMaximalContaining(
+        IReadOnlyCollection<int> chordKeys,
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<FamilyRelation> relations,
+        int ktet)
+    {
+        var maximalSet = new HashSet<int>(MaximalLcms(families, relations));
+        var chord = new HashSet<int>(chordKeys);
+        var rows = new List<Placement>();
+
+        foreach (var family in families)
+        {
+            if (!maximalSet.Contains(family.Lcm)) continue;
+            for (var at = 0; at < ktet; at++)
+            {
+                var placement = Compute(family, at, ktet);
+                if (!chord.IsSubsetOf(placement.Keys)) continue;
+                rows.Add(placement);
+            }
+        }
+
+        return rows
+            .OrderBy(p => p.Lcm)
+            .ThenBy(p => p.At)
+            .ToList();
+    }
 }
