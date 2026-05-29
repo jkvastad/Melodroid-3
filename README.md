@@ -192,7 +192,7 @@ Run `dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12` to
 
 Run `dotnet run -- table key-supersets --keys 0 4 7 --ktet 12` to list every placement whose keys contain the C major triad. The `Extra` column lists the keys the placement adds beyond the requested set (empty = tightest fit, the placement is exactly the requested keys); rows are sorted by `(extra count asc, LCM asc, Key asc)` so the tightest fits appear first. For `{0, 4, 7}` the top rows are the isomorphic triad placements `(LCM 3, Key 7)` and `(LCM 4, Key 0)` both with an empty `Extra`, followed by larger families like `(LCM 8, Key 0)` with `Extra = 2 11`, `(LCM 12, Key 0)` with `Extra = 5 9`, and `(LCM 24, Key 0)` with `Extra = 2 5 9 11` that contain the triad as a proper subset. Columns are `LCM | Key | Keys | Extra`; the requested subset keys are highlighted green inside the Keys cell so the extras pop out by contrast, and the same extras are listed explicitly in the `Extra` column. Use `table placement --lcm L --at K` to look up the fractions backing any row. Options: `--keys` (required, space-separated indices in `[0, ktet-1]`, duplicates folded), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
 
-#### Chords, Scales and LCM Families
+#### Voicings and LCM Families
 Looking back at the LCM families for our good fractions we see that their placements correspond to traditional chords and scales.
 ┌────────────┬───────────────┐
 │ LCM        │ Name          │
@@ -207,7 +207,8 @@ Looking back at the LCM families for our good fractions we see that their placem
 │ 20         │               │
 │ 24         │ Major 13      │
 └────────────┴───────────────┘
-Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scale but they might still have consonant voicings. Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet):
+Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scales but they might still have consonant voicings. 
+Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet) and avoids semitones (interval 1 in 12-tet) which produces Helmholtz dissonance due to frequency beating.
 
 To rank voicings we can score each interval and sum:
 * intervals in `{3, 4}` (triadic) cost `0`
@@ -218,22 +219,39 @@ A pure-triadic voicing scores `0`; the score grows as the voicing is forced to u
 
 Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set directly — e.g. `dotnet run -- table voicings --keys 0 4 7 --ktet 12` for a C major triad, or `dotnet run -- table voicings --keys 0 1 3 5 8 9 10 --ktet 12` for LCM 15@0. Options: exactly one of `--lcm` (must be an existing LCM family) or `--keys` (each value in `[0, ktet-1]`, duplicates folded), plus `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24). `--max-size`/`--max-prime`/`--max-lcm` only apply to the `--lcm` lookup path; `--keys` feeds the keys straight to the voicings enumerator.
 
-For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, intervals `4 4 3 4 3`, penalty `0`), while other roots reach penalty `1` or `2`.
+For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}, note the dim on the high end), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early aug chord), while other roots reach penalty `1` or `2`.
 
-These voicings sound ok but not great - there is a lot of tension in them. Since the tension arises from the semitone clusters, let's look at subsets
+The voicings for 15 and 20 sound ok but not great - there is a lot of tension in them. Perhaps due to the high dim and low aug, but perhaps due to the semitone clusters. Let's look at subsets which mitigate these clusters:
 
 LCM 15@0 with keys 0 1 3 5 8 9 10
-* Removing the 8 creates the subset {0 1 3 5 9 10} with only supers 15@0
+* Removing the 8 creates the subset {0 1 3 5 9 10} with only supers 15@0. This subset has a best voicing {10 1 5 9 0 3} which sounds pretty good but tense, a dramatic feeling. Note the high dim.
 * Removing the 9 creates the subset {0 1 3 5 8 10} which is 18@3, a subset of 24@1 and 24@8
 * Removing the 10 creates the subset {0 1 3 5 8 9} which is 20@5
 
 LCM 20@0 with keys 0 3 4 7 8 10
-* Removing the 3 creates the subset {0 4 7 8 10} with superset 15@7
+* Removing the 3 creates the subset {0 4 7 8 10} with superset 15@7. This subset has a best voicing {8 0 4 7 10} which sounds quite tense.
 * Removing the 4 creates the subset {0 3 7 8 10} which is 8@8, subset of 18@10, 24@3 and 24@8
-* Removing the 7 creates the subset {0 3 4 8 10} with superset 15@7
-* Removing the 8 creates the subset {0 3 4 7 10} with superset 15@7
+* Removing the 7 creates the subset {0 3 4 8 10} with superset. 15@7. This subset has a best voicing {4 8 10 0 3} which sounds pretty good, {8 10 0 3} is 5@0 and there is slight tension from key 4.
+* Removing the 8 creates the subset {0 3 4 7 10} with superset 15@7. This subset has a best voicing {4 7 10 0 3} which sounds ok but tense, this is C7 with an added key 3 adding tension.
 
-As expected the best sounding lcms are the smaller ones.
+As expected the best sounding lcms are the smaller ones. Recall that LCM is the WPL of a wave packet, and note that under isomorphism all the best sounding voicings contain powers of two. The lcms with difficulty finding consonant voicings are the large lcms, especially the ones containing the relatively large prime 5, as expected. 
+
+The largest lcm of 24 is interesting as anecdotally I perceive it more consonant when the dim chord present in lcm 24 is mitigated in various ways as opposed to being explicit. Compare e.g. {5 9 0 4 7 11 2} vs. {5 9 0 4 7 11 2 5} - adding in the explicit repeat of 5 at the end adds quite a lot of harsh tension to an otherwise consonant voicing. Similarly {9 0 4 7 11 2 5} and {11 2 5 9 0 4 7} are quite harsh with the explicit dim on the high and low end, compared to {7 11 2 5 9 0 4} which embeds the dim in a G7 which seems to turn the harshness into a pull towards a C major. With C major being 4@0 which divides 24@0 perhaps there is some mechanism for chord progressions at play here.
+
+It is noteworthy that the largest lcm 24 has consonant voicings but the smaller 20 and 15 do not. Possible reasons include:
+
+* Prime 5 destabilizes large patterns, perhaps due to some sort of chunking of the total pattern (larger primes mean larger chunks)    
+* A preference for certain lcms. Perhaps the brain simply prefers to map wave packets to certain lcms over others. This could cause lcm 15@0 to sound like 18@3 with a bad key 9, and 20@0 as 8@8 with a bad key 4.
+* Uniform chords. When the consecutive intervals of a chord divide the k-tet (e.g. aug {0 4 8} and dim7 {0 3 6 9} for 12-tet) it is possible to create uniform chords which are ambigous as to any orientation. Such chords do sound quite tense and this could be due to difficulties for the brain to parse the wave packet onto any lcm. 
+  * Aug is only present in lcm 15 and 20, always with a note in the semitone cluster.
+  * Dim7 is not present in any lcm, but dim is present in lcm 15, 20 and 24.
+* TODO: compare harmonic minor to lcm 15, note that e.g. for 15@0 key 6 sounds good, discuss.
+
+A note on lcm 15@0 {0 1 3 5 8 9 10} - it is quite close to the traditional A# harmonic minor scale {0 1 3 5 6 9 10}, exchanging key 8 for 6. The A# harmonic minor is in turn close to the A# natural minor {0 1 3 5 6 8 10} by exchanging 9 for 8 yielding 24@1. The harmonic minor placed at 10 can then be thought of as 24@1 but based of an aug chord instead of a major chord - this results in a set of keys close to 24@1 but having no full match of its own, while also containing both an aug@1,5,9 and a dim7@0,3,6,9, producing a very ambigous key set.
+
+##### Chords and Melody
+When playing a set of keys, we saw earlier using the key-supersets command that such a set can belong to many different placements. (TODO: discuss melody as modulating between placements - all key sets belong to either 15 or 24, so a small key set has several possibilities for melody as a method of highligthing/modulating superset).
+
 
 --- Deferred
 Preference: Perhaps the hierarchy of lcm 24 is preferred by the brain when pattern matching so e.g. lcm 20@0 sounds like 8@8 with a bad note 4
