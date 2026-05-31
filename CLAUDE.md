@@ -8,9 +8,9 @@ The program is exploratory — it produces artifacts you inspect, not a polished
 - **Mermaid graphs** — relation graphs between LCM families (literal subset / isomorphism / renormalized subset), written as `.md` for in-editor preview.
 - **PNG plots** — ScottPlot waveform plots of an LCM family's constituent sines and their superposition.
 - **MIDI files** *(planned, not yet implemented)* — for auditioning musical ideas. `Melanchall.DryWetMidi` will be added when the first MIDI writer lands.
-- **Tone.js web app** *(planned, not yet implemented)* — for auditioning musical ideas. User can experience procedurally generated music based on the theory. Useful for e.g. github pages.
+- **Tone.js web page** *(planned, not yet implemented)* — for auditioning musical ideas. User can experience procedurally generated music based on the theory. Useful for e.g. github pages.
 
-For the full theoretical premise (good fractions, wave pattern length, renormalization, isomorphism examples), see [README.md](README.md). CLAUDE.md is the operating manual; README is the theory document.
+For the full theoretical premise (good fractions, wave pattern length, renormalization, isomorphism examples), see docs. CLAUDE.md is the operating manual; docs are the theory documents.
 
 ## Tech stack
 
@@ -72,9 +72,7 @@ dotnet run -- table chord-melody    --chord-keys 0 4 7
                                      [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Each subcommand writes its result under `output/<category>/` and prints the path to stdout. See [README.md](README.md) for what each command produces and how to interpret it.
-
-When adding or changing a CLI command (new subcommand, new option, behaviour change), update [README.md](README.md) alongside the code change. Document the command under the most-relevant theory section (Good Fractions, LCM Families, Isomorphisms and Subsets, Wave Pattern Plots) so the theory and the command that exposes it stay co-located.
+Each subcommand writes its result under `output/<category>/` and prints the path to stdout.
 
 ## Build / run / test
 
