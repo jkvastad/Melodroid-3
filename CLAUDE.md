@@ -8,6 +8,7 @@ The program is exploratory — it produces artifacts you inspect, not a polished
 - **Mermaid graphs** — relation graphs between LCM families (literal subset / isomorphism / renormalized subset), written as `.md` for in-editor preview.
 - **PNG plots** — ScottPlot waveform plots of an LCM family's constituent sines and their superposition.
 - **MIDI files** *(planned, not yet implemented)* — for auditioning musical ideas. `Melanchall.DryWetMidi` will be added when the first MIDI writer lands.
+- **Tone.js web app** *(planned, not yet implemented)* — for auditioning musical ideas. User can experience procedurally generated music based on the theory. Useful for e.g. github pages.
 
 For the full theoretical premise (good fractions, wave pattern length, renormalization, isomorphism examples), see [README.md](README.md). CLAUDE.md is the operating manual; README is the theory document.
 
