@@ -59,16 +59,16 @@ dotnet run -- plot  lcm-families --lcm N
                                      [--max-size 24] [--max-prime 5]
                                      [--samples-per-period 200] [--mode all|sum|constituents]
                                      [--subset-lcm K]
-dotnet run -- table placement       --lcm L [L...] --at B --ktet K
-                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
-dotnet run -- table family-overlap  --lcm-sweep A --lcm-ref B --ktet K
-                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
-dotnet run -- table key-supersets   --keys 0 4 7 --ktet K
-                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
-dotnet run -- table voicings        (--lcm L | --keys 0 4 7) --ktet K
-                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
-dotnet run -- table chord-melody    --chord-keys 0 4 7 --ktet K
-                                     [--max-size 24] [--max-prime 5] [--max-lcm 24]
+dotnet run -- table placement       --lcm L [L...] --at B
+                                     [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+dotnet run -- table family-overlap  --lcm-sweep A --lcm-ref B
+                                     [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+dotnet run -- table key-supersets   --keys 0 4 7
+                                     [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+dotnet run -- table voicings        (--lcm L | --keys 0 4 7)
+                                     [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+dotnet run -- table chord-melody    --chord-keys 0 4 7
+                                     [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
 Each subcommand writes its result under `output/<category>/` and prints the path to stdout. See [README.md](README.md) for what each command produces and how to interpret it.

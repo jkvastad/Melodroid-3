@@ -255,8 +255,8 @@ class Program
 
         var ktetOption = new Option<int>("--ktet")
         {
-            Description = "Number of equally-tempered keys per octave. The sweep emits one row per key (n = 0..k-1).",
-            Required = true,
+            Description = "Number of equally-tempered keys per octave. The sweep emits one row per key (n = 0..k-1). Default 12.",
+            DefaultValueFactory = _ => 12,
         };
         var keySweepBinRadiusOption = new Option<double?>("--bin-radius")
         {
