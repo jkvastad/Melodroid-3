@@ -1,0 +1,126 @@
+---
+sidebar_position: 2
+---
+
+# Voicings and LCM Families
+
+The placements of our good-fraction LCM families correspond to traditional chords and scales:
+
+| LCM | Name |
+| :--- | :--- |
+| 1 | Unison |
+| 2 | Perfect Fifth |
+| 3, 4 | Major Third |
+| 5, 6 | Add 9 |
+| 8, 9, 10, 12 | Major 9 |
+| 15 | — |
+| 18 | Minor 11 |
+| 20 | — |
+| 24 | Major 13 |
+
+Most map to known, harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and
+20 map to no traditional chord, but they may still have consonant voicings. Traditionally
+consonant voicings favour triads (intervals 3, 4 in 12-TET) and avoid semitones (interval 1) —
+both easier on the hand and lower in dissonance (see e.g.
+[Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
+
+## Scoring voicings
+
+Rank a voicing by scoring each interval and summing:
+
+- intervals in $\{3, 4\}$ (triadic) cost $0$;
+- intervals in $\{2, 5\}$ (near-triadic) cost $1$;
+- intervals $i \geq 6$ (wide) cost $i - 4$ (so $6 \to 2$, $7 \to 3$, …, $k{-}1 \to k{-}5$).
+
+A pure-triadic voicing scores $0$; the score grows as the voicing is forced into nears and then
+wides.
+
+```bash
+dotnet run -- table voicings --lcm 24 --ktet 12
+```
+
+prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. Each row is
+`Root | Voicing | Intervals | Span | Penalty`, where `Voicing` is the key read as a strictly
+ascending sequence (so `7 11 2` means `7 11 14`). Every root of the C major scale reaches penalty
+`0`; root 7 is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate
+voicings for an arbitrary key set, e.g. `--keys 0 1 3 5 8 9 10` for `15@0`.
+
+## LCM 15 and 20
+
+For `15@0` = `{0 1 3 5 8 9 10}` the `{8 9 10}` cluster forces every voicing to include a
+near-triadic step; the best score from any root is `1` (e.g. from roots 8 and 10, such as
+`10 1 5 9 0 3 8`, note the high dim), the rest reach `2`. `20@0` = `{0 3 4 7 8 10}` is more
+forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early
+aug), other roots reach `1` or `2`.
+
+The voicings for 15 and 20 sound okay but tense — perhaps from the high dim and low aug, or the
+semitone clusters. Removing cluster notes yields gentler subsets:
+
+**`15@0` = `{0 1 3 5 8 9 10}`**
+
+- remove 8 → `{0 1 3 5 9 10}` (only superset `15@0`); best voicing `10 1 5 9 0 3` — good but
+  tense/dramatic, note the high dim.
+- remove 9 → `{0 1 3 5 8 10}` = `18@3`, a subset of `24@1` and `24@8`.
+- remove 10 → `{0 1 3 5 8 9}` = `20@5`.
+
+**`20@0` = `{0 3 4 7 8 10}`**
+
+- remove 3 → `{0 4 7 8 10}` (superset `15@7`); best voicing `8 0 4 7 10` — quite tense.
+- remove 4 → `{0 3 7 8 10}` = `8@8`, subset of `18@10`, `24@3`, `24@8`.
+- remove 7 → `{0 3 4 8 10}` (superset `15@7`); best voicing `4 8 10 0 3` — pretty good,
+  `8 10 0 3` is `5@0` with slight tension from key 4.
+- remove 8 → `{0 3 4 7 10}` (superset `15@7`); best voicing `4 7 10 0 3` — okay but tense, a C7
+  with an added key 3.
+
+As expected, the smaller LCMs sound best, and under isomorphism the best voicings contain powers
+of two. The hardest LCMs to voice consonantly are the large ones — especially those carrying the
+relatively large prime 5.
+
+## The curious case of LCM 24
+
+The largest LCM, 24, is interesting: anecdotally it sounds *more* consonant when its dim chord is
+mitigated rather than stated explicitly. Compare `5 9 0 4 7 11 2` with `5 9 0 4 7 11 2 5` — the
+explicit repeated 5 adds harsh tension. Likewise `9 0 4 7 11 2 5` and `11 2 5 9 0 4 7` are harsh
+with the dim exposed at the ends, whereas `7 11 2 5 9 0 4` embeds the dim inside a G7 that pulls
+toward C major. Since C major is `4@0`, which divides `24@0`, there may be a chord-progression
+mechanism at play.
+
+It is notable that LCM 24 has consonant voicings while the smaller 20 and 15 do not. Possible
+reasons:
+
+- **Prime 5 destabilises large patterns**, perhaps via chunking (larger primes, larger chunks).
+- **A preference for certain LCMs** — the brain may map wave packets to favoured LCMs, hearing
+  `15@0` as `18@3` with a bad key 9, or `20@0` as `8@8` with a bad key 4.
+- **Uniform chords.** When a chord's consecutive intervals divide the $k$-TET (aug `{0 4 8}`,
+  dim7 `{0 3 6 9}` in 12-TET), the chord is ambiguous as to orientation and sounds tense, perhaps
+  because the brain cannot parse it onto any single LCM. Aug appears only in LCM 15 and 20, always
+  with a note in the semitone cluster; dim7 appears in none, but dim is in 15, 20, and 24.
+
+:::note Harmonic minor aside
+`15@0` = `{0 1 3 5 8 9 10}` is close to the A♯ harmonic minor scale `{0 1 3 5 6 9 10}` (key 8 for
+6), which is close to the A♯ natural minor `{0 1 3 5 6 8 10}` = `24@1` (key 9 for 8). The harmonic
+minor placed at 10 reads like `24@1` built on an aug rather than a major chord — a key set near
+`24@1` with no full match of its own, containing both an aug (`@1,5,9`) and a dim7 (`@0,3,6,9`):
+a very ambiguous set.
+:::
+
+## Chords and Melody
+
+A sounding chord can belong to many placements, and every key set with a full match is a subset
+of `15` or `24`. Playing melody over chords can be seen as modulating between the placements the
+chord allows.
+
+The collapsed [LCM-families graph](../theory/lcm-families.mdx) shows that, with max size 24, max
+prime 5, up to LCM 24, two supersets contain all other full matches. We call these the **maximal
+LCM families**: a family is maximal iff it is never a proper subset of any other.
+
+```bash
+dotnet run -- table chord-melody --chord-keys 0 4 7 --ktet 12
+```
+
+renders a matrix: rows are the maximal-LCM placements containing the chord (sorted by LCM then
+anchor), columns are the $k$ keys, and a cell is `●` when the placement contains that key. The
+chord-key columns are tinted green. To ask "which placements survive if I add key K as melody?",
+read column K. For the C major triad `{0, 4, 7}` the rows are `15@4 15@7 15@11 24@0 24@5 24@7`;
+column 5 is filled at `15@4 15@7 24@0 24@5` and blank at `15@11 24@7`, so playing key 5 keeps four
+interpretations and rules out two.

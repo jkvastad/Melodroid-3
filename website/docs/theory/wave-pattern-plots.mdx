@@ -1,0 +1,65 @@
+---
+sidebar_position: 3
+---
+
+# Wave Pattern Plots
+
+The LCM of a family is its **wave pattern length** (WPL): the number of reference periods over
+which the in-phase superposition of its fractions repeats. We can see this directly by plotting
+each fraction $p/q$ as
+
+$$
+\sin\!\left(2\pi \cdot \tfrac{p}{q} \cdot t\right)
+$$
+
+(amplitude $1$, all in phase at $t = 0$) on a shared time axis from $0$ to $\mathrm{LCM}$,
+together with their sum. Every component sine completes an integer number of cycles by
+$t = \mathrm{LCM}$ and returns to zero, so the summed pattern closes at the endpoint — the wave
+pattern visibly repeats with period LCM.
+
+```bash
+dotnet run -- plot lcm-families --lcm 6
+```
+
+writes `output/plots/lcm-family-6.png`. The PNG overlays each fraction's sine in its own colour
+and draws the superposition in thick black; a dashed vertical line marks $t = \mathrm{LCM}$.
+
+![Wave pattern plot for the LCM-6 family](/img/plots/lcm-family-6.png)
+
+## Sum and constituent views
+
+`--mode sum` plots only the superposition (`lcm-family-{lcm}-sum.png`); `--mode constituents`
+plots only the individual sines with no sum overlay (`lcm-family-{lcm}-constituents.png`). The
+y-axis range is identical across all three modes, so the views are directly comparable.
+
+![LCM-6 superposition only](/img/plots/lcm-family-6-sum.png)
+
+![LCM-6 constituents only](/img/plots/lcm-family-6-constituents.png)
+
+## Highlighting a sub-family
+
+`--subset-lcm K` highlights a literal-subset family inside the parent plot. Because a family's
+WPL equals its LCM, whenever $K$ divides `--lcm` the sub-family's pattern tiles
+$\mathrm{LCM} / K$ times across the parent window — e.g. LCM 4 fits twice into LCM 8, LCM 3 fits
+eight times into LCM 24. Blue dashed lines mark each multiple of $K$, and the sub-family's own
+superposition is drawn in solid blue. $K$ must divide `--lcm`, and the family at $K$ must exist
+under the current `--max-size` / `--max-prime`. The filename gains a `-sub{K}` suffix.
+
+![LCM-24 with the LCM-3 sub-family highlighted](/img/plots/lcm-family-24-sub3.png)
+
+## The residual (difference mode)
+
+`--mode difference` isolates the residual — the parent's superposition minus the subset's. By
+default it overlays three curves: the parent sum (black), the subset sum (blue), and the
+difference (red), keeping the subset's dashed period markers for reference. Where the subset
+captures the bulk of the pattern the residual stays small; where the parent adds genuinely new
+structure it swings wide. `--difference-only` drops the two reference sums and plots just the
+red residual. Requires `--subset-lcm`.
+
+![LCM-24 residual against its LCM-4 sub-family](/img/plots/lcm-family-24-difference-sub4.png)
+
+:::note Regenerating these plots
+The PNGs are produced by `dotnet run -- plot lcm-families ...` (see the
+[CLI reference](../cli/reference.mdx)) and copied into `static/img/plots/`. Regenerate and
+re-copy when the plotting logic changes.
+:::

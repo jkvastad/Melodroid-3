@@ -1,0 +1,59 @@
+---
+sidebar_position: 1
+---
+
+import Player from '@site/src/components/Player';
+
+# Voicings and Placements
+
+We now have a $k$-TET tuning that can sound every full match, so we can start making music and
+testing the model by ear. For the good fractions of max size 24 and max prime 5, 12-TET is the
+tuning of choice, so we take a deep dive into it.
+
+## Placements
+
+In a $k$-TET tuning the reference point of an LCM full match maps to a key. We write a full match
+of LCM $a$ with reference on key $b$ as $a@b$ (e.g. $24@0$) and call it a **placement** of the
+LCM on key $b$.
+
+Counting pitch C as key 0 lets us borrow familiar terms: $24@0$ is the C major scale, $4@7$ is
+the G major chord.
+
+<Player keys={[0, 4, 7]} label="▶ 4@0 — C major triad (keys 0 4 7)" />
+
+Sometimes we must be explicit about the shape of a chord, e.g. "$24@0$ voiced as
+`{7 11 2 5 9 0 4}`" — the G13 chord. That is a **voicing**, and it matters for avoiding Helmholtz
+dissonance from adjacent keys (a semitone voiced as `{0, 1}` versus the gentler `{0, 13}`).
+
+```bash
+dotnet run -- table placement --lcm 4 --at 0 --ktet 12
+```
+
+prints `4@0` (keys `0 4 7`, the C major triad). `--at 7` gives `4@7` (keys `7 11 2`, G major).
+Pass multiple LCMs — `--lcm 3 5 15 --at 0` — to render one row per LCM at the same anchor, handy
+for comparing isomorphic placements.
+
+## Overlap with a reference family
+
+```bash
+dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12
+```
+
+sweeps the major-triad shape (LCM 4) against the C major scale (`24@0` = `{0 2 4 5 7 9 11}`). At
+key 0 the overlap is `0 4 7` (the triad sits inside the scale); at key 5 the F major triad
+`5 9 0` overlaps as `0 5 9`. Rows where the placement sits wholly inside the reference are
+highlighted green — the keys from which the swept shape can be played without leaving the
+reference's pitch set.
+
+## Which placements contain a chord
+
+```bash
+dotnet run -- table key-supersets --keys 0 4 7 --ktet 12
+```
+
+lists every placement whose keys contain the C major triad. The `Extra` column lists the keys a
+placement adds beyond the requested set (empty = exact fit); rows sort by (extra count, LCM,
+key). For `{0, 4, 7}` the tightest fits are the isomorphic `(LCM 3, Key 7)` and `(LCM 4, Key 0)`,
+then `(LCM 8, Key 0)` with `Extra = 2 11`, `(LCM 12, Key 0)` with `Extra = 5 9`, and
+`(LCM 24, Key 0)` with `Extra = 2 5 9 11`. Use `table placement --lcm L --at K` to look up the
+fractions backing any row.

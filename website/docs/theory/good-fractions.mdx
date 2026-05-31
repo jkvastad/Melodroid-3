@@ -1,0 +1,54 @@
+---
+sidebar_position: 1
+---
+
+import Player from '@site/src/components/Player';
+
+# Good Fractions
+
+When expressing simultaneous notes as fractions of a reference note, some fractions are better
+than others for forming a repeating pattern in the combined wave. A **good fraction** is one
+whose numerator and denominator are both small and built only from small primes — the two
+properties that keep the [wave pattern length](../intro.mdx) short.
+
+## Why only "so many" fractions
+
+Recall the hearing constraint: with a $20\ \mathrm{Hz}$ floor, a wave pattern lasting more than
+roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a unit, and $100\ \mathrm{Hz}$ is a
+useful worst-case fundamental. At $100\ \mathrm{Hz}$ a strict $10\ \mathrm{ms}$ reading would
+cap the WPL at $5$ — very few patterns. The limit is fuzzy, though, and the real ceiling is
+likely higher.
+
+Two levers keep the WPL manageable:
+
+- **Small numerators/denominators.** The WPL is the $\operatorname{lcm}$ of the denominators,
+  so small values keep it low; by octave equivalence the numerators inherit the same
+  constraint.
+- **Small primes.** Because the WPL is an LCM, denominators built from small primes ($2, 3, 5$)
+  cancel against each other when a set is renormalised to a different base, keeping the total
+  WPL lenient.
+
+In practice we allow a WPL of up to **24**. This is heavily informed by the fact that the major
+scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. For
+comparison, 12-tone equal temperament (12-TET) approximates its semitone with the largest good
+denominator, $16/15$.
+
+## Definition
+
+The possible good fractions are therefore a function of two parameters:
+
+- `--max-size` — the largest allowed numerator or denominator (default $24$);
+- `--max-prime` — the largest prime allowed in their factorisations (default $5$).
+
+Every good fraction is mapped onto $[1, 2)$ by octave equivalence.
+
+<Player fractions={[1, 1.25, 1.5]} label="▶ A good-fraction chord {1, 5/4, 3/2}" />
+
+## Listing them
+
+```bash
+dotnet run -- table good-fractions
+```
+
+Options: `--max-size` (default 24), `--max-prime` (default 5). See the
+[CLI reference](../cli/reference.mdx) for the full command surface.

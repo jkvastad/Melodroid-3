@@ -1,0 +1,72 @@
+---
+sidebar_position: 4
+---
+
+# Cluster Ranges
+
+So far we have treated sound as sets of perfect fractions. Real sound does not consist of
+perfect fractions. If harmony is pattern recognition of frequency ratios, the listener likely
+performs some **clustering**, binning the ratios of real notes onto their ideal fractions.
+
+Given a set of fractions on $[1, 2)$, the human **just-noticeable difference** (JND, about
+$0.5$–$1\%$ depending on frequency) defines a relative bin around each ideal fraction — a
+**cluster target**.
+
+A problem arises when two bins overlap: which target does a ratio in the overlap cluster to?
+Writing the bin radius as a ratio $c$, the overlap point between two fractions $a < b$ satisfies
+
+$$
+a + ac = b - bc \quad\Longrightarrow\quad c = \frac{b - a}{b + a}.
+$$
+
+```bash
+dotnet run -- table bin-overlaps
+```
+
+prints, for each adjacent pair of good fractions, the bin radius $c$ at which their JND bins
+first touch. Each row is $(\text{Lower}, \text{Upper}, c, c\,\%)$ with
+$c = (\text{Upper} - \text{Lower}) / (\text{Upper} + \text{Lower})$. The $c$ column is the
+*exact* reduced fraction (e.g. $1/161$ for the tightest gap $10/9 \to 9/8$); $c\,\%$ is the same
+value as a percentage. The final row handles the octave wrap by pairing the largest good
+fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows. The caption surfaces the
+minimum $c$ — the largest JND a listener could have before *any* adjacent bins overlap.
+
+## Full Match and Octave Sweep
+
+Any frequency can serve as a reference point. Some reference points renormalise a set of ratios
+into good fractions with a relatively low combined LCM. Sampling reference points across
+$[1, 2)$, renormalising the given ratios and binning them cyclically (a value near $2$ can bin
+to $1$) against the good fractions is an **octave sweep**.
+
+For bin radius below $1/161$ no bins overlap and binning is unambiguous. If every ratio in a set
+bins to a good fraction at a given reference point, that is a **full match**.
+
+```bash
+dotnet run -- table octave-sweep --ratios 1.0 1.25 1.5
+```
+
+Each row shows the reference ratio, one cell per good-fraction column (signed % distance when
+the renormalised ratio fell in that bin), the LCM of the matched denominators, and a `Full?`
+marker. Strict full matches are highlighted green. When a ratio falls in two overlapping bins
+(only possible at radius $\geq 1/161$), the row is flagged ambiguous: each competing column is
+filled with a `~` prefix and the row is highlighted yellow; its LCM cell shows the **minimum**
+LCM across candidate readings with a `?` suffix (e.g. `9?`).
+
+Some common reference sets:
+
+- (LCM 4) `1.0 1.25 1.5`
+- (LCM 8) `1.0 1.125 1.25 1.5 1.875`
+
+### Centered Full Matches
+
+Finding full matches is like tuning a radio: matches appear in contiguous blocks of sweep steps
+that renormalise the inputs into the same set of good fractions. A **centered full match** is
+the single best step in such a block — the one with the smallest worst-cell distance ($\min$
+over the block of $\max$ over cells of $\lvert\text{signed }\%\text{ distance}\rvert$), ties
+broken by the lower sweep index. A block is the maximal contiguous run of full-match rows
+sharing the same per-input tuple of matched fractions, so a direct transition from one tuning
+(e.g. $\{1, 5/4, 3/2\}$) to a competing one (e.g. $\{1, 6/5, 3/2\}$) gives each its own centered
+row.
+
+Centered rows are marked `★` instead of `✓`. `--only-centered-full-matches` keeps exactly one
+row per block, and takes precedence over `--only-full-matches`.

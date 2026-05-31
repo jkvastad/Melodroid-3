@@ -1,282 +1,37 @@
 # Melodroid 3
-A program for exploring music.
 
-## Theoretical premise
-Investigating the boundary conditions around which musical perception evolved.
-Analogous to studying cuisine - knowledge of e.g. taste buds can inspire great recipes.
+A program for music research from first principles — exploring music as the meeting point
+between the physics of sound and the biology of human hearing.
 
-## Harmony as pattern recognition of simultaneous waves
-We will be studying musical harmony via pattern recognition of simultaneous waves. For example a major chord can be expressed as fractions {1, 5/4, 3/2}. 
-The pattern for this set of frequencies loops every 4 iterations of the base wavelength, extending over 4 periods of time. 
-The wave pattern length (WPL) is the Least Common Multiple (LCM) of the sets denonimators.
+## 📖 Documentation
 
-### Good Fractions
-When expressing simultaneous musical notes as fractions of a reference note, some fractions will be better than others for creating repeating patterns in simultaneous waves.
+**The full theory and CLI reference live in the docs site:**
+<https://jkvastad.github.io/Melodroid-3/>
 
-Given the lower frequency hearing threshold for humans of 20hz, a wave pattern extending over more than 50ms will likely not be recognized/pattern matched.
-* E.g. for a fundamental of 100hz the major chord with WPL 4 the wave pattern duration (WPD) is 40ms.
+The site source is under [`website/`](website/). To run it locally:
 
-Music (at least orchestra/opera) is mostly played in C2-C6 range (65hz - 1047hz fundamental range, let's say 100hz - 1000hz for simplicity). 
-* Lower frequencies produce longer duration patterns, thus 100hz can be used as a worst case for WPD.
+```bash
+cd website
+npm install
+npm run start     # http://localhost:3000 with hot reload
+```
 
-Denominators of fractions in a set determine the WPL and music is octave equivalent - all fractions are mapped onto "[1,2)": 
-* Any note in a set may be renormalized as the base wavelength - all resulting fractions less than one are then multiplied by 2 until larger than one 
-** e.g. {1, 5/4, 3/2} -> renormalize with 5/4 as base wavelength 1 {4/5, 1, 12/10} -> octave normalize {8/5, 1, 12/10} -> simplify and sort {1, 6/5, 8/5}.
-* This means numerators effectively have the same constraints as denominators.
+## The C# tool
 
-Harmony requires multiple different frequencies, which by the above implies there are only so many "good fractions" which can be used to construct wave patterns.
-* Worst case of 100hz = 10ms means maximum WPL of 5. This is quite low and does not permit many different patterns. Constraint limits are fuzzy and the real WPL is likely higher.
-* Since WPL is decided by LCM, having denominators constructed from small primes (e.g. 2, 3 and 5) is more lenient towards total WPL as they may cancel out with other denominators on renormalization to different base wavelengths.
+The `dotnet` CLI is the source of truth for the data the docs describe.
 
-In view of this, perhaps WPL of up to 24 should be allowed - highly influenced by the fact that the major scale played as a chord (e.g. G13/Cmaj13 for C major) can be expressed as a pattern of WPL 24
-* Common twelve-tone equal temperament (12-TET) has notes approximated notably by largest denominator 15 for semitone (16/15)
+| Action | Command |
+| --- | --- |
+| Build | `dotnet build` |
+| Run | `dotnet run -- <subcommand>` |
+| Test | `dotnet test` |
 
-Possible good fractions are thus a function of maximum allowed denominator/numerator size (e.g. 24) and highest allowed prime (5).
+Subcommands are grouped by output type (`table`, `graph`, `plot`); each writes its artifact
+under `output/` and prints the path. See the
+[CLI reference](https://jkvastad.github.io/Melodroid-3/docs/cli/reference) for the full command
+surface, or run `dotnet run -- --help`.
 
-Run `dotnet run -- table good-fractions` to print the good fractions. Options: `--max-size` (default 24), `--max-prime` (default 5).
-
-### LCM Families
-Given a set of good fractions, we can compute the LCM for the denominators of a given non-empty subset (this LCM is the WPL for that fraction set). For a given LCM L, the maximum sized subset of the good fractions whose denominators have LCM L is called the LCM Family (for those good fractions) of size L.
-
-Run `dotnet run -- table lcm-families` to print the LCM families, ordered by ascending LCM, with empty families omitted. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
-
-#### Isomorphisms and Subsets
-Some LCM families are naturally subsets of others, e.g. LCM4 {1, 5/4, 3/2} is a subset to LCM8{1/1, 9/8, 5/4, 3/2, 15/8}. Due to octave equivalence, some families are subsets after renormalizing (lcm 18: {1/1, 10/9, 4/3, 3/2, 5/3, 16/9} renormalize to 4/3 -> {1/1, 9/8, 5/4, 4/3, 3/2, 5/3}, subset of 24), or even completely isomorphic (LCM4 {1, 5/4, 3/2} renormalize to 3/2 -> LCM3{1, 4/3, 5/3}).
-
-Run `dotnet run -- graph lcm-families` to generate a Mermaid graph at `output/graphs/lcm-families.md` illustrating the three relations (solid arrow = literal subset, thick double-headed arrow = isomorphism, dashed arrow = renormalized subset). Open the file in VSCode and press Ctrl+Shift+V to view the rendered graph. Edges are Hasse-reduced per relation and isomorphic families are grouped into subgraph clusters. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24), `--mode` (default `full`).
-
-Add `--mode collapsed` to instead generate `output/graphs/lcm-families-collapsed.md`, where each isomorphism class (singletons included) becomes a single node. Class-to-class edges are deduplicated and Hasse-reduced per kind, so e.g. you see `class 1 -> class 2` once rather than every `LCM=3 -> LCM=5`, `LCM=3 -> LCM=6`, `LCM=4 -> LCM=5`, `LCM=4 -> LCM=6` arrow that the full view emits. Intra-class isomorphism edges disappear by construction. Useful when the full graph has too many edges to scan at a glance.
-
-#### Wave Pattern Plots
-The LCM of a family is its Wave Pattern Length: the number of reference periods over which the in-phase superposition of its fractions repeats. We can see this by plotting each fraction `p/q` as `sin(2π · (p/q) · t)` (amplitude 1, all in phase at `t = 0`) on a shared time axis from `0` to `LCM`, together with their sum. Every component sine completes an integer number of cycles by `t = LCM` and returns to zero, so the summed pattern closes at the endpoint — the wave pattern visibly repeats with period LCM.
-
-Run `dotnet run -- plot lcm-families --lcm 6` to write `output/plots/lcm-family-6.png`. The PNG overlays each fraction's sine in its own color and draws the superposition in thick black. A dashed vertical line marks `t = LCM`. Options: `--lcm` (required), `--max-size` (default 24), `--max-prime` (default 5), `--samples-per-period` (default 200; controls plot smoothness), `--mode` (default `all`).
-
-Add `--mode sum` to plot only the superposition (writes `output/plots/lcm-family-{lcm}-sum.png`), or `--mode constituents` to plot only the individual sine waves with no sum overlay (writes `output/plots/lcm-family-{lcm}-constituents.png`). The Y-axis range is identical across all three modes so the views are directly comparable.
-
-Add `--subset-lcm K` to highlight a literal-subset family inside the parent plot. Because a family's WPL equals its LCM, whenever `K` divides `--lcm` the sub-family's wave pattern tiles `--lcm / K` times across the parent's window — e.g. lcm4 fits 2× into lcm8, lcm3 fits 8× into lcm24. The plot then adds blue dashed vertical lines at each multiple of `K`, plus the superposition of just the sub-family's sines drawn in solid blue, making the repeating sub-pattern visible against the parent's full waveform. `K` must divide `--lcm` (the literal-subset condition) and the family at `K` must exist under the current `--max-size` / `--max-prime`. The filename gets a `-sub{K}` suffix, e.g. `output/plots/lcm-family-24-sub3.png`.
-
-Combine with `--mode difference` to isolate the residual — the parent's superposition minus the subset's superposition. By default the panel overlays three curves on a shared axis: the parent sum (black), the subset sum (blue), and the difference (red), with the subset's dashed period markers retained for spatial reference. This makes visible what the parent family contributes *beyond* what the subset already accounts for: where the subset captures the bulk of the pattern, the residual is small and tracks under the parent and subset sums; where the parent adds genuinely new structure, the residual swings wide. Add `--difference-only` to drop the two reference sums and plot just the red residual when you want a clean look at it. Requires `--subset-lcm`; filename is `output/plots/lcm-family-{lcm}-difference-sub{K}.png` (or `-difference-only-sub{K}.png` with the flag).
-
-### Cluster ranges
-Continuing on the idea of LCM families with isomorphism under octave equivalence, we have discussed sound as sets of fractions. Real sound, however, does not consist of perfect fractions. If harmony is pattern recognition of frequency fractions, then it is likely that some sort of clustering is performed by the listener, where the ratios of musical notes are binned or mapped onto their ideal fractions.
-
-Given a set of fractions on the interval [1,2), using the Just Noticeable Difference for humans (about 0.5-1% depending on Hz) produces a set of relative bins around an ideal fraction towards which ratios can cluster (a cluster target).
-
-A problem arises if two such clusters were to overlap - namely, which cluster target does a ratio cluster to if it falls in the overlap? If bin radius is expressed as a ratio c then the overlap point between two fractions a < b has the relation:
-
-a + ac = b - bc -> c = (b-a)/(b+a)
-
-Run `dotnet run -- table bin-overlaps` to print, for each adjacent pair of good fractions, the bin radius `c` at which their JND clusters first touch. Each row shows `(Lower, Upper, c, c %)` where `c = (Upper - Lower) / (Upper + Lower)` per the relation above. The `c` column is the *exact* reduced fraction (e.g. `1/161` for the tightest gap `10/9 → 9/8`); `c %` is the same value as a percentage (e.g. `0.621 %`) to align with the README's "about 0.5–1% JND" framing. The final row handles the octave wrap by pairing the largest good fraction with a virtual `2/1` (which is octave-equivalent to `1/1`), so a set of N good fractions produces N rows. The table caption surfaces the minimum `c` — the binding constraint, i.e. the largest JND a listener could have before *any* adjacent good-fraction bins start to overlap. Options: `--max-size` (default 24), `--max-prime` (default 5).
-
-#### Full Match and Octave Sweep
-While any frequency can be used as a reference point to express a set of frequencies as ratios, some reference points will create a set of good fractions so that their combined LCM is relatively low. Given a set of ratios on [1,2) it is possible to sample reference points along this interval, renormalising the given ratios and binning them (cyclically - a value close to 2 can bin to 1) to the good fractions with some given bin radius. I will call this procedure an Octave Sweep.
-
-For bin radius less than 1/161 there are no overlapping bins and the results are unambiguous. If all of the ratios in a set bin to good fractions for a given bin radius and reference point in an octave sweep, I will call it a Full Match (of the octave sweep).
-
-Run `dotnet run -- table octave-sweep --ratios 1.0 1.25 1.5` to sweep a reference ratio across `[1, 2)` and bin each input ratio against the good fractions. 
-Each row shows:
-* The reference ratio
-* One cell per good-fraction column (signed percentage distance relative the good fraction if the renormalized input ratio fell inside that fraction's bin, otherwise empty)
-* The LCM of the denominators of the good fractions that received a binning
-* A `Full?` marker. 
-Rows where every input ratio bins to exactly one good fraction (Full Match) are highlighted green. If any renormalized ratio falls inside two overlapping bins (only possible at bin radius ≥ 1/161), the entire row is flagged ambiguous: each competing good-fraction column is filled in for that input (one rendered cell per match), all with a `~` prefix so the conflict is visible at a glance, and the row is highlighted yellow. For ambiguous rows where every input still landed in *some* bin, the `LCM` cell shows the **minimum** LCM across all candidate selections (one fraction per ambiguous cell) followed by a `?` suffix, e.g. `9?` — signalling that this is the floor of several competing readings rather than a unique LCM. Ambiguous-overlap rows are still treated as full matches by the filter, so `--only-full-matches` keeps them too.
-Options: `--ratios` (required, space-separated decimals on `[1, 2)`), `--sweep-step` (default `0.001`, unitless ratio increment — 1000 rows across the octave), `--bin-radius` (default `1/161 ≈ 0.00621`, the unambiguous threshold), `--only-full-matches` (default off; suppress rows where any input fell outside every bin — strict full matches and ambiguous-overlap rows are both kept; the caption still reports the full sweep count and the ambiguous tally), `--max-size` (default 24), `--max-prime` (default 5).
-
-Some common ratios for reference:
-(lcm 4) 1.0 1.25 1.5
-(lcm 8) 1.0, 1.125, 1.25, 1.5, 1.875
-
-##### Centered Full Matches
-Finding full matches in an octave sweep is similar to tuning a radio - at certain reference ratios we get full matches. These generally appear in contiguous blocks of sweep steps — adjacent steps which renormalize the given rations into the bins of the same set of good fractions. These sweep steps are all technically full matches even though they describe the same set of good fractions.
-
-A **centered full match** is the single best step in such a block: the one with the smallest worst-cell distance (`min` over the block of `max` over cells of `|signed % distance|`). Ties are broken by the lower sweep index. The block itself is the maximal contiguous run of full-match rows that share the same per-input-position tuple of matched good fractions — so when an octave sweep transitions directly from one tuning (e.g. `{1, 5/4, 3/2}`) to a competing one (e.g. `{1, 6/5, 3/2}`) without a non-full-match row between them, each tuning still gets its own centered row.
-
-Centered rows are marked `★` in the `Full?` column (instead of `✓`) and the table caption reports the centered count alongside the full-match count. Use `--only-centered-full-matches` to suppress every other row, leaving exactly one row per block. Ambiguous-overlap rows participate in blocks alongside strict full matches (they share the first-matched-fraction signature), so the centered row of a block may itself be ambiguous — that row keeps its yellow highlight even when marked `★`. The centered filter takes precedence over `--only-full-matches` if both are passed.
-
-### Playing Fractions
-To play music, an instrument is needed. One one end we have instruments which can produce arbitray frequencies, such as violins and the human voice, allowing full expression of sound. Such freedom of expression also comes with a high complexity as the choices are only limited by the resolution of frequencies.
-
-The current hypothesis builds on the idea of clustering imperfect ratios to good fractions, meaning that perfect expression is not necessarily needed for perfect harmony, nor perhaps even desirable. Supposing there are only specific frequency relations of importance means adding meaningless frequencies to an instrument is unnecessary. This is a point in favor of studying instruments with keys, producing a subset of all possible frequencies, removing unnecessary complexity. 
-
-As a counterpoint, sometimes a great work needs contrast. Dissonance itself might be desirable: this idea is similar to how chili, a toxin, is indisputably popular in cuisine. A naive culinary model could reasonably label all toxins as undesireable, and we might do likewise were we to label all non-harmonious ratios undesirable.
-
-Which frequency relations are important, and ultimately, which ratios are necessary for an instrument?
-
-#### A Good Keyboard
-Deciding ratios for an instrument creates a tuning system. Since this involves well defined frequencies I will discuss it in the form of a keyboard for familiarity. 
-
-A desired property when playing a keyed instrument is modulation. Modulation refers to playing the same ratios of frequencies from different fundamentals while still producing the same harmonies. More formally we can say that akeyboard can express all possible full matches from every key.
-
-For an arbitrary keyboard having access to the good fractions from one reference point does not guarantee having them from others. This last point can be solved by equal temperament tonal systems, where the ratio of any two adjacent keys is the same, making all fundamentals equal.
-
-Combining equal temperament tuning with the need for octave equivalency, we are now looking at instruments producing frequencies of the form (f_0*2^(n/k)), where f_0 is some arbitrary frequency (e.g. the Standard Pitch at 440Hz), n is the distance in number of keys from the middle key, and k is the number of keys in the tuning. Setting k to 12 in this k-tone equal temperament (k-tet) system we get the well known 12-tet tuning.
-
-##### How many keys are needed?
-To answer the question of how many keys are needed, let’s begin by listing the requirements set by the theory to see indeed what the keys are needed for:
-
-* Modulation: 
-It must be possible to play all the good fractions using any key as reference point. This means that relative to any arbitrary key in the equal tuning, for each good fraction there must be at least one key within the fraction's bin radius.
-On one hand having infinite keys technically solves the problem, but maximizes complexity.
-On the other hand having a single key with bin radius set to half an octave also technically works, but is way outside any JND interpretation.
-
-* Full Expression - No unplayable virtual reference points
-A set of keys might produce a full match with a virtual reference point, one which is not in the set of played keys. For example a Major Chord (1, 5/4, 3/2) has a full match of LCM 8 at 4/3.
-Such a virtual reference point should be playable from a key on the keyboard.
-
-* Minimal Complexity - as few keys as possible
-
-The above requirements would allow us to play all the good fractions from any key and physically sound any reference point creating a full match with minimal key clutter.
-
-Here we encounter a subtle yet important point: what does it mean to "play a good fraction using a key"? Previously we looked at arbitrary ratio sets on [1,2) and sampled reference points to search for full matches. With a keyboard our ratio sets are defined by the fixed ratios between keys (which is just a smaller set of possible ratios). However, we are no longer free to arbitrarily sound a reference point - it must also correspond to a key.
-
-For a given keyboard with a given a set of keys which have a full match, the reference point has a closest key. Intuitively, if the key is close enough we will recognize it as the reference point. How close is close enough? Must the reference be within JND of the key? Is it a larger bin radius due to inference from context (the given set of keys helping out)? Since full matches are based on the concept of binning real ratios to ideal fractions, using the bin radius to bin the closest key to the reference point seems appropriate.
-
-With such a definition of "playing a good fraction using a key", namely the sounded key frequency expressed as a ratio must bin to the target ideal good fraction, let's construct our keyboard.
-
-###### Modulation
-To satisfy the requirement of modulation we can look at a k-tet system. Given a reference key each good fraction must have at least one key in the k-tet within bin radius. There are two parameters affecting this: bin radius and number of keys. For a given number of keys, there will be a good fraction which needs the largest radius to bin its nearest key. This bin radius is `c_k = |2^(n/k) − g_k*| / g_k*` — the worst-case multiplicative distance "caused" by `g_k*`.
-
-Run `dotnet run -- table ktet-cutoffs` to list, for each `k` from 1 to `--max-k`, the cutoff `c_k`, the limiting fraction `g_k`, and the nearest k-tet key (index `n` and ratio `2^(n/k)`). Green rows mark where `c_k` strictly improves over every smaller k. Add `--only-strictly-improving` to keep only those green rows; the caption still reports the full active k sequence and adds a `(filter: only strictly improving)` clause. Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-k` (default 50), `--only-strictly-improving` (default off).
-
-Notably for standard good fractions (max size 24, max prime 5), we get
-┌────┬──────────┬───────────┬───────────────────┬───────────┬──────────┐
-│  k │      c_k │     c_k % │ Limiting Fraction │ Nearest n │  2^(n/k) │
-├────┼──────────┼───────────┼───────────────────┼───────────┼──────────┤
-│ 11 │ 0.029332 │  2.9332 % │ 5/4               │         4 │ 1.286665 │
-│ 12 │ 0.010216 │  1.0216 % │ 10/9              │         2 │ 1.122462 │
-│ 19 │ 0.008460 │  0.8460 % │ 16/15             │         2 │ 1.075691 │
-│ 31 │ 0.006458 │  0.6458 % │ 10/9              │         5 │ 1.118287 │
-│ 34 │ 0.004547 │  0.4547 % │ 9/8               │         6 │ 1.130116 │
-
-Since JND is almost 1%, at k=11 the bin radius is about 3x JND but suddenly drops to JND at k=12. This only improves (slightly, some 20% smaller) at k=19, and then again at 31, 34 - just around the threshold for unique good fraction bin radii. Thus k=12 with about 63% of the keys of k=19 seems like a good compromise. This is quite remarkable as we have just recovered a (in some sense the) modern popular tuning system from first principles of biology and physics.
-
-###### Full Expression
-To satisfy the requirement of full expression any set of keys on our keyboard which has a full match must be able to play a key which bins to the reference point of that full match. Since our solution for modulation makes sure that every key can function as a reference point to every good fraction, this requirement is also fulfilled by k-tets with sufficiently low bin radii.
-
-###### Minimal Complexity
-To satisfy the requirement of minimal complexity, we need as few keys as possible when fulfilling the other requirements. Since modulation was solved with this in mind, our k-tet choices seem to be between 12, 19, 31 and 34 keys. This would favor 12-tet as the optimal solution, with two caveats:
-* The bin radius might be to large and require 19 or even 34 (unique binnings) keys.
-* The solution might be too perfect - basically we might allow too little dissonance (see discussion of cuisine and chili in section "Playing Fractions"). In music we have effects such as bending strings on guitar which slides between notes. Perhaps the effect is popular due to introducing the right amount of dissonance, or perhaps it is simply the novelty of a sliding frequency - perhaps both. 12-tet does allow for some dissonance - none of the 13 standard good fractions map to key 6 (the tritone, a.k.a. the Devil's interval), and key 2 (10/9, 9/8) and 10 (16/9, 9/5) have ambigous mappings.
-
-##### Key Sweep
-Working with keys rather than arbitrary ratios means finding full matches is restricted to our set of keys rather than arbitrary ratios on [1,2). Thus instead of an octave sweep we can employ a Key Sweep - same principle as an octave sweep, but the sweep steps are replaced with the keys of our tonal system.
-
-Run `dotnet run -- table key-sweep --ktet 12 --keys 0 4 7` to sweep through the `k` keys of a `--ktet` equal-tempered system and bin each input — here a 12-tet major-triad approximation (keys 0, 4, 7) — against the good fractions. Each `--keys` index `i` is converted internally to the ratio `2^(i/k)`, so `--keys 0 4 7` on a 12-tet keyboard is the played-on-a-real-instrument analogue of `--ratios 1.0 1.2599210498948732 1.4983070768766815`. The reference for row `n` is the key ratio `2^(n/k)`, so the table has exactly `k` rows (one per key, `n = 0..k-1`).
-
-Sometimes you want to test ratios that are not on the keyboard — e.g. checking how an external instrument's pitch, a different tuning system's interval, or a literal good fraction would bin under the current k-tet's coverage. `--ratios` accepts space-separated decimals on `[1, 2)` for exactly this case: `dotnet run -- table key-sweep --ktet 12 --ratios 1.0 1.25 1.5` sweeps the three given ratios directly. `--keys` and `--ratios` may be combined — their union is the swept input set.
-
-Each row shows:
-* The key index `n`
-* The key ratio `2^(n/k)`
-* One cell per good-fraction column (signed percentage distance if the renormalized input fell inside that fraction's bin, otherwise empty)
-* The LCM of the denominators of the good fractions that received a binning (suffixed `?` for ambiguous full matches — see the octave-sweep section on candidate LCMs)
-* A `Full?` marker (`✓` for strict full match, `?` for ambiguous-overlap)
-
-Rows are highlighted green for strict full matches and yellow for ambiguous-overlap rows, following the same conventions as the octave sweep. Unlike the octave sweep there is no "centered full match" notion — for any reasonable `k` the step `2^(1/k) - 1` is much larger than the bin radius, so every block is a single key.
-
-Options: `--keys` (space-separated key indices, each in `[0, k-1]`; converted to `2^(i/k)`), `--ratios` (space-separated decimals on `[1, 2)`) — at least one of `--keys` / `--ratios` is required, and both may be supplied together, `--ktet` (default 12, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).
-
-### The sound of music
-Now that we have a k-tet tuning system which can sound all possible full matches let's start creating music and verifying the model empirically - how does it sound? When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising we will do a deep dive into 12-tet.
-
-#### Voicings and Placements
-In a k-tet tuning the reference point for a full match of an lcm will be mapped to a key. We can notate a full match with lcm "a" with reference point on key "b" as a@b, e.g. 24@0. This is called a Placement on Key b as we have "placed" the lcm on key b.
-
-If we count pitch C as key 0 this allows us to use familiar expressions from modern music theory such as chords and keys. We can then say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
-Sometimes we need to be more explicit and state the form of a chord, such as "24@0 voiced as {7 11 2 5 9 0 4}" - Also known as the G13 chord. This is called a Voicing and is important for e.g. avoiding excessive Helmholtz dissonance from adjacent keys (e.g. a drawn out semitone chord voiced as {0,1} versus the less dissonant {0,13}).
-
-Run `dotnet run -- table placement --lcm 4 --at 0 --ktet 12` to print the placement `4@0` (keys `0 4 7`, the C major triad). Switch to `--at 7` for `4@7` (keys `7 11 2`, the G major triad). Pass multiple LCMs space-separated — `--lcm 3 5 15 --at 0 --ktet 12` — to render one row per LCM at the same anchor (useful for comparing isomorphic placements side-by-side); rows appear in the order given and duplicates are kept. Columns are `LCM | At | Keys (k-tet) | Fractions`. Options: `--lcm` (required, one or more values; each must be an existing LCM family given the specified good fractions and maximum allowed LCM), `--at` (required, in `[0, ktet-1]`), `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
-
-Run `dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12` to sweep the major-triad shape (LCM 4) against the C major scale (LCM 24 @ 0 = `{0, 2, 4, 5, 7, 9, 11}`). At `Key=0` the overlap is `0 4 7` (the triad sits wholly inside the scale); at `Key=5` the F major triad keys `5 9 0` still overlap the C major scale as `0 5 9`. Columns are `Key | Placement | Overlap`, Placement and Overlap render keys as space-separated indices for direct visual comparison. Rows where the placement sits wholly inside B (i.e. Overlap matches Placement as a set) are highlighted green — these are the keys from which A can be played without leaving B's pitch set. Options: `--lcm-sweep` (required), `--lcm-ref` (required), `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
-
-Run `dotnet run -- table key-supersets --keys 0 4 7 --ktet 12` to list every placement whose keys contain the C major triad. The `Extra` column lists the keys the placement adds beyond the requested set (empty = tightest fit, the placement is exactly the requested keys); rows are sorted by `(extra count asc, LCM asc, Key asc)` so the tightest fits appear first. For `{0, 4, 7}` the top rows are the isomorphic triad placements `(LCM 3, Key 7)` and `(LCM 4, Key 0)` both with an empty `Extra`, followed by larger families like `(LCM 8, Key 0)` with `Extra = 2 11`, `(LCM 12, Key 0)` with `Extra = 5 9`, and `(LCM 24, Key 0)` with `Extra = 2 5 9 11` that contain the triad as a proper subset. Columns are `LCM | Key | Keys | Extra`; the requested subset keys are highlighted green inside the Keys cell so the extras pop out by contrast, and the same extras are listed explicitly in the `Extra` column. Use `table placement --lcm L --at K` to look up the fractions backing any row. Options: `--keys` (required, space-separated indices in `[0, ktet-1]`, duplicates folded), `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
-
-#### Voicings and LCM Families
-Looking back at the LCM families for our good fractions we see that their placements correspond to traditional chords and scales.
-┌────────────┬───────────────┐
-│ LCM        │ Name          │
-├────────────┼───────────────┤
-│ 1          │ Unison        │
-│ 2          │ Perfect Fifth │
-│ 3,4        │ Major Third   │
-│ 5,6        │ Add 9         │
-│ 8,9,10,12  │ Major 9       │
-│ 15         │               │
-│ 18         │ Minor 11      │
-│ 20         │               │
-│ 24         │ Major 13      │
-└────────────┴───────────────┘
-Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scales but they might still have consonant voicings. 
-Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet) and avoids semitones (interval 1 in 12-tet). This is pragmatic for hand placement on a keyboard and also reduces dissonance (see e.g. [Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
-
-To rank voicings we can score each interval and sum:
-* intervals in `{3, 4}` (triadic) cost `0`
-* intervals in `{2, 5}` (near-triadic) cost `1`
-* intervals `i ≥ 6` (wide) cost `i − 4` (so `6 → 2`, `7 → 3`, …, `k-1 → k-5`)
-
-A pure-triadic voicing scores `0`; the score grows as the voicing is forced to use nears and then wides.
-
-Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set directly — e.g. `dotnet run -- table voicings --keys 0 4 7 --ktet 12` for a C major triad, or `dotnet run -- table voicings --keys 0 1 3 5 8 9 10 --ktet 12` for LCM 15@0. Options: exactly one of `--lcm` (must be an existing LCM family) or `--keys` (each value in `[0, ktet-1]`, duplicates folded), plus `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24). `--max-size`/`--max-prime`/`--max-lcm` only apply to the `--lcm` lookup path; `--keys` feeds the keys straight to the voicings enumerator.
-
-TODO: At this point user wants to listen to example voicings with/without excessive semitones - e.g. the above table with a low cost voicing and a squashed voicing with all tones inside the same octave.
-
-For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}, note the dim on the high end), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early aug chord), while other roots reach penalty `1` or `2`.
-
-The voicings for 15 and 20 sound ok but not great - there is a lot of tension in them. Perhaps due to the high dim and low aug, but perhaps due to the semitone clusters. Let's look at subsets which mitigate these clusters:
-
-LCM 15@0 with keys 0 1 3 5 8 9 10
-* Removing the 8 creates the subset {0 1 3 5 9 10} with only supers 15@0. This subset has a best voicing {10 1 5 9 0 3} which sounds pretty good but tense, a dramatic feeling. Note the high dim.
-* Removing the 9 creates the subset {0 1 3 5 8 10} which is 18@3, a subset of 24@1 and 24@8
-* Removing the 10 creates the subset {0 1 3 5 8 9} which is 20@5
-
-LCM 20@0 with keys 0 3 4 7 8 10
-* Removing the 3 creates the subset {0 4 7 8 10} with superset 15@7. This subset has a best voicing {8 0 4 7 10} which sounds quite tense.
-* Removing the 4 creates the subset {0 3 7 8 10} which is 8@8, subset of 18@10, 24@3 and 24@8
-* Removing the 7 creates the subset {0 3 4 8 10} with superset. 15@7. This subset has a best voicing {4 8 10 0 3} which sounds pretty good, {8 10 0 3} is 5@0 and there is slight tension from key 4.
-* Removing the 8 creates the subset {0 3 4 7 10} with superset 15@7. This subset has a best voicing {4 7 10 0 3} which sounds ok but tense, this is C7 with an added key 3 adding tension.
-
-As expected the best sounding lcms are the smaller ones. Recall that LCM is the WPL of a wave packet, and note that under isomorphism all the best sounding voicings contain powers of two. The lcms with difficulty finding consonant voicings are the large lcms, especially the ones containing the relatively large prime 5, as expected. 
-
-The largest lcm of 24 is interesting as anecdotally I perceive it more consonant when the dim chord present in lcm 24 is mitigated in various ways as opposed to being explicit. Compare e.g. {5 9 0 4 7 11 2} vs. {5 9 0 4 7 11 2 5} - adding in the explicit repeat of 5 at the end adds quite a lot of harsh tension to an otherwise consonant voicing. Similarly {9 0 4 7 11 2 5} and {11 2 5 9 0 4 7} are quite harsh with the explicit dim on the high and low end, compared to {7 11 2 5 9 0 4} which embeds the dim in a G7 which seems to turn the harshness into a pull towards a C major. With C major being 4@0 which divides 24@0 perhaps there is some mechanism for chord progressions at play here.
-
-It is noteworthy that the largest lcm 24 has consonant voicings but the smaller 20 and 15 do not. Possible reasons include:
-
-* Prime 5 destabilizes large patterns, perhaps due to some sort of chunking of the total pattern (larger primes mean larger chunks)    
-* A preference for certain lcms. Perhaps the brain simply prefers to map wave packets to certain lcms over others. This could cause lcm 15@0 to sound like 18@3 with a bad key 9, and 20@0 as 8@8 with a bad key 4.
-* Uniform chords. When the consecutive intervals of a chord divide the k-tet (e.g. aug {0 4 8} and dim7 {0 3 6 9} for 12-tet) it is possible to create uniform chords which are ambigous as to any orientation. Such chords do sound quite tense and this could be due to difficulties for the brain to parse the wave packet onto any lcm. 
-  * Aug is only present in lcm 15 and 20, always with a note in the semitone cluster.
-  * Dim7 is not present in any lcm, but dim is present in lcm 15, 20 and 24.
-* TODO: compare harmonic minor to lcm 15, note that e.g. for 15@0 key 6 sounds good, discuss.
-
-A note on lcm 15@0 {0 1 3 5 8 9 10} - it is quite close to the traditional A# harmonic minor scale {0 1 3 5 6 9 10}, exchanging key 8 for 6. The A# harmonic minor is in turn close to the A# natural minor {0 1 3 5 6 8 10} by exchanging 9 for 8 yielding 24@1. The harmonic minor placed at 10 can then be thought of as 24@1 but based of an aug chord instead of a major chord - this results in a set of keys close to 24@1 but having no full match of its own, while also containing both an aug@1,5,9 and a dim7@0,3,6,9, producing a very ambigous key set.
-
-##### Chords and Melody
-When playing a set of keys (a chord), we saw earlier using the key-supersets command that such a set can belong to many different placements. We also know that any key set with a full match is a subset to either lcm 15 or 24. The common practice of playing melody over chords could the be seen as modulating between possible placements established by the chord.
-
-The `lcm-families` command with `--mode collapsed` shows that with `--max-size 24`, `--max-prime 5` and families computed up to `--max-lcm 24` there are two supersets which all other full matches fall into. Similarly for our k-tet keyboards, all key sets with full matches are subsets of placements for lcm 24 and 15. We call these the **maximal LCM families**: a family is maximal iff it is never a proper subset of any other set. Playing chords and melody modulates between which maximal placements are possible interpretations for the sounding keys.
-
-Run `dotnet run -- table chord-melody --chord-keys 0 4 7 --ktet 12` to render a matrix showing the effect of adding a melodic key to a chord. Rows are the maximal-LCM placements that contain the chord (sorted by `(LCM, At)`); columns are the `--ktet` keys `0 .. ktet-1`; cells show `●` when the placement contains that key and are blank otherwise. The headers of the chord-key columns are tinted green so the chord stands out vertically across all rows. To answer "which placements still work if I add key K as melody?", read column K: the rows with `●` are the survivors. For the C major triad `{0, 4, 7}` the six rows are `15@4 15@7 15@11 24@0 24@5 24@7`; column 5 has `●` at `15@4 15@7 24@0 24@5` and is blank at `15@11 24@7`, so playing key 5 over the triad still allows the four with `●` and excludes the two without. The caption reports the chord, the maximal LCM set discovered for the current good-fractions parameters, the placement count, and the k-tet. Options: `--chord-keys` (required, space-separated indices in `[0, ktet-1]`, duplicates folded), `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
-
---- Deferred
-###### On a Sour Note
-TODO: find mechanisms for creating wrong notes.
-* Seems to be rhythm dependent - an expectation is created within a rhythmic block and there are rules governing when this can be broken/bent and how (e.g. lcm factor overlaps, superset/subset, uniform chord transitions etc., possibly creating new rhythmic subblocks to get away with harmonic changes, potentially using the harmonic change itself as rhythmic boundaries)
-* Exotic effects - lcm 15 has a flavor similar to uniform chords, and this flavor is better upheld by harmonic minor (which is close to a major scale with augmented major chord)
-
-Playing melody according to the chord melody tables makes two flavors of perception apparent - that of lcm 24 and lcm 15. Lcm 24 is more light hearted, happy and relaxed, while lcm 15 is more dramatic, tense and stressful. lcm 15 is also quite similar to the sound of uniform chords such as 0 4 8 and 0 3 6 9.
-
-Some notes of interest:
-* from 5 9 0 the flavor for lcm 15@0 is broken by key 8 (play e.g. melody 10 9 8), producing a bluesy sound which seems to go well with 24@8 (play e.g. melody 8 7).
-* playing 8 from 10 1 5 does not break any flavor, as expected since key 8 matches all possible placements for 10 1 5.
-* playing 4 from 10 1 5 produces a good sound with lots of motions, which is of interest as the melody column 4 has no entry
-
-If playing e.g. 5 9 0 (3@0, 4@5) it seems the brain locks into a flavor or perception for some time when it picks up cues as to whether the sound should be parsed as lcm 24 or 15, and even which placement is active. E.g. playing chord 5 9 0 and starting with a measure of melody 7 5 4 5 gives clear lcm 24@5 flavor - trying to follow up the next measure with...
-
-* ... key 11 gives a false sounding note even though it fits another lcm 24 - 24@0. Perhaps this is due to 5 9 0 having a full match of 4@5, making 24@5 a natural fit. 
-* ... key 3 gives the lcm 15 flavor. There is a full match for 5 9 0 with 3@0. Changing the introductory melody to 7 5 4 3
-
-
-Preference: Perhaps the hierarchy of lcm 24 is preferred by the brain when pattern matching so e.g. lcm 20@0 sounds like 8@8 with a bad note 4
-Uniform chords: aug and dim7 have 3 vs. 4 ambigous interpretations as they are symmetrical on the octave. Distinct sound. As noted, the harmonic minor placed at 10 can then  thought of as 24@1 but based of an aug chord instead of a major chord - this results in a set of keys close to 24@1 but having no full match of its own, while also containing both an aug@1,5,9 and a dim7@0,3,6,9, producing a very ambigous key set. Perhaps in 12-tet the brain is basically parsing lcm 24, 15 or uniform. Uniform might also have a flavor, e.g. the possible supersets a chord could belong to might form our perception.
-Potential perception: the possible supersets a chord could belong to might form our perception.
+- **Tech stack:** .NET 9.0 / C# 12; `Spectre.Console`, `ScottPlot`, `System.CommandLine`,
+  xUnit + FluentAssertions.
+- **Project layout:** domain code in `src/` (`Physics`, `Hearing`, `Music`, `Output`), tests in
+  `Melodroid.Tests/`, generated artifacts in the gitignored `output/`.

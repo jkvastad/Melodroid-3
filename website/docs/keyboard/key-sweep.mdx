@@ -1,0 +1,30 @@
+---
+sidebar_position: 2
+---
+
+# Key Sweep
+
+Working with keys instead of arbitrary ratios restricts the search for full matches to the keys
+of the tuning. Instead of an [octave sweep](../theory/cluster-ranges.mdx) we run a **key
+sweep** — the same idea, but the sweep steps are the keys of the tonal system.
+
+```bash
+dotnet run -- table key-sweep --ktet 12 --keys 0 4 7
+```
+
+sweeps the $k$ keys of a `--ktet` system and bins each input — here a 12-TET major-triad
+approximation (keys 0, 4, 7) — against the good fractions. Each `--keys` index $i$ becomes the
+ratio $2^{i/k}$, so `--keys 0 4 7` on a 12-TET keyboard is the real-instrument analogue of
+`--ratios 1.0 1.2599210498948732 1.4983070768766815`. The reference for row $n$ is the key ratio
+$2^{n/k}$, giving exactly $k$ rows.
+
+To test ratios that are *not* on the keyboard — an external instrument's pitch, another tuning's
+interval, or a literal good fraction — `--ratios` accepts space-separated decimals on $[1, 2)$.
+`--keys` and `--ratios` may be combined; their union is swept.
+
+Each row shows the key index $n$, the key ratio $2^{n/k}$, one cell per good-fraction column
+(signed % distance when the input binned there), the LCM of the matched denominators (with a `?`
+suffix for ambiguous full matches), and a `Full?` marker (`✓` strict, `?` ambiguous). Rows are
+green for strict full matches and yellow for ambiguous ones, as in the octave sweep. Unlike the
+octave sweep there is no centered-match notion — for any reasonable $k$ the step $2^{1/k} - 1$ is
+far larger than the bin radius, so every block is a single key.
