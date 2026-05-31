@@ -178,13 +178,15 @@ Rows are highlighted green for strict full matches and yellow for ambiguous-over
 Options: `--keys` (space-separated key indices, each in `[0, k-1]`; converted to `2^(i/k)`), `--ratios` (space-separated decimals on `[1, 2)`) — at least one of `--keys` / `--ratios` is required, and both may be supplied together, `--ktet` (required, integer ≥ 1, the number of keys in the equal-tempered octave), `--bin-radius` (optional override; default is `c_k`, the exact worst-case k-tet covering radius from §"How many keys are needed?" — every good fraction has a binnable key at this radius by construction), `--only-full-matches` (default off; suppress rows where any input fell outside every bin), `--max-size` (default 24), `--max-prime` (default 5).
 
 ### The sound of music
-Now that we have a k-tet tuning system which can sound all possible full matches let's start creating music and verifying the model empirically - how does it sound?
+Now that we have a k-tet tuning system which can sound all possible full matches let's start creating music and verifying the model empirically - how does it sound? When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising we will do a deep dive into 12-tet.
 
 #### Voicings and Placements
 In a k-tet tuning the reference point for a full match of an lcm will be mapped to a key. We can notate a full match with lcm "a" with reference point on key "b" as a@b, e.g. 24@0. This is called a Placement on Key b as we have "placed" the lcm on key b.
 
-When studying the good fractions of max size 24 and max prime 5 it seems 12-tet is the tuning of choice. Since these good fractions seem promising I will refer to them unless otherwise specified. If we count pitch C as key 0 this allows us to use familiar expressions from modern music theory such as chords and keys. We can then say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
+If we count pitch C as key 0 this allows us to use familiar expressions from modern music theory such as chords and keys. We can then say things like "24@0 is the traditional major scale on C" or "4@7 is the G major chord".
 Sometimes we need to be more explicit and state the form of a chord, such as "24@0 voiced as {7 11 2 5 9 0 4}" - Also known as the G13 chord. This is called a Voicing and is important for e.g. avoiding excessive Helmholtz dissonance from adjacent keys (e.g. a drawn out semitone chord voiced as {0,1} versus the less dissonant {0,13}).
+
+TODO: ktet can be optional, default 12
 
 Run `dotnet run -- table placement --lcm 4 --at 0 --ktet 12` to print the placement `4@0` (keys `0 4 7`, the C major triad). Switch to `--at 7` for `4@7` (keys `7 11 2`, the G major triad). Pass multiple LCMs space-separated — `--lcm 3 5 15 --at 0 --ktet 12` — to render one row per LCM at the same anchor (useful for comparing isomorphic placements side-by-side); rows appear in the order given and duplicates are kept. Columns are `LCM | At | Keys (k-tet) | Fractions`. Options: `--lcm` (required, one or more values; each must be an existing LCM family given the specified good fractions and maximum allowed LCM), `--at` (required, in `[0, ktet-1]`), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
 
@@ -208,7 +210,9 @@ Looking back at the LCM families for our good fractions we see that their placem
 │ 24         │ Major 13      │
 └────────────┴───────────────┘
 Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scales but they might still have consonant voicings. 
-Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet) and avoids semitones (interval 1 in 12-tet) which produces Helmholtz dissonance due to frequency beating.
+Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet) and avoids semitones (interval 1 in 12-tet) which produce dissonance (see e.g. [Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
+
+TODO: Example voicing with/without excessive semitones
 
 To rank voicings we can score each interval and sum:
 * intervals in `{3, 4}` (triadic) cost `0`
@@ -220,6 +224,8 @@ A pure-triadic voicing scores `0`; the score grows as the voicing is forced to u
 Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set directly — e.g. `dotnet run -- table voicings --keys 0 4 7 --ktet 12` for a C major triad, or `dotnet run -- table voicings --keys 0 1 3 5 8 9 10 --ktet 12` for LCM 15@0. Options: exactly one of `--lcm` (must be an existing LCM family) or `--keys` (each value in `[0, ktet-1]`, duplicates folded), plus `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24). `--max-size`/`--max-prime`/`--max-lcm` only apply to the `--lcm` lookup path; `--keys` feeds the keys straight to the voicings enumerator.
 
 For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}, note the dim on the high end), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early aug chord), while other roots reach penalty `1` or `2`.
+
+TODO: web app for listening to the voicings, perhaps selecting them from a list.
 
 The voicings for 15 and 20 sound ok but not great - there is a lot of tension in them. Perhaps due to the high dim and low aug, but perhaps due to the semitone clusters. Let's look at subsets which mitigate these clusters:
 
@@ -256,7 +262,25 @@ The `lcm-families` command with `--mode collapsed` shows that with `--max-size 2
 
 Run `dotnet run -- table chord-melody --chord-keys 0 4 7 --ktet 12` to render a matrix showing the effect of adding a melodic key to a chord. Rows are the maximal-LCM placements that contain the chord (sorted by `(LCM, At)`); columns are the `--ktet` keys `0 .. ktet-1`; cells show `●` when the placement contains that key and are blank otherwise. The headers of the chord-key columns are tinted green so the chord stands out vertically across all rows. To answer "which placements still work if I add key K as melody?", read column K: the rows with `●` are the survivors. For the C major triad `{0, 4, 7}` the six rows are `15@4 15@7 15@11 24@0 24@5 24@7`; column 5 has `●` at `15@4 15@7 24@0 24@5` and is blank at `15@11 24@7`, so playing key 5 over the triad still allows the four with `●` and excludes the two without. The caption reports the chord, the maximal LCM set discovered for the current good-fractions parameters, the placement count, and the k-tet. Options: `--chord-keys` (required, space-separated indices in `[0, ktet-1]`, duplicates folded), `--ktet` (required), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24).
 
-
 --- Deferred
+###### On a Sour Note
+TODO: find mechanisms for creating wrong notes.
+* Seems to be rhythm dependent - an expectation is created within a rhythmic block and there are rules governing when this can be broken/bent and how (e.g. lcm factor overlaps, superset/subset, uniform chord transitions etc., possibly creating new rhythmic subblocks to get away with harmonic changes, potentially using the harmonic change itself as rhythmic boundaries)
+* Exotic effects - lcm 15 has a flavor similar to uniform chords, and this flavor is better upheld by harmonic minor (which is close to a major scale with augmented major chord)
+
+Playing melody according to the chord melody tables makes two flavors of perception apparent - that of lcm 24 and lcm 15. Lcm 24 is more light hearted, happy and relaxed, while lcm 15 is more dramatic, tense and stressful. lcm 15 is also quite similar to the sound of uniform chords such as 0 4 8 and 0 3 6 9.
+
+Some notes of interest:
+* from 5 9 0 the flavor for lcm 15@0 is broken by key 8 (play e.g. melody 10 9 8), producing a bluesy sound which seems to go well with 24@8 (play e.g. melody 8 7).
+* playing 8 from 10 1 5 does not break any flavor, as expected since key 8 matches all possible placements for 10 1 5.
+* playing 4 from 10 1 5 produces a good sound with lots of motions, which is of interest as the melody column 4 has no entry
+
+If playing e.g. 5 9 0 (3@0, 4@5) it seems the brain locks into a flavor or perception for some time when it picks up cues as to whether the sound should be parsed as lcm 24 or 15, and even which placement is active. E.g. playing chord 5 9 0 and starting with a measure of melody 7 5 4 5 gives clear lcm 24@5 flavor - trying to follow up the next measure with...
+
+* ... key 11 gives a false sounding note even though it fits another lcm 24 - 24@0. Perhaps this is due to 5 9 0 having a full match of 4@5, making 24@5 a natural fit. 
+* ... key 3 gives the lcm 15 flavor. There is a full match for 5 9 0 with 3@0. Changing the introductory melody to 7 5 4 3
+
+
 Preference: Perhaps the hierarchy of lcm 24 is preferred by the brain when pattern matching so e.g. lcm 20@0 sounds like 8@8 with a bad note 4
-Uniform chords: aug and dim7 have 3 vs. 4 ambigous interpretations as they are symmetrical on the octave. Distinct sound.
+Uniform chords: aug and dim7 have 3 vs. 4 ambigous interpretations as they are symmetrical on the octave. Distinct sound. As noted, the harmonic minor placed at 10 can then  thought of as 24@1 but based of an aug chord instead of a major chord - this results in a set of keys close to 24@1 but having no full match of its own, while also containing both an aug@1,5,9 and a dim7@0,3,6,9, producing a very ambigous key set. Perhaps in 12-tet the brain is basically parsing lcm 24, 15 or uniform. Uniform might also have a flavor, e.g. the possible supersets a chord could belong to might form our perception.
+Potential perception: the possible supersets a chord could belong to might form our perception.
