@@ -210,8 +210,6 @@ Looking back at the LCM families for our good fractions we see that their placem
 Most map to known chords and scales (Major 13 is the major scale) known for their harmonic sound. LCM 15 and 20, however, do not map to any traditional chords or scales but they might still have consonant voicings. 
 Traditionally consonant voicings contain many triads (interval 3,4 in 12-tet) and avoids semitones (interval 1 in 12-tet). This is pragmatic for hand placement on a keyboard and also reduces dissonance (see e.g. [Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
 
-TODO: Example voicing with/without excessive semitones
-
 To rank voicings we can score each interval and sum:
 * intervals in `{3, 4}` (triadic) cost `0`
 * intervals in `{2, 5}` (near-triadic) cost `1`
@@ -221,9 +219,9 @@ A pure-triadic voicing scores `0`; the score grows as the voicing is forced to u
 
 Run `dotnet run -- table voicings --lcm 24 --ktet 12` to print the lowest-penalty voicings of the C major scale (`24@0`) from every root, one row per voicing. Each row shows `Root | Voicing | Intervals | Span | Penalty` where `Voicing` is the space-separated key read as a strictly ascending sequence (each next key is the smallest pitch with that key greater than the previous note, so e.g. `7 11 2` means `7 11 14`), `Intervals` are the deltas between successive ascending pitches, `Span` is their sum, and `Penalty` is the total cost. For the C major scale every root reaches penalty `0`; the row at `Root=7` is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set directly — e.g. `dotnet run -- table voicings --keys 0 4 7 --ktet 12` for a C major triad, or `dotnet run -- table voicings --keys 0 1 3 5 8 9 10 --ktet 12` for LCM 15@0. Options: exactly one of `--lcm` (must be an existing LCM family) or `--keys` (each value in `[0, ktet-1]`, duplicates folded), plus `--ktet` (default 12), `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24). `--max-size`/`--max-prime`/`--max-lcm` only apply to the `--lcm` lookup path; `--keys` feeds the keys straight to the voicings enumerator.
 
-For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}, note the dim on the high end), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early aug chord), while other roots reach penalty `1` or `2`.
+TODO: At this point user wants to listen to example voicings with/without excessive semitones - e.g. the above table with a low cost voicing and a squashed voicing with all tones inside the same octave.
 
-TODO: web app for listening to the voicings, perhaps selecting them from a list.
+For the LCM 15@0 placement `{0, 1, 3, 5, 8, 9, 10}` the `{8, 9, 10}` cluster forces every voicing to contain at least one near-triadic step; the best score reachable from any root is `1` (achieved from roots 8 and 10 e.g. {10 1 5 9 0 3 8}, note the dim on the high end), with the remaining roots reaching `2`. The LCM 20 placement `{0, 3, 4, 7, 8, 10}` is more forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early aug chord), while other roots reach penalty `1` or `2`.
 
 The voicings for 15 and 20 sound ok but not great - there is a lot of tension in them. Perhaps due to the high dim and low aug, but perhaps due to the semitone clusters. Let's look at subsets which mitigate these clusters:
 

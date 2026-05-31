@@ -1,6 +1,6 @@
 # Melodroid 3
 
-A console application for **music research from first principles**: exploring music as the meeting point between the **physics of sound** (origin) and the **biology of human hearing** (destination).
+A program for **music research from first principles**: exploring music as the meeting point between the **physics of sound** (origin) and the **biology of human hearing** (destination).
 
 The program is exploratory — it produces artifacts you inspect, not a polished user-facing app. Current output modes:
 

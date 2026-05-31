@@ -6,7 +6,12 @@
       "Bash(Select-Object -First 20)",
       "Bash(Select-Object -First 5)",
       "Bash(xargs grep -l \"FamilyOverlapRow\\\\|KeySupersetRow\")",
-      "Bash(xargs grep -l \"Row\")"
+      "Bash(xargs grep -l \"Row\")",
+      "Bash(ls -la \"d:\\\\Code\\\\Melodroid 3\\\\\" | head -50)",
+      "Read(//d/Code/**)",
+      "Bash(Get-ChildItem -Path 'd:\\\\Code\\\\Melodroid 3' -Name *.csproj)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Code\\\\Melodroid 3\" -Recurse -Filter \"*.cs\")",
+      "Bash(Select-Object -First 20 FullName)"
     ]
   }
 }

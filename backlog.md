@@ -1,3 +1,6 @@
+# Claude
+Update claude.md to reflect the new github page docs section structure replacing the old readme style.
+
 # The sound of music
 Web app, perhaps github pages, where user can listen to proc. gen. music based on theory. Possibly use Tone.js vs. just creating a custom synth. Possibly work by generating a MIDI which is played in browser, and user can download it for inspection if something interesting happened.
 
@@ -8,8 +11,6 @@ Investigate sound of key sets with no small lcm which sound good, primarily the 
 # General
 Cleanup program for hints, e.g. collection initializations can be simplified (lots of oververbose calls)
 
-# Claude
-Update CLAUDE.md to reflect preference when composing with MIDI, e.g. avoid the melanchal traditional music conventions such as pitch names and time signatures. Work instead with rawer MIDI as we are investigating time relations as fractions and notes relative placements which are semantically closer to numbers 0-127. Will be working with MIDI editors in DAWs rather than classical sheet music.
 
 # Octave sweep
 ## Animated octave sweep
