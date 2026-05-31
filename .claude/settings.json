@@ -12,7 +12,9 @@
       "Bash(Get-ChildItem -Path 'd:\\\\Code\\\\Melodroid 3' -Name *.csproj)",
       "Bash(Get-ChildItem -Path \"D:\\\\Code\\\\Melodroid 3\" -Recurse -Filter \"*.cs\")",
       "Bash(Select-Object -First 20 FullName)",
-      "PowerShell($env:Path = \"D:\\\\Program Files\\\\nodejs;$env:Path\"; npx --yes create-docusaurus@latest website classic --typescript)"
+      "PowerShell($env:Path = \"D:\\\\Program Files\\\\nodejs;$env:Path\"; npx --yes create-docusaurus@latest website classic --typescript)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)"
     ]
   }
 }

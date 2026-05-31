@@ -13,7 +13,15 @@ The site source is under [`website/`](website/). To run it locally:
 ```bash
 cd website
 npm install
-npm run start     # http://localhost:3000 with hot reload
+npm start         # http://localhost:3000/Melodroid-3/ with hot reload
+```
+
+Similarly for production build test
+
+```bash
+cd website
+npm run build
+npm run serve         # http://localhost:3000/Melodroid-3/ with hot reload
 ```
 
 ## The C# tool
