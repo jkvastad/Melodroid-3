@@ -1,22 +1,7 @@
 # Docs
-Can't find npm or node via terminal in vs code, something went wrong during node install.
-How do i spin up the node server for local testing?
 Needs general fixing, several bugs and uglies
 
-## intro.mdx
-### Harmony as pattern recognition of simultaneous waves
-$\{1,\ 5/4,\ 3/2\}$ shows ups as {1, 5/4, 3/2}{1, 5/4, 3/2} - one in katex format and the other in plain text. Same for 
 
-$\{p_1/q_1,\ \ldots,\ p_n/q_n\}$
-
-and
-
-$$
-\mathrm{WPL} = \operatorname{lcm}(q_1,\ q_2,\ \ldots,\ q_n).
-$$
-
-
----
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
 LCM 8 under docs/theory/lcm-families#how-the-families-relate produces audible click
 
