@@ -2,6 +2,10 @@
 Update claude.md to reflect the new github page docs section structure replacing the old readme style.
 Claude MD probably needs an update after the docs rework
 
+# Docs
+Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
+How do i spin up the node server for local testing?
+
 # The sound of music
 Web app, perhaps github pages, where user can listen to proc. gen. music based on theory. Possibly use Tone.js vs. just creating a custom synth. Possibly work by generating a MIDI which is played in browser, and user can download it for inspection if something interesting happened.
 
