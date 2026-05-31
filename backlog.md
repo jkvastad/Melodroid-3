@@ -1,9 +1,27 @@
 # Docs
-Needs general fixing, several bugs and uglies
+Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
-
+## Intro (intro.mdx)
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
-LCM 8 under docs/theory/lcm-families#how-the-families-relate produces audible click
+
+## Theory
+### Good Fractions (theory/good-fractions.mdx)
+### LCM Families (theory/lcm-families.mdx)
+LCM 8 produces audible click
+### Wave Pattern Plots (theory/wave-pattern-plots.mdx)
+### Cluster Ranges (theory/cluster-ranges.mdx)
+### Playing Fractions (theory/playing-fractions.mdx)
+
+## The Keyboard
+### A Good Keyboard (keyboard/a-good-keyboard.mdx)
+### Key Sweep (keyboard/key-sweep.mdx)
+
+## The Sound of Music
+### Voicings and Placements (music/voicings-and-placements.mdx)
+### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+### On a Sour Note (music/on-a-sour-note.mdx)
+
+## CLI Reference (cli/reference.mdx)
 
 # Claude
 Update claude.md to reflect the new github page docs section structure replacing the old readme style.
