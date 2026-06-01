@@ -17,6 +17,7 @@ export type WavePlotProps = {
   subsetLcm?: number;
   differenceOnly?: boolean;
   height?: number; // px, default 360
+  title?: string; // override for the auto-generated "LCM family L=…" heading
 };
 
 type VLine = {x: number; color: string};
@@ -70,6 +71,7 @@ function buildModel(
   mode: NonNullable<WavePlotProps['mode']>,
   subsetLcm: number | undefined,
   differenceOnly: boolean,
+  titleOverride: string | undefined,
 ): PlotModel {
   const empty: PlotModel = {
     data: [[]],
@@ -77,7 +79,7 @@ function buildModel(
     yMin: -1,
     yMax: 1,
     vlines: [],
-    title: `LCM family L=${lcmValue}`,
+    title: titleOverride ?? `LCM family L=${lcmValue}`,
   };
 
   const family = lcmFamily(lcmValue, maxSize, maxPrime);
@@ -176,7 +178,8 @@ function buildModel(
             : ' — difference'
           : '';
   const subSuffix = subsetLcm === undefined ? '' : ` + sub L=${subsetLcm}`;
-  const title = `LCM family L=${lcmValue} (${n} fractions)${modeSuffix}${subSuffix}`;
+  const base = titleOverride ?? `LCM family L=${lcmValue} (${n} fractions)`;
+  const title = `${base}${modeSuffix}${subSuffix}`;
 
   return {data, series, yMin: -(n + 1), yMax: n + 1, vlines, title};
 }
@@ -190,6 +193,7 @@ export default function WavePlotClient({
   subsetLcm,
   differenceOnly = false,
   height = 360,
+  title,
 }: WavePlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
@@ -210,8 +214,9 @@ export default function WavePlotClient({
         mode,
         subsetLcm,
         differenceOnly,
+        title,
       ),
-    [lcm, maxSize, maxPrime, spp, mode, subsetLcm, differenceOnly],
+    [lcm, maxSize, maxPrime, spp, mode, subsetLcm, differenceOnly, title],
   );
 
   vlinesRef.current = model.vlines;
@@ -225,8 +230,8 @@ export default function WavePlotClient({
   // but not on spp. Re-creating uPlot only when this key changes lets a pure
   // spp change update data in place and keep any drag-zoom.
   const structureKey = useMemo(
-    () => [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height].join('|'),
-    [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height],
+    () => [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height, title].join('|'),
+    [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height, title],
   );
 
   useEffect(() => {

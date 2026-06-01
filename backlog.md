@@ -2,13 +2,13 @@
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
 ## Intro (intro.mdx)
-Show major chord wave pattern plot - perhaps
-Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
+Plot does not render until after having opened the wave pattern plots page?
 
 ## Theory
 ### Good Fractions (theory/good-fractions.mdx)
 ### LCM Families (theory/lcm-families.mdx)
 LCM 8 produces audible click
+Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
 ### Wave Pattern Plots (theory/wave-pattern-plots.mdx)
 
 ### Cluster Ranges (theory/cluster-ranges.mdx)

@@ -3,22 +3,20 @@ sidebar_position: 1
 ---
 
 import Player from '@site/src/components/Player';
+import WavePlot from '@site/src/components/WavePlot';
 
 # Melodroid 3
 
 A program for **music research from first principles** — exploring music as the meeting point
 between the physics of sound and the biology of human hearing.
 
-## Theoretical premise
-
-Investigating the boundary conditions around which musical perception evolved. Analogous to
-studying cuisine by studying taste buds for inspiration to great recipes.
-
 ## Harmony as pattern recognition of simultaneous waves
 
 We study musical harmony as **pattern recognition of simultaneous waves**. For example, a major
 chord can be expressed as fractions $\{1,\ 5/4,\ 3/2\}$. The pattern for this set of frequencies
 loops every four iterations of the base wavelength, extending over four periods of time.
+
+<WavePlot lcm={4} title="Major Chord" />
 
 <Player fractions={[1, 1.25, 1.5]} label="▶ Play the major chord {1, 5/4, 3/2}" />
 
