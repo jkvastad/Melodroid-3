@@ -58,6 +58,7 @@ type PlotModel = {
   yMin: number;
   yMax: number;
   vlines: VLine[];
+  title: string;
   error?: string;
 };
 
@@ -70,7 +71,14 @@ function buildModel(
   subsetLcm: number | undefined,
   differenceOnly: boolean,
 ): PlotModel {
-  const empty: PlotModel = {data: [[]], series: [{}], yMin: -1, yMax: 1, vlines: []};
+  const empty: PlotModel = {
+    data: [[]],
+    series: [{}],
+    yMin: -1,
+    yMax: 1,
+    vlines: [],
+    title: `LCM family L=${lcmValue}`,
+  };
 
   const family = lcmFamily(lcmValue, maxSize, maxPrime);
   if (family.length === 0) {
@@ -156,7 +164,21 @@ function buildModel(
     }
   }
 
-  return {data, series, yMin: -(n + 1), yMax: n + 1, vlines};
+  // Mirror the title format of LcmFamilyWaveformRenderer.cs.
+  const modeSuffix =
+    mode === 'sum'
+      ? ' — sum'
+      : mode === 'constituents'
+        ? ' — constituents'
+        : mode === 'difference'
+          ? differenceOnly
+            ? ' — difference (only)'
+            : ' — difference'
+          : '';
+  const subSuffix = subsetLcm === undefined ? '' : ` + sub L=${subsetLcm}`;
+  const title = `LCM family L=${lcmValue} (${n} fractions)${modeSuffix}${subSuffix}`;
+
+  return {data, series, yMin: -(n + 1), yMax: n + 1, vlines, title};
 }
 
 export default function WavePlotClient({
@@ -199,10 +221,14 @@ export default function WavePlotClient({
 
     const width = containerRef.current.clientWidth || 700;
     const opts: uPlot.Options = {
+      title: model.title,
       width,
       height,
       scales: {
-        x: {time: false, range: [0, lcm]},
+        // Pass-through range: data extent ([0, lcm], tight) on init/reset, but
+        // honors the zoomed bounds on drag-release (a static array would snap
+        // back, defeating drag-to-zoom).
+        x: {time: false, range: (_u, min, max) => [min, max]},
         y: {range: [model.yMin, model.yMax]},
       },
       axes: [
@@ -247,6 +273,9 @@ export default function WavePlotClient({
   return (
     <div style={{margin: '1rem 0'}}>
       <div ref={containerRef} style={{width: '100%'}} />
+      <div style={{fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem'}}>
+        drag to zoom · double-click to reset
+      </div>
       <div
         style={{
           display: 'flex',
@@ -281,7 +310,6 @@ export default function WavePlotClient({
             onChange={(e) => setSpp(Number(e.target.value))}
           />
         </label>
-        <span style={{opacity: 0.7}}>drag to zoom · double-click to reset</span>
       </div>
     </div>
   );
