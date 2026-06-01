@@ -216,7 +216,21 @@ export default function WavePlotClient({
 
   vlinesRef.current = model.vlines;
 
+  // Latest model, read by the creation effect so it can build with up-to-date
+  // data without re-running (and tearing down the plot) on every spp change.
+  const modelRef = useRef(model);
+  modelRef.current = model;
+
+  // The plot's structure (series set, title, y-bounds, size) depends on these,
+  // but not on spp. Re-creating uPlot only when this key changes lets a pure
+  // spp change update data in place and keep any drag-zoom.
+  const structureKey = useMemo(
+    () => [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height].join('|'),
+    [lcm, maxSize, maxPrime, mode, subsetLcm, differenceOnly, height],
+  );
+
   useEffect(() => {
+    const model = modelRef.current;
     if (model.error || !containerRef.current) return;
 
     const width = containerRef.current.clientWidth || 700;
@@ -255,7 +269,16 @@ export default function WavePlotClient({
       u.destroy();
       plotRef.current = null;
     };
-  }, [model, height, lcm]);
+  }, [structureKey]);
+
+  // Re-sampling (spp change) only changes the data point count, not the series
+  // structure — push it into the existing instance with resetScales=false so a
+  // drag-zoom survives. setData also triggers a redraw, repainting the vlines.
+  useEffect(() => {
+    const u = plotRef.current;
+    if (!u || model.error) return;
+    u.setData(model.data as uPlot.AlignedData, false);
+  }, [model.data, model.error]);
 
   if (model.error) {
     return (

@@ -16,7 +16,8 @@
       "PowerShell(node --version)",
       "PowerShell(npm --version)",
       "Bash(npm run *)",
-      "Bash(findstr /R \"│  *24 │  *3 │  *4 \")"
+      "Bash(findstr /R \"│  *24 │  *3 │  *4 \")",
+      "PowerShell(npm --prefix \"d:\\\\Code\\\\Melodroid 3\\\\website\" run typecheck)"
     ]
   }
 }
