@@ -272,12 +272,19 @@ export default function WavePlotClient({
   }, [structureKey]);
 
   // Re-sampling (spp change) only changes the data point count, not the series
-  // structure — push it into the existing instance with resetScales=false so a
-  // drag-zoom survives. setData also triggers a redraw, repainting the vlines.
+  // structure. setData(_, false) updates the data WITHOUT ever repainting (uPlot
+  // only commits on a scale reset), so repaint via the full-reset path
+  // (setData(_, true), the same path uPlot uses on init) and then restore the
+  // previous x view — keeping any drag-zoom intact. Both calls run synchronously
+  // before the browser paints, so the full-extent draw never flashes.
   useEffect(() => {
     const u = plotRef.current;
     if (!u || model.error) return;
-    u.setData(model.data as uPlot.AlignedData, false);
+    const {min, max} = u.scales.x;
+    u.setData(model.data as uPlot.AlignedData, true);
+    if (min != null && max != null) {
+      u.setScale('x', {min, max});
+    }
   }, [model.data, model.error]);
 
   if (model.error) {
