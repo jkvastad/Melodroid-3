@@ -14,7 +14,9 @@
       "Bash(Select-Object -First 20 FullName)",
       "PowerShell($env:Path = \"D:\\\\Program Files\\\\nodejs;$env:Path\"; npx --yes create-docusaurus@latest website classic --typescript)",
       "PowerShell(node --version)",
-      "PowerShell(npm --version)"
+      "PowerShell(npm --version)",
+      "Bash(npm run *)",
+      "Bash(findstr /R \"│  *24 │  *3 │  *4 \")"
     ]
   }
 }

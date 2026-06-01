@@ -2,6 +2,8 @@
 sidebar_position: 3
 ---
 
+import WavePlot from '@site/src/components/WavePlot';
+
 # Wave Pattern Plots
 
 The LCM of a family is its **wave pattern length** (WPL): the number of reference periods over
@@ -17,49 +19,47 @@ together with their sum. Every component sine completes an integer number of cyc
 $t = \mathrm{LCM}$ and returns to zero, so the summed pattern closes at the endpoint — the wave
 pattern visibly repeats with period LCM.
 
-```bash
-dotnet run -- plot lcm-families --lcm 6
-```
+The plots below are **computed live in your browser** from the same good-fraction / LCM-family
+math as the rest of the program — drag to zoom, double-click to reset, and use the controls
+beneath each plot to switch modes or change the sample density. Each fraction's sine is drawn in
+its own colour, the superposition in thick black, and a dashed vertical line marks
+$t = \mathrm{LCM}$. Here is the LCM-6 family:
 
-writes `output/plots/lcm-family-6.png`. The PNG overlays each fraction's sine in its own colour
-and draws the superposition in thick black; a dashed vertical line marks $t = \mathrm{LCM}$.
-
-![Wave pattern plot for the LCM-6 family](/img/plots/lcm-family-6.png)
+<WavePlot lcm={6} />
 
 ## Sum and constituent views
 
-`--mode sum` plots only the superposition (`lcm-family-{lcm}-sum.png`); `--mode constituents`
-plots only the individual sines with no sum overlay (`lcm-family-{lcm}-constituents.png`). The
-y-axis range is identical across all three modes, so the views are directly comparable.
+The **sum** mode plots only the superposition; **constituents** mode plots only the individual
+sines with no sum overlay. The y-axis range is identical across all modes, so the views are
+directly comparable — switch between them with the mode control.
 
-![LCM-6 superposition only](/img/plots/lcm-family-6-sum.png)
+<WavePlot lcm={6} mode="sum" />
 
-![LCM-6 constituents only](/img/plots/lcm-family-6-constituents.png)
+<WavePlot lcm={6} mode="constituents" />
 
 ## Highlighting a sub-family
 
-`--subset-lcm K` highlights a literal-subset family inside the parent plot. Because a family's
-WPL equals its LCM, whenever $K$ divides `--lcm` the sub-family's pattern tiles
+Passing a `subsetLcm` highlights a literal-subset family inside the parent plot. Because a
+family's WPL equals its LCM, whenever $K$ divides the parent LCM the sub-family's pattern tiles
 $\mathrm{LCM} / K$ times across the parent window — e.g. LCM 4 fits twice into LCM 8, LCM 3 fits
 eight times into LCM 24. Blue dashed lines mark each multiple of $K$, and the sub-family's own
-superposition is drawn in solid blue. $K$ must divide `--lcm`, and the family at $K$ must exist
-under the current `--max-size` / `--max-prime`. The filename gains a `-sub{K}` suffix.
+superposition is drawn in solid blue. $K$ must divide the parent LCM, and the family at $K$ must
+exist under the current size / prime limits.
 
-![LCM-24 with the LCM-3 sub-family highlighted](/img/plots/lcm-family-24-sub3.png)
+<WavePlot lcm={24} subsetLcm={3} />
 
 ## The residual (difference mode)
 
-`--mode difference` isolates the residual — the parent's superposition minus the subset's. By
+The **difference** mode isolates the residual — the parent's superposition minus the subset's. By
 default it overlays three curves: the parent sum (black), the subset sum (blue), and the
 difference (red), keeping the subset's dashed period markers for reference. Where the subset
 captures the bulk of the pattern the residual stays small; where the parent adds genuinely new
-structure it swings wide. `--difference-only` drops the two reference sums and plots just the
-red residual. Requires `--subset-lcm`.
+structure it swings wide.
 
-![LCM-24 residual against its LCM-4 sub-family](/img/plots/lcm-family-24-difference-sub4.png)
+<WavePlot lcm={24} subsetLcm={4} mode="difference" />
 
-:::note Regenerating these plots
-The PNGs are produced by `dotnet run -- plot lcm-families ...` (see the
-[CLI reference](../cli/reference.mdx)) and copied into `static/img/plots/`. Regenerate and
-re-copy when the plotting logic changes.
+:::note Rendering these as PNGs
+The same plots can be produced as static images with `dotnet run -- plot lcm-families ...` (see the
+[CLI reference](../cli/reference.mdx)) — handy for slides or print. The interactive versions on this
+page are computed directly from the theory, so they always stay in sync with the model.
 :::

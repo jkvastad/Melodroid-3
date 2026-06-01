@@ -2,6 +2,7 @@
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
 ## Intro (intro.mdx)
+Show major chord wave pattern plot - perhaps
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
 
 ## Theory
@@ -9,6 +10,10 @@ Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it 
 ### LCM Families (theory/lcm-families.mdx)
 LCM 8 produces audible click
 ### Wave Pattern Plots (theory/wave-pattern-plots.mdx)
+Ineractive plots look pretty good, but:
+* No headings
+* "drag to zoom · double-click to reset" next to the samples/period seems strange - dragging the slider does not zoom the plot, nor does double clicking the slider reset it.
+
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 
