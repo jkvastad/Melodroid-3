@@ -9,12 +9,7 @@ export default function Home(): ReactNode {
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
       <main style={{maxWidth: 760, margin: '0 auto', padding: '4rem 1rem'}}>
         <h1>{siteConfig.title}</h1>
-        <p style={{fontSize: '1.2rem'}}>{siteConfig.tagline}</p>
-        <p>
-          Music research from first principles — harmony as pattern recognition
-          of simultaneous waves, explored at the meeting point of the physics of
-          sound and the biology of human hearing.
-        </p>
+        <p style={{fontSize: '1.2rem'}}>{siteConfig.tagline}</p>        
         <Link className="button button--primary button--lg" to="/docs/intro">
           Read the theory →
         </Link>

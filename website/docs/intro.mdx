@@ -20,8 +20,8 @@ loops every four iterations of the base wavelength, extending over four periods 
 
 <Player fractions={[1, 1.25, 1.5]} label="▶ Play the major chord {1, 5/4, 3/2}" />
 
-The **wave pattern length** (WPL) is the least common multiple (LCM) of the set's denominators —
-for a chord $\{p_1/q_1,\ \ldots,\ p_n/q_n\}$,
+As can be seen, this creates a pattern of waves over time. The **wave pattern length** (WPL) is the least common multiple (LCM) of the set's denominators —
+for a chord $\{p_1/q_1,\ \ldots,\ p_n/q_n\}$ the WPL is:
 
 $$
 \mathrm{WPL} = \operatorname{lcm}(q_1,\ q_2,\ \ldots,\ q_n).
@@ -30,7 +30,7 @@ $$
 ### From pattern length to a hearing constraint
 
 Given the lower frequency threshold of human hearing at about $20\ \mathrm{Hz}$, a wave pattern
-lasting more than roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a unit. The **wave
+lasting more than roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a pattern. The **wave
 pattern duration** (WPD) for a fundamental $f_0$ is
 
 $$
@@ -40,22 +40,5 @@ $$
 For a fundamental of $100\ \mathrm{Hz}$, the major chord (WPL $4$) gives
 $\mathrm{WPD} = 4 \cdot \frac{1000}{100} = 40\ \mathrm{ms}$ — just inside the ceiling.
 
-Music (at least orchestra and opera) lives mostly in the C2–C6 range (≈ 65–1047 Hz fundamental;
-call it 100–1000 Hz for simplicity). Lower frequencies produce longer-duration patterns, so
+Music (at least orchestra and opera) lives mostly in the C2–C6 range (≈ 65–1047 Hz fundamental). Lower frequencies produce longer-duration patterns, so
 $100\ \mathrm{Hz}$ serves as a useful worst case for WPD.
-
-### Octave equivalence
-
-Music is octave-equivalent, so all fractions are mapped onto $[1, 2)$. Any note in a set may be
-renormalised as the base wavelength; resulting fractions below one are doubled until they land in
-$[1, 2)$. For instance, $\{1,\ 5/4,\ 3/2\}$ renormalised to base $5/4$ becomes
-$\{4/5,\ 1,\ 6/5\}$, which octave-normalises to $\{1,\ 6/5,\ 8/5\}$.
-
-This means numerators share the same constraints as denominators, so there are only so many
-**good fractions** available to construct wave patterns.
-
-:::note Where this goes next
-The [LCM Families](./theory/lcm-families.mdx) page builds on this: given the good fractions, which
-subsets share a wave pattern length, and how do those families relate under octave equivalence —
-as literal subsets, isomorphisms, or renormalised subsets?
-:::

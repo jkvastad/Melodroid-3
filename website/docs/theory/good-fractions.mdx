@@ -7,19 +7,24 @@ import Player from '@site/src/components/Player';
 # Good Fractions
 
 When expressing simultaneous notes as fractions of a reference note, some fractions are better
-than others for forming a repeating pattern in the combined wave. A **good fraction** is one
-whose numerator and denominator are both small and built only from small primes — the two
-properties that keep the [wave pattern length](../intro.mdx) short.
+than others at forming a repeating pattern over a short time period. 
 
-## Why only "so many" fractions
+A **good fraction** is one whose numerator and denominator are both small and built only from small primes — the two
+properties that keep the [wave pattern length](../intro.mdx#harmony-as-pattern-recognition-of-simultaneous-waves) short.
+The idea is that the brain hears real valued frequencies and maps them onto good fractions for pattern matching.
 
-Recall the hearing constraint: with a $20\ \mathrm{Hz}$ floor, a wave pattern lasting more than
-roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a unit, and $100\ \mathrm{Hz}$ is a
-useful worst-case fundamental. At $100\ \mathrm{Hz}$ a strict $10\ \mathrm{ms}$ reading would
-cap the WPL at $5$ — very few patterns. The limit is fuzzy, though, and the real ceiling is
-likely higher.
+The reason numerators also contribute to low WPL is because music is octave-equivalent, meaning all fractions are mapped onto $[1, 2)$. 
+Any note in a set may be renormalised as the base wavelength; resulting fractions below one are doubled until they land in $[1, 2)$. 
 
-Two levers keep the WPL manageable:
+For instance, $\{1,\ 5/4,\ 3/2\}$ renormalised to base $5/4$ becomes $\{4/5,\ 1,\ 6/5\}$, which octave-normalises to $\{1,\ 6/5,\ 8/5\}$.
+The numerator then becomes a factor in the denominator, illustrating why numerators share the same constraints as denominators.
+
+## We happy few
+
+Fractions decide the length of a wave pattern, but recall that wave pattern lengths have an upper bound via a wave pattern duration of some $50\ \mathrm{ms}$. At $100\ \mathrm{Hz}$ a single wave takes $10\ \mathrm{ms}$ and would
+cap the WPL at $5$, allowing very few patterns. However, this limit is an estimate, and the real ceiling is likely higher. Which fractions then are useful for constructing patterns?
+
+Two factors keep the WPL manageable:
 
 - **Small numerators/denominators.** The WPL is the $\operatorname{lcm}$ of the denominators,
   so small values keep it low; by octave equivalence the numerators inherit the same
@@ -28,10 +33,8 @@ Two levers keep the WPL manageable:
   cancel against each other when a set is renormalised to a different base, keeping the total
   WPL lenient.
 
-In practice we allow a WPL of up to **24**. This is heavily informed by the fact that the major
-scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. For
-comparison, 12-tone equal temperament (12-TET) approximates its semitone with the largest good
-denominator, $16/15$.
+In practice a WPL of up to **24** is of interest. This is heavily influenced by the fact that the major
+scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. WPL $24$ also allows the 12-tone equal temperament (12-TET) semitone approximation $16/15$.
 
 ## Definition
 

@@ -1,11 +1,15 @@
 # Docs
+* Note that there is a high severity vulnerability in serialize-javascript <=7.0.4 which is a false alarm because the only input which could be rce is on build side. Just wait for docusaurus to patch it out. Do not npm audit fix --force, which would attempt a breaking major upgrade.
+
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
 ## Intro (intro.mdx)
-Plot does not render until after having opened the wave pattern plots page?
+Perhaps playing a sound should not be infinite duration per default?
 
 ## Theory
+Perhaps the docusaurus default boxed layout of subsections should instead be a list as sections build on each other top to bottom?
 ### Good Fractions (theory/good-fractions.mdx)
+Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### LCM Families (theory/lcm-families.mdx)
 LCM 8 produces audible click
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
