@@ -122,8 +122,43 @@ flowchart TD
     L20 -. "b=3/2" .-> L15
 ```
 
-:::tip Regenerating this graph
-This diagram is the output of `melodroid graph lcm-families` (which writes
+In a more concise, collapsed form, each node is one isomorphism class (singletons included), and
+class-to-class edges are deduplicated and Hasse-reduced per kind:
+
+```mermaid
+flowchart TD
+    C1["class 1<br/>{LCM=1}"]
+    C2["class 2<br/>{LCM=2}"]
+    C3["class 3<br/>{LCM=3, 4}"]
+    C4["class 4<br/>{LCM=5, 6}"]
+    C5["class 5<br/>{LCM=8, 9, 10, 12}"]
+    C6["class 6<br/>{LCM=15}"]
+    C7["class 7<br/>{LCM=18}"]
+    C8["class 8<br/>{LCM=20}"]
+    C9["class 9<br/>{LCM=24}"]
+
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+    C4 --> C5
+    C4 --> C6
+    C5 --> C7
+    C5 --> C8
+    C5 --> C9
+    C2 -.-> C3
+    C3 -.-> C4
+    C4 -.-> C5
+    C5 -.-> C7
+    C5 -.-> C8
+    C7 -.-> C6
+    C7 -.-> C9
+    C8 -.-> C6
+```
+From this we see that all LCM families pool into either the odd-length LCM 15 or even length LCM 24.
+
+
+{/*
+Regenerating this graph: this diagram is the output of `melodroid graph lcm-families` (which writes
 `output/graphs/lcm-families.md`). When the relation logic changes, regenerate and re-paste the
 Mermaid block above.
-:::
+*/}
