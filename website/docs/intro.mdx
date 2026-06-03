@@ -5,10 +5,11 @@ sidebar_position: 1
 import Player from '@site/src/components/Player';
 import WavePlot from '@site/src/components/WavePlot';
 
-# Melodroid 3
+# Melodroid
 
 A program for **music research from first principles** — exploring music as the meeting point
-between the physics of sound and the biology of human hearing.
+between the physics of sound and the biology of human hearing. 
+Melodroid is mainly a CLI program producing various plots and printouts for study, and this companion website works as docs and explains theory.
 
 ## Harmony as pattern recognition of simultaneous waves
 
@@ -27,6 +28,8 @@ $$
 \mathrm{WPL} = \operatorname{lcm}(q_1,\ q_2,\ \ldots,\ q_n).
 $$
 
+The idea is that the brain might have evolved to find these kinds of patterns in sound and uses them for our perception of music.
+
 ### From pattern length to a hearing constraint
 
 Given the lower frequency threshold of human hearing at about $20\ \mathrm{Hz}$, a wave pattern
@@ -41,4 +44,5 @@ For a fundamental of $100\ \mathrm{Hz}$, the major chord (WPL $4$) gives
 $\mathrm{WPD} = 4 \cdot \frac{1000}{100} = 40\ \mathrm{ms}$ — just inside the ceiling.
 
 Music (at least orchestra and opera) lives mostly in the C2–C6 range (≈ 65–1047 Hz fundamental). Lower frequencies produce longer-duration patterns, so
-$100\ \mathrm{Hz}$ serves as a useful worst case for WPD.
+$100\ \mathrm{Hz}$ serves as a useful worst case for WPD. 
+We will show in the theory section how this simple constraint could lead to consequences for everything from chord progressions to an optimal number of keys for a piano.

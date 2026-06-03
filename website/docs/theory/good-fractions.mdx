@@ -34,7 +34,7 @@ Two factors keep the WPL manageable:
   WPL lenient.
 
 In practice a WPL of up to **24** is of interest. This is heavily influenced by the fact that the major
-scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. WPL $24$ also allows the 12-tone equal temperament (12-TET) semitone approximation $16/15$.
+scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. WPL $24$ also allows the 12-tone equal temperament (12-TET) semitone approximation $16/15$, as well as a combination of WPL $8$ and $3$.
 
 ## Definition
 
@@ -50,7 +50,7 @@ Every good fraction is mapped onto $[1, 2)$ by octave equivalence.
 ## Listing them
 
 ```bash
-dotnet run -- table good-fractions
+melodroid table good-fractions
 ```
 
 Options: `--max-size` (default 24), `--max-prime` (default 5). See the

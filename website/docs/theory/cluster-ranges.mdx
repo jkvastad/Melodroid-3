@@ -20,7 +20,7 @@ a + ac = b - bc \quad\Longrightarrow\quad c = \frac{b - a}{b + a}.
 $$
 
 ```bash
-dotnet run -- table bin-overlaps
+melodroid table bin-overlaps
 ```
 
 prints, for each adjacent pair of good fractions, the bin radius $c$ at which their JND bins
@@ -42,7 +42,7 @@ For bin radius below $1/161$ no bins overlap and binning is unambiguous. If ever
 bins to a good fraction at a given reference point, that is a **full match**.
 
 ```bash
-dotnet run -- table octave-sweep --ratios 1.0 1.25 1.5
+melodroid table octave-sweep --ratios 1.0 1.25 1.5
 ```
 
 Each row shows the reference ratio, one cell per good-fraction column (signed % distance when

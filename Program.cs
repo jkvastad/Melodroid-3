@@ -858,7 +858,7 @@ class Program
         var plotCommand = new Command("plot", "Plot-output commands (PNG).");
         plotCommand.Add(plotLcmFamiliesCommand);
 
-        var root = new RootCommand("Melodroid 3 — music research from first principles.");
+        var root = new RootCommand("Melodroid — music research from first principles.");
         root.Add(tableCommand);
         root.Add(graphCommand);
         root.Add(plotCommand);

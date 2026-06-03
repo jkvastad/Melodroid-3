@@ -1,0 +1,52 @@
+---
+sidebar_position: 1
+---
+
+# Installation
+
+Melodroid is a command-line program. Grab a prebuilt binary for your platform, then run it from a
+terminal.
+
+## Download a release
+
+1. Open the project's [**Releases**](https://github.com/jkvastad/Melodroid-3/releases) page.
+2. Download the archive matching your operating system:
+   - `melodroid-<version>-win-x64.zip` — Windows (Intel/AMD)
+   - `melodroid-<version>-linux-x64.tar.gz` — Linux (Intel/AMD)
+   - `melodroid-<version>-osx-x64.tar.gz` — macOS (Intel)
+   - `melodroid-<version>-osx-arm64.tar.gz` — macOS (Apple silicon)
+3. Unzip / untar it. The binaries are **self-contained** — you do not need the .NET runtime
+   installed.
+
+## Run it
+
+From the folder you extracted into:
+
+```bash
+# Windows
+melodroid table good-fractions
+
+# Linux / macOS
+./melodroid table good-fractions
+```
+
+Each command writes its artifact under `output/<category>/` (relative to your current working
+directory) and prints the path. See the [CLI reference](./reference.mdx) for the full command
+surface.
+
+:::note Linux: plot commands need libfontconfig
+The `plot` commands render PNGs via SkiaSharp, which needs **fontconfig** at runtime. On a minimal
+Linux install run `sudo apt-get install libfontconfig1` (or your distro's equivalent) if plotting
+fails. The table and graph commands are unaffected.
+:::
+
+## Building from source
+
+Contributors working from a clone run the same commands through the .NET SDK instead of the
+prebuilt binary — replace `melodroid` with `dotnet run --`:
+
+```bash
+dotnet run -- table good-fractions
+```
+
+See the repository `CLAUDE.md` for the full build / run / test workflow.

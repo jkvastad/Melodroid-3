@@ -36,7 +36,7 @@ A pure-triadic voicing scores $0$; the score grows as the voicing is forced into
 wides.
 
 ```bash
-dotnet run -- table voicings --lcm 24 --ktet 12
+melodroid table voicings --lcm 24 --ktet 12
 ```
 
 prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. Each row is
@@ -115,7 +115,7 @@ prime 5, up to LCM 24, two supersets contain all other full matches. We call the
 LCM families**: a family is maximal iff it is never a proper subset of any other.
 
 ```bash
-dotnet run -- table chord-melody --chord-keys 0 4 7 --ktet 12
+melodroid table chord-melody --chord-keys 0 4 7 --ktet 12
 ```
 
 renders a matrix: rows are the maximal-LCM placements containing the chord (sorted by LCM then

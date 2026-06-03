@@ -26,7 +26,7 @@ Sometimes we must be explicit about the shape of a chord, e.g. "$24@0$ voiced as
 dissonance from adjacent keys (a semitone voiced as `{0, 1}` versus the gentler `{0, 13}`).
 
 ```bash
-dotnet run -- table placement --lcm 4 --at 0 --ktet 12
+melodroid table placement --lcm 4 --at 0 --ktet 12
 ```
 
 prints `4@0` (keys `0 4 7`, the C major triad). `--at 7` gives `4@7` (keys `7 11 2`, G major).
@@ -36,7 +36,7 @@ for comparing isomorphic placements.
 ## Overlap with a reference family
 
 ```bash
-dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12
+melodroid table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12
 ```
 
 sweeps the major-triad shape (LCM 4) against the C major scale (`24@0` = `{0 2 4 5 7 9 11}`). At
@@ -48,7 +48,7 @@ reference's pitch set.
 ## Which placements contain a chord
 
 ```bash
-dotnet run -- table key-supersets --keys 0 4 7 --ktet 12
+melodroid table key-supersets --keys 0 4 7 --ktet 12
 ```
 
 lists every placement whose keys contain the C major triad. The `Extra` column lists the keys a

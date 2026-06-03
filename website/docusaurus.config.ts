@@ -7,7 +7,7 @@ import rehypeKatex from 'rehype-katex';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Melodroid 3',
+  title: 'Melodroid',
   tagline: 'A program for exploring music',
   favicon: 'img/favicon.ico',
 
@@ -64,9 +64,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Melodroid 3',
+      title: 'Melodroid',
       logo: {
-        alt: 'Melodroid 3 Logo',
+        alt: 'Melodroid Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -105,7 +105,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Melodroid 3. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Melodroid. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

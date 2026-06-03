@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # CLI Reference
@@ -13,7 +13,7 @@ good-fraction options appear on most commands: `--max-size` (default 24), `--max
 ### `good-fractions`
 
 ```bash
-dotnet run -- table good-fractions [--max-size 24] [--max-prime 5]
+melodroid table good-fractions [--max-size 24] [--max-prime 5]
 ```
 
 Prints the good fractions for the given size/prime limits.
@@ -21,7 +21,7 @@ Prints the good fractions for the given size/prime limits.
 ### `lcm-families`
 
 ```bash
-dotnet run -- table lcm-families [--max-size 24] [--max-prime 5] [--max-lcm 24]
+melodroid table lcm-families [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
 Prints the LCM families, ascending by LCM, empty families omitted.
@@ -29,7 +29,7 @@ Prints the LCM families, ascending by LCM, empty families omitted.
 ### `bin-overlaps`
 
 ```bash
-dotnet run -- table bin-overlaps [--max-size 24] [--max-prime 5]
+melodroid table bin-overlaps [--max-size 24] [--max-prime 5]
 ```
 
 For each adjacent pair of good fractions, the bin radius
@@ -39,7 +39,7 @@ touch. The caption reports the minimum $c$ — the binding constraint.
 ### `octave-sweep`
 
 ```bash
-dotnet run -- table octave-sweep --ratios 1.0 1.25 1.5 \
+melodroid table octave-sweep --ratios 1.0 1.25 1.5 \
   [--sweep-step 0.001] [--bin-radius 1/161] [--only-full-matches] \
   [--only-centered-full-matches] [--max-size 24] [--max-prime 5]
 ```
@@ -51,7 +51,7 @@ $[1, 2)$).
 ### `ktet-cutoffs`
 
 ```bash
-dotnet run -- table ktet-cutoffs [--max-k 50] [--only-strictly-improving] \
+melodroid table ktet-cutoffs [--max-k 50] [--only-strictly-improving] \
   [--max-size 24] [--max-prime 5]
 ```
 
@@ -60,7 +60,7 @@ Lists the worst-case covering radius $c_k$ per $k$, its limiting fraction, and t
 ### `key-sweep`
 
 ```bash
-dotnet run -- table key-sweep --ktet 12 (--keys 0 4 7 | --ratios 1.0 1.25 1.5) \
+melodroid table key-sweep --ktet 12 (--keys 0 4 7 | --ratios 1.0 1.25 1.5) \
   [--bin-radius c_k] [--only-full-matches] [--max-size 24] [--max-prime 5]
 ```
 
@@ -70,7 +70,7 @@ Like the octave sweep but stepping through the $k$ keys of the tuning. At least 
 ### `placement`
 
 ```bash
-dotnet run -- table placement --lcm 4 [4 ...] --at 0 \
+melodroid table placement --lcm 4 [4 ...] --at 0 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -79,7 +79,7 @@ Prints the keys and fractions for one or more LCM placements at a shared anchor.
 ### `family-overlap`
 
 ```bash
-dotnet run -- table family-overlap --lcm-sweep 4 --lcm-ref 24 \
+melodroid table family-overlap --lcm-sweep 4 --lcm-ref 24 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -88,7 +88,7 @@ Sweeps one LCM shape against a reference family; green rows sit wholly inside th
 ### `key-supersets`
 
 ```bash
-dotnet run -- table key-supersets --keys 0 4 7 \
+melodroid table key-supersets --keys 0 4 7 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -97,7 +97,7 @@ Lists every placement whose keys contain the requested set, tightest fits first.
 ### `voicings`
 
 ```bash
-dotnet run -- table voicings (--lcm 24 | --keys 0 4 7) \
+melodroid table voicings (--lcm 24 | --keys 0 4 7) \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -106,7 +106,7 @@ Lowest-penalty voicings from each root. Exactly one of `--lcm` / `--keys`.
 ### `chord-melody`
 
 ```bash
-dotnet run -- table chord-melody --chord-keys 0 4 7 \
+melodroid table chord-melody --chord-keys 0 4 7 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -117,7 +117,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 ### `lcm-families`
 
 ```bash
-dotnet run -- graph lcm-families [--mode full|collapsed] \
+melodroid graph lcm-families [--mode full|collapsed] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -129,7 +129,7 @@ class into a single node.
 ### `lcm-families`
 
 ```bash
-dotnet run -- plot lcm-families --lcm 6 [--mode all|sum|constituents|difference] \
+melodroid plot lcm-families --lcm 6 [--mode all|sum|constituents|difference] \
   [--subset-lcm K] [--difference-only] [--samples-per-period 200] \
   [--max-size 24] [--max-prime 5]
 ```

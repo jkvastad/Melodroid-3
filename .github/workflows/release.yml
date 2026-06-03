@@ -1,0 +1,84 @@
+name: Build and publish melodroid binaries
+
+on:
+  # Cut a release by pushing a version tag, e.g. v3.0.0.
+  push:
+    tags: ['v*.*.*']
+  # Allow manual dry runs from the Actions tab.
+  workflow_dispatch:
+
+# Needed to create the GitHub Release and upload assets.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            archive: zip
+          - rid: linux-x64
+            os: ubuntu-latest
+            archive: tar
+          - rid: osx-x64
+            os: macos-latest
+            archive: tar
+          - rid: osx-arm64
+            os: macos-latest
+            archive: tar
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish self-contained single-file binary
+        run: >
+          dotnet publish "Melodroid 3.csproj"
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish/${{ matrix.rid }}
+
+      # Use the tag for the version when present, otherwise mark a manual run.
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package (zip)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $name = "melodroid-${{ steps.version.outputs.value }}-${{ matrix.rid }}.zip"
+          Compress-Archive -Path "publish/${{ matrix.rid }}/*" -DestinationPath $name
+
+      - name: Package (tar.gz)
+        if: matrix.archive == 'tar'
+        shell: bash
+        run: |
+          name="melodroid-${{ steps.version.outputs.value }}-${{ matrix.rid }}.tar.gz"
+          tar -czf "$name" -C "publish/${{ matrix.rid }}" .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: melodroid-${{ matrix.rid }}
+          path: melodroid-*.${{ matrix.archive == 'zip' && 'zip' || 'tar.gz' }}
+
+      - name: Attach to release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: melodroid-*.${{ matrix.archive == 'zip' && 'zip' || 'tar.gz' }}
