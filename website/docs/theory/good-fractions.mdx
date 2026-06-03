@@ -19,17 +19,17 @@ Any note in a set may be renormalised as the base wavelength; resulting fraction
 For instance, $\{1,\ 5/4,\ 3/2\}$ renormalised to base $5/4$ becomes $\{4/5,\ 1,\ 6/5\}$, which octave-normalises to $\{1,\ 6/5,\ 8/5\}$.
 The numerator then becomes a factor in the denominator, illustrating why numerators share the same constraints as denominators.
 
-## We happy few
+## We Happy Few
 
 Fractions decide the length of a wave pattern, but recall that wave pattern lengths have an upper bound via a wave pattern duration of some $50\ \mathrm{ms}$. At $100\ \mathrm{Hz}$ a single wave takes $10\ \mathrm{ms}$ and would
-cap the WPL at $5$, allowing very few patterns. However, this limit is an estimate, and the real ceiling is likely higher. Which fractions then are useful for constructing patterns?
+cap the WPL at $5$, allowing very few patterns. However, this limit is an estimate, and the real ceiling could be higher. Which fractions then are useful for constructing patterns?
 
 Two factors keep the WPL manageable:
 
 - **Small numerators/denominators.** The WPL is the $\operatorname{lcm}$ of the denominators,
   so small values keep it low; by octave equivalence the numerators inherit the same
   constraint.
-- **Small primes.** Because the WPL is an LCM, denominators built from small primes ($2, 3, 5$)
+- **Small primes.** Because the WPL is an $\operatorname{lcm}$, denominators built from small primes ($2, 3, 5$)
   cancel against each other when a set is renormalised to a different base, keeping the total
   WPL lenient.
 
@@ -45,9 +45,7 @@ The possible good fractions are therefore a function of two parameters:
 
 Every good fraction is mapped onto $[1, 2)$ by octave equivalence.
 
-<Player fractions={[1, 1.25, 1.5]} label="▶ A good-fraction chord {1, 5/4, 3/2}" />
-
-## Listing them
+## Listing Fractions
 
 ```bash
 melodroid table good-fractions
@@ -55,3 +53,9 @@ melodroid table good-fractions
 
 Options: `--max-size` (default 24), `--max-prime` (default 5). See the
 [CLI reference](../cli/reference.mdx) for the full command surface.
+
+With the defaults (`--max-size 24`, `--max-prime 5`) this yields 13 good fractions:
+
+$$
+\frac{1}{1},\ \frac{16}{15},\ \frac{10}{9},\ \frac{9}{8},\ \frac{6}{5},\ \frac{5}{4},\ \frac{4}{3},\ \frac{3}{2},\ \frac{8}{5},\ \frac{5}{3},\ \frac{16}{9},\ \frac{9}{5},\ \frac{15}{8}
+$$
