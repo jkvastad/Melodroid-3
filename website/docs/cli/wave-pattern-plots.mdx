@@ -1,6 +1,10 @@
 ---
 sidebar_position: 3
+title: Wave Pattern Plots
+description: Plotting LCM families
 ---
+
+{/* Relocated from the Theory section: this page is mostly worked CLI examples for `plot lcm-families`. */}
 
 import WavePlot from '@site/src/components/WavePlot';
 
@@ -23,27 +27,46 @@ pattern visibly repeats with period LCM.
 
 ## Highlighting a sub-family
 
-Passing a `subsetLcm` highlights a literal-subset family inside the parent plot. Because a
-family's WPL equals its LCM, whenever $K$ divides the parent LCM the sub-family's pattern tiles
-$\mathrm{LCM} / K$ times across the parent window — e.g. LCM 4 fits twice into LCM 8, LCM 3 fits
-eight times into LCM 24. Blue dashed lines mark each multiple of $K$, and the sub-family's own
-superposition is drawn in solid blue. $K$ must divide the parent LCM, and the family at $K$ must
-exist under the current size / prime limits.
+A literal-subset family can be highlighted inside the parent plot. Because a family's WPL equals
+its LCM, whenever $K$ divides the parent LCM the sub-family's pattern tiles $\mathrm{LCM} / K$ times
+across the parent window — e.g. LCM 4 fits twice into LCM 8, LCM 3 fits eight times into LCM 24.
+
+```bash
+melodroid plot lcm-families --lcm 24 --subset-lcm 3
+```
+
+Options: `--subset-lcm K` (the sub-family LCM to highlight), `--max-size` (default 24),
+`--max-prime` (default 5). See the
+[CLI reference](./reference.mdx#lcm-families-2) for the full command surface. $K$ must divide
+the parent LCM, and the family at $K$ must exist under the current size / prime limits.
+
+Blue dashed lines mark each multiple of $K$, and the sub-family's own superposition is drawn in
+solid blue. Highlighting LCM 3 inside LCM 24 shows the eight tilings:
 
 <WavePlot lcm={24} subsetLcm={3} />
 
 ## The residual (difference mode)
 
-The **difference** mode isolates the residual — the parent's superposition minus the subset's. By
-default it overlays three curves: the parent sum (black), the subset sum (blue), and the
+The **difference** mode isolates the residual — the parent's superposition minus the subset's.
+
+```bash
+melodroid plot lcm-families --lcm 24 --subset-lcm 4 --mode difference
+```
+
+Options: `--mode difference` (isolate the residual), `--subset-lcm K` (the subtracted sub-family),
+`--difference-only` (drop the parent and subset curves, plot only the residual), `--max-size`
+(default 24), `--max-prime` (default 5). See the
+[CLI reference](./reference.mdx#lcm-families-2) for the full command surface.
+
+By default it overlays three curves: the parent sum (black), the subset sum (blue), and the
 difference (red), keeping the subset's dashed period markers for reference. Where the subset
 captures the bulk of the pattern the residual stays small; where the parent adds genuinely new
-structure it swings wide.
+structure it swings wide:
 
 <WavePlot lcm={24} subsetLcm={4} mode="difference" />
 
-:::note Rendering these as PNGs
+{/*note Rendering these as PNGs
 The same plots can be produced as static images with `melodroid plot lcm-families ...` (see the
-[CLI reference](../cli/reference.mdx#lcm-families-2)) — handy for slides or print. The interactive versions on this
+[CLI reference](./reference.mdx#lcm-families-2)) — handy for slides or print. The interactive versions on this
 page are computed directly from the theory, so they always stay in sync with the model.
-:::
+*/}

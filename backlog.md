@@ -17,7 +17,6 @@ Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### LCM Families (theory/lcm-families.mdx)
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
 Show the collapsed easier mermaid graph
-### Wave Pattern Plots (theory/wave-pattern-plots.mdx)
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 
