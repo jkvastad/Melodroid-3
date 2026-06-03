@@ -3,6 +3,8 @@
 
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
+The Least Common Multiple is referred to over the docs with either LCM or $\operatorname{lcm}$, preference?
+
 ## Intro (intro.mdx)
 Perhaps playing a sound should not be infinite duration per default?
 
@@ -11,10 +13,9 @@ Perhaps the docusaurus default boxed layout of subsections should instead be a l
 ### Good Fractions (theory/good-fractions.mdx)
 Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### LCM Families (theory/lcm-families.mdx)
-LCM 8 produces audible click
 Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
+Show the collapsed easier mermaid graph
 ### Wave Pattern Plots (theory/wave-pattern-plots.mdx)
-
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 
