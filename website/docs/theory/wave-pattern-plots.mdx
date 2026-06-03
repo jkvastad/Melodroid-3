@@ -19,23 +19,7 @@ together with their sum. Every component sine completes an integer number of cyc
 $t = \mathrm{LCM}$ and returns to zero, so the summed pattern closes at the endpoint — the wave
 pattern visibly repeats with period LCM.
 
-The plots below are computed live in your browser from the same good-fraction / LCM-family
-math as the rest of the program — drag to zoom, double-click to reset, and use the controls
-beneath each plot to switch modes or change the sample density. Each fraction's sine is drawn in
-its own colour, the superposition in thick black, and a dashed vertical line marks
-$t = \mathrm{LCM}$. Here is the LCM-6 family:
-
 <WavePlot lcm={6} />
-
-## Sum and constituent views
-
-The **sum** mode plots only the superposition; **constituents** mode plots only the individual
-sines with no sum overlay. The y-axis range is identical across all modes, so the views are
-directly comparable — switch between them with the mode control.
-
-<WavePlot lcm={6} mode="sum" />
-
-<WavePlot lcm={6} mode="constituents" />
 
 ## Highlighting a sub-family
 
@@ -60,6 +44,6 @@ structure it swings wide.
 
 :::note Rendering these as PNGs
 The same plots can be produced as static images with `melodroid plot lcm-families ...` (see the
-[CLI reference](../cli/reference.mdx)) — handy for slides or print. The interactive versions on this
+[CLI reference](../cli/reference.mdx#lcm-families-2)) — handy for slides or print. The interactive versions on this
 page are computed directly from the theory, so they always stay in sync with the model.
 :::

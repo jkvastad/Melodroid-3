@@ -5,6 +5,8 @@ Needs general fixing, several bugs and uglies. Sections below mirror the website
 
 The Least Common Multiple is referred to over the docs with either LCM or $\operatorname{lcm}$, preference?
 
+When linking to CLI reference link to the relevant command when possible rather than the generic page
+
 ## Intro (intro.mdx)
 Perhaps playing a sound should not be infinite duration per default?
 

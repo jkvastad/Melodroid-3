@@ -36,8 +36,17 @@ new base (LCM 18 renormalised to base $4/3$ becomes a subset of LCM 24), and som
   label="▶ LCM 3 — {1, 4/3, 5/3}"
 />
 
-The graph below shows all three relations between families computed with `--max-size 24`,
-`--max-prime 5`, up to `--max-lcm 24`:
+## Producing Graphs
+
+```bash
+melodroid graph lcm-families
+```
+
+Options: `--max-size` (default 24), `--max-prime` (default 5), `--max-lcm` (default 24),
+`--mode` (`full` or `collapsed`, default `full`). See the
+[CLI reference](../cli/reference.mdx#lcm-families-1) for the full command surface.
+
+With the defaults a graph renders all three relations between all families:
 
 - **solid arrow** (`-->`) — literal subset: $F_A \subseteq F_B$ as sets;
 - **thick double arrow** (`<==>`) — isomorphism: some base $b \in F_A$ makes the renormalisation
@@ -122,8 +131,13 @@ flowchart TD
     L20 -. "b=3/2" .-> L15
 ```
 
-In a more concise, collapsed form, each node is one isomorphism class (singletons included), and
-class-to-class edges are deduplicated and Hasse-reduced per kind:
+Passing `--mode collapsed` produces a more concise form, where each node is one isomorphism class
+(singletons included), and class-to-class edges are deduplicated and Hasse-reduced per kind:
+
+```bash
+melodroid graph lcm-families --mode collapsed
+```
+
 
 ```mermaid
 flowchart TD

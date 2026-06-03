@@ -27,9 +27,9 @@ type VLine = {x: number; color: string};
 const constituentColor = (i: number, n: number): string =>
   `hsl(${Math.round((360 * i) / Math.max(1, n))}, 70%, 45%)`;
 
-// Draw plugin for the dashed vertical reference lines (LCM endpoint in gray,
-// sub-family period markers in translucent blue) — mirrors the VerticalLine
-// calls in LcmFamilyWaveformRenderer.cs.
+// Draw plugin for the dashed vertical reference lines (sub-family period
+// markers in translucent blue) — mirrors the VerticalLine calls in
+// LcmFamilyWaveformRenderer.cs.
 function vLinesPlugin(getLines: () => VLine[]): uPlot.Plugin {
   return {
     hooks: {
@@ -107,7 +107,7 @@ function buildModel(
 
   const data: (number[] | Float64Array)[] = [xs];
   const series: uPlot.Series[] = [{label: 't'}];
-  const vlines: VLine[] = [{x: lcmValue, color: 'rgba(128,128,128,0.9)'}];
+  const vlines: VLine[] = [];
 
   const showConstituents = mode === 'all' || mode === 'constituents';
   const showSum =
