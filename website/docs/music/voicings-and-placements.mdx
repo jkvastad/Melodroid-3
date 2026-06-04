@@ -7,23 +7,27 @@ import Player from '@site/src/components/Player';
 # Voicings and Placements
 
 We now have a $k$-TET tuning that can sound every full match, so we can start making music and
-testing the model by ear. For the good fractions of max size 24 and max prime 5, 12-TET is the
-tuning of choice, so we take a deep dive into it.
+testing the model by ear. For the good fractions of max size 24 and max prime 5, 12 TET is the
+tuning of choice, so we make a deep dive with these assumptions.
 
 ## Placements
 
-In a $k$-TET tuning the reference point of an LCM full match maps to a key. We write a full match
+In a 12 TET tuning the reference point of an LCM family full match maps to a key. We write a full match
 of LCM $a$ with reference on key $b$ as $a@b$ (e.g. $24@0$) and call it a **placement** of the
 LCM on key $b$.
 
 Counting pitch C as key 0 lets us borrow familiar terms: $24@0$ is the C major scale, $4@7$ is
 the G major chord.
 
-<Player keys={[0, 4, 7]} label="▶ 4@0 — C major triad (keys 0 4 7)" />
+Sometimes we must be explicit about the shape of a chord. We call this a **Voicing**, e.g. "$24@0$ voiced as
+`{7 11 2 5 9 0 4}`" — the G13 chord. This can help alleviate some dissonance from adjacent keys (a semitone voiced as `{0, 1}` versus the gentler `{0, 13}`).
 
-Sometimes we must be explicit about the shape of a chord, e.g. "$24@0$ voiced as
-`{7 11 2 5 9 0 4}`" — the G13 chord. That is a **voicing**, and it matters for avoiding Helmholtz
-dissonance from adjacent keys (a semitone voiced as `{0, 1}` versus the gentler `{0, 13}`).
+<Player keys={[0, 1]} label="▶ Close semitone {0, 1}" />
+<Player keys={[0, 13]} gain={0.8} label="▶ Spread minor ninth {0, 13}" />
+
+Neither sounds pleasant in a sustained tone, but the close semitone produces very audible beating effects as well.
+
+Running
 
 ```bash
 melodroid table placement --lcm 4 --at 0 --ktet 12
@@ -33,7 +37,8 @@ prints `4@0` (keys `0 4 7`, the C major triad). `--at 7` gives `4@7` (keys `7 11
 Pass multiple LCMs — `--lcm 3 5 15 --at 0` — to render one row per LCM at the same anchor, handy
 for comparing isomorphic placements.
 
-## Overlap with a reference family
+## LCM Family Overlaps
+Sometimes we wonder if LCM families overlap. Running
 
 ```bash
 melodroid table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12
@@ -45,7 +50,8 @@ key 0 the overlap is `0 4 7` (the triad sits inside the scale); at key 5 the F m
 highlighted green — the keys from which the swept shape can be played without leaving the
 reference's pitch set.
 
-## Which placements contain a chord
+## General Overlap
+More generally we want to check an arbitrary number of keys against possible overlaps with lcm families. Running
 
 ```bash
 melodroid table key-supersets --keys 0 4 7 --ktet 12
