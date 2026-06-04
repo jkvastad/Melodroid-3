@@ -5,57 +5,59 @@ sidebar_position: 1
 # A Good Keyboard
 
 Choosing the ratios for an instrument creates a **tuning system**. Because this is about
-well-defined frequencies, we frame it as a keyboard for familiarity.
+well-defined frequencies, for familiarity we frame it as constructing a keyboard.
 
-A key property is **modulation**: playing the same frequency ratios from different fundamentals
-while producing the same harmonies. Formally, a keyboard should express every possible full
-match from every key. An arbitrary keyboard with the good fractions available from one reference
-point will not generally have them from another — but **equal-temperament** tuning fixes this,
-since the ratio between adjacent keys is constant, making every fundamental equivalent.
+A desired key property is **modulation**: playing the same frequency ratios from different keys
+should produce the same harmonies. Formally, a keyboard should express every possible full
+match from every key. 
+
+An arbitrary keyboard with good fractions available from one key will generally not have them available from another arbitrary key.
+An **equal-tempered** tuning solves this by having a constant ratio between adjacent keys, making every key equivalent.
 
 Combining equal temperament with octave equivalence gives instruments whose frequencies have the
 form $f_0 \cdot 2^{n/k}$, where $f_0$ is an arbitrary reference (e.g. standard pitch
 $440\ \mathrm{Hz}$), $n$ is the signed key distance, and $k$ is the number of keys per octave.
-Setting $k = 12$ gives the familiar 12-TET tuning.
+Setting $k = 12$ produces the familiar 12-TET tuning.
 
 ## How many keys are needed?
 
-List the requirements the theory places on the keys:
+What do we want from our keyboard, and how does this affect the number of keys?
 
 - **Modulation.** Every good fraction must be playable from any key as reference — relative to
   any key, each good fraction needs at least one key within its bin radius. Infinitely many keys
-  solve this but maximise complexity; a single key with a half-octave radius also "works" but is
+  solve this but maximises complexity; a single key with a half-octave radius also technically works but is
   far outside any JND.
 - **Full expression — no unplayable virtual reference points.** A set of keys may produce a full
-  match whose reference point is not itself a played key. For example the major chord
-  $\{1, 5/4, 3/2\}$ has an LCM-8 full match at $4/3$. That virtual reference should be playable.
-- **Minimal complexity — as few keys as possible.**
+  match whose reference point is not itself a playable key. For example the major chord
+  $\{1, 5/4, 3/2\}$ has an LCM-8 full match at $4/3$. Such a virtual reference point should be playable.
+- **Minimal complexity**. As few keys as possible.
 
-What does it mean to "play a good fraction using a key"? With a keyboard the ratio set is fixed
-by the keys, and the reference point must also be a key. For a key set with a full match, the
-reference point has a nearest key; if it is close enough we hear it as the reference. We take
-"close enough" to be the same bin radius used for clustering: the sounded key, expressed as a
-ratio, must bin to the target good fraction.
+Formalizing our intuition, what exactly does it mean to "play a good fraction using a key"? 
+
+With a keyboard the playable ratio set is fixed by the keys.
+For a key set with a full match, the reference point has a nearest key; if this key is close enough to the reference we expect to recognize it as such.
+We can formalise "close enough" with the same bin radius used for clustering: the sounded key, 
+expressed as a ratio of the reference point, must bin to the reference point.
 
 ### Modulation
 
-For a $k$-TET system and a reference key, each good fraction needs a key within its bin radius.
-For a given $k$ there is a good fraction needing the largest radius to reach its nearest key —
-the worst-case covering radius
+For a $k$-TET system and a reference key, each good fraction should have at least one key within its bin radius.
+For a given $k$ there is one good fraction $g_k^*$ needing the largest radius to reach its nearest key —
+the worst-case covering radius:
 
 $$
 c_k = \frac{\lvert 2^{n/k} - g_k^* \rvert}{g_k^*},
 $$
 
-the multiplicative distance caused by the limiting fraction $g_k^*$.
+This is the multiplicative distance caused by the limiting fraction $g_k^*$.
 
 ```bash
 melodroid table ktet-cutoffs
 ```
 
-lists, for each $k$, the cutoff $c_k$, the limiting fraction $g_k$, and the nearest $k$-TET key
+The command lists, for each $k$, the cutoff $c_k$, the limiting fraction $g_k$, and the nearest $k$-TET key
 (index $n$ and ratio $2^{n/k}$). Green rows mark where $c_k$ strictly improves over every smaller
-$k$. For the standard good fractions (max size 24, max prime 5):
+$k$. For the standard good fractions (max size 24, max prime 5) the results of interest are:
 
 | $k$ | $c_k$ | $c_k$ % | Limiting fraction | Nearest $n$ | $2^{n/k}$ |
 | ---: | ---: | ---: | :--- | ---: | ---: |
@@ -65,17 +67,17 @@ $k$. For the standard good fractions (max size 24, max prime 5):
 | 31 | 0.006458 | 0.6458 % | 10/9 | 5 | 1.118287 |
 | 34 | 0.004547 | 0.4547 % | 9/8 | 6 | 1.130116 |
 
-Since the JND is almost $1\%$, $k = 11$ gives about $3\times$ JND but $k = 12$ suddenly drops to
+Since the JND is almost $1\%$, $k = 11$ gives about $3\times$ JND but $k = 12$ suddenly drops to only one
 JND. It only improves slightly (~20% smaller) at $k = 19$, then again at $31$ and $34$ — around
 the threshold for unique good-fraction bin radii. So $k = 12$, with about $63\%$ of the keys of
-$k = 19$, is a strong compromise. Remarkably, we have recovered the modern popular tuning system
-from first principles of biology and physics.
+$k = 19$, is a strong compromise. Perhaps a consequence of choosing $\mathrm{WPL}=24$ to acquire good fractions for expressing the major scale, 
+we have in any case recovered a modern popular tuning system from first principles of biology and physics.
 
 ### Full expression
 
 Any key set with a full match must be able to play a key that bins to its reference point. Since
-the modulation solution already lets every key act as a reference for every good fraction,
-sufficiently low-radius $k$-TETs satisfy this automatically.
+the modulation solution already lets every key act as a reference for every good fraction, 
+$k$-TETs with worst case bin radius close to JND already satisfy this automatically.
 
 ### Minimal complexity
 
@@ -83,7 +85,7 @@ We want the fewest keys meeting the other requirements. The viable $k$-TETs are 
 favouring **12-TET** — with two caveats:
 
 - the bin radius may be too large, forcing 19 or even 34 (unique binnings) keys;
-- the solution may be *too* perfect, allowing too little dissonance (recall the chili). Effects
+- the solution may be *too* perfect, allowing too little dissonance. Effects
   like string bending introduce sliding dissonance that listeners enjoy. 12-TET still allows
-  some: none of the 13 standard good fractions map to key 6 (the tritone, the "Devil's
+  some dissonance: none of the 13 standard good fractions map to key 6 (the tritone, the "Devil's
   interval"), and keys 2 (10/9, 9/8) and 10 (16/9, 9/5) have ambiguous mappings.
