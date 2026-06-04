@@ -11,6 +11,7 @@ export type VoicingPlayerProps = {
   label?: string;
   mode?: 'chord' | 'arpeggio'; // default 'chord'
   oscillator?: 'sine' | 'triangle' | 'square' | 'sawtooth'; // default 'sine'
+  gain?: number; // linear amplitude multiplier, default 1 (e.g. 0.8 = 80%)
 };
 
 export default function VoicingPlayer({
@@ -21,6 +22,7 @@ export default function VoicingPlayer({
   label = 'Play',
   mode = 'chord',
   oscillator = 'sine',
+  gain = 1,
 }: VoicingPlayerProps) {
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -34,7 +36,7 @@ export default function VoicingPlayer({
       synthRef.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: {type: oscillator}, // pure sine = the wave-pattern model
         envelope: {attack: 0.02, decay: 0.1, sustain: 0.8, release: 0.4},
-        volume: -12, // headroom; PolySynth sums voices
+        volume: -12 + Tone.gainToDb(gain), // headroom; PolySynth sums voices
       }).toDestination();
     }
     return synthRef.current;

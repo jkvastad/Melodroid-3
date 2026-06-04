@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+description: Binning real frequency ratios onto ideal fractions.
 ---
 
 # Cluster Ranges
@@ -26,15 +27,7 @@ melodroid table bin-overlaps
 ```
 
 Options: `--max-size` (default 24), `--max-prime` (default 5). See the
-[CLI reference](../cli/reference.mdx#bin-overlaps) for the full command surface.
-
-With the defaults this command prints, for each adjacent pair of good fractions, the bin radius $c$ at
-which their JND bins first touch. Each row is $(\text{Lower}, \text{Upper}, c, c\,\%)$ with
-$c = (\text{Upper} - \text{Lower}) / (\text{Upper} + \text{Lower})$. The $c$ column is the
-*exact* reduced fraction (e.g. $1/161$ for the tightest gap $10/9 \to 9/8$); $c\,\%$ is the same
-value as a percentage. The final row handles the octave wrap by pairing the largest good
-fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows. The caption surfaces the
-minimum $c$ — the largest JND a listener could have before *any* adjacent bins overlap.
+[CLI reference](../cli/reference.mdx#bin-overlaps) for the full command surface. Example default output:
 
 ```text
 ┌───────┬───────┬───────┬─────────┐
@@ -57,6 +50,14 @@ minimum $c$ — the largest JND a listener could have before *any* adjacent bins
 13 adjacent-pair overlaps; minimum
 c = 1/161 (0.621 %) at (10/9 → 9/8)
 ```
+
+With the defaults this command prints, for each adjacent pair of good fractions, the bin radius $c$ at
+which their JND bins first touch. Each row is $(\text{Lower}, \text{Upper}, c, c\,\%)$ with
+$c = (\text{Upper} - \text{Lower}) / (\text{Upper} + \text{Lower})$. The $c$ column is the
+*exact* reduced fraction (e.g. $1/161$ for the tightest gap $10/9 \to 9/8$); $c\,\%$ is the same
+value as a percentage. The final row handles the octave wrap by pairing the largest good
+fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows. The caption surfaces the
+minimum $c$ — the largest JND a listener could have before *any* adjacent bins overlap.
 
 The minimum bin radius for LCM 24 is thus $1/161 \approx 0.621\%$
 
@@ -122,3 +123,5 @@ row.
 
 Centered rows are marked `★` instead of `✓`. `--only-centered-full-matches` keeps exactly one
 row per block, and takes precedence over `--only-full-matches`.
+
+When looking for wave patterns, the centered full match provides a good candidate reference point for a pattern.
