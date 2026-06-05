@@ -3,6 +3,7 @@ sidebar_position: 2
 ---
 
 import Player from '@site/src/components/Player';
+import SequencePlayer from '@site/src/components/SequencePlayer';
 
 # Voicings and LCM Families
 
@@ -81,10 +82,33 @@ Symmetric chords are present in both lcm 15 and 20 and might contribute in some 
 There is a curious case regarding the semitone: Whether written as 16/15 or 15/8 the relative difference is the same. 
 However, it seems that framing a melody of repeating semitones as 15/8 sounds harmonious while framing it as 16/15 sounds dissonant. Observe:
 
-TODO: audio example of repeating triple time semitone as part of lcm 8.
-Time is 16 beats per measure 
-start with playing 0,-1 at beats 0 and 2 repeating for one measure.
-Continue playing semitone melody and add in a block chord of lcm 8@-12 for the next measure (note that -1 is not voiced in the block, it is instead part of the melody).
+The player below realises this as a continuous two-measure gallop at 90 BPM (a
+16th-note grid grouped in 3-beat cells — a long `-1` and a short `0`). The first
+measure is the bare semitone melody: restless and dissonant. At the second measure
+the same melody continues, but a sustained LCM-8 chord enters at anchor `-12`,
+voiced with the 9 up an octave so the root is a clear major triad
+(`{-12, -8, -5, 2}` — the `-1` / major seventh is left out of the block because the
+melody already supplies it). Each `-1` now lands as the chord's `15/8`, the major
+seventh, and the same semitone figure resolves.
+
+<SequencePlayer
+  beatSec={60 / 90 / 4}
+  label="▶ semitone gallop → reframed as 15/8 of LCM-8"
+  melody={[
+    {key: -1, beat: 0, beats: 2}, {key: 0, beat: 2, beats: 1},
+    {key: -1, beat: 3, beats: 2}, {key: 0, beat: 5, beats: 1},
+    {key: -1, beat: 6, beats: 2}, {key: 0, beat: 8, beats: 1},
+    {key: -1, beat: 9, beats: 2}, {key: 0, beat: 11, beats: 1},
+    {key: -1, beat: 12, beats: 2}, {key: 0, beat: 14, beats: 1},
+    {key: -1, beat: 15, beats: 2}, {key: 0, beat: 17, beats: 1},
+    {key: -1, beat: 18, beats: 2}, {key: 0, beat: 20, beats: 1},
+    {key: -1, beat: 21, beats: 2}, {key: 0, beat: 23, beats: 1},
+    {key: -1, beat: 24, beats: 2}, {key: 0, beat: 26, beats: 1},
+    {key: -1, beat: 27, beats: 2}, {key: 0, beat: 29, beats: 1},
+    {key: -1, beat: 30, beats: 2},
+  ]}
+  chords={[{keys: [-12, -8, -5, 2], beat: 16, beats: 16, velocity: 0.7}]}
+/>
 
 TODO: investigate why e.g. interval 11 sounds consonant as part of lcm 8, but less so when isolated and even less when played as 13. 
 Similarly -1, 0 sounds dissonant but frame the -1 as the 11 in lcm 8 and it sounds better. Why do these different representations of the semitone sound consonant/dissonant?
