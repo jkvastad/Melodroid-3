@@ -92,7 +92,7 @@ melodroid table key-supersets --keys 0 4 7 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists every placement whose keys contain the requested set, tightest fits first.
+Lists every placement whose keys contain the requested set, tightest fits first. `--keys` accepts any integer and octave-normalizes it into `[0, ktet-1]` (e.g. `14 → 2`, `-1 → ktet-1`).
 
 ### `voicings`
 

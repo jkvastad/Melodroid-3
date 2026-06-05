@@ -474,7 +474,7 @@ class Program
 
         var keySupersetsKeysOption = new Option<int[]>("--keys")
         {
-            Description = "Target key indices on a --ktet keyboard (each in [0, ktet-1]), space-separated. Duplicates are folded.",
+            Description = "Target key indices on a --ktet keyboard, space-separated. Any integer is accepted and octave-normalized into [0, ktet-1] (e.g. 14 → 2, -1 → ktet-1). Duplicates are folded.",
             Required = true,
             AllowMultipleArgumentsPerToken = true,
         };
@@ -500,16 +500,9 @@ class Program
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
             if (keys.Length == 0) { AnsiConsole.MarkupLine("[red]--keys must contain at least one value.[/]"); return 1; }
-            foreach (var key in keys)
-            {
-                if (key < 0 || key >= k)
-                {
-                    AnsiConsole.MarkupLine($"[red]--keys value {key} is outside [[0, {k - 1}]].[/]");
-                    return 1;
-                }
-            }
 
-            var dedupKeys = keys.Distinct().OrderBy(x => x).ToList();
+            // Octave-normalize keys into [0, k) so callers can pass any integer (e.g. 14 → 2, -1 → k-1).
+            var dedupKeys = keys.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var rows = Placements.FindSupersets(dedupKeys, families, k);

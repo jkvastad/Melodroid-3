@@ -19,10 +19,10 @@ Our good-fraction LCM families mostly correspond to traditional chords and scale
 | 15 | — | <Player keys={[0, 3, 7, 11, 14, 17, 22]} gain={0.8} label="▶ 0 3 7 11 14 17 22" /> |
 | 18 | Minor 11 | <Player keys={[0, 3, 7, 10, 14, 17]} gain={0.8} label="▶ 0 3 7 10 14 17" /> |
 | 20 | — | <Player keys={[0, 4, 8, 11, 15, 18]} gain={0.8} label="▶ 0 4 8 11 15 18" /> |
-| 24 | Major 13 | <Player keys={[0, 4, 7, 10, 14, 17, 21]} gain={0.8} label="▶ 0 4 7 10 14 17 21" /> |
+| 24 | Major 13 | <Player keys={[0, 4, 7, 10, 14, 17, 21]} gain={0.7} label="▶ 0 4 7 10 14 17 21" /> |
 
 Several of these are harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and
-20 map to no traditional chord, but they may still have consonant voicings. Traditionally
+20 map to no traditional chords and seem to lack consonant voicings. Traditionally
 consonant voicings favour triads (intervals 3, 4 in 12-TET) and avoid semitones (interval 1) —
 both easier on the hand and lower in dissonance (see e.g.
 [Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
@@ -48,7 +48,7 @@ ascending sequence (so `7 11 2` means `7 11 14`). Every root of the C major scal
 `0`; root 7 is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate
 voicings for an arbitrary key set, e.g. `--keys 0 1 3 5 8 9 10` for `15@0`.
 
-## LCM 15 and 20
+## Dissonant LCM
 
 For `15@0` = `{0 1 3 5 8 9 10}` the `{8 9 10}` cluster forces every voicing to include a
 near-triadic step; the best score from any root is `1` (e.g. from roots 8 and 10, such as
@@ -56,14 +56,35 @@ near-triadic step; the best score from any root is `1` (e.g. from roots 8 and 10
 forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early
 aug), other roots reach `1` or `2`.
 
-Even the best voicings for 15 and 20 sound tense (see table above). Perhaps from the high dim and low aug, perhaps the
+Even the best voicings for 15 and 20 sound tense (see table above). Perhaps from the high dim and low aug, perhaps from the
 semitone clusters. Perhaps for other reasons - e.g. the simple interval 16/15 sounds tense as a sustained note both in close and wide position (32/15).
 
-At this point we make make some notes on the validity of harmonic pattern theory - what exactly is it about?
+At this point we should make some notes on the validity of harmonic pattern theory - what exactly is it about?
 
-If the hypotheses is that all wave patterns of sufficiently small size sound consonant or pleasing, then the harsh sound of lcm 20 and 15 either invalidates the hypothesis or implies that 24 is too large a WPL.
-In the latter case then perhaps 8 is the limit, as it allows for a nice isomorphic class of LCM families. 
-Perhaps auxilary effects such as isomorphisms and sub-patterns effectively allow larger lcms such as 12, 18 and even 24 (3x8) which do sound consonant.
+If the hypotheses is that all wave patterns of sufficiently small size sound consonant or pleasing,
+then the harsh sound of lcm 15 (and 20) either invalidate the hypothesis or implies that 15 is too large a WPL. 
+Since lcm 18 and 24 sound (more) consonant a "smaller is better" rule is too simple.
+
+Possible explanations include:
+
+* **Pattern compression** - the large consonant LCMs contain a power of two, meaning their patterns past the halfway point can be inferred as mirrored repetitions.
+The effective length of lcm 18 and 24 is then 9 and 12, below 15. In such a sense the "smaller is better" rule might hold.
+* **Preference** - The brain might be partial for which patterns to match. It could prefer not only just small WPLs, but even WPLs, or specific LCMs. 
+This could lead to situations where something could have been reconigzed as e.g. lcm 15 or 20,
+but instead the brain tries to interpret them as a preferred LCM with some bad notes, leading to dissonance. 
+(TODO: example competing LCMs with 15 and 20)
+* **Symmetric Chords** - In 12-TET the chords 0 3 6 9 and 0 4 8 are **symmetric**, meaning there is no way apart from lowest/highest frequency to prefer a reference point.
+Such chords have a distinct tension different from the dissonance in e.g. a semitone cluster. (TODO: example audio).
+Symmetric chords are present in both lcm 15 and 20 and might contribute in some way to their dissonant voicings.
+
+### Semitone or Major Seven?
+There is a curious case regarding the semitone: Whether written as 16/15 or 15/8 the relative difference is the same. 
+However, it seems that framing a melody of repeating semitones as 15/8 sounds harmonious while framing it as 16/15 sounds dissonant. Observe:
+
+TODO: audio example of repeating triple time semitone as part of lcm 8.
+Time is 16 beats per measure 
+start with playing 0,-1 at beats 0 and 2 repeating for one measure.
+Continue playing semitone melody and add in a block chord of lcm 8@-12 for the next measure (note that -1 is not voiced in the block, it is instead part of the melody).
 
 TODO: investigate why e.g. interval 11 sounds consonant as part of lcm 8, but less so when isolated and even less when played as 13. 
 Similarly -1, 0 sounds dissonant but frame the -1 as the 11 in lcm 8 and it sounds better. Why do these different representations of the semitone sound consonant/dissonant?

@@ -55,6 +55,10 @@ This is the multiplicative distance caused by the limiting fraction $g_k^*$.
 melodroid table ktet-cutoffs
 ```
 
+Options: `--max-k` (default 50, the largest $k$ to list), `--only-strictly-improving` (keep only the
+green rows), `--max-size` (default 24), `--max-prime` (default 5). See the
+[CLI reference](../cli/reference.mdx#ktet-cutoffs) for the full command surface.
+
 The command lists, for each $k$, the cutoff $c_k$, the limiting fraction $g_k$, and the nearest $k$-TET key
 (index $n$ and ratio $2^{n/k}$). Green rows mark where $c_k$ strictly improves over every smaller
 $k$. For the standard good fractions (max size 24, max prime 5) the results of interest are:
