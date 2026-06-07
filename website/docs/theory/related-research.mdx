@@ -41,9 +41,41 @@ This is similar to our observations regarding LCM for denominators and WPL,
 and how renormalizing a reference point means that numerators may also play a role in deciding WPL for a set of fractions.
 
 ## Good Fractions
-When discussing relative periodicity, Stolzenburg[^stolzenburg] assumes 12 TET and then searches for fractions which are close to the 12 keys. This leads to two sets:
+### Rational Tunings
+When discussing relative periodicity, Stolzenburg[^stolzenburg] assumes 12 TET and then searches for fractions which are close to the 12 keys by increasing the error margin.
+This leads to two sets, his **rational tuning #1** (max deviation $d = 1.0\%$) and **rational tuning #2** ($d = 1.1\%$). 
+Both are built by taking, for each of the 12 keys, the fraction with the smallest denominator lying within the tolerance band of 12-TET.
+This is the same "smallest fraction within the JND" idea behind the good fractions, but mapping fractions onto keys rather than keys onto fractions.
 
+| Semitone | Interval | Rational tuning #1 | Rational tuning #2 | A good fraction? |
+| --- | --- | --- | --- | --- |
+| 0 | Unison | 1/1 | 1/1 | ✓ |
+| 1 | Minor second | 16/15 | 16/15 | ✓ |
+| 2 | Major second | 9/8 | 9/8 | ✓ (10/9 also good, unused) |
+| 3 | Minor third | 6/5 | 6/5 | ✓ |
+| 4 | Major third | 5/4 | 5/4 | ✓ |
+| 5 | Perfect fourth | 4/3 | 4/3 | ✓ |
+| 6 | Tritone | 17/12 | 7/5 | ✗ — no good fraction |
+| 7 | Perfect fifth | 3/2 | 3/2 | ✓ |
+| 8 | Minor sixth | 8/5 | 8/5 | ✓ |
+| 9 | Major sixth | 5/3 | 5/3 | ✓ |
+| 10 | Minor seventh | 16/9 | 9/5 | ✓ (both are good) |
+| 11 | Major seventh | 15/8 | 15/8 | ✓ |
+| 12 | Octave | 2/1 | 2/1 | ✓ (≡ 1/1) |
 
+The tunings diverge only at the **tritone** (17/12 vs 7/5) and the **minor seventh** (16/9 vs 9/5).
+
+The comparison to the good fractions is striking: every ratio in either tuning is one of the standard 13 good fractions — **except the tritone**.
+The tritone requires reaching outside the prime limit of 5, using either 7 (in 7/5) or 17 (in 17/12).
+
+Two further differences:
+
+- Standard good fractions contains **10/9** as an alternate major second, which neither tuning uses (both prefer 9/8).
+- Standard good fractions contains **both** minor-seventh candidates 16/9 and 9/5, whereas each tuning commits to just one.
+
+The good fractions effectively span the union of rational tunings #1 and #2, minus the tritone. 
+Of note is that we use an additional constraint, that of max WPL, to constrain fraction size and limit primes. This then defines a set of good fractions.
+From this we can reason about how many notes a tuning should have to express all good fractions, rather than assume 12 and see which fractions can express the notes.
 
 ## Consonance
 The pleasantness of simultaneous chord is affected not only by frequency ratios, but by timbre (overtone profiles).
