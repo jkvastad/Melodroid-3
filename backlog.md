@@ -3,10 +3,6 @@
 
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
-The Least Common Multiple is referred to over the docs with either LCM or $\operatorname{lcm}$, preference?
-
-When linking to CLI reference link to the relevant command when possible rather than the generic page
-
 ## Intro (intro.mdx)
 Perhaps playing a sound should not be infinite duration per default?
 
@@ -15,8 +11,6 @@ Perhaps the docusaurus default boxed layout of subsections should instead be a l
 ### Good Fractions (theory/good-fractions.mdx)
 Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### LCM Families (theory/lcm-families.mdx)
-Mermaid graph in LCM families is kind of big and gets compressed, perhaps if it can be large and scrolled around?
-Show the collapsed easier mermaid graph
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 
@@ -25,6 +19,8 @@ Show the collapsed easier mermaid graph
 ### Key Sweep (keyboard/key-sweep.mdx)
 
 ## The Sound of Music
+TODO: discuss consonance in relation to timbre (and possibly encultured preference)
+TODO: section discussing composition - meoldy and chord progressions via full matches.
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
 ### On a Sour Note (music/on-a-sour-note.mdx)
