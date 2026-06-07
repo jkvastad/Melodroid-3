@@ -29,7 +29,13 @@ Show the collapsed easier mermaid graph
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
-## CLI Reference (cli/reference.mdx)
+## Related Research
+### Related Research (related-research/related-research.mdx)
+
+## CLI Reference
+### Installation (cli/installation.mdx)
+### CLI Reference (cli/reference.mdx)
+### Wave Pattern Plots (cli/wave-pattern-plots.mdx)
 
 # Claude
 Update claude.md to reflect the new github page docs section structure replacing the old readme style.
