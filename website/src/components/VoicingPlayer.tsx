@@ -25,6 +25,10 @@ export default function VoicingPlayer({
   gain = 1,
 }: VoicingPlayerProps) {
   const synthRef = useRef<Tone.PolySynth | null>(null);
+  // Output gain the synth runs through, so stop() can ramp the level to zero
+  // before disposing — a smooth fade instead of a click from cutting mid-sample.
+  const gainRef = useRef<Tone.Gain | null>(null);
+  const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState(false);
 
   const ratios = fractions ?? (keys ?? []).map((n) => Math.pow(2, n / ktet));
@@ -33,39 +37,68 @@ export default function VoicingPlayer({
   // Build the synth lazily in the browser; dispose on unmount.
   const getSynth = () => {
     if (!synthRef.current) {
+      gainRef.current = new Tone.Gain(1).toDestination();
       synthRef.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: {type: oscillator}, // pure sine = the wave-pattern model
         envelope: {attack: 0.02, decay: 0.1, sustain: 0.8, release: 0.4},
         volume: -12 + Tone.gainToDb(gain), // headroom; PolySynth sums voices
-      }).toDestination();
+      }).connect(gainRef.current);
     }
     return synthRef.current;
   };
 
-  useEffect(
-    () => () => {
-      synthRef.current?.dispose();
-    },
-    [],
-  );
+  useEffect(() => () => stop(), []); // dispose on unmount
 
   const play = async () => {
     await Tone.start(); // unlock audio on user gesture
     const synth = getSynth();
     if (mode === 'arpeggio') {
+      // Notes enter one at a time and ring on, accumulating into the full
+      // chord; once the last has entered they all sustain together for `hold`
+      // seconds, then release as one. Per-note durations are sized so every
+      // voice releases at the same absolute time, letting the ear compare the
+      // built-up arpeggio against the block chord.
+      const step = 0.3; // seconds between successive entries
+      const hold = 1.2; // seconds all notes ring together before release
       const t0 = Tone.now();
+      const n = freqs.length;
       freqs.forEach((f, i) =>
-        synth.triggerAttackRelease(f, '8n', t0 + i * 0.25),
+        synth.triggerAttackRelease(f, (n - i) * step + hold, t0 + i * step),
+      );
+      // Auto-reset the button when the (finite) arpeggio finishes. Release
+      // adds tail beyond the scheduled end, so pad before flipping back.
+      const totalSec = n * step + hold;
+      endTimerRef.current = setTimeout(
+        () => setPlaying(false),
+        totalSec * 1000 + 500,
       );
     } else {
       synth.triggerAttack(freqs); // sustained block chord
-      setPlaying(true);
     }
+    setPlaying(true);
   };
 
+  // Ramp the output gain to zero (smooth fade, no click), then dispose once the
+  // fade completes. Disposing — not releaseAll — is what actually cancels any
+  // future-scheduled arpeggio notes; a disposed synth can't retrigger, so we
+  // null the refs and rebuild on the next play.
   const stop = () => {
-    synthRef.current?.releaseAll();
+    if (endTimerRef.current) {
+      clearTimeout(endTimerRef.current);
+      endTimerRef.current = null;
+    }
+    const synth = synthRef.current;
+    const gainNode = gainRef.current;
+    synthRef.current = null;
+    gainRef.current = null;
     setPlaying(false);
+    if (!synth) return;
+    const fadeSec = 0.30;
+    gainNode?.gain.rampTo(0, fadeSec); // fade currently-sounding + pending notes
+    setTimeout(() => {
+      synth.dispose();
+      gainNode?.dispose();
+    }, fadeSec * 1000 + 50);
   };
 
   return (

@@ -10,17 +10,17 @@ import SequencePlayer from '@site/src/components/SequencePlayer';
 Having discussed concrete voicings, we can now turn to listening to Harmonic Pattern Theory.
 Our good-fraction LCM families mostly correspond to traditional chords and scales:
 
-| LCM | Name | Listen |
-| :--- | :--- | :--- |
-| 1 | Unison | <Player keys={[0]} label="▶ 0" /> |
-| 2 | Perfect Fifth | <Player keys={[0, 7]} label="▶ 0 7" /> |
-| 3, 4 | Major Third | <Player keys={[0, 4, 7]} label="▶ 0 4 7" /> |
-| 5, 6 | Add 9 | <Player keys={[0, 2, 4, 7]} label="▶ 0 2 4 7" /> |
-| 8, 9, 10, 12 | Major 9 | <Player keys={[0, 4, 7, 11, 14]} gain={0.8} label="▶ 0 4 7 11 14" /> |
-| 15 | — | <Player keys={[0, 3, 7, 11, 14, 17, 22]} gain={0.8} label="▶ 0 3 7 11 14 17 22" /> |
-| 18 | Minor 11 | <Player keys={[0, 3, 7, 10, 14, 17]} gain={0.8} label="▶ 0 3 7 10 14 17" /> |
-| 20 | — | <Player keys={[0, 4, 8, 11, 15, 18]} gain={0.8} label="▶ 0 4 8 11 15 18" /> |
-| 24 | Major 13 | <Player keys={[0, 4, 7, 10, 14, 17, 21]} gain={0.7} label="▶ 0 4 7 10 14 17 21" /> |
+| LCM | Name | Chord | Arpeggio |
+| :--- | :--- | :--- | :--- |
+| 1 | Unison | <Player keys={[0]} label="▶ 0" /> | <Player keys={[0]} mode="arpeggio" label="▶ 0" /> |
+| 2 | Perfect Fifth | <Player keys={[0, 7]} label="▶ 0 7" /> | <Player keys={[0, 7]} mode="arpeggio" label="▶ 0 7" /> |
+| 3, 4 | Major Third | <Player keys={[0, 4, 7]} label="▶ 0 4 7" /> | <Player keys={[0, 4, 7]} mode="arpeggio" label="▶ 0 4 7" /> |
+| 5, 6 | Add 9 | <Player keys={[0, 2, 4, 7]} label="▶ 0 2 4 7" /> | <Player keys={[0, 2, 4, 7]} mode="arpeggio" label="▶ 0 2 4 7" /> |
+| 8, 9, 10, 12 | Major 9 | <Player keys={[0, 4, 7, 11, 14]} gain={0.8} label="▶ 0 4 7 11 14" /> | <Player keys={[0, 4, 7, 11, 14]} mode="arpeggio" gain={0.8} label="▶ 0 4 7 11 14" /> |
+| 15 | — | <Player keys={[0, 3, 7, 11, 14, 17, 22]} gain={0.8} label="▶ 0 3 7 11 14 17 22" /> | <Player keys={[0, 3, 7, 11, 14, 17, 22]} mode="arpeggio" gain={0.8} label="▶ 0 3 7 11 14 17 22" /> |
+| 18 | Minor 11 | <Player keys={[0, 3, 7, 10, 14, 17]} gain={0.8} label="▶ 0 3 7 10 14 17" /> | <Player keys={[0, 3, 7, 10, 14, 17]} mode="arpeggio" gain={0.8} label="▶ 0 3 7 10 14 17" /> |
+| 20 | — | <Player keys={[0, 4, 8, 11, 15, 18]} gain={0.8} label="▶ 0 4 8 11 15 18" /> | <Player keys={[0, 4, 8, 11, 15, 18]} mode="arpeggio" gain={0.8} label="▶ 0 4 8 11 15 18" /> |
+| 24 | Major 13 | <Player keys={[0, 4, 7, 10, 14, 17, 21]} gain={0.7} label="▶ 0 4 7 10 14 17 21" /> | <Player keys={[0, 4, 7, 10, 14, 17, 21]} mode="arpeggio" gain={0.7} label="▶ 0 4 7 10 14 17 21" /> |
 
 Several of these are harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and
 20 map to no traditional chords and seem to lack consonant voicings. Traditionally
