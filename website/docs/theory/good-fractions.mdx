@@ -61,4 +61,30 @@ $$
 \frac{1}{1},\ \frac{16}{15},\ \frac{10}{9},\ \frac{9}{8},\ \frac{6}{5},\ \frac{5}{4},\ \frac{4}{3},\ \frac{3}{2},\ \frac{8}{5},\ \frac{5}{3},\ \frac{16}{9},\ \frac{9}{5},\ \frac{15}{8}
 $$
 
-TODO: listen to the fractions. Do they all sound good? Notes on how fractions are mirrored e.g. 16/15 and 15/8 are the same in this sense but sound different.
+Each button below plays the fraction as a dyad — a sine at the reference frequency together with a sine at the
+fraction's frequency — so you can hear how well the interval settles into a repeating pattern. `1/1` plays the bare reference.
+
+| Fraction | Interval | Listen |
+| :--- | :--- | :--- |
+| $\frac{1}{1}$ | Unison | <Player fractions={[1]} label="▶ 1/1" /> |
+| $\frac{16}{15}$ | Minor second | <Player fractions={[1, 1.0666666666666667]} label="▶ 16/15" /> |
+| $\frac{10}{9}$ | Major second | <Player fractions={[1, 1.1111111111111112]} label="▶ 10/9" /> |
+| $\frac{9}{8}$ | Major second | <Player fractions={[1, 1.125]} label="▶ 9/8" /> |
+| $\frac{6}{5}$ | Minor third | <Player fractions={[1, 1.2]} label="▶ 6/5" /> |
+| $\frac{5}{4}$ | Major third | <Player fractions={[1, 1.25]} label="▶ 5/4" /> |
+| $\frac{4}{3}$ | Perfect fourth | <Player fractions={[1, 1.3333333333333333]} label="▶ 4/3" /> |
+| $\frac{3}{2}$ | Perfect fifth | <Player fractions={[1, 1.5]} label="▶ 3/2" /> |
+| $\frac{8}{5}$ | Minor sixth | <Player fractions={[1, 1.6]} label="▶ 8/5" /> |
+| $\frac{5}{3}$ | Major sixth | <Player fractions={[1, 1.6666666666666667]} label="▶ 5/3" /> |
+| $\frac{16}{9}$ | Minor seventh | <Player fractions={[1, 1.7777777777777777]} label="▶ 16/9" /> |
+| $\frac{9}{5}$ | Minor seventh | <Player fractions={[1, 1.8]} label="▶ 9/5" /> |
+| $\frac{15}{8}$ | Major seventh | <Player fractions={[1, 1.875]} label="▶ 15/8" /> |
+
+TODO: mention two tone dissonance curves, discuss relation to interval inversion.
+
+The fractions fall into octave-complement pairs whose product is $2$ — $\frac{16}{15}$ with $\frac{15}{8}$, $\frac{10}{9}$ with $\frac{9}{5}$,
+$\frac{9}{8}$ with $\frac{16}{9}$, $\frac{6}{5}$ with $\frac{5}{3}$, $\frac{5}{4}$ with $\frac{8}{5}$, and $\frac{4}{3}$ with $\frac{3}{2}$ — leaving $\frac{1}{1}$ as its own mirror.
+Each pair is one interval and its inversion, yet the two sound distinct: a low minor second beats far more harshly than its mirrored major seventh. 
+The major third sounds quite consonant while the minor sixth sounds tense.
+
+TODO: do they all sound good? Use the buttons to decide which fractions earn their place, and characterise what changes between mirror pairs beyond register.

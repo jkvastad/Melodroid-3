@@ -82,17 +82,18 @@ Symmetric chords are present in both lcm 15 and 20 and might contribute in some 
 There is a curious case regarding the semitone: Whether written as 16/15 or 15/8 the relative difference is the same. 
 However, it seems that framing a melody of repeating semitones as 15/8 sounds harmonious while framing it as 16/15 sounds dissonant. Observe:
 
-The player below realises this as a continuous two-measure gallop at 90 BPM (a
-16th-note grid grouped in 3-beat cells — a long `-1` and a short `0`). The first
-measure is the bare semitone melody: restless and dissonant. At the second measure
-the same melody continues, but a sustained LCM-8 chord enters at anchor `-12`,
-voiced with the 9 up an octave so the root is a clear major triad
-(`{-12, -8, -5, 2}` — the `-1` / major seventh is left out of the block because the
-melody already supplies it). Each `-1` now lands as the chord's `15/8`, the major
-seventh, and the same semitone figure resolves.
+The player below realises this as a continuous three-measure gallop at 90 BPM (a
+triplet grid — each quarter note divided in three — grouped in 3-beat cells, a
+long `-1` and a short `0`, so 12 beats per measure). The first measure is the bare
+semitone melody: restless and dissonant. At the second measure a sustained LCM-8 chord
+enters at anchor `-12`, voiced with the 9 up an octave so the root is a clear major
+triad (`{-12, -8, -5, 2}` — the `-1` / major seventh is left out of the block because
+the melody already supplies it). Each `-1` now lands as the chord's `15/8`, the major
+seventh, and the same semitone figure resolves. The third measure strips the chord away,
+returning to the bare semitone.
 
 <SequencePlayer
-  beatSec={60 / 90 / 4}
+  beatSec={60 / 90 / 3}
   label="▶ semitone gallop → reframed as 15/8 of LCM-8"
   melody={[
     {key: -1, beat: 0, beats: 2}, {key: 0, beat: 2, beats: 1},
@@ -105,9 +106,38 @@ seventh, and the same semitone figure resolves.
     {key: -1, beat: 21, beats: 2}, {key: 0, beat: 23, beats: 1},
     {key: -1, beat: 24, beats: 2}, {key: 0, beat: 26, beats: 1},
     {key: -1, beat: 27, beats: 2}, {key: 0, beat: 29, beats: 1},
-    {key: -1, beat: 30, beats: 2},
+    {key: -1, beat: 30, beats: 2}, {key: 0, beat: 32, beats: 1},
+    {key: -1, beat: 33, beats: 2}, {key: 0, beat: 35, beats: 1},
   ]}
-  chords={[{keys: [-12, -8, -5, 2], beat: 16, beats: 16, velocity: 0.7}]}
+  chords={[{keys: [-12, -8, -5, 2], beat: 12, beats: 12, velocity: 0.7}]}
+/>
+
+The same reframing transposes up a semitone. The melody below alternates a long `0`
+and a short `1` — the bare semitone restless in the first measure. At the second measure
+a sustained LCM-8 chord enters at anchor `1` (`{-11, -7, -4, 3}` — root, major third,
+fifth, and the 9 up an octave, with the `0` / major seventh left out of the block
+because the melody supplies it). Now each `0` lands as the chord's `15/8`, and the
+`0, 1` figure resolves where before it was the dissonant one. The chord drops out in
+the third measure.
+
+<SequencePlayer
+  beatSec={60 / 90 / 3}
+  label="▶ semitone gallop → reframed as 15/8 of LCM-8 (8@1)"
+  melody={[
+    {key: 0, beat: 0, beats: 2}, {key: 1, beat: 2, beats: 1},
+    {key: 0, beat: 3, beats: 2}, {key: 1, beat: 5, beats: 1},
+    {key: 0, beat: 6, beats: 2}, {key: 1, beat: 8, beats: 1},
+    {key: 0, beat: 9, beats: 2}, {key: 1, beat: 11, beats: 1},
+    {key: 0, beat: 12, beats: 2}, {key: 1, beat: 14, beats: 1},
+    {key: 0, beat: 15, beats: 2}, {key: 1, beat: 17, beats: 1},
+    {key: 0, beat: 18, beats: 2}, {key: 1, beat: 20, beats: 1},
+    {key: 0, beat: 21, beats: 2}, {key: 1, beat: 23, beats: 1},
+    {key: 0, beat: 24, beats: 2}, {key: 1, beat: 26, beats: 1},
+    {key: 0, beat: 27, beats: 2}, {key: 1, beat: 29, beats: 1},
+    {key: 0, beat: 30, beats: 2}, {key: 1, beat: 32, beats: 1},
+    {key: 0, beat: 33, beats: 2}, {key: 1, beat: 35, beats: 1},
+  ]}
+  chords={[{keys: [-11, -7, -4, 3], beat: 12, beats: 12, velocity: 0.7}]}
 />
 
 TODO: investigate why e.g. interval 11 sounds consonant as part of lcm 8, but less so when isolated and even less when played as 13. 
@@ -169,6 +199,8 @@ a very ambiguous set.
 :::
 
 ## Chords and Melody
+
+What drives chord progressions? Why does e.g. Dm-> D work? F -> A with A# melody?
 
 A sounding chord can belong to many placements, and every key set with a full match is a subset
 of `15` or `24`. Playing melody over chords can be seen as modulating between the placements the
