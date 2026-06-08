@@ -19,7 +19,10 @@ Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### Key Sweep (keyboard/key-sweep.mdx)
 
 ## The Sound of Music
-TODO: discuss consonance in relation to timbre (and possibly encultured preference)
+TODO: discuss consonance in relation to timbre (and possibly encultured preference). 
+* What is consonance? (pleasantness)
+* Does it matter that lcms 15/20 do not sound consonant?
+* Try playing lcms and fractions with different overtone series. Is it possible to construct series so that certain fractions/lcms sound bad/good depending on overtones?
 TODO: section discussing composition - meoldy and chord progressions via full matches.
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
