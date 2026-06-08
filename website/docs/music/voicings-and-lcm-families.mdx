@@ -4,6 +4,7 @@ sidebar_position: 2
 
 import Player from '@site/src/components/Player';
 import SequencePlayer from '@site/src/components/SequencePlayer';
+import TimbrePlayer from '@site/src/components/TimbrePlayer';
 
 # Voicings and LCM Families
 
@@ -61,6 +62,66 @@ Even the best voicings for 15 and 20 sound tense (see table above). Perhaps from
 semitone clusters. Perhaps for other reasons - e.g. the simple interval 16/15 sounds tense as a sustained note both in close and wide position (32/15).
 
 At this point we should make some notes on the validity of harmonic pattern theory - what exactly is it about?
+
+Is it about consonance? Consonance is heavily influenced by overtones. Marjieh, Harrison, Lee,
+Deligiannaki & Jacoby (2024),
+[Timbral effects on consonance](https://pmc.ncbi.nlm.nih.gov/articles/PMC11258268/), show that a
+fixed interval's pleasantness depends strongly on the spectrum of the tones sounding it — to the
+point of the **perfect fifth and octave** losing their consonance, and entirely new intervals
+gaining it, when the partials are reshaped. Their tones use ten partials laid out by
+$f_i = f_0\,\gamma^{\log_2(i+1)}$ with a 3 dB/octave rolloff: $\gamma = 2.0$ is the ordinary
+harmonic series, $\gamma = 2.1$ **stretched**, $\gamma = 1.9$ **compressed**. Stretching moves the
+octave's consonance peak from 12 to about 12.78 semitones; compressing it to about 11.20.
+Replacing the partials with an inharmonic (gamelan *bonang*-like) set makes the major third, fifth
+and octave peaks vanish and new ones appear near **2.6 and 4.8 semitones** — the spacing of the
+Javanese *slendro* scale.
+
+The demos below synthesise each note from its partials directly (the ordinary players only offer
+harmonic timbres), so you can hear the effect first-hand. Use headphones or good speakers — the
+effect is in slow/fast beating between partials.
+
+**A — same 2:1 octave, swept overtone profile.** The notes never change (a literal 12-semitone
+octave); only the partials do. Harmonic locks; stretched and compressed both turn rough. This is
+the sentence above made audible: *pleasing → harsh and back, from the overtone profile alone.*
+
+<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={1.9} label="▶ octave · compressed (γ=1.9)" />
+&nbsp;
+<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={2.0} label="▶ octave · harmonic (γ=2.0)" />
+&nbsp;
+<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={2.1} label="▶ octave · stretched (γ=2.1)" />
+
+**B — fixed stretched timbre, swept interval.** Holding the stretched ($\gamma = 2.1$) timbre, the
+consonant interval is no longer the 2:1 octave (12) but the stretched octave (≈12.78). The plain
+octave and a wider step both beat; the middle one settles.
+
+<TimbrePlayer
+  gamma={2.1}
+  beatSec={1.6}
+  events={[{notes: [0, 12]}, {notes: [0, 12.78]}, {notes: [0, 13.5]}]}
+  label="▶ 12.0 → 12.78 → 13.5 st (stretched timbre)"
+/>
+
+**C — inharmonic match.** The 4.8-semitone *slendro* step (frequency ratio
+$r = 2^{4.8/12} \approx 1.3195$) is harsh with ordinary harmonic partials. But give the tones an
+inharmonic timbre whose partials are powers of that very ratio — $\{1, r, r^2, r^3, r^4\}$ — and
+the interval locks: every partial of the upper note lands on a partial of the lower (Sethares'
+construction; it is *why* such a spacing reads as consonant for *bonang*-like spectra).
+
+<TimbrePlayer events={[{notes: [0, 4.8], beats: 3}]} gamma={2.0} label="▶ 4.8 st · harmonic" />
+&nbsp;
+<TimbrePlayer
+  events={[{notes: [0, 4.8], beats: 3}]}
+  partialRatios={[1, 1.319508, 1.741101, 2.297397, 3.031433]}
+  label="▶ 4.8 st · slendro-matched inharmonic"
+/>
+
+**D — slow-beat sweetness.** With harmonic partials, an octave detuned a touch off 2:1 produces a
+slow, gentle pulsation rather than fast roughness — the positively-valenced "slow beating" the
+paper isolates. Compare the locked octave with the slightly detuned one.
+
+<TimbrePlayer events={[{notes: [0, 12], beats: 4}]} gamma={2.0} label="▶ octave · locked (12.0)" />
+&nbsp;
+<TimbrePlayer events={[{notes: [0, 12.15], beats: 4}]} gamma={2.0} label="▶ octave · detuned (12.15)" />
 
 If the hypotheses is that all wave patterns of sufficiently small size sound consonant or pleasing,
 then the harsh sound of lcm 15 (and 20) either invalidate the hypothesis or implies that 15 is too large a WPL. 
