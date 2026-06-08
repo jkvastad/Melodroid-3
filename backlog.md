@@ -3,6 +3,8 @@
 
 Needs general fixing, several bugs and uglies. Sections below mirror the website doc structure (website/docs/).
 
+Mixed usage of katex for e.g. hz - sometimes inline mathrm, sometimes just plain text.
+
 ## Intro (intro.mdx)
 Perhaps playing a sound should not be infinite duration per default?
 

@@ -12,8 +12,6 @@ In Harmony Perception by Periodicity Detection[^stolzenburg] Frieder Stolzenburg
 "the approximated ratio of the period length of the chord (its periodicity pitch) relative to the period length of its lowest tone component 
 (without necessarily applying octave equivalence)". This is our WPL, but Stolzenburg presents it in a more rigorous context. For approximating ratios the 1% JND is used.
 
-This is followed up by....
-
 ## Gradus Suavitatis
 Euler discussed the **gradus suavitatis**[^euler] (degree of softness) as a measure of harmoniousness.
 As explained by Stolzenburg[^stolzenburg], it considers the least common multiple (LCM) of the
@@ -38,6 +36,17 @@ $\Gamma(72) = 1 + 3 \cdot 1 + 2 \cdot 2 = 8$ as the value of the gradus suavitat
 This is similar to our observations regarding LCM for denominators and WPL, 
 and how renormalizing a reference point means that numerators may also play a role in deciding WPL for a set of fractions.
 
+## Lower Limit of Melodic Pitch
+For melodic recognition, the lower pitch range seems to be about 30 Hz rather than the 20 Hz of general hearing[^pressnitzer], possibly narrowing the pattern length from 50 ms to 33 ms. Pressnitzer, Patterson and Krumbholz define the lower limit of melodic pitch as the repetition rate below which listeners can no longer recognise that one note in a four-note melody changed by a semitone; for tones containing low-frequency energy this limit is around 30 Hz, and their model limits pitch extraction to time intervals of less than about 33 ms — consistent with the period of a 30 Hz tone.
+
+## Neural Resonance
+Instead of matching a complete pattern autocorrelation style, Neural Resonance Theory posits that coupled neural oscillators mode-lock at low integer ratios (e.g. 1:1, 2:1, 3:2)[^harding]. 
+This means they both try to keep their ratios of oscillations, but also that they can generate frequencies not in the input, such as a missing fundamental.
+
 [^stolzenburg]: Frieder Stolzenburg, "Harmony perception by periodicity detection," *Journal of Mathematics and Music*, vol. 9, no. 3, pp. 215–238, 2015. [doi:10.1080/17459737.2015.1033024](https://doi.org/10.1080/17459737.2015.1033024). Preprint: [arXiv:1306.6458](https://arxiv.org/abs/1306.6458).
 
 [^euler]: Leonhard Euler, *Tentamen novae theoriae musicae ex certissimis harmoniae principiis dilucide expositae*. St. Petersburg: Typographia Academiae Scientiarum, 1739. English translation by Charles S. Smith, June 1960. Excerpts discussed and explained: [Music translated into Mathematics: Leonhard Euler](http://tonalsoft.com/monzo/euler/euler-en.aspx)
+
+[^pressnitzer]: Daniel Pressnitzer, Roy D. Patterson and Katrin Krumbholz, "The lower limit of melodic pitch," *Journal of the Acoustical Society of America*, vol. 109, no. 5, pp. 2074–2084, 2001. [doi:10.1121/1.1359797](https://doi.org/10.1121/1.1359797).
+
+[^harding]: Edward E. Harding, Ji Chul Kim, Alexander P. Demos et al., "Musical neurodynamics," *Nature Reviews Neuroscience*, vol. 26, pp. 293–307, 2025. [doi:10.1038/s41583-025-00915-4](https://doi.org/10.1038/s41583-025-00915-4).

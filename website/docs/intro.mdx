@@ -32,17 +32,22 @@ The idea is that the brain might have evolved to find these kinds of patterns in
 
 ### From pattern length to a hearing constraint
 
-Given the lower frequency threshold of human hearing at about $20\ \mathrm{Hz}$, a wave pattern
-lasting more than roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a pattern. The **wave
-pattern duration** (WPD) for a fundamental $f_0$ is
+Given the lower frequency threshold of human hearing at about $20\ \mathrm{Hz}$, a wave pattern lasting more than roughly $50\ \mathrm{ms}$ is unlikely to be recognised as a pattern.
+For melody, the [lower limit of melodic pitch](related-research/wave-pattern-length.mdx#lower-limit-of-melodic-pitch) is closer to 30hz, allowing the wave pattern only some 33ms. 
+
+The **wave pattern duration** (WPD) for a fundamental $f_0$ is
 
 $$
 \mathrm{WPD} = \mathrm{WPL} \cdot \frac{1000}{f_0}\ \mathrm{ms}.
 $$
 
 For a fundamental of $100\ \mathrm{Hz}$, the major chord (WPL $4$) gives
-$\mathrm{WPD} = 4 \cdot \frac{1000}{100} = 40\ \mathrm{ms}$ — just inside the ceiling.
+$\mathrm{WPD} = 4 \cdot \frac{1000}{100} = 40\ \mathrm{ms}$.
 
 Music (at least orchestra and opera) lives mostly in the C2–C6 range (≈ 65–1047 Hz fundamental). Lower frequencies produce longer-duration patterns, so
 $100\ \mathrm{Hz}$ serves as a useful worst case for WPD. 
 We will show in the theory section how this simple constraint could lead to consequences for everything from chord progressions to an optimal number of keys for a piano.
+
+Of note is that the pattern matching idea is a form of autocorrelation. 
+Another idea entirely is [neural resonance](related-research/wave-pattern-length.mdx#neural-resonance), where instead of recognising a pattern, neural oscillators in the brain mode-lock to small integer ratios.
+In such a case the neuronal stability of certain integer ratios is more important than duration as a wave pattern is effectively perceived in parallell.
