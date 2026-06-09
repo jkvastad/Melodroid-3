@@ -25,7 +25,7 @@ export type PartialSweepPlotProps = {
   max: number;
   slider: number; // current axis-1 value — drives the cursor
   step2: number; // current axis-2 (step size); only moves things in 'inharmonic-sweep'
-  height?: number; // px, default 280
+  height?: number; // px, default 560
 };
 
 const SAMPLES = 200;
@@ -158,7 +158,7 @@ export default function PartialSweepPlot({
   max,
   slider,
   step2,
-  height = 280,
+  height = 560,
 }: PartialSweepPlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
@@ -189,20 +189,24 @@ export default function PartialSweepPlot({
       height,
       legend: {show: false},
       scales: {
-        x: {time: false, range: () => [min, max]},
-        y: {distr: 3, range: () => [modelRef.current.yMin, modelRef.current.yMax]},
+        // Pass-through ranges (like WavePlotClient): honor the bounds a box-drag sets, instead of
+        // snapping back to a static extent. The padded initial view is applied explicitly below.
+        x: {time: false, range: (_u, lo, hi) => [lo, hi]},
+        y: {distr: 3, range: (_u, lo, hi) => [lo, hi]},
       },
       axes: [
         {label: xAxisLabel(cfg)},
         {label: 'partial frequency (Hz)'},
       ],
       series: m.series,
-      cursor: {drag: {x: false, y: false}},
+      cursor: {drag: {x: true, y: true}},
       plugins: [cursorPlugin(() => sliderRef.current)],
     };
 
     const u = new uPlot(opts, m.data as uPlot.AlignedData, containerRef.current);
     plotRef.current = u;
+    // x auto-ranges to exactly [min, max] (xs spans it); restore the 5%-padded y extent.
+    u.setScale('y', {min: m.yMin, max: m.yMax});
 
     const ro = new ResizeObserver(() => {
       if (containerRef.current) {
@@ -224,6 +228,7 @@ export default function PartialSweepPlot({
     const u = plotRef.current;
     if (!u) return;
     u.setData(model.data as uPlot.AlignedData, true);
+    u.setScale('y', {min: model.yMin, max: model.yMax});
   }, [model.data]);
 
   // slider change: just move the cursor line.
@@ -244,6 +249,9 @@ export default function PartialSweepPlot({
   return (
     <div style={{margin: '0.6rem 0'}}>
       <div ref={containerRef} style={{width: '100%'}} />
+      <div style={{fontSize: '0.8rem', opacity: 0.7, marginTop: '0.25rem'}}>
+        drag a box to zoom · double-click to reset
+      </div>
       <div
         style={{
           display: 'flex',
