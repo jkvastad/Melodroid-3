@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as Tone from 'tone';
 
-export type TimbreMorphMode = 'gamma' | 'interval' | 'inharmonic';
+export type TimbreMorphMode = 'gamma' | 'interval' | 'inharmonic' | 'inharmonic-sweep';
 
 export type TimbreMorphPlayerProps = {
   // Which axis the slider drives:
@@ -13,6 +13,13 @@ export type TimbreMorphPlayerProps = {
   //                  `initial`).
   //   'inharmonic' — slider IS a blend t∈[0,1] from the harmonic partials (i+1) to the
   //                  explicit `partialRatios` set; notes and interval are fixed.
+  //   'inharmonic-sweep' — TWO sliders. Slider 1 is the blend t∈[0,1] (as in
+  //                  'inharmonic'); slider 2 is the step size s (semitones). The upper
+  //                  voice sits at offset s and the inharmonic target is r^i with
+  //                  r = 2^(s/12), so moving the step recomputes both the upper note's
+  //                  pitch and its matched spectrum (Sethares' construction, generalised
+  //                  to any step). `partialRatios` is ignored; `partials` sets N. Step
+  //                  axis comes from stepMin/stepMax/stepInitial/stepStep.
   mode: TimbreMorphMode;
   notes: number[]; // semitone offsets from the fundamental
   min: number;
@@ -21,9 +28,14 @@ export type TimbreMorphPlayerProps = {
   step?: number; // slider granularity; default 0.01
   // Fixed-spectrum parameters (see mode notes above for which apply).
   gamma?: number; // default 2.0 (used by 'interval')
-  partials?: number; // default 10 (used by 'gamma' / 'interval')
+  partials?: number; // default 10 (used by 'gamma' / 'interval' / 'inharmonic-sweep')
   rolloffDbPerOct?: number; // amplitude rolloff, default 3 dB/octave
   partialRatios?: number[]; // inharmonic target multipliers (used by 'inharmonic')
+  // Step-size slider (used by 'inharmonic-sweep' only).
+  stepMin?: number; // semitone range min for the step slider
+  stepMax?: number; // semitone range max for the step slider
+  stepInitial?: number; // starting step value; defaults to `initial`
+  stepStep?: number; // step-slider granularity; default 0.01
   fundamental?: number; // Hz, default 220
   gain?: number; // linear amplitude multiplier; default 0.4
   label?: string; // button label; default 'Play'
@@ -50,6 +62,10 @@ export default function TimbreMorphPlayerClient({
   partials = 10,
   rolloffDbPerOct = 3,
   partialRatios,
+  stepMin,
+  stepMax,
+  stepInitial,
+  stepStep = 0.01,
   fundamental = 220,
   gain = 0.4,
   label = 'Play',
@@ -64,33 +80,45 @@ export default function TimbreMorphPlayerClient({
   const partialsRef = useRef<
     Array<{osc: Tone.Oscillator; noteIndex: number; partial: number}>
   >([]);
-  const [slider, setSlider] = useState(initial);
+  const [slider, setSlider] = useState(initial); // axis 1: gamma / interval / blend t
+  const [step2, setStep2] = useState(stepInitial ?? initial); // axis 2: step size s
   const [playing, setPlaying] = useState(false);
 
-  // 'inharmonic' must run exactly as many partials as the target ratio set has.
+  // 'inharmonic' must run exactly as many partials as the target ratio set has;
+  // 'inharmonic-sweep' computes its ratios on the fly, so it falls back to `partials`.
   const partialCount =
     mode === 'inharmonic' ? partialRatios?.length ?? partials : partials;
 
-  // The notes actually sounding for a given slider value. Constant in length across the
-  // slider's range (so the oscillator set never changes — we only re-ramp frequencies).
-  const noteOffsets = (m: number): number[] =>
-    mode === 'interval' ? [notes[0], m] : notes;
+  // The notes actually sounding for given slider values. Constant in length across the
+  // sliders' ranges (so the oscillator set never changes — we only re-ramp frequencies).
+  // `t` is axis 1, `s` is axis 2 (the step size, only used by 'inharmonic-sweep').
+  const noteOffsets = (t: number, s: number): number[] => {
+    if (mode === 'interval') return [notes[0], t];
+    if (mode === 'inharmonic-sweep') return [notes[0], s];
+    return notes;
+  };
 
-  // Per-partial frequency multiplier for a given slider value.
-  const partialRatio = (i: number, m: number): number => {
-    if (mode === 'gamma') return Math.pow(m, Math.log2(i + 1));
+  // Per-partial frequency multiplier for given slider values.
+  const partialRatio = (i: number, t: number, s: number): number => {
+    if (mode === 'gamma') return Math.pow(t, Math.log2(i + 1));
     if (mode === 'interval') return Math.pow(gamma, Math.log2(i + 1));
+    if (mode === 'inharmonic-sweep') {
+      // Blend the harmonic series (i+1) toward r^i, r = 2^(s/12): at t=1 the upper note's
+      // partial i lands on the lower note's partial i+1 for any step s.
+      const r = Math.pow(2, s / 12);
+      return (1 - t) * (i + 1) + t * Math.pow(r, i);
+    }
     // inharmonic: blend the harmonic series (i+1) toward the explicit ratios.
     const harmonic = i + 1;
     const inharmonic = partialRatios![i];
-    return (1 - m) * harmonic + m * inharmonic;
+    return (1 - t) * harmonic + t * inharmonic;
   };
 
   const noteFreq = (offsetSemitones: number) =>
     fundamental * Math.pow(2, offsetSemitones / 12);
 
-  const computeFreq = (noteIndex: number, partial: number, m: number) =>
-    noteFreq(noteOffsets(m)[noteIndex]) * partialRatio(partial, m);
+  const computeFreq = (noteIndex: number, partial: number, t: number, s: number) =>
+    noteFreq(noteOffsets(t, s)[noteIndex]) * partialRatio(partial, t, s);
 
   // Fixed (slider-independent) per-partial amplitude from the rolloff, normalised so the
   // partials of one note sum to unity before the per-note headroom split.
@@ -104,9 +132,12 @@ export default function TimbreMorphPlayerClient({
   const defaultReadout = (m: number): string => {
     if (mode === 'gamma') return `γ = ${m.toFixed(2)}`;
     if (mode === 'interval') return `${m.toFixed(2)} st`;
+    if (mode === 'inharmonic-sweep')
+      return `${Math.round((1 - m) * 100)}% harmonic - ${Math.round(m * 100)}% ratio partials`;
     return `harmonic ↔ inharmonic: ${Math.round(m * 100)}%`;
   };
   const caption = (readout ?? defaultReadout)(slider);
+  const stepCaption = `${step2.toFixed(2)} st`; // axis-2 readout (inharmonic-sweep)
 
   const stop = () => {
     const master = masterRef.current;
@@ -139,7 +170,7 @@ export default function TimbreMorphPlayerClient({
     const nodes: Array<{dispose: () => void}> = [];
     const tagged: Array<{osc: Tone.Oscillator; noteIndex: number; partial: number}> = [];
 
-    const offsets = noteOffsets(slider);
+    const offsets = noteOffsets(slider, step2);
     // Split headroom across the simultaneous notes so a chord doesn't clip.
     const noteScale = gain / Math.max(offsets.length, 1);
     offsets.forEach((_, noteIndex) => {
@@ -148,7 +179,7 @@ export default function TimbreMorphPlayerClient({
           master,
         );
         const osc = new Tone.Oscillator(
-          computeFreq(noteIndex, i, slider),
+          computeFreq(noteIndex, i, slider, step2),
           'sine',
         ).connect(pGain);
         osc.start(t0);
@@ -162,13 +193,23 @@ export default function TimbreMorphPlayerClient({
     setPlaying(true);
   };
 
-  // Update the slider value; if sounding, glide every partial to its new frequency. A
-  // short ramp (40 ms) kills zipper noise while staying responsive to dragging.
+  // Update an axis; if sounding, glide every partial to its new frequency. A short ramp
+  // (40 ms) kills zipper noise while staying responsive to dragging. Each handler passes
+  // its just-changed axis as a fresh argument and reads the other axis from state (which
+  // is correct — only the dragged axis changed in this event; React state is still stale).
   const onSlide = (value: number) => {
     setSlider(value);
     if (!masterRef.current) return;
     for (const {osc, noteIndex, partial} of partialsRef.current) {
-      osc.frequency.rampTo(computeFreq(noteIndex, partial, value), 0.04);
+      osc.frequency.rampTo(computeFreq(noteIndex, partial, value, step2), 0.04);
+    }
+  };
+
+  const onSlideStep = (value: number) => {
+    setStep2(value);
+    if (!masterRef.current) return;
+    for (const {osc, noteIndex, partial} of partialsRef.current) {
+      osc.frequency.rampTo(computeFreq(noteIndex, partial, slider, value), 0.04);
     }
   };
 
@@ -180,17 +221,50 @@ export default function TimbreMorphPlayerClient({
         onClick={playing ? stop : play}>
         {playing ? 'Stop' : label}
       </button>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={slider}
-        aria-label={caption}
-        onChange={(e) => onSlide(parseFloat(e.target.value))}
-        style={{verticalAlign: 'middle', width: '14rem'}}
-      />
-      <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+      {/* 'inharmonic-sweep' puts the step slider inline by the button and the blend
+          slider below; every other mode keeps its single axis inline. */}
+      {mode === 'inharmonic-sweep' ? (
+        <>
+          <input
+            type="range"
+            min={stepMin}
+            max={stepMax}
+            step={stepStep}
+            value={step2}
+            aria-label={stepCaption}
+            onChange={(e) => onSlideStep(parseFloat(e.target.value))}
+            style={{verticalAlign: 'middle', width: '14rem'}}
+          />
+          <code style={{marginLeft: '0.8rem'}}>{stepCaption}</code>
+          <div style={{marginTop: '0.4rem'}}>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={slider}
+              aria-label={caption}
+              onChange={(e) => onSlide(parseFloat(e.target.value))}
+              style={{verticalAlign: 'middle', width: '14rem'}}
+            />
+            <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+          </div>
+        </>
+      ) : (
+        <>
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={slider}
+            aria-label={caption}
+            onChange={(e) => onSlide(parseFloat(e.target.value))}
+            style={{verticalAlign: 'middle', width: '14rem'}}
+          />
+          <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+        </>
+      )}
     </div>
   );
 }

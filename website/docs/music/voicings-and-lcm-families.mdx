@@ -101,22 +101,26 @@ upper voice: the plain octave (12.0) and a wider step (13.5) both beat; around 1
   label="▶ stretched timbre"
 />
 
-**C — inharmonic match.** The 4.8-semitone *slendro* step (frequency ratio
-$r = 2^{4.8/12} \approx 1.3195$) is harsh with ordinary harmonic partials. But give the tones an
-inharmonic timbre whose partials are powers of that very ratio — $\{1, r, r^2, r^3, r^4\}$ — and
-the interval locks: every partial of the upper note lands on a partial of the lower (Sethares'
-construction; it is *why* such a spacing reads as consonant for *bonang*-like spectra). Drag from
-harmonic toward the slendro-matched spectrum and hear the fixed 4.8 st step settle.
+**C — inharmonic match (any step).** Sethares' construction is not special to 4.8 semitones. For
+*any* step size $s$, set $r = 2^{s/12}$ and give both tones an inharmonic timbre whose partials are
+powers of that ratio — $\{1, r, r^2, r^3, r^4\}$. Then every partial of the upper note lands on a
+partial of the lower note, and the $s$-semitone interval locks into consonance (it is *why* such a
+spacing reads as consonant for *bonang*-like spectra). The first slider blends from ordinary
+harmonic partials toward this matched spectrum; the second slider sweeps the step size — the upper
+note and its target spectrum recompute together. Pick any step, then push the blend toward
+"inharmonic" and hear it settle, including the 4.8 st *slendro* step the paper highlights.
 
 <TimbreMorphPlayer
-  mode="inharmonic"
+  mode="inharmonic-sweep"
   notes={[0, 4.8]}
   partials={5}
-  partialRatios={[1, 1.319508, 1.741101, 2.297397, 3.031433]}
   min={0}
   max={1}
   initial={0}
-  label="▶ 4.8 st"
+  stepMin={0}
+  stepMax={12}
+  stepInitial={4.8}
+  label="▶ any step"
 />
 
 **D — slow-beat sweetness.** With harmonic partials, an octave detuned a touch off 2:1 produces a
