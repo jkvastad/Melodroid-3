@@ -1,7 +1,17 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import * as Tone from 'tone';
+import PartialSweepPlot from './PartialSweepPlot';
+import {
+  ampSum as ampSumOf,
+  computeFreq as computeFreqOf,
+  noteOffsets as noteOffsetsOf,
+  partialAmp as partialAmpOf,
+  partialCount as partialCountOf,
+  TimbreConfig,
+  TimbreMorphMode,
+} from '@site/src/lib/timbrePartials';
 
-export type TimbreMorphMode = 'gamma' | 'interval' | 'inharmonic' | 'inharmonic-sweep';
+export type {TimbreMorphMode};
 
 export type TimbreMorphPlayerProps = {
   // Which axis the slider drives:
@@ -40,6 +50,7 @@ export type TimbreMorphPlayerProps = {
   gain?: number; // linear amplitude multiplier; default 0.4
   label?: string; // button label; default 'Play'
   readout?: (m: number) => string; // formats the slider value into a caption
+  plot?: boolean; // show the partial-sweep map below the sliders; default true
 };
 
 // A slider-driven additive-synth player: it holds a sustained chord and re-ramps each
@@ -70,6 +81,7 @@ export default function TimbreMorphPlayerClient({
   gain = 0.4,
   label = 'Play',
   readout,
+  plot = true,
 }: TimbreMorphPlayerProps) {
   // Master gain the whole signal runs through, so stop() can fade to zero (no click)
   // before disposing.
@@ -84,50 +96,20 @@ export default function TimbreMorphPlayerClient({
   const [step2, setStep2] = useState(stepInitial ?? initial); // axis 2: step size s
   const [playing, setPlaying] = useState(false);
 
-  // 'inharmonic' must run exactly as many partials as the target ratio set has;
-  // 'inharmonic-sweep' computes its ratios on the fly, so it falls back to `partials`.
-  const partialCount =
-    mode === 'inharmonic' ? partialRatios?.length ?? partials : partials;
-
-  // The notes actually sounding for given slider values. Constant in length across the
-  // sliders' ranges (so the oscillator set never changes — we only re-ramp frequencies).
-  // `t` is axis 1, `s` is axis 2 (the step size, only used by 'inharmonic-sweep').
-  const noteOffsets = (t: number, s: number): number[] => {
-    if (mode === 'interval') return [notes[0], t];
-    if (mode === 'inharmonic-sweep') return [notes[0], s];
-    return notes;
-  };
-
-  // Per-partial frequency multiplier for given slider values.
-  const partialRatio = (i: number, t: number, s: number): number => {
-    if (mode === 'gamma') return Math.pow(t, Math.log2(i + 1));
-    if (mode === 'interval') return Math.pow(gamma, Math.log2(i + 1));
-    if (mode === 'inharmonic-sweep') {
-      // Blend the harmonic series (i+1) toward r^i, r = 2^(s/12): at t=1 the upper note's
-      // partial i lands on the lower note's partial i+1 for any step s.
-      const r = Math.pow(2, s / 12);
-      return (1 - t) * (i + 1) + t * Math.pow(r, i);
-    }
-    // inharmonic: blend the harmonic series (i+1) toward the explicit ratios.
-    const harmonic = i + 1;
-    const inharmonic = partialRatios![i];
-    return (1 - t) * harmonic + t * inharmonic;
-  };
-
-  const noteFreq = (offsetSemitones: number) =>
-    fundamental * Math.pow(2, offsetSemitones / 12);
-
-  const computeFreq = (noteIndex: number, partial: number, t: number, s: number) =>
-    noteFreq(noteOffsets(t, s)[noteIndex]) * partialRatio(partial, t, s);
-
-  // Fixed (slider-independent) per-partial amplitude from the rolloff, normalised so the
-  // partials of one note sum to unity before the per-note headroom split.
-  const partialAmp = (i: number) =>
-    Math.pow(10, (-rolloffDbPerOct * Math.log2(i + 1)) / 20);
-  const ampSum = Array.from({length: partialCount}, (_, i) => partialAmp(i)).reduce(
-    (a, b) => a + b,
-    0,
+  // The slider-independent spectrum config, shared with the visual sweep map so the picture
+  // and the sound are computed from exactly the same partial formulas (see timbrePartials.ts).
+  const cfg: TimbreConfig = useMemo(
+    () => ({mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, fundamental}),
+    [mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, fundamental],
   );
+
+  // Thin wrappers over the shared math, kept so the rest of this component reads as before.
+  const partialCount = partialCountOf(cfg);
+  const noteOffsets = (t: number, s: number) => noteOffsetsOf(cfg, t, s);
+  const computeFreq = (noteIndex: number, partial: number, t: number, s: number) =>
+    computeFreqOf(cfg, noteIndex, partial, t, s);
+  const partialAmp = (i: number) => partialAmpOf(cfg, i);
+  const ampSum = ampSumOf(cfg);
 
   const defaultReadout = (m: number): string => {
     if (mode === 'gamma') return `γ = ${m.toFixed(2)}`;
@@ -264,6 +246,9 @@ export default function TimbreMorphPlayerClient({
           />
           <code style={{marginLeft: '0.8rem'}}>{caption}</code>
         </>
+      )}
+      {plot && (
+        <PartialSweepPlot cfg={cfg} min={min} max={max} slider={slider} step2={step2} />
       )}
     </div>
   );
