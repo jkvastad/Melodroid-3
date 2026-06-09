@@ -25,7 +25,7 @@ export type TimbreMorphPlayerProps = {
   rolloffDbPerOct?: number; // amplitude rolloff, default 3 dB/octave
   partialRatios?: number[]; // inharmonic target multipliers (used by 'inharmonic')
   fundamental?: number; // Hz, default 220
-  gain?: number; // linear amplitude multiplier; default 0.5
+  gain?: number; // linear amplitude multiplier; default 0.4
   label?: string; // button label; default 'Play'
   readout?: (m: number) => string; // formats the slider value into a caption
 };
@@ -51,7 +51,7 @@ export default function TimbreMorphPlayerClient({
   rolloffDbPerOct = 3,
   partialRatios,
   fundamental = 220,
-  gain = 0.5,
+  gain = 0.4,
   label = 'Play',
   readout,
 }: TimbreMorphPlayerProps) {
