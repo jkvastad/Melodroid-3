@@ -4,7 +4,7 @@ sidebar_position: 2
 
 import Player from '@site/src/components/Player';
 import SequencePlayer from '@site/src/components/SequencePlayer';
-import TimbrePlayer from '@site/src/components/TimbrePlayer';
+import TimbreMorphPlayer from '@site/src/components/TimbreMorphPlayer';
 
 # Voicings and LCM Families
 
@@ -81,47 +81,58 @@ harmonic timbres), so you can hear the effect first-hand. Use headphones or good
 effect is in slow/fast beating between partials.
 
 **A — same 2:1 octave, swept overtone profile.** The notes never change (a literal 12-semitone
-octave); only the partials do. Harmonic locks; stretched and compressed both turn rough. This is
-the sentence above made audible: *pleasing → harsh and back, from the overtone profile alone.*
+octave); only the partials do. Press play and drag the slider: at γ=2.0 (harmonic) the octave
+locks; pulled either way — compressed (1.9) or stretched (2.1) — it turns rough. This is the
+sentence above made audible: *pleasing → harsh and back, from the overtone profile alone.*
 
-<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={1.9} label="▶ octave · compressed (γ=1.9)" />
-&nbsp;
-<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={2.0} label="▶ octave · harmonic (γ=2.0)" />
-&nbsp;
-<TimbrePlayer events={[{notes: [0, 12], beats: 3}]} gamma={2.1} label="▶ octave · stretched (γ=2.1)" />
+<TimbreMorphPlayer mode="gamma" notes={[0, 12]} min={1.9} max={2.1} initial={2.0} label="▶ octave" />
 
 **B — fixed stretched timbre, swept interval.** Holding the stretched ($\gamma = 2.1$) timbre, the
-consonant interval is no longer the 2:1 octave (12) but the stretched octave (≈12.78). The plain
-octave and a wider step both beat; the middle one settles.
+consonant interval is no longer the 2:1 octave (12) but the stretched octave (≈12.78). Drag the
+upper voice: the plain octave (12.0) and a wider step (13.5) both beat; around 12.78 it settles.
 
-<TimbrePlayer
+<TimbreMorphPlayer
+  mode="interval"
+  notes={[0, 12]}
   gamma={2.1}
-  beatSec={1.6}
-  events={[{notes: [0, 12]}, {notes: [0, 12.78]}, {notes: [0, 13.5]}]}
-  label="▶ 12.0 → 12.78 → 13.5 st (stretched timbre)"
+  min={12}
+  max={13.5}
+  initial={12.78}
+  label="▶ stretched timbre"
 />
 
 **C — inharmonic match.** The 4.8-semitone *slendro* step (frequency ratio
 $r = 2^{4.8/12} \approx 1.3195$) is harsh with ordinary harmonic partials. But give the tones an
 inharmonic timbre whose partials are powers of that very ratio — $\{1, r, r^2, r^3, r^4\}$ — and
 the interval locks: every partial of the upper note lands on a partial of the lower (Sethares'
-construction; it is *why* such a spacing reads as consonant for *bonang*-like spectra).
+construction; it is *why* such a spacing reads as consonant for *bonang*-like spectra). Drag from
+harmonic toward the slendro-matched spectrum and hear the fixed 4.8 st step settle.
 
-<TimbrePlayer events={[{notes: [0, 4.8], beats: 3}]} gamma={2.0} label="▶ 4.8 st · harmonic" />
-&nbsp;
-<TimbrePlayer
-  events={[{notes: [0, 4.8], beats: 3}]}
+<TimbreMorphPlayer
+  mode="inharmonic"
+  notes={[0, 4.8]}
+  partials={5}
   partialRatios={[1, 1.319508, 1.741101, 2.297397, 3.031433]}
-  label="▶ 4.8 st · slendro-matched inharmonic"
+  min={0}
+  max={1}
+  initial={0}
+  label="▶ 4.8 st"
 />
 
 **D — slow-beat sweetness.** With harmonic partials, an octave detuned a touch off 2:1 produces a
 slow, gentle pulsation rather than fast roughness — the positively-valenced "slow beating" the
-paper isolates. Compare the locked octave with the slightly detuned one.
+paper isolates. Nudge the upper voice off 12.0 and the beating appears slow, then quickens toward
+roughness as you push further.
 
-<TimbrePlayer events={[{notes: [0, 12], beats: 4}]} gamma={2.0} label="▶ octave · locked (12.0)" />
-&nbsp;
-<TimbrePlayer events={[{notes: [0, 12.15], beats: 4}]} gamma={2.0} label="▶ octave · detuned (12.15)" />
+<TimbreMorphPlayer
+  mode="interval"
+  notes={[0, 12]}
+  gamma={2.0}
+  min={12}
+  max={12.3}
+  initial={12}
+  label="▶ octave"
+/>
 
 If the hypotheses is that all wave patterns of sufficiently small size sound consonant or pleasing,
 then the harsh sound of lcm 15 (and 20) either invalidate the hypothesis or implies that 15 is too large a WPL. 
