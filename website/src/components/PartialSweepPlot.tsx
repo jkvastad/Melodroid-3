@@ -235,9 +235,12 @@ export default function PartialSweepPlot({
     u.setData(model.data as uPlot.AlignedData, true);
   }, [model.data]);
 
-  // slider change: just move the cursor line.
+  // slider change: just move the cursor line. redraw(false, false) repaints at the CURRENT
+  // scales (commit path) so it re-fires the cursor plugin's draw hook without re-ranging — a
+  // bare redraw() re-runs _setScale on x, which re-autoranges the auto y scale through its
+  // range fn back to the full extent, throwing away any active box zoom.
   useEffect(() => {
-    plotRef.current?.redraw();
+    plotRef.current?.redraw(false, false);
   }, [slider]);
 
   const cents = closestCrossNoteCents(cfg, slider, step2);
