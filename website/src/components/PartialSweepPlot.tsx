@@ -189,10 +189,14 @@ export default function PartialSweepPlot({
       height,
       legend: {show: false},
       scales: {
-        // Pass-through ranges (like WavePlotClient): honor the bounds a box-drag sets, instead of
-        // snapping back to a static extent. The padded initial view is applied explicitly below.
-        x: {time: false, range: (_u, lo, hi) => [lo, hi]},
-        y: {distr: 3, range: (_u, lo, hi) => [lo, hi]},
+        // These range fns run ONLY on autorange (initial load + double-click reset): a box-drag is
+        // applied as an explicit setScale that bypasses them, so it still zooms. Returning the full
+        // padded extent here keeps load/reset correct, and reading yMin/yMax from modelRef tracks a
+        // step2 rebuild. (A pass-through `(_,lo,hi)=>[lo,hi]` would re-autorange y to the RAW,
+        // unpadded extent on every redraw — the slider's redraw() sets x, which re-ranges auto y —
+        // churning the series paths so they never draw until a double-click.)
+        x: {time: false, range: () => [min, max]},
+        y: {distr: 3, range: () => [modelRef.current.yMin, modelRef.current.yMax]},
       },
       axes: [
         {label: xAxisLabel(cfg)},
@@ -205,8 +209,8 @@ export default function PartialSweepPlot({
 
     const u = new uPlot(opts, m.data as uPlot.AlignedData, containerRef.current);
     plotRef.current = u;
-    // x auto-ranges to exactly [min, max] (xs spans it); restore the 5%-padded y extent.
-    u.setScale('y', {min: m.yMin, max: m.yMax});
+    // No setScale here: construction autoranges both scales through the range fns above, landing on
+    // the full padded extent — so the first paint is already correct.
 
     const ro = new ResizeObserver(() => {
       if (containerRef.current) {
@@ -222,13 +226,13 @@ export default function PartialSweepPlot({
     };
   }, [structureKey]);
 
-  // step2 change: same series, new y data + y-range. setData(_, true) repaints via the reset
-  // path (which re-reads the y range function).
+  // step2 change: same series, new y data. setData(_, true) repaints via the reset path, which
+  // re-autoranges through the y range fn above — and that reads the now-current modelRef, so the
+  // y view picks up the new step2 extent without an explicit setScale.
   useEffect(() => {
     const u = plotRef.current;
     if (!u) return;
     u.setData(model.data as uPlot.AlignedData, true);
-    u.setScale('y', {min: model.yMin, max: model.yMax});
   }, [model.data]);
 
   // slider change: just move the cursor line.
