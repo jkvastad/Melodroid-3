@@ -103,7 +103,7 @@ upper voice: the plain octave (12.0) and a wider step (13.5) both beat; around 1
 
 **C — inharmonic match (any step).** Sethares' construction is not special to 4.8 semitones. For
 *any* step size $s$, set $r = 2^{s/12}$ and give both tones an inharmonic timbre whose partials are
-powers of that ratio — $\{1, r, r^2, r^3, r^4\}$. Then every partial of the upper note lands on a
+powers of that ratio — $\{1, r, r^2, \dots, r^9\}$. Then every partial of the upper note lands on a
 partial of the lower note, and the $s$-semitone interval locks into consonance (it is *why* such a
 spacing reads as consonant for *bonang*-like spectra). The first slider blends from ordinary
 harmonic partials toward this matched spectrum; the second slider sweeps the step size — the upper
@@ -113,7 +113,7 @@ note and its target spectrum recompute together. Pick any step, then push the bl
 <TimbreMorphPlayer
   mode="inharmonic-sweep"
   notes={[0, 4.8]}
-  partials={5}
+  partials={10}
   min={0}
   max={1}
   initial={0}

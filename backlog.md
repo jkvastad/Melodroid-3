@@ -25,6 +25,8 @@ TODO: discuss consonance in relation to timbre (and possibly encultured preferen
 * What is consonance? (pleasantness)
 * Does it matter that lcms 15/20 do not sound consonant?
 * Try playing lcms and fractions with different overtone series. Is it possible to construct series so that certain fractions/lcms sound bad/good depending on overtones?
+ * Add an auto marker which shows the best harmonics blend? Is there a spot for a given ratio and harmonics where timbres are "best"?
+ * Try playing a three tone chord with ratio powers
 TODO: section discussing composition - meoldy and chord progressions via full matches.
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)

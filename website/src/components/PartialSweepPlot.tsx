@@ -164,6 +164,11 @@ export default function PartialSweepPlot({
   const plotRef = useRef<uPlot | null>(null);
   const sliderRef = useRef(slider);
   sliderRef.current = slider;
+  // Whether the user has an active box zoom. Box zoom in this plot is effectively y-only: the
+  // constant x range fn (`() => [min,max]`) re-runs for the x series on every commit (uPlot
+  // setScales, i==0 branch) and snaps x back to full, while an explicit y stays put. So zoom lives
+  // in the y scale — tracked here, narrower-than-full-extent, via the setScale hook below.
+  const yZoomedRef = useRef(false);
 
   const cfgKey = JSON.stringify(cfg);
   const model = useMemo(
@@ -189,12 +194,16 @@ export default function PartialSweepPlot({
       height,
       legend: {show: false},
       scales: {
-        // These range fns run ONLY on autorange (initial load + double-click reset): a box-drag is
-        // applied as an explicit setScale that bypasses them, so it still zooms. Returning the full
-        // padded extent here keeps load/reset correct, and reading yMin/yMax from modelRef tracks a
-        // step2 rebuild. (A pass-through `(_,lo,hi)=>[lo,hi]` would re-autorange y to the RAW,
-        // unpadded extent on every redraw — the slider's redraw() sets x, which re-ranges auto y —
-        // churning the series paths so they never draw until a double-click.)
+        // Both range fns return the full padded extent, ignoring their args, so load + double-click
+        // reset land correctly and reading yMin/yMax from modelRef tracks a step2 rebuild. (A
+        // pass-through `(_,lo,hi)=>[lo,hi]` would re-autorange y to the RAW, unpadded extent on every
+        // redraw — the slider's redraw() sets x, which re-ranges auto y — churning the series paths
+        // so they never draw until a double-click.)
+        //
+        // Consequence (see uPlot setScales): the x range fn re-runs for the x series on EVERY commit,
+        // so a box-drag's x zoom is immediately snapped back to full — box zoom here is effectively
+        // y-only. An explicit y, by contrast, is skipped by the independent-scales loop and persists.
+        // That is why the step2 effect below tracks and restores the y scale, not x.
         x: {time: false, range: () => [min, max]},
         y: {distr: 3, range: () => [modelRef.current.yMin, modelRef.current.yMax]},
       },
@@ -205,6 +214,22 @@ export default function PartialSweepPlot({
       series: m.series,
       cursor: {drag: {x: true, y: true}},
       plugins: [cursorPlugin(() => sliderRef.current)],
+      // Track y-zoom: a box-drag narrows y below the full [yMin,yMax] extent; a double-click reset
+      // (or our own autorange below) restores it. modelRef holds the currently-displayed extent, so
+      // this stays correct as step2 rebuilds change yMin/yMax. The step2 effect reads it to decide
+      // whether to preserve the user's view.
+      hooks: {
+        setScale: [
+          (u, key) => {
+            if (key !== 'y') return;
+            const {yMin, yMax} = modelRef.current;
+            const sy = u.scales.y;
+            const eps = (yMax - yMin) * 1e-6 || 1e-9;
+            yZoomedRef.current =
+              sy.min != null && sy.max != null && (sy.min > yMin + eps || sy.max < yMax - eps);
+          },
+        ],
+      },
     };
 
     const u = new uPlot(opts, m.data as uPlot.AlignedData, containerRef.current);
@@ -226,13 +251,23 @@ export default function PartialSweepPlot({
     };
   }, [structureKey]);
 
-  // step2 change: same series, new y data. setData(_, true) repaints via the reset path, which
-  // re-autoranges through the y range fn above — and that reads the now-current modelRef, so the
-  // y view picks up the new step2 extent without an explicit setScale.
+  // step2 change: same series, new partial data — repaint without discarding an active box zoom.
+  // When the user has zoomed (y narrowed), load the new data silently with setData(_, false) (which
+  // never repaints on its own), then a single setScale('y') back to the current zoom: that one
+  // commit rebuilds the paths for the new step and keeps y pinned (an explicit y is not re-ranged —
+  // uPlot setScales, independent-scales loop), while x is left untouched at its full extent. When
+  // NOT zoomed, setData(_, true) autoranges y through its range fn so the view follows the new
+  // step's partial spread (the original default).
   useEffect(() => {
     const u = plotRef.current;
     if (!u) return;
-    u.setData(model.data as uPlot.AlignedData, true);
+    if (yZoomedRef.current) {
+      const yv = {min: u.scales.y.min!, max: u.scales.y.max!};
+      u.setData(model.data as uPlot.AlignedData, false);
+      u.setScale('y', yv);
+    } else {
+      u.setData(model.data as uPlot.AlignedData, true);
+    }
   }, [model.data]);
 
   // slider change: just move the cursor line. redraw(false, false) repaints at the CURRENT
