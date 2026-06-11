@@ -26,8 +26,7 @@ Our good-fraction LCM families mostly correspond to traditional chords and scale
 Several of these are harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and
 20 map to no traditional chords and seem to lack consonant voicings. Traditionally
 consonant voicings favour triads (intervals 3, 4 in 12-TET) and avoid semitones (interval 1) —
-both easier on the hand and lower in dissonance (see e.g.
-[Perception of musical consonance and dissonance: an outcome of neural synchronization](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/)).
+both easier on the hand and lower in dissonance.[^lots-stone]
 
 ## Scoring voicings
 
@@ -48,7 +47,7 @@ prints the lowest-penalty voicings of the C major scale (`24@0`) from every root
 `Root | Voicing | Intervals | Span | Penalty`, where `Voicing` is the key read as a strictly
 ascending sequence (so `7 11 2` means `7 11 14`). Every root of the C major scale reaches penalty
 `0`; root 7 is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate
-voicings for an arbitrary key set, e.g. `--keys 0 1 3 5 8 9 10` for `15@0`.
+voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
 
 ## Dissonant LCM
 
@@ -101,10 +100,29 @@ upper voice: the plain octave (12.0) and a wider step (13.5) both beat; around 1
   label="▶ stretched timbre"
 />
 
-**C — inharmonic match (any step).** Sethares' construction is not special to 4.8 semitones. For
+**C — inharmonic match (any step).** Sethares' construction is not special to 4.8 semitones[^sethares]. For
 *any* step size $s$, set $r = 2^{s/12}$ and give both tones an inharmonic timbre whose partials are
-powers of that ratio — $\{1, r, r^2, \dots, r^9\}$. Then every partial of the upper note lands on a
-partial of the lower note, and the $s$-semitone interval locks into consonance (it is *why* such a
+powers of that ratio — $\{1, r, r^2, \dots\}$. 
+
+Since $r$ is the ratio of two tones of frequency $a$ and $b$, then if $b > a$ it follows that
+
+$$
+ar = b \iff r = b/a
+$$
+
+This implies that for any overtones $a_i$ and $b_j$ we have
+
+$$
+a_i = a r^i = a (b/a)^i = b^i / a^{i-1}
+$$
+
+$$
+b_j = b r^j = b (b/a)^j = b^{j+1} / a^{j}
+$$
+
+with equality when $j + 1 = i$.
+
+This means every partial of the upper note lands on a partial of the lower note, and the $s$-semitone interval locks into consonance (it is *why* such a
 spacing reads as consonant for *bonang*-like spectra). The first slider blends from ordinary
 harmonic partials toward this matched spectrum; the second slider sweeps the step size — the upper
 note and its target spectrum recompute together. Pick any step, then push the blend toward
@@ -296,3 +314,12 @@ chord-key columns are tinted green. To ask "which placements survive if I add ke
 read column K. For the C major triad `{0, 4, 7}` the rows are `15@4 15@7 15@11 24@0 24@5 24@7`;
 column 5 is filled at `15@4 15@7 24@0 24@5` and blank at `15@11 24@7`, so playing key 5 keeps four
 interpretations and rules out two.
+
+
+[^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
+2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).
+
+[^lots-stone]: Inbal Shapira Lots & Lewi Stone, "Perception of musical consonance
+and dissonance: an outcome of neural synchronization," *Journal of the Royal
+Society Interface* **5**, no. 29 (2008): 1429–1434,
+[doi:10.1098/rsif.2008.0143](https://pmc.ncbi.nlm.nih.gov/articles/PMC2607353/).

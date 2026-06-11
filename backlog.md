@@ -21,6 +21,11 @@ Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### Key Sweep (keyboard/key-sweep.mdx)
 
 ## The Sound of Music
+TODO: go through the experiments of "Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"
+* Claude dropped the ball on cases but can still be salvaged, created useful tools
+* Perhaps go through all experiments and create interactive graphs to show the most salient points?
+* Summarise with implications for WPL based theory - why does e.g. harmonic minor sound good but not lcm 15?
+TODO: Also check out "Consonance and Pitch" which looks into how expectation affects consonance
 TODO: discuss consonance in relation to timbre (and possibly encultured preference). 
 * What is consonance? (pleasantness)
 * Does it matter that lcms 15/20 do not sound consonant?
@@ -30,6 +35,7 @@ TODO: discuss consonance in relation to timbre (and possibly encultured preferen
 TODO: section discussing composition - meoldy and chord progressions via full matches.
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+Perhaps the lots-stone reference is not perfect as we are not really interested in their result but rather the background for helmholtz dyads they discuss.
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
 ## Related Research

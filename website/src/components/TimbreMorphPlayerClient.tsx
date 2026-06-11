@@ -23,8 +23,8 @@ export type TimbreMorphPlayerProps = {
   //                  `initial`).
   //   'inharmonic' — slider IS a blend t∈[0,1] from the harmonic partials (i+1) to the
   //                  explicit `partialRatios` set; notes and interval are fixed.
-  //   'inharmonic-sweep' — TWO sliders. Slider 1 is the blend t∈[0,1] (as in
-  //                  'inharmonic'); slider 2 is the step size s (semitones). The upper
+  //   'inharmonic-sweep' — TWO sliders. Slider 2 is the blend t∈[0,1] (as in
+  //                  'inharmonic'); slider 1 is the step size s (semitones). The upper
   //                  voice sits at offset s and the inharmonic target is r^i with
   //                  r = 2^(s/12), so moving the step recomputes both the upper note's
   //                  pitch and its matched spectrum (Sethares' construction, generalised
