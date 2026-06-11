@@ -4,7 +4,8 @@ public readonly record struct Superposition(
     IReadOnlyList<Placement> Pieces,   // sorted by (Lcm, At)
     IReadOnlyList<int> ExtraKeys,      // union(pieces' keys) \ target, sorted
     bool DisjointOnTarget,             // pieces' target-contributions partition the target
-    int? Reference);                   // shared anchor when unique-reference; null otherwise
+    int? Reference,                    // shared anchor when unique-reference; null otherwise
+    int? CombinedLcm);                 // lcm of pieces' family LCMs when unique-reference (shared fundamental); null otherwise
 
 public static class Superpositions
 {
@@ -93,7 +94,14 @@ public static class Superpositions
 
             var disjoint = cover.Sum(c => c.Contribution.Count) == target.Count;
 
-            results.Add(new Superposition(pieces, extraKeys, disjoint, reference));
+            // Unique-reference: all pieces share one fundamental, so the whole superposition's
+            // wave pattern length is the lcm of the constituent family LCMs. With pieces on
+            // different references (any-reference) there is no single fundamental, so leave it null.
+            int? combinedLcm = reference is null
+                ? null
+                : pieces.Select(p => p.Lcm).Aggregate(IntegerMath.Lcm);
+
+            results.Add(new Superposition(pieces, extraKeys, disjoint, reference, combinedLcm));
         }
 
         // 4. Sort: piece count ↑, total extras ↑, max block LCM ↑, reference ↑, then (Lcm, At).

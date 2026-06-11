@@ -34,7 +34,10 @@ public static class SuperpositionsTableRenderer
         var table = new Table()
             .AddColumn(new TableColumn("#").RightAligned());
         if (uniqueReference)
+        {
             table.AddColumn(new TableColumn("Ref").RightAligned());
+            table.AddColumn(new TableColumn("LCM").RightAligned());
+        }
         table
             .AddColumn(new TableColumn("Pieces").LeftAligned())
             .AddColumn(new TableColumn($"Union ({ktet}-tet)").LeftAligned())
@@ -51,7 +54,11 @@ public static class SuperpositionsTableRenderer
 
             var extraStr = string.Join(" ", row.ExtraKeys);
             var cells = new List<string> { row.Pieces.Count.ToString() };
-            if (uniqueReference) cells.Add(row.Reference?.ToString() ?? "");
+            if (uniqueReference)
+            {
+                cells.Add(row.Reference?.ToString() ?? "");
+                cells.Add(row.CombinedLcm?.ToString() ?? "");
+            }
             cells.Add(piecesStr);
             cells.Add(unionStr);
             cells.Add(extraStr);

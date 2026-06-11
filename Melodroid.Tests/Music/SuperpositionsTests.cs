@@ -15,6 +15,19 @@ public class SuperpositionsTests
         return new HashSet<int>(Placements.Compute(family, at, ktet).Keys);
     }
 
+    // Independent oracle: lcm of a set of integers via a locally reimplemented gcd/lcm.
+    private static int LcmOf(IEnumerable<int> values)
+    {
+        static int Gcd(int a, int b)
+        {
+            a = Math.Abs(a);
+            b = Math.Abs(b);
+            while (b != 0) (a, b) = (b, a % b);
+            return a == 0 ? 1 : a;
+        }
+        return values.Aggregate(1, (acc, v) => acc / Gcd(acc, v) * v);
+    }
+
     [Fact]
     public void Major_scale_is_two_LCM8_placements_with_no_extras()
     {
@@ -235,13 +248,14 @@ public class SuperpositionsTests
 
         // 8@0 + 8@5 roots its two families on different keys, so it is a valid any-reference
         // cover but cannot be a unique-reference one.
-        static bool IsMajorScaleTwoEights(Superposition s) =>
+        anyRows.Should().Contain(s =>
             s.Pieces.Count == 2 &&
             s.Pieces.Any(p => p.Lcm == 8 && p.At == 0) &&
-            s.Pieces.Any(p => p.Lcm == 8 && p.At == 5);
-
-        anyRows.Should().Contain(IsMajorScaleTwoEights);
-        uniqueRows.Should().NotContain(IsMajorScaleTwoEights);
+            s.Pieces.Any(p => p.Lcm == 8 && p.At == 5));
+        uniqueRows.Should().NotContain(s =>
+            s.Pieces.Count == 2 &&
+            s.Pieces.Any(p => p.Lcm == 8 && p.At == 0) &&
+            s.Pieces.Any(p => p.Lcm == 8 && p.At == 5));
     }
 
     [Theory]
@@ -268,5 +282,24 @@ public class SuperpositionsTests
 
         rows.Should().NotBeEmpty();
         rows.Should().OnlyContain(s => s.Reference == null);
+    }
+
+    [Fact]
+    public void Unique_reference_combined_lcm_is_lcm_of_piece_lcms_and_null_under_any_reference()
+    {
+        var target = new[] { 0, 2, 4, 5, 7, 9, 11 };
+
+        var (uniqueRows, _) = Superpositions.Enumerate(
+            target, DefaultFamilies(), ktet: 12, minBlockLcm: 2, maxBlockLcm: 24, maxResults: 200, uniqueReference: true);
+
+        uniqueRows.Should().NotBeEmpty();
+        foreach (var s in uniqueRows)
+            s.CombinedLcm.Should().Be(LcmOf(s.Pieces.Select(p => p.Lcm)));
+
+        var (anyRows, _) = Superpositions.Enumerate(
+            target, DefaultFamilies(), ktet: 12, minBlockLcm: 2, maxBlockLcm: 24, maxResults: 200, uniqueReference: false);
+
+        anyRows.Should().NotBeEmpty();
+        anyRows.Should().OnlyContain(s => s.CombinedLcm == null);
     }
 }
