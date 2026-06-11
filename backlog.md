@@ -44,6 +44,8 @@ Perhaps the lots-stone reference is not perfect as we are not really interested 
 ## CLI Reference
 ### Installation (cli/installation.mdx)
 ### CLI Reference (cli/reference.mdx)
+New superposition command - skips aliases for placements, might later on want to check e.g. "only allow one reference point"
+TODO: superposition command deprecates key-supersets command, can be recreated with command options.
 ### Wave Pattern Plots (cli/wave-pattern-plots.mdx)
 
 # Claude

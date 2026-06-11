@@ -18,7 +18,8 @@
       "Bash(npm run *)",
       "Bash(findstr /R \"│  *24 │  *3 │  *4 \")",
       "PowerShell(npm --prefix \"d:\\\\Code\\\\Melodroid 3\\\\website\" run typecheck)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(dotnet test --filter \"FullyQualifiedName~SuperpositionsTests\" --nologo --logger \"trx;LogFileName=res.trx\" | Out-Null; if \\(Test-Path \"Melodroid.Tests/TestResults/res.trx\"\\) { $x = [xml]\\(Get-Content \"Melodroid.Tests/TestResults/res.trx\"\\); $x.TestRun.ResultSummary.outcome; $x.TestRun.ResultSummary.Counters.OuterXml } else { \"no trx\" })"
     ]
   }
 }

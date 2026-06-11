@@ -94,6 +94,16 @@ melodroid table key-supersets --keys 0 4 7 \
 
 Lists every placement whose keys contain the requested set, tightest fits first. `--keys` accepts any integer and octave-normalizes it into `[0, ktet-1]` (e.g. `14 → 2`, `-1 → ktet-1`).
 
+### `superpositions`
+
+```bash
+melodroid table superpositions --keys 0 2 4 5 7 9 11 \
+  [--min-block-lcm 2] [--max-block-lcm 24] [--max-results 200] \
+  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `key-supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone, exposing identities such as the major scale `= 8@0 + 8@5` and the natural minor `= 8@1 + 8@6`. `--max-results` caps the listing.
+
 ### `voicings`
 
 ```bash

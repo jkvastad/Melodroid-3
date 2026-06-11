@@ -510,6 +510,68 @@ class Program
             return 0;
         });
 
+        var superpositionsKeysOption = new Option<int[]>("--keys")
+        {
+            Description = "Target key indices on a --ktet keyboard, space-separated. Any integer is accepted and octave-normalized into [0, ktet-1] (e.g. 14 → 2, -1 → ktet-1). Duplicates are folded.",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var superpositionsMinBlockLcmOption = new Option<int>("--min-block-lcm")
+        {
+            Description = "Smallest LCM allowed for a building-block family (default 2, excluding the unison). Raise it to compose the target from larger patterns only, e.g. --min-block-lcm 8 to use the 8/9/10/12 families.",
+            DefaultValueFactory = _ => 2,
+        };
+        var superpositionsMaxBlockLcmOption = new Option<int?>("--max-block-lcm")
+        {
+            Description = "Largest LCM allowed for a building-block family (defaults to --max-lcm). Lower it to compose the target from smaller patterns only, e.g. --max-block-lcm 12.",
+            DefaultValueFactory = _ => null,
+        };
+        var superpositionsMaxResultsOption = new Option<int>("--max-results")
+        {
+            Description = "Cap on the number of decompositions listed.",
+            DefaultValueFactory = _ => 200,
+        };
+
+        var superpositionsCommand = new Command(
+            "superpositions",
+            "Enumerate minimal/irredundant ways to cover --keys as a union (superposition) of LCM-family placements. Building blocks may extend past the target; each reported decomposition lists its extra keys. Every piece uniquely covers at least one target key.");
+        superpositionsCommand.Add(maxSizeOption);
+        superpositionsCommand.Add(maxPrimeOption);
+        superpositionsCommand.Add(maxLcmOption);
+        superpositionsCommand.Add(superpositionsKeysOption);
+        superpositionsCommand.Add(superpositionsMinBlockLcmOption);
+        superpositionsCommand.Add(superpositionsMaxBlockLcmOption);
+        superpositionsCommand.Add(superpositionsMaxResultsOption);
+        superpositionsCommand.Add(ktetOption);
+        superpositionsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var keys = parse.GetValue(superpositionsKeysOption) ?? Array.Empty<int>();
+            var minBlockLcm = parse.GetValue(superpositionsMinBlockLcmOption);
+            var maxBlockLcm = parse.GetValue(superpositionsMaxBlockLcmOption) ?? maxLcm;
+            var maxResults = parse.GetValue(superpositionsMaxResultsOption);
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (keys.Length == 0) { AnsiConsole.MarkupLine("[red]--keys must contain at least one value.[/]"); return 1; }
+            if (minBlockLcm < 2) { AnsiConsole.MarkupLine("[red]--min-block-lcm must be ≥ 2.[/]"); return 1; }
+            if (maxBlockLcm < minBlockLcm) { AnsiConsole.MarkupLine("[red]--max-block-lcm must be ≥ --min-block-lcm.[/]"); return 1; }
+            if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
+
+            // Octave-normalize keys into [0, k) so callers can pass any integer (e.g. 14 → 2, -1 → k-1).
+            var dedupKeys = keys.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var (rows, truncated) = Superpositions.Enumerate(dedupKeys, families, k, minBlockLcm, maxBlockLcm, maxResults);
+            SuperpositionsTableRenderer.Render(dedupKeys, k, minBlockLcm, maxBlockLcm, rows, truncated);
+            return 0;
+        });
+
         var chordMelodyChordKeysOption = new Option<int[]>("--chord-keys")
         {
             Description = "Chord key indices on a --ktet keyboard (each in [0, ktet-1]), space-separated. Duplicates are folded.",
@@ -644,6 +706,7 @@ class Program
         tableCommand.Add(placementCommand);
         tableCommand.Add(familyOverlapCommand);
         tableCommand.Add(keySupersetsCommand);
+        tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(voicingsCommand);
 
