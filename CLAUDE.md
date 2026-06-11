@@ -74,7 +74,7 @@ table key-sweep         bin --keys / --ratios stepping through a k-tet tuning's 
 table placement         map an LCM family's fractions onto k-tet keys at a chosen anchor
 table family-overlap    sweep one family's placements against a reference family
 table key-supersets     placements whose keys are a superset of given --keys
-table superpositions    minimal ways to cover --keys as a union of LCM-family placements
+table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors)
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table chord-melody      matrix of maximal-LCM placements containing a chord vs each key
 graph lcm-families      Mermaid relation graph (--mode full|collapsed)

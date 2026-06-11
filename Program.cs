@@ -531,6 +531,10 @@ class Program
             Description = "Cap on the number of decompositions listed.",
             DefaultValueFactory = _ => 200,
         };
+        var superpositionsAnyReferenceOption = new Option<bool>("--any-reference")
+        {
+            Description = "Allow pieces to sit at different reference keys (anchors). Off by default, which keeps only decompositions whose pieces share one reference key.",
+        };
 
         var superpositionsCommand = new Command(
             "superpositions",
@@ -542,6 +546,7 @@ class Program
         superpositionsCommand.Add(superpositionsMinBlockLcmOption);
         superpositionsCommand.Add(superpositionsMaxBlockLcmOption);
         superpositionsCommand.Add(superpositionsMaxResultsOption);
+        superpositionsCommand.Add(superpositionsAnyReferenceOption);
         superpositionsCommand.Add(ktetOption);
         superpositionsCommand.SetAction(parse =>
         {
@@ -552,6 +557,7 @@ class Program
             var minBlockLcm = parse.GetValue(superpositionsMinBlockLcmOption);
             var maxBlockLcm = parse.GetValue(superpositionsMaxBlockLcmOption) ?? maxLcm;
             var maxResults = parse.GetValue(superpositionsMaxResultsOption);
+            var anyReference = parse.GetValue(superpositionsAnyReferenceOption);
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -567,8 +573,8 @@ class Program
             var dedupKeys = keys.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var (rows, truncated) = Superpositions.Enumerate(dedupKeys, families, k, minBlockLcm, maxBlockLcm, maxResults);
-            SuperpositionsTableRenderer.Render(dedupKeys, k, minBlockLcm, maxBlockLcm, rows, truncated);
+            var (rows, truncated) = Superpositions.Enumerate(dedupKeys, families, k, minBlockLcm, maxBlockLcm, maxResults, uniqueReference: !anyReference);
+            SuperpositionsTableRenderer.Render(dedupKeys, k, minBlockLcm, maxBlockLcm, rows, truncated, uniqueReference: !anyReference);
             return 0;
         });
 

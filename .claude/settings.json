@@ -19,7 +19,9 @@
       "Bash(findstr /R \"│  *24 │  *3 │  *4 \")",
       "PowerShell(npm --prefix \"d:\\\\Code\\\\Melodroid 3\\\\website\" run typecheck)",
       "Bash(npx tsc *)",
-      "PowerShell(dotnet test --filter \"FullyQualifiedName~SuperpositionsTests\" --nologo --logger \"trx;LogFileName=res.trx\" | Out-Null; if \\(Test-Path \"Melodroid.Tests/TestResults/res.trx\"\\) { $x = [xml]\\(Get-Content \"Melodroid.Tests/TestResults/res.trx\"\\); $x.TestRun.ResultSummary.outcome; $x.TestRun.ResultSummary.Counters.OuterXml } else { \"no trx\" })"
+      "PowerShell(dotnet test --filter \"FullyQualifiedName~SuperpositionsTests\" --nologo --logger \"trx;LogFileName=res.trx\" | Out-Null; if \\(Test-Path \"Melodroid.Tests/TestResults/res.trx\"\\) { $x = [xml]\\(Get-Content \"Melodroid.Tests/TestResults/res.trx\"\\); $x.TestRun.ResultSummary.outcome; $x.TestRun.ResultSummary.Counters.OuterXml } else { \"no trx\" })",
+      "PowerShell(dotnet test --filter \"FullyQualifiedName~Unique_reference_surfaces_isomorphic_aliases\" --logger \"trx;LogFileName=alias.trx\" 2>&1 | Out-Null; \"EXIT: $LASTEXITCODE\"; $trx = Get-ChildItem -Recurse -Filter \"alias.trx\" | Select-Object -First 1; if \\($trx\\) { \\([xml]\\(Get-Content $trx.FullName\\)\\).TestRun.ResultSummary.Counters.OuterXml })",
+      "PowerShell(dotnet run -- table superpositions --keys 0 2 4 5 7 9 11 --min-block-lcm 8 --max-block-lcm 12 2>&1 | Out-File \"$env:TEMP\\\\sup_scale.txt\" -Encoding utf8; Get-Content \"$env:TEMP\\\\sup_scale.txt\")"
     ]
   }
 }

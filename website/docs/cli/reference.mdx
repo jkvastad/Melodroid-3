@@ -98,11 +98,15 @@ Lists every placement whose keys contain the requested set, tightest fits first.
 
 ```bash
 melodroid table superpositions --keys 0 2 4 5 7 9 11 \
-  [--min-block-lcm 2] [--max-block-lcm 24] [--max-results 200] \
+  [--min-block-lcm 2] [--max-block-lcm 24] [--max-results 200] [--any-reference] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `key-supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone, exposing identities such as the major scale `= 8@0 + 8@5` and the natural minor `= 8@1 + 8@6`. `--max-results` caps the listing.
+Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `key-supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone. `--max-results` caps the listing.
+
+By default only **unique-reference** decompositions are listed: every piece shares one reference key (anchor), shown in the `Ref` column. The reference of a placement `L@a` is its anchor `a` — the key where the family's fundamental (`1/1`) sits — so a unique-reference cover roots the whole sound on a single fundamental. Isomorphic families are handled as aliases: the same keyboard key-set reachable by different families at shifted anchors (e.g. `4@0` and `3@7`, or `8@0` and `12@7`) lets a piece join whichever reference its partners share. With `--min-block-lcm 8 --max-block-lcm 12` this exposes the major scale as `8@0 + 12@0` (rooted on key 0, no extras) — the shared-reference alias of the cross-anchor `8@0 + 8@5`.
+
+Pass `--any-reference` to drop the shared-reference requirement and list every minimal cover (pieces may sit at different anchors, the `Ref` column is omitted); that is where mixed-reference identities such as the major scale `= 8@0 + 8@5` and the natural minor `= 8@1 + 8@6` appear.
 
 ### `voicings`
 

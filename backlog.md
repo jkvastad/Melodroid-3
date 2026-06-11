@@ -35,6 +35,9 @@ TODO: discuss consonance in relation to timbre (and possibly encultured preferen
 TODO: section discussing composition - meoldy and chord progressions via full matches.
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+TODO: to align cases with experiments from "Timbral effects on consonance..." case A should not only allow stretch but also allow a semitone slider from 11 to 13 semitones, effectively merging case B into case A.
+TODO: Case C is interesting in and of itself but not related to the paper. Could be expanded into playing melodies with dynamically auto-adjusting timbres.
+TODO: Add the bonang case with the fixed frequencies 𝑓0,1.52⁢𝑓0,3.46⁢𝑓0, and 3.92⁢𝑓0, for the upper tone and "the lower tone corresponds to a standard harmonic tone with four equally weighted harmonics.". This allows the user to sweep across the semitones and note for themselves where consonance arrises.
 Perhaps the lots-stone reference is not perfect as we are not really interested in their result but rather the background for helmholtz dyads they discuss.
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
