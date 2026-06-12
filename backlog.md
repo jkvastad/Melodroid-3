@@ -21,6 +21,7 @@ Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### Key Sweep (keyboard/key-sweep.mdx)
 
 ## The Sound of Music
+Some notes on consonance: Seems like there is some work based on dissonance curves for all overtones (the spectrum) of an instrument, from which we can do calculations on which intervals minimize the global roughness from these dissonances.
 TODO: go through the experiments of "Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"
 * Claude dropped the ball on cases but can still be salvaged, created useful tools
 * Perhaps go through all experiments and create interactive graphs to show the most salient points?
@@ -37,12 +38,20 @@ TODO: section discussing composition - meoldy and chord progressions via full ma
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
 TODO: to align cases with experiments from "Timbral effects on consonance..." case A should not only allow stretch but also allow a semitone slider from 11 to 13 semitones, effectively merging case B into case A.
 TODO: Case C is interesting in and of itself but not related to the paper. Could be expanded into playing melodies with dynamically auto-adjusting timbres.
-TODO: Add the bonang case with the fixed frequencies 𝑓0,1.52⁢𝑓0,3.46⁢𝑓0, and 3.92⁢𝑓0, for the upper tone and "the lower tone corresponds to a standard harmonic tone with four equally weighted harmonics.". This allows the user to sweep across the semitones and note for themselves where consonance arrises.
+TODO: Add the bonang case with the fixed frequencies 𝑓0,1.52⁢𝑓0,3.46⁢𝑓0, and 3.92⁢𝑓0, for the upper tone and "the lower tone corresponds to a standard harmonic tone with four equally weighted harmonics.". 
+This allows the user to sweep across the semitones and note for themselves where consonance arrises.
+TODO: Triad experiment with a slider for overtone stretch and a two-dimensional surface where the user can move a mouse to adjust intervals (as in their study 5). This way a user can listen to triad chord consonance.
+
 Perhaps the lots-stone reference is not perfect as we are not really interested in their result but rather the background for helmholtz dyads they discuss.
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
 ## Related Research
-### Related Research (related-research/related-research.mdx)
+### Consonance (related-research/consonance.mdx)
+Open up with the excellent review "Musical consonance: a review of theory and evidence on perception and preference of auditory roughness in humans and other animals" which discusses different models of consonance.
+Move a lot of the consonance discussion from "Voicings and LCM Families" here, especially:
+* The discussion of overtones vs. harmonicity for dyads in Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales
+* Expectation paper "Consonance and pitch" 
+* Enculturation "Indifference to dissonance in native Amazonians reveals cultural variation in music perception" and counter article 
 
 ## CLI Reference
 ### Installation (cli/installation.mdx)
