@@ -133,6 +133,43 @@ function closestCrossNoteCents(
   return best;
 }
 
+// Interval (x-axis value) at which every upper partial coincides with a lower partial — the
+// stretched-octave lock. When the upper note's frequency ratio equals the stretch γ, upper
+// partial k lands on lower partial 2k for all k at once, so the whole spectrum locks. Measured
+// above the lower note (cfg.notes[0]) as notes[0] + 12·log₂γ. Only defined for modes whose x-axis
+// IS the interval and whose stretch is a single γ; null otherwise (e.g. 'gamma', where x IS γ).
+function lockInterval(cfg: TimbreConfig, step2: number): number | null {
+  if (cfg.mode === 'stretch-interval') return cfg.notes[0] + 12 * Math.log2(step2);
+  if (cfg.mode === 'interval') return cfg.notes[0] + 12 * Math.log2(cfg.gamma ?? 2);
+  return null;
+}
+
+// Draws the static partial-lock interval (a red dashed vertical line) — the reader's target for
+// highest consonance. Reads cfg/step2 from refs so it tracks the stretch slider on a bare redraw.
+function lockLinePlugin(getCfg: () => TimbreConfig, getStep2: () => number): uPlot.Plugin {
+  return {
+    hooks: {
+      draw: (u) => {
+        const lockX = lockInterval(getCfg(), getStep2());
+        if (lockX == null) return;
+        const {min, max} = u.scales.x;
+        if (min == null || max == null || lockX < min || lockX > max) return;
+        const {ctx} = u;
+        const cx = Math.round(u.valToPos(lockX, 'x', true));
+        ctx.save();
+        ctx.strokeStyle = 'rgba(214,40,40,0.9)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cx, u.bbox.top);
+        ctx.lineTo(cx, u.bbox.top + u.bbox.height);
+        ctx.stroke();
+        ctx.restore();
+      },
+    },
+  };
+}
+
 // Draws the live slider cursor (a solid vertical line), reading the current value from a ref so
 // dragging only needs a cheap u.redraw() — no rebuild. Mirrors WavePlotClient's vLinesPlugin.
 function cursorPlugin(getX: () => number): uPlot.Plugin {
@@ -166,6 +203,10 @@ export default function PartialSweepPlot({
   const plotRef = useRef<uPlot | null>(null);
   const sliderRef = useRef(slider);
   sliderRef.current = slider;
+  // step2 drives the partial-lock line from inside the draw hook (not React state), so mirror it
+  // into a ref the same way as the slider.
+  const step2Ref = useRef(step2);
+  step2Ref.current = step2;
   // Whether the user has an active box zoom. Box zoom in this plot is effectively y-only: the
   // constant x range fn (`() => [min,max]`) re-runs for the x series on every commit (uPlot
   // setScales, i==0 branch) and snaps x back to full, while an explicit y stays put. So zoom lives
@@ -215,7 +256,11 @@ export default function PartialSweepPlot({
       ],
       series: m.series,
       cursor: {drag: {x: true, y: true}},
-      plugins: [cursorPlugin(() => sliderRef.current)],
+      plugins: [
+        // lock line first so the black live cursor draws on top where they coincide (γ=2 → both at 12).
+        lockLinePlugin(() => cfg, () => step2Ref.current),
+        cursorPlugin(() => sliderRef.current),
+      ],
       // Track y-zoom: a box-drag narrows y below the full [yMin,yMax] extent; a double-click reset
       // (or our own autorange below) restores it. modelRef holds the currently-displayed extent, so
       // this stays correct as step2 rebuilds change yMin/yMax. The step2 effect reads it to decide
@@ -281,6 +326,7 @@ export default function PartialSweepPlot({
   }, [slider]);
 
   const cents = closestCrossNoteCents(cfg, slider, step2);
+  const hasLock = lockInterval(cfg, step2) != null;
   const collisionNote =
     cents == null
       ? null
@@ -320,6 +366,19 @@ export default function PartialSweepPlot({
             {n === 0 ? 'lower note' : model.noteCnt === 2 ? 'upper note' : `note ${n + 1}`}
           </span>
         ))}
+        {hasLock && (
+          <span style={{display: 'flex', alignItems: 'center', gap: '0.35rem'}}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: '1.1rem',
+                height: 0,
+                borderTop: '2px dashed rgba(214,40,40,0.9)',
+              }}
+            />
+            max-consonance interval
+          </span>
+        )}
         {collisionNote && <span>· {collisionNote}</span>}
       </div>
     </div>
