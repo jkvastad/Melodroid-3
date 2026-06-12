@@ -35,6 +35,11 @@ export type TimbreMorphPlayerProps = {
   //                  (stepMin/stepMax/stepInitial). The lower voice is fixed at notes[0]
   //                  and partials stretch by γ as in 'gamma'. The sweep map plots partial
   //                  frequency against the interval (semitones on x). notes[1+] are ignored.
+  //   'mixed-interval' — slider IS the UPPER voice's semitone offset (like 'interval'), but the
+  //                  two voices carry DIFFERENT fixed spectra given by `noteRatios` (one explicit
+  //                  partial-ratio array per note). The lower voice is fixed at notes[0]; notes[1+]
+  //                  are ignored. Use `rolloffDbPerOct={0}` for equal partial weights. This is the
+  //                  mixed-timbre case (e.g. harmonic lower tone vs bonang upper tone).
   mode: TimbreMorphMode;
   notes: number[]; // semitone offsets from the fundamental
   min: number;
@@ -46,6 +51,8 @@ export type TimbreMorphPlayerProps = {
   partials?: number; // default 10 (used by 'gamma' / 'interval' / 'inharmonic-sweep')
   rolloffDbPerOct?: number; // amplitude rolloff, default 3 dB/octave
   partialRatios?: number[]; // inharmonic target multipliers (used by 'inharmonic')
+  noteRatios?: number[][]; // per-note explicit partial multipliers (used by 'mixed-interval')
+  scaleMarks?: number[]; // x-positions (semitones) to mark on the sweep map, e.g. slendro steps
   // Step-size slider (used by 'inharmonic-sweep' only).
   stepMin?: number; // semitone range min for the step slider
   stepMax?: number; // semitone range max for the step slider
@@ -78,6 +85,8 @@ export default function TimbreMorphPlayerClient({
   partials = 10,
   rolloffDbPerOct = 3,
   partialRatios,
+  noteRatios,
+  scaleMarks,
   stepMin,
   stepMax,
   stepInitial,
@@ -104,24 +113,27 @@ export default function TimbreMorphPlayerClient({
   // The slider-independent spectrum config, shared with the visual sweep map so the picture
   // and the sound are computed from exactly the same partial formulas (see timbrePartials.ts).
   const cfg: TimbreConfig = useMemo(
-    () => ({mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, fundamental}),
-    [mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, fundamental],
+    () => ({mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, noteRatios, fundamental}),
+    [mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, noteRatios, fundamental],
   );
 
   // Thin wrappers over the shared math, kept so the rest of this component reads as before.
-  const partialCount = partialCountOf(cfg);
+  // partialCount / ampSum take a note index so 'mixed-interval' can give each voice its own
+  // spectrum; every other mode ignores it (same count/sum for all notes).
+  const partialCount = (noteIndex = 0) => partialCountOf(cfg, noteIndex);
   const noteOffsets = (t: number, s: number) => noteOffsetsOf(cfg, t, s);
   const computeFreq = (noteIndex: number, partial: number, t: number, s: number) =>
     computeFreqOf(cfg, noteIndex, partial, t, s);
   const partialAmp = (i: number) => partialAmpOf(cfg, i);
-  const ampSum = ampSumOf(cfg);
+  const ampSum = (noteIndex = 0) => ampSumOf(cfg, noteIndex);
 
   // Two-slider modes expose axis 2 (step2) alongside the main slider.
   const twoSliders = mode === 'inharmonic-sweep' || mode === 'stretch-interval';
 
   const defaultReadout = (m: number): string => {
     if (mode === 'gamma') return `γ = ${m.toFixed(2)}`;
-    if (mode === 'interval' || mode === 'stretch-interval') return `${m.toFixed(2)} st`;
+    if (mode === 'interval' || mode === 'stretch-interval' || mode === 'mixed-interval')
+      return `${m.toFixed(2)} st`;
     if (mode === 'inharmonic-sweep')
       return `${Math.round((1 - m) * 100)}% harmonic - ${Math.round(m * 100)}% ratio partials`;
     return `harmonic ↔ inharmonic: ${Math.round(m * 100)}%`;
@@ -168,10 +180,10 @@ export default function TimbreMorphPlayerClient({
     // Split headroom across the simultaneous notes so a chord doesn't clip.
     const noteScale = gain / Math.max(offsets.length, 1);
     offsets.forEach((_, noteIndex) => {
-      for (let i = 0; i < partialCount; i++) {
-        const pGain = new Tone.Gain((partialAmp(i) / ampSum) * noteScale).connect(
-          master,
-        );
+      for (let i = 0; i < partialCount(noteIndex); i++) {
+        const pGain = new Tone.Gain(
+          (partialAmp(i) / ampSum(noteIndex)) * noteScale,
+        ).connect(master);
         const osc = new Tone.Oscillator(
           computeFreq(noteIndex, i, slider, step2),
           'sine',
@@ -261,7 +273,14 @@ export default function TimbreMorphPlayerClient({
         </>
       )}
       {plot && (
-        <PartialSweepPlot cfg={cfg} min={min} max={max} slider={slider} step2={step2} />
+        <PartialSweepPlot
+          cfg={cfg}
+          min={min}
+          max={max}
+          slider={slider}
+          step2={step2}
+          marks={scaleMarks}
+        />
       )}
     </div>
   );

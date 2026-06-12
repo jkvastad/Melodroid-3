@@ -39,8 +39,26 @@ In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and t
   label="▶ stretched octave"
 />
 
-TODO: Look up the details, can we reconstruct some salient examples of how overtone profiles change our consonance judgements?
-What about sine waves with no overtones? Do they have an assumed timbre e.g. harmonic?
+### Mixed timbres with a bonang 
+From Study 2C we can listen to a dyad with **two different timbres**: the lower note is an ordinary harmonic tone with four equally-weighted partials (1, 2, 3, 4), while the higher note is modelled on a Javanese gamelan instrument called a bonang.
+The bonang in the study uses overtones 𝑓0,1.52⁢𝑓0,3.46⁢𝑓0, and 3.92⁢𝑓0. 
+In the graph below you can adjust semitone distance (0-15) for the higher note. Slendro scale steps are marked and partials are displayed.
+
+<TimbreMorphPlayer
+  mode="mixed-interval"
+  notes={[0, 4.8]}
+  noteRatios={[[1, 2, 3, 4], [1, 1.52, 3.46, 3.92]]}
+  rolloffDbPerOct={0}
+  min={0}
+  max={15}
+  initial={4.8}
+  scaleMarks={[2.4, 4.8, 7.2, 9.6, 12, 14.4]}
+  label="▶ bonang dyad"
+/>
+
+Both tones use **equally-weighted** partials. Because the two spectra differ there is no single stretch factor, and so no partial-lock line — instead consonance appears wherever a bonang partial happens to fall on a harmonic of the lower note. Drag the upper voice and watch the sweep map: the lower tone's partials stay at fixed multiples while the bonang's slide upward, and the readout flags the closest cross-note pair. The study finds consonance peaks at **≈ 2.6** and **≈ 4.8 semitones** — exactly where the bonang's $3.46\,f_0$ and $1.52\,f_0$ partials meet the lower tone's 4th and 2nd harmonics (you can see the tracks cross). These sit on the marked *slendro* degrees (an equal five-tone division of the octave, ~240 cents per step), which the authors read as a perceptual origin for the scale.
+
+TODO: What about sine waves with no overtones? Do they have an assumed timbre e.g. harmonic?
 
 [^marjieh]: Raja Marjieh, Peter M. C. Harrison, Harin Lee, Fotini Deligiannaki, and Nori Jacoby, "Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales," *Nature Communications*, vol. 15, art. 1482, 2024. [doi:10.1038/s41467-024-45812-z](https://doi.org/10.1038/s41467-024-45812-z).
 

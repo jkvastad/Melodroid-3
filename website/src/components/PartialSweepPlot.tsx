@@ -25,6 +25,7 @@ export type PartialSweepPlotProps = {
   max: number;
   slider: number; // current axis-1 value — drives the cursor
   step2: number; // current axis-2 (step size); only moves things in 'inharmonic-sweep'
+  marks?: number[]; // x-positions (semitones) to mark with faint lines, e.g. slendro scale steps
   height?: number; // px, default 560
 };
 
@@ -44,6 +45,8 @@ const xAxisLabel = (cfg: TimbreConfig): string => {
       return 'upper voice (semitones)';
     case 'stretch-interval':
       return 'interval (semitones)';
+    case 'mixed-interval':
+      return 'upper voice (semitones)';
     case 'inharmonic-sweep':
       return 'blend (harmonic → matched)';
     default:
@@ -65,7 +68,6 @@ function buildModel(
   max: number,
   step2: number,
 ): Model {
-  const pCount = partialCount(cfg);
   const noteCnt = noteOffsets(cfg, min, step2).length;
 
   const xs = new Float64Array(SAMPLES);
@@ -82,6 +84,7 @@ function buildModel(
   let yMax = -Infinity;
 
   for (let n = 0; n < noteCnt; n++) {
+    const pCount = partialCount(cfg, n); // per-note: 'mixed-interval' voices can differ
     for (let i = 0; i < pCount; i++) {
       const y = new Float64Array(SAMPLES);
       for (let k = 0; k < SAMPLES; k++) {
@@ -110,13 +113,13 @@ function closestCrossNoteCents(
   slider: number,
   step2: number,
 ): number | null {
-  const pCount = partialCount(cfg);
   const noteCnt = noteOffsets(cfg, slider, step2).length;
   if (noteCnt < 2) return null;
   const freqs: number[][] = [];
   for (let n = 0; n < noteCnt; n++) {
     const row: number[] = [];
-    for (let i = 0; i < pCount; i++) row.push(computeFreq(cfg, n, i, slider, step2));
+    for (let i = 0; i < partialCount(cfg, n); i++)
+      row.push(computeFreq(cfg, n, i, slider, step2));
     freqs.push(row);
   }
   let best = Infinity;
@@ -191,12 +194,42 @@ function cursorPlugin(getX: () => number): uPlot.Plugin {
   };
 }
 
+// Draws faint dashed vertical lines at fixed x-positions (e.g. slendro scale degrees) so the
+// reader can see where marked intervals fall relative to the partial tracks. A neutral violet,
+// distinct from the note hues (blue/orange) and the black live cursor; drawn before both so they
+// sit behind. The marks are static config, captured once.
+function scaleMarksPlugin(marks: number[]): uPlot.Plugin {
+  return {
+    hooks: {
+      draw: (u) => {
+        const {min, max} = u.scales.x;
+        if (min == null || max == null) return;
+        const {ctx} = u;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(120,110,160,0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        for (const m of marks) {
+          if (m < min || m > max) continue;
+          const cx = Math.round(u.valToPos(m, 'x', true));
+          ctx.beginPath();
+          ctx.moveTo(cx, u.bbox.top);
+          ctx.lineTo(cx, u.bbox.top + u.bbox.height);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    },
+  };
+}
+
 export default function PartialSweepPlot({
   cfg,
   min,
   max,
   slider,
   step2,
+  marks,
   height = 560,
 }: PartialSweepPlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -222,10 +255,12 @@ export default function PartialSweepPlot({
   modelRef.current = model;
 
   // Recreate the plot only when its series structure / x-range changes — a step2 change keeps
-  // the same series and just updates the data in place (below).
+  // the same series and just updates the data in place (below). marksKey is folded in so changing
+  // the scale marks rebuilds (the marks plugin captures them once at construction).
+  const marksKey = (marks ?? []).join(',');
   const structureKey = useMemo(
-    () => [cfgKey, min, max, height, model.noteCnt].join('|'),
-    [cfgKey, min, max, height, model.noteCnt],
+    () => [cfgKey, min, max, height, model.noteCnt, marksKey].join('|'),
+    [cfgKey, min, max, height, model.noteCnt, marksKey],
   );
 
   useEffect(() => {
@@ -257,7 +292,9 @@ export default function PartialSweepPlot({
       series: m.series,
       cursor: {drag: {x: true, y: true}},
       plugins: [
-        // lock line first so the black live cursor draws on top where they coincide (γ=2 → both at 12).
+        // scale marks first (behind), then the lock line, then the black live cursor on top where
+        // they coincide (γ=2 → both at 12).
+        scaleMarksPlugin(marks ?? []),
         lockLinePlugin(() => cfg, () => step2Ref.current),
         cursorPlugin(() => sliderRef.current),
       ],
@@ -377,6 +414,19 @@ export default function PartialSweepPlot({
               }}
             />
             max-consonance interval
+          </span>
+        )}
+        {marks && marks.length > 0 && (
+          <span style={{display: 'flex', alignItems: 'center', gap: '0.35rem'}}>
+            <span
+              style={{
+                display: 'inline-block',
+                width: '1.1rem',
+                height: 0,
+                borderTop: '1px dashed rgba(120,110,160,0.8)',
+              }}
+            />
+            scale steps
           </span>
         )}
         {collisionNote && <span>· {collisionNote}</span>}
