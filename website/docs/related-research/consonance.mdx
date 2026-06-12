@@ -3,6 +3,8 @@ sidebar_position: 3
 description: Consonance in related research
 ---
 
+import TimbreMorphPlayer from '@site/src/components/TimbreMorphPlayer';
+
 # Consonance
 When two or more frequencies sound simultaneously they are perceived as more or less pleasant. This is called consonance. The reasons for consonance have perhaps been studied for millenia - already the babylonians had tuning systems:  West, M. L. "The Babylonian Musical Notation and the Hurrian Melodic Texts." Music & Letters 75, no. 2 (1994): 161–179.
 
@@ -22,8 +24,20 @@ These experiments are reimplemented below for the reader to experience for thems
 
 ### Stretched overtones and intervals
 One observation is that the consonance of the ubiquitous octave is dependent on the timbre. 
-In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and the interval from major seventh (11 semitones) to minor ninth (13 semitones).
+In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and the interval from major seventh (11 semitones) to minor ninth (13 semitones). Press play, then drag the sliders. Both notes share the same overtone profile: with harmonic partials ($\gamma = 2.0$) the plain octave (12 semitones) locks into consonance, but as the partials are stretched or compressed the consonant interval drifts off 12 — the octave is consonant only relative to its timbre. The map plots each partial's frequency against the interval; where a track of the upper note crosses one of the lower note, the partials coincide and the tone settles.
 
+<TimbreMorphPlayer
+  mode="stretch-interval"
+  notes={[0, 12]}
+  partials={10}
+  min={11}
+  max={13}
+  initial={12}
+  stepMin={1.9}
+  stepMax={2.1}
+  stepInitial={2.0}
+  label="▶ stretched octave"
+/>
 
 TODO: Look up the details, can we reconstruct some salient examples of how overtone profiles change our consonance judgements?
 What about sine waves with no overtones? Do they have an assumed timbre e.g. harmonic?

@@ -42,6 +42,8 @@ const xAxisLabel = (cfg: TimbreConfig): string => {
       return 'stretch γ';
     case 'interval':
       return 'upper voice (semitones)';
+    case 'stretch-interval':
+      return 'interval (semitones)';
     case 'inharmonic-sweep':
       return 'blend (harmonic → matched)';
     default:

@@ -4,7 +4,12 @@
 // can never drift apart. See the prose in voicings-and-lcm-families.mdx (§ Dissonant LCM) and
 // Marjieh et al. (2024) for what the spectra mean.
 
-export type TimbreMorphMode = 'gamma' | 'interval' | 'inharmonic' | 'inharmonic-sweep';
+export type TimbreMorphMode =
+  | 'gamma'
+  | 'interval'
+  | 'inharmonic'
+  | 'inharmonic-sweep'
+  | 'stretch-interval';
 
 // Everything the partial formulas need that does not change as the sliders move. The two
 // slider axes (t = gamma/interval/blend, s = step size) are passed per-call.
@@ -33,6 +38,7 @@ export function partialCount(cfg: TimbreConfig): number {
 // 'inharmonic-sweep').
 export function noteOffsets(cfg: TimbreConfig, t: number, s: number): number[] {
   if (cfg.mode === 'interval') return [cfg.notes[0], t];
+  if (cfg.mode === 'stretch-interval') return [cfg.notes[0], t];
   if (cfg.mode === 'inharmonic-sweep') return [cfg.notes[0], s];
   return cfg.notes;
 }
@@ -45,6 +51,9 @@ export function partialRatio(
   s: number,
 ): number {
   if (cfg.mode === 'gamma') return Math.pow(t, Math.log2(i + 1));
+  // 'stretch-interval': axis 2 (s) is the stretch γ; axis 1 (t) is the interval (handled in
+  // noteOffsets). Partials stretch by γ exactly as in 'gamma'.
+  if (cfg.mode === 'stretch-interval') return Math.pow(s, Math.log2(i + 1));
   if (cfg.mode === 'interval')
     return Math.pow(cfg.gamma ?? 2.0, Math.log2(i + 1));
   if (cfg.mode === 'inharmonic-sweep') {

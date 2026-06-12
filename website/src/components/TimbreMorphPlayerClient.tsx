@@ -30,6 +30,11 @@ export type TimbreMorphPlayerProps = {
   //                  pitch and its matched spectrum (Sethares' construction, generalised
   //                  to any step). `partialRatios` is ignored; `partials` sets N. Step
   //                  axis comes from stepMin/stepMax/stepInitial/stepStep.
+  //   'stretch-interval' — TWO sliders. Slider 1 is the interval (the UPPER voice's
+  //                  semitone offset, min/max/initial); slider 2 is the stretch γ
+  //                  (stepMin/stepMax/stepInitial). The lower voice is fixed at notes[0]
+  //                  and partials stretch by γ as in 'gamma'. The sweep map plots partial
+  //                  frequency against the interval (semitones on x). notes[1+] are ignored.
   mode: TimbreMorphMode;
   notes: number[]; // semitone offsets from the fundamental
   min: number;
@@ -111,15 +116,22 @@ export default function TimbreMorphPlayerClient({
   const partialAmp = (i: number) => partialAmpOf(cfg, i);
   const ampSum = ampSumOf(cfg);
 
+  // Two-slider modes expose axis 2 (step2) alongside the main slider.
+  const twoSliders = mode === 'inharmonic-sweep' || mode === 'stretch-interval';
+
   const defaultReadout = (m: number): string => {
     if (mode === 'gamma') return `γ = ${m.toFixed(2)}`;
-    if (mode === 'interval') return `${m.toFixed(2)} st`;
+    if (mode === 'interval' || mode === 'stretch-interval') return `${m.toFixed(2)} st`;
     if (mode === 'inharmonic-sweep')
       return `${Math.round((1 - m) * 100)}% harmonic - ${Math.round(m * 100)}% ratio partials`;
     return `harmonic ↔ inharmonic: ${Math.round(m * 100)}%`;
   };
   const caption = (readout ?? defaultReadout)(slider);
-  const stepCaption = `${step2.toFixed(2)} st`; // axis-2 readout (inharmonic-sweep)
+  // axis-2 readout: γ for 'stretch-interval', step size for 'inharmonic-sweep'.
+  const stepCaption =
+    mode === 'stretch-interval'
+      ? `γ = ${step2.toFixed(2)}`
+      : `${step2.toFixed(2)} st`;
 
   const stop = () => {
     const master = masterRef.current;
@@ -203,9 +215,10 @@ export default function TimbreMorphPlayerClient({
         onClick={playing ? stop : play}>
         {playing ? 'Stop' : label}
       </button>
-      {/* 'inharmonic-sweep' puts the step slider inline by the button and the blend
-          slider below; every other mode keeps its single axis inline. */}
-      {mode === 'inharmonic-sweep' ? (
+      {/* Two-slider modes ('inharmonic-sweep', 'stretch-interval') put the axis-2 slider
+          inline by the button and the axis-1 slider below; every other mode keeps its single
+          axis inline. */}
+      {twoSliders ? (
         <>
           <input
             type="range"
