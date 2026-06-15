@@ -52,6 +52,8 @@ Move a lot of the consonance discussion from "Voicings and LCM Families" here, e
 * The discussion of overtones vs. harmonicity for dyads in Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales
 * Expectation paper "Consonance and pitch" 
 * Enculturation "Indifference to dissonance in native Amazonians reveals cultural variation in music perception" and counter article 
+#### Stretched overtones and intervals
+Adjust volume. maybe 25% softer volume.
 
 ## CLI Reference
 ### Installation (cli/installation.mdx)

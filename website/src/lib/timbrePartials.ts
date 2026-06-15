@@ -109,3 +109,14 @@ export function ampSum(cfg: TimbreConfig, noteIndex = 0): number {
   for (let i = 0; i < partialCount(cfg, noteIndex); i++) sum += partialAmp(cfg, i);
   return sum;
 }
+
+// Interval (x-axis value) at which every upper partial coincides with a lower partial — the
+// stretched-octave lock. When the upper note's frequency ratio equals the stretch γ, upper
+// partial k lands on lower partial 2k for all k at once, so the whole spectrum locks. Measured
+// above the lower note (cfg.notes[0]) as notes[0] + 12·log₂γ. Only defined for modes whose x-axis
+// IS the interval and whose stretch is a single γ; null otherwise (e.g. 'gamma', where x IS γ).
+export function lockInterval(cfg: TimbreConfig, step2: number): number | null {
+  if (cfg.mode === 'stretch-interval') return cfg.notes[0] + 12 * Math.log2(step2);
+  if (cfg.mode === 'interval') return cfg.notes[0] + 12 * Math.log2(cfg.gamma ?? 2);
+  return null;
+}

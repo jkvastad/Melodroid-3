@@ -4,6 +4,7 @@ import PartialSweepPlot from './PartialSweepPlot';
 import {
   ampSum as ampSumOf,
   computeFreq as computeFreqOf,
+  lockInterval,
   noteOffsets as noteOffsetsOf,
   partialAmp as partialAmpOf,
   partialCount as partialCountOf,
@@ -219,6 +220,17 @@ export default function TimbreMorphPlayerClient({
     }
   };
 
+  // Partial-lock interval (the plot's red dashed line) for the current stretch — the reader's
+  // target. Recomputed each render so it tracks the γ slider in 'stretch-interval'; null for modes
+  // without a single-γ lock, which hides the match button.
+  const lock = lockInterval(cfg, step2);
+  // Snap the interval slider onto the lock interval (clamped to the slider range), reusing onSlide
+  // so a sounding chord glides to the locked spectrum.
+  const matchLock = () => {
+    if (lock == null) return;
+    onSlide(Math.min(max, Math.max(min, lock)));
+  };
+
   return (
     <div style={{margin: '0.6rem 0'}}>
       <button
@@ -255,6 +267,14 @@ export default function TimbreMorphPlayerClient({
               style={{verticalAlign: 'middle', width: '14rem'}}
             />
             <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+            {lock != null && (
+              <button
+                className="button button--secondary button--sm"
+                style={{marginLeft: '0.8rem'}}
+                onClick={matchLock}>
+                match
+              </button>
+            )}
           </div>
         </>
       ) : (
@@ -270,6 +290,14 @@ export default function TimbreMorphPlayerClient({
             style={{verticalAlign: 'middle', width: '14rem'}}
           />
           <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+          {lock != null && (
+            <button
+              className="button button--secondary button--sm"
+              style={{marginLeft: '0.8rem'}}
+              onClick={matchLock}>
+              match
+            </button>
+          )}
         </>
       )}
       {plot && (

@@ -3,6 +3,7 @@ import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import {
   computeFreq,
+  lockInterval,
   noteOffsets,
   partialAmp,
   partialCount,
@@ -134,17 +135,6 @@ function closestCrossNoteCents(
     }
   }
   return best;
-}
-
-// Interval (x-axis value) at which every upper partial coincides with a lower partial — the
-// stretched-octave lock. When the upper note's frequency ratio equals the stretch γ, upper
-// partial k lands on lower partial 2k for all k at once, so the whole spectrum locks. Measured
-// above the lower note (cfg.notes[0]) as notes[0] + 12·log₂γ. Only defined for modes whose x-axis
-// IS the interval and whose stretch is a single γ; null otherwise (e.g. 'gamma', where x IS γ).
-function lockInterval(cfg: TimbreConfig, step2: number): number | null {
-  if (cfg.mode === 'stretch-interval') return cfg.notes[0] + 12 * Math.log2(step2);
-  if (cfg.mode === 'interval') return cfg.notes[0] + 12 * Math.log2(cfg.gamma ?? 2);
-  return null;
 }
 
 // Draws the static partial-lock interval (a red dashed vertical line) — the reader's target for

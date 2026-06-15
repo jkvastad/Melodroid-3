@@ -13,18 +13,25 @@ In modern times there are three primary hypotheses for consonance "Musical conso
 * Preference for harmonicity
 * Learned preference from cultural exposure
 
-Aversion to roughness centers around Helmholtz observation that as two coinciding frequencies are separated, there occurs a maxima of unpleasantness. This creates a dissonance curve.
+Aversion to roughness centers around Helmholtz observation (TODO: citation for Helmholtz original work) that as two coinciding frequencies are separated, there occurs a maxima of unpleasantness. 
+This creates a "dissonance curve".
+
+
 Preference for harmonicity centers around the idea that humans like it when interval and overtone ratios are small simple fractions e.g. the octaves 2:1 or the perfect fifths 3:2.
+
+
 Learned preference centers around the idea that musical preference is a learned phenomena.
 
 ## Timbral Effects
-The pleasantness of simultaneous chord is affected not only by frequency ratios, but by timbre (overtone profiles). In ["Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"](https://pmc.ncbi.nlm.nih.gov/articles/PMC11258268/)[^marjieh]
+The pleasantness of simultaneous chord is affected not only by frequency ratios, but also by timbre (overtone/partials profiles).
+In ["Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"](https://pmc.ncbi.nlm.nih.gov/articles/PMC11258268/)[^marjieh],
 the authors run a series of experiments showing that consonance judgements are affected by not just the intervals (harmonicity) but by overtone profiles as well (aversion to roughness). 
 These experiments are reimplemented below for the reader to experience for themselves:
 
 ### Stretched overtones and intervals
-One observation is that the consonance of the ubiquitous octave is dependent on the timbre. 
-In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and the interval from major seventh (11 semitones) to minor ninth (13 semitones). Press play, then drag the sliders. Both notes share the same overtone profile: with harmonic partials ($\gamma = 2.0$) the plain octave (12 semitones) locks into consonance, but as the partials are stretched or compressed the consonant interval drifts off 12 — the octave is consonant only relative to its timbre. The map plots each partial's frequency against the interval; where a track of the upper note crosses one of the lower note, the partials coincide and the tone settles. The red dashed line marks the **partial-lock interval** $12\log_2\gamma$ (measured above the lower note): the unique interval where the upper note's frequency ratio equals the stretch $\gamma$, so *every* upper partial lands on a lower partial at once and the whole spectrum locks. At $\gamma = 2.0$ it sits on the plain 12-semitone octave; stretch or compress the partials and it drifts off 12 — your target for highest consonance follows the timbre.
+One observation is that the consonance of the ubiquitous octave is dependent on timbre. 
+In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and the interval from major seventh (11 semitones) to minor ninth (13 semitones). 
+Press play, then drag the sliders or press "match" to snap the interval onto the timbre's spectrum lock.
 
 <TimbreMorphPlayer
   mode="stretch-interval"
@@ -38,6 +45,12 @@ In the below graph, try adjusting both the timbre stretch from 1.9 to 2.1, and t
   stepInitial={2.0}
   label="▶ stretched octave"
 />
+
+Both notes share the same overtone profile: with harmonic partials ($\gamma = 2.0$) the plain octave (12 semitones) locks into consonance. 
+As the partials are stretched or compressed the consonant interval drifts away from 12 semitones — the octave is consonant only relative to its timbre.
+
+The red dashed line marks $12\log_2\gamma$ above the lower note - the semitone where all partials lock. 
+This is where the upper note's frequency ratio equals the stretch $\gamma$, so every upper partial lands on a lower partial and the whole spectrum locks.
 
 ### Mixed timbres with a bonang 
 From Study 2C we can listen to a dyad with **two different timbres**: the lower note is an ordinary harmonic tone with four equally-weighted partials (1, 2, 3, 4), while the higher note is modelled on a Javanese gamelan instrument called a bonang.
