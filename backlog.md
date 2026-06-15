@@ -47,13 +47,10 @@ Perhaps the lots-stone reference is not perfect as we are not really interested 
 
 ## Related Research
 ### Consonance (related-research/consonance.mdx)
-Open up with the excellent review "Musical consonance: a review of theory and evidence on perception and preference of auditory roughness in humans and other animals" which discusses different models of consonance.
-Move a lot of the consonance discussion from "Voicings and LCM Families" here, especially:
-* The discussion of overtones vs. harmonicity for dyads in Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales
 * Expectation paper "Consonance and pitch" 
 * Enculturation "Indifference to dissonance in native Amazonians reveals cultural variation in music perception" and counter article 
 #### Stretched overtones and intervals
-Adjust volume. maybe 25% softer volume.
+#### Mixed timbres with a bonang
 
 ## CLI Reference
 ### Installation (cli/installation.mdx)
