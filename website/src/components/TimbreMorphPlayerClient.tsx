@@ -50,6 +50,13 @@ export type TimbreMorphPlayerProps = {
   // Fixed-spectrum parameters (see mode notes above for which apply).
   gamma?: number; // default 2.0 (used by 'interval')
   partials?: number; // default 10 (used by 'gamma' / 'interval' / 'inharmonic-sweep')
+  // Active-partial-count slider (opt-in): when partialMax is set a third slider lets the reader
+  // change how many partials sound live, from partialMin (default 1) to partialMax. `partials`
+  // becomes the slider's INITIAL value. The bank is built at partialMax oscillators and gated by
+  // gain, so each partial keeps a fixed loudness — raising the count adds upper partials on top of
+  // an unchanged fundamental. Only meaningful for modes that use the explicit `partials` count.
+  partialMin?: number; // active-partials slider min, default 1
+  partialMax?: number; // active-partials slider max; presence enables the slider
   rolloffDbPerOct?: number; // amplitude rolloff, default 3 dB/octave
   partialRatios?: number[]; // inharmonic target multipliers (used by 'inharmonic')
   noteRatios?: number[][]; // per-note explicit partial multipliers (used by 'mixed-interval')
@@ -84,6 +91,8 @@ export default function TimbreMorphPlayerClient({
   step = 0.01,
   gamma = 2.0,
   partials = 10,
+  partialMin = 1,
+  partialMax,
   rolloffDbPerOct = 3,
   partialRatios,
   noteRatios,
@@ -105,17 +114,23 @@ export default function TimbreMorphPlayerClient({
   // The oscillators tagged with which note / partial they realise, so the slider
   // handler can recompute and re-ramp each one's frequency.
   const partialsRef = useRef<
-    Array<{osc: Tone.Oscillator; noteIndex: number; partial: number}>
+    Array<{osc: Tone.Oscillator; pGain: Tone.Gain; noteIndex: number; partial: number}>
   >([]);
   const [slider, setSlider] = useState(initial); // axis 1: gamma / interval / blend t
   const [step2, setStep2] = useState(stepInitial ?? initial); // axis 2: step size s
+  const [partialN, setPartialN] = useState(partials); // axis 3: active partial count (opt-in)
   const [playing, setPlaying] = useState(false);
+
+  // Whether the active-partials slider is enabled, and the fixed-size oscillator bank we build.
+  const partialsSlider = partialMax != null;
+  const bankCount = partialMax ?? partials;
 
   // The slider-independent spectrum config, shared with the visual sweep map so the picture
   // and the sound are computed from exactly the same partial formulas (see timbrePartials.ts).
+  // `partials` here is the LIVE active count (partialN) so the plot tracks the slider.
   const cfg: TimbreConfig = useMemo(
-    () => ({mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, noteRatios, fundamental}),
-    [mode, notes, gamma, partials, rolloffDbPerOct, partialRatios, noteRatios, fundamental],
+    () => ({mode, notes, gamma, partials: partialN, rolloffDbPerOct, partialRatios, noteRatios, fundamental}),
+    [mode, notes, gamma, partialN, rolloffDbPerOct, partialRatios, noteRatios, fundamental],
   );
 
   // Thin wrappers over the shared math, kept so the rest of this component reads as before.
@@ -127,6 +142,18 @@ export default function TimbreMorphPlayerClient({
     computeFreqOf(cfg, noteIndex, partial, t, s);
   const partialAmp = (i: number) => partialAmpOf(cfg, i);
   const ampSum = (noteIndex = 0) => ampSumOf(cfg, noteIndex);
+
+  // Fixed reference amplitude sum over the FULL bank (N-independent), so each partial keeps a
+  // constant loudness: raising the active count adds upper partials on top of an unchanged
+  // fundamental rather than rescaling everything. partialAmp is N-independent.
+  const ampSumRef = () => {
+    let sum = 0;
+    for (let i = 0; i < bankCount; i++) sum += partialAmp(i);
+    return sum;
+  };
+  // Per-partial gain for the additive synth: silent above the active count, fixed amplitude below.
+  const targetGain = (i: number, noteScale: number) =>
+    i < partialN ? (partialAmp(i) / ampSumRef()) * noteScale : 0;
 
   // Two-slider modes expose axis 2 (step2) alongside the main slider.
   const twoSliders = mode === 'inharmonic-sweep' || mode === 'stretch-interval';
@@ -145,6 +172,7 @@ export default function TimbreMorphPlayerClient({
     mode === 'stretch-interval'
       ? `γ = ${step2.toFixed(2)}`
       : `${step2.toFixed(2)} st`;
+  const partialCaption = `${partialN} partial${partialN === 1 ? '' : 's'}`;
 
   const stop = () => {
     const master = masterRef.current;
@@ -175,15 +203,21 @@ export default function TimbreMorphPlayerClient({
     masterRef.current = master;
 
     const nodes: Array<{dispose: () => void}> = [];
-    const tagged: Array<{osc: Tone.Oscillator; noteIndex: number; partial: number}> = [];
+    const tagged: Array<{osc: Tone.Oscillator; pGain: Tone.Gain; noteIndex: number; partial: number}> = [];
 
     const offsets = noteOffsets(slider, step2);
     // Split headroom across the simultaneous notes so a chord doesn't clip.
     const noteScale = gain / Math.max(offsets.length, 1);
     offsets.forEach((_, noteIndex) => {
-      for (let i = 0; i < partialCount(noteIndex); i++) {
+      // Build the full bank (partialMax oscillators when the slider is enabled, else partialCount):
+      // partials beyond the active count start silent and are gated by gain, so changing the count
+      // never adds or removes oscillators. 'mixed-interval' has no opt-in slider, so partialCount holds.
+      const count = partialsSlider ? bankCount : partialCount(noteIndex);
+      for (let i = 0; i < count; i++) {
         const pGain = new Tone.Gain(
-          (partialAmp(i) / ampSum(noteIndex)) * noteScale,
+          partialsSlider
+            ? targetGain(i, noteScale)
+            : (partialAmp(i) / ampSum(noteIndex)) * noteScale,
         ).connect(master);
         const osc = new Tone.Oscillator(
           computeFreq(noteIndex, i, slider, step2),
@@ -191,7 +225,7 @@ export default function TimbreMorphPlayerClient({
         ).connect(pGain);
         osc.start(t0);
         nodes.push(osc, pGain);
-        tagged.push({osc, noteIndex, partial: i});
+        tagged.push({osc, pGain, noteIndex, partial: i});
       }
     });
 
@@ -220,6 +254,19 @@ export default function TimbreMorphPlayerClient({
     }
   };
 
+  // Active-partial-count slider: leave frequencies alone, just ramp each partial's gain so partials
+  // below the new count sound (at their fixed amplitude) and the rest fade to silence. `value` is the
+  // just-changed count; partialN state is still stale here, so gate against `value` directly.
+  const onSlidePartials = (value: number) => {
+    setPartialN(value);
+    if (!masterRef.current) return;
+    const noteScale = gain / Math.max(noteOffsets(slider, step2).length, 1);
+    for (const {pGain, partial} of partialsRef.current) {
+      const g = partial < value ? (partialAmp(partial) / ampSumRef()) * noteScale : 0;
+      pGain.gain.rampTo(g, 0.04);
+    }
+  };
+
   // Partial-lock interval (the plot's red dashed line) for the current stretch — the reader's
   // target. Recomputed each render so it tracks the γ slider in 'stretch-interval'; null for modes
   // without a single-γ lock, which hides the match button.
@@ -230,6 +277,24 @@ export default function TimbreMorphPlayerClient({
     if (lock == null) return;
     onSlide(Math.min(max, Math.max(min, lock)));
   };
+
+  // Opt-in active-partials slider, rendered as its own stacked row under the other axes. Integer
+  // steps (1 partial at a time) keep the sweep-plot rebuilds on each change cheap.
+  const partialsRow = partialsSlider && (
+    <div style={{marginTop: '0.4rem'}}>
+      <input
+        type="range"
+        min={partialMin}
+        max={partialMax}
+        step={1}
+        value={partialN}
+        aria-label={partialCaption}
+        onChange={(e) => onSlidePartials(parseInt(e.target.value, 10))}
+        style={{verticalAlign: 'middle', width: '14rem'}}
+      />
+      <code style={{marginLeft: '0.8rem'}}>{partialCaption}</code>
+    </div>
+  );
 
   return (
     <div style={{margin: '0.6rem 0'}}>
@@ -276,6 +341,7 @@ export default function TimbreMorphPlayerClient({
               </button>
             )}
           </div>
+          {partialsRow}
         </>
       ) : (
         <>
@@ -298,6 +364,7 @@ export default function TimbreMorphPlayerClient({
               match
             </button>
           )}
+          {partialsRow}
         </>
       )}
       {plot && (

@@ -13,6 +13,7 @@ Perhaps the docusaurus default boxed layout of subsections should instead be a l
 ### Good Fractions (theory/good-fractions.mdx)
 Weird styling on the G13/Cmaj13 part, G is italicized but not the Cmaj
 ### LCM Families (theory/lcm-families.mdx)
+Check graphs for max-prime 7 and both max lcm 35(5*7) and 24.
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 

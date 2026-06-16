@@ -72,12 +72,16 @@ $$
 with equality when $j + 1 = i$.
 
 This means every partial of the upper note lands on a partial of the lower note. Try this out in the graph below. The first slider blends from ordinary
-harmonic partials toward this matched spectrum.
+harmonic partials toward this matched spectrum, and the second sets the step size. 
+The third slider sets how many partials sound (1–12): adding more does not make the dyad more dissonant, as it has been reported[^mclachlan] that adding more harmonics does not increase dissonance perception.
+This implies that dissonance perception is not just a result of beating partials.
 
 <TimbreMorphPlayer
   mode="inharmonic-sweep"
   notes={[0, 4.8]}
   partials={10}
+  partialMin={1}
+  partialMax={10}
   min={0}
   max={1}
   initial={0}
@@ -109,7 +113,26 @@ In the graph below you can adjust semitone distance (0-15) for the higher note. 
 The study finds consonance peaks at $\approx 2.6$ and $\approx 4.8$ semitones. This is where the bonang's $3.46\,f_0$ and $1.52\,f_0$ partials meet the lower tone's 4th and 2nd harmonics.
 These sit on the marked Slendro degrees (an equal five-tone division of the octave, ~240 cents per step), which the authors read as a perceptual origin for the scale.
 
-## Effects from Culture and experience
+
+## Effects from Culture and Experience
+Consonance perception is not only affected by rougness and harmonicity as can be perceived in the examples above, but also by individual and cultural experience.
+
+### Across Experience
+People report dissonance differently depending on how exactly it is queried in relation to their musical expertise, 
+with e.g. pleasantness varying greatly but tension being invariant.[^lahdelma]
+
+When asked about dissonance as a form of "perceived roughness, harshness, unpleasantness, or difficulty in listening to the sound" 
+people report lower dissonance for the same dyads after having practiced pitch-matching (calibrating a tone until it is perceived to match a tone in the dyad).[^mclachlan] 
+From these results it is proposed that dissonance is affected by cognitive incongruence when expectations clash with perceived reality.
+
+### Across Culture
+A series of experiments involving the Tsimane people from Bolivia have produced interesting findings.
+The Tsimane have a music tradition consisting of performances from one singer/musician (flute, violin) at a time and rarely with accompanying instruments, producing little experience with harmony.
+
+The Tsimane have an aversion to roughness/tension, but do not consider chords such as major thirds more pleasant than e.g. a tritone or minor second.[^mcdermott]
+
+
+
 
 
 [^marjieh]: Raja Marjieh, Peter M. C. Harrison, Harin Lee, Fotini Deligiannaki, and Nori Jacoby, "Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales," *Nature Communications*, vol. 15, art. 1482, 2024. [doi:10.1038/s41467-024-45812-z](https://doi.org/10.1038/s41467-024-45812-z).
@@ -119,3 +142,9 @@ These sit on the marked Slendro degrees (an equal five-tone division of the octa
 [^west]:  West, M. L. "The Babylonian Musical Notation and the Hurrian Melodic Texts." Music & Letters 75, no. 2 (1994): 161–179.
 
 [^mcbride]: McBride, John M. "Musical consonance: a review of theory and evidence on perception and preference of auditory roughness in humans and other animals." arXiv preprint arXiv:2510.14159 (2025).
+
+[^mclachlan]: McLachlan, Neil, et al. "Consonance and pitch." Journal of Experimental Psychology: General 142.4 (2013): 1142.
+
+[^lahdelma]: Lahdelma, Imre, and Tuomas Eerola. "Cultural familiarity and musical expertise impact the pleasantness of consonance/dissonance but not its perceived tension." Scientific reports 10.1 (2020): 8693.
+
+[^mcdermott]: McDermott, Josh H., et al. "Indifference to dissonance in native Amazonians reveals cultural variation in music perception." Nature 535.7613 (2016): 547-550.
