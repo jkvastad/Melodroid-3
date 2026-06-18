@@ -1,0 +1,136 @@
+---
+sidebar_position: 4
+description: Melody, octave scrambling and contour in related research
+---
+
+import SequencePlayer from '@site/src/components/SequencePlayer';
+
+# Melody
+Melody, or a tune, is a sequence of notes, usually easily recognizable.
+
+## Octave equivalence and octave scrambling
+While a melody can be recognized when played at varying pitch heights, it is not so readily recognized if pitch classes are octave transposed:
+
+<SequencePlayer
+  beatSec={0.22}
+  label="▶ Scrambled melody — contour destroyed"
+  melody={[
+    {key: -12, beat: 0, beats: 1},
+    {key: 12, beat: 1, beats: 1},
+    {key: 2, beat: 2, beats: 1},
+    {key: -8, beat: 3, beats: 1},
+    {key: 0, beat: 4, beats: 1},
+    {key: -8, beat: 5, beats: 1},
+    {key: 2, beat: 6, beats: 2},
+    {key: 12, beat: 8, beats: 1},
+    {key: 0, beat: 9, beats: 1},
+    {key: -10, beat: 10, beats: 1},
+    {key: -8, beat: 11, beats: 1},
+    {key: -12, beat: 12, beats: 2},
+    {key: 11, beat: 14, beats: 2},
+    {key: -12, beat: 16, beats: 1},
+    {key: 12, beat: 17, beats: 1},
+    {key: 2, beat: 18, beats: 1},
+    {key: -8, beat: 19, beats: 1},
+    {key: -7, beat: 20, beats: 1},
+    {key: 4, beat: 21, beats: 1},
+    {key: 14, beat: 22, beats: 1},
+    {key: 12, beat: 23, beats: 1},
+    {key: -13, beat: 24, beats: 1},
+    {key: 7, beat: 25, beats: 1},
+    {key: -3, beat: 26, beats: 1},
+    {key: -13, beat: 27, beats: 1},
+    {key: -12, beat: 28, beats: 2},
+    {key: 12, beat: 30, beats: 2},
+  ]}
+/>
+
+Did you recognize the tune? 
+
+This was from Dowling and Hollombe[^dowling] who split a tune across three octaves.
+Preserving the original contour helps recognition. (Contour is where the tune goes up/down, the
+octave-scrambled version also goes up/down. Keeping successive notes close together also helps.)
+
+<SequencePlayer
+  beatSec={0.22}
+  label="▶ Scrambled melody — contour preserved"
+  melody={[
+    {key: 0, beat: 0, beats: 1},
+    {key: 0, beat: 1, beats: 1},
+    {key: 14, beat: 2, beats: 1},
+    {key: 16, beat: 3, beats: 1},
+    {key: -12, beat: 4, beats: 1},
+    {key: 16, beat: 5, beats: 1},
+    {key: -10, beat: 6, beats: 2},
+    {key: -12, beat: 8, beats: 1},
+    {key: -12, beat: 9, beats: 1},
+    {key: 14, beat: 10, beats: 1},
+    {key: 16, beat: 11, beats: 1},
+    {key: 0, beat: 12, beats: 2},
+    {key: -13, beat: 14, beats: 2},
+    {key: -12, beat: 16, beats: 1},
+    {key: -12, beat: 17, beats: 1},
+    {key: 14, beat: 18, beats: 1},
+    {key: 16, beat: 19, beats: 1},
+    {key: 17, beat: 20, beats: 1},
+    {key: -8, beat: 21, beats: 1},
+    {key: -10, beat: 22, beats: 1},
+    {key: -12, beat: 23, beats: 1},
+    {key: -13, beat: 24, beats: 1},
+    {key: -17, beat: 25, beats: 1},
+    {key: 9, beat: 26, beats: 1},
+    {key: 11, beat: 27, beats: 1},
+    {key: 12, beat: 28, beats: 2},
+    {key: 12, beat: 30, beats: 2},
+  ]}
+/>
+
+Finally the original tune:
+
+<SequencePlayer
+  beatSec={0.22}
+  label="▶ Reference verse"
+  melody={[
+    {key: 0, beat: 0, beats: 1},
+    {key: 0, beat: 1, beats: 1},
+    {key: 2, beat: 2, beats: 1},
+    {key: 4, beat: 3, beats: 1},
+    {key: 0, beat: 4, beats: 1},
+    {key: 4, beat: 5, beats: 1},
+    {key: 2, beat: 6, beats: 2},
+    {key: 0, beat: 8, beats: 1},
+    {key: 0, beat: 9, beats: 1},
+    {key: 2, beat: 10, beats: 1},
+    {key: 4, beat: 11, beats: 1},
+    {key: 0, beat: 12, beats: 2},
+    {key: -1, beat: 14, beats: 2},
+    {key: 0, beat: 16, beats: 1},
+    {key: 0, beat: 17, beats: 1},
+    {key: 2, beat: 18, beats: 1},
+    {key: 4, beat: 19, beats: 1},
+    {key: 5, beat: 20, beats: 1},
+    {key: 4, beat: 21, beats: 1},
+    {key: 2, beat: 22, beats: 1},
+    {key: 0, beat: 23, beats: 1},
+    {key: -1, beat: 24, beats: 1},
+    {key: -5, beat: 25, beats: 1},
+    {key: -3, beat: 26, beats: 1},
+    {key: -1, beat: 27, beats: 1},
+    {key: 0, beat: 28, beats: 2},
+    {key: 0, beat: 30, beats: 2},
+  ]}
+/>
+
+Originally it was Deutsch[^deutsch] who took a familiar tune — the opening of _Yankee Doodle_ — and left every
+note's pitch class intact while randomly reassigning each note to one of three octaves.
+Listeners who were not told the tune's name failed to recognise it. The melody had dissolved, even though, by
+the logic of octave equivalence, "the same notes" were being played.
+
+[^deutsch]: Deutsch, D. (1972). _Octave generalization and tune recognition._ Perception &
+    Psychophysics, 11(6), 411–412.
+    [doi:10.3758/BF03206280](https://doi.org/10.3758/BF03206280)
+
+[^dowling]: Dowling, W. J., & Hollombe, A. W. (1977). _The perception of melodies distorted by
+    splitting into several octaves: Effects of increasing proximity and melodic contour._
+    Perception & Psychophysics, 21(1), 60–64.
+    [doi:10.3758/BF03199469](https://doi.org/10.3758/BF03199469)
