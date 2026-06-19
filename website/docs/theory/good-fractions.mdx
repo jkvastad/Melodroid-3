@@ -14,15 +14,14 @@ A **good fraction** is one whose numerator and denominator are both small and bu
 properties that keep the [wave pattern length](../intro.mdx#harmonic-pattern-theory) short.
 The idea is that the brain hears real valued frequencies and maps them onto good fractions for pattern matching.
 
-The reason numerators also contribute to low WPL is because music is octave-equivalent, meaning all fractions are mapped onto $[1, 2)$. 
-Any note in a set may be renormalised as the base wavelength; resulting fractions below one are doubled until they land in $[1, 2)$. 
-
-For instance, $\{1,\ 5/4,\ 3/2\}$ renormalised to base $5/4$ becomes $\{4/5,\ 1,\ 6/5\}$, which octave-normalises to $\{1,\ 6/5,\ 8/5\}$.
+The reason numerators also contribute to low WPL is because of renormalization, where we make a ratio in a set of frequencies the reference note.
+For instance, $\{1,\ 5/4,\ 3/2\}$ renormalised to base $5/4$ becomes $\{4/5,\ 1,\ 6/5\}$. 
 The numerator then becomes a factor in the denominator, illustrating why numerators share the same constraints as denominators.
+
 
 ## We Happy Few
 
-Fractions decide the length of a wave pattern, but recall that wave pattern lengths have an upper bound via a wave pattern duration of some $50\ \mathrm{ms}$. At $100\ \mathrm{Hz}$ a single wave takes $10\ \mathrm{ms}$ and would
+Fractions decide the length of a wave pattern, but wave pattern lengths have an upper bound via a wave pattern duration of some $50\ \mathrm{ms}$. At $100\ \mathrm{Hz}$ a single wave takes $10\ \mathrm{ms}$ and would
 cap the WPL at $5$, allowing very few patterns. However, this limit is an estimate, and the real ceiling could be higher. Which fractions then are useful for constructing patterns?
 
 Two factors keep the WPL manageable:
@@ -80,11 +79,5 @@ fraction's frequency. `1/1` plays the bare reference.
 | $\frac{9}{5}$ | Minor seventh | <Player fractions={[1, 1.8]} label="▶ 9/5" /> |
 | $\frac{15}{8}$ | Major seventh | <Player fractions={[1, 1.875]} label="▶ 15/8" /> |
 
-TODO: mention two tone dissonance curves, discuss relation to interval inversion.
-
-The fractions fall into octave-complement pairs whose product is $2$ — $\frac{16}{15}$ with $\frac{15}{8}$, $\frac{10}{9}$ with $\frac{9}{5}$,
+Interestingly the fractions fall into octave-complement pairs whose product is $2$ — $\frac{16}{15}$ with $\frac{15}{8}$, $\frac{10}{9}$ with $\frac{9}{5}$,
 $\frac{9}{8}$ with $\frac{16}{9}$, $\frac{6}{5}$ with $\frac{5}{3}$, $\frac{5}{4}$ with $\frac{8}{5}$, and $\frac{4}{3}$ with $\frac{3}{2}$ — leaving $\frac{1}{1}$ as its own mirror.
-Each pair is one interval and its inversion, yet the two sound distinct: a low minor second beats far more harshly than its mirrored major seventh. 
-The major third sounds quite consonant while the minor sixth sounds tense.
-
-TODO: do they all sound good? Use the buttons to decide which fractions earn their place, and characterise what changes between mirror pairs beyond register.

@@ -26,7 +26,7 @@ LCM 8 $\{1,\ 9/8,\ 5/4,\ 3/2,\ 15/8\}$:
   label="▶ LCM 8 — {1, 9/8, 5/4, 3/2, 15/8}"
 />
 
-Because music is octave-equivalent, some families are subsets only after **renormalising** to a
+Notably some families are subsets only after **octave renormalising** to a
 new base (LCM 18 renormalised to base $4/3$ becomes a subset of LCM 24), and some are entirely
 **isomorphic** (LCM 4 renormalised to base $3/2$ is exactly LCM 3 $\{1,\ 4/3,\ 5/3\}$):
 
@@ -37,6 +37,11 @@ new base (LCM 18 renormalised to base $4/3$ becomes a subset of LCM 24), and som
   gain={0.8}
   label="▶ LCM 3 — {1, 4/3, 5/3}"
 />
+
+While mathematically nice, is it physically reasonable to work with octave renormalised ratio sets? 
+Octave equivalence (perceiving frequency ratios of 2 as "the same note") seems to be cultural or at least learned 
+(see related research on [consonance](/docs/related-research/consonance) and [melody](/docs/related-research/melody)), while tonal fusion (two tones perceived as one) seems to be more universal.
+With harmonic instruments there is no shortage of octave overtones where one could argue that an octave renormalisation is really just perception of overtone patterns (or even an inferred lower octave).
 
 ## Producing Graphs
 
@@ -170,7 +175,7 @@ flowchart TD
     C7 -.-> C9
     C8 -.-> C6
 ```
-From this we see that all LCM families pool into either the odd-length LCM 15 or even length LCM 24.
+From this we see that all LCM families of max WPD 24 and max prime 5 pool into either the odd-length LCM 15 or even length LCM 24.
 
 
 {/*
