@@ -9,3 +9,6 @@ publish/
 website/node_modules/
 website/build/
 website/.docusaurus/
+
+# Claude Code local config
+.claude/
