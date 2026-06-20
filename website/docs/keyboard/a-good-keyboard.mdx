@@ -7,14 +7,16 @@ sidebar_position: 1
 Choosing the ratios for an instrument creates a **tuning system**. Because this is about
 well-defined frequencies, for familiarity we frame it as constructing a keyboard.
 
-A desired key property is **modulation**: playing the same frequency ratios from different keys
-should produce the same harmonies. Formally, a keyboard should express every possible full
-match from every key. 
+A desired key property is **modulation**: playing the same frequency ratios from different keys should produce the same harmonies. 
+In HPT, harmony is about full matches so formally a keyboard should express every possible full match from every key. 
 
 An arbitrary keyboard with good fractions available from one key will generally not have them available from another arbitrary key.
 An **equal-tempered** tuning solves this by having a constant ratio between adjacent keys, making every key equivalent.
+Equal temperament produces a tuning system of the form $f_0 \cdot r^{n/k}$.
+Since tonal fusion is most strongly influenced by octaves and octave equivalence is at least possible, $r=2$ seems like a reasonable choice. 
+Moreover our good fractions come in octave-complement pairs.
 
-Combining equal temperament with octave equivalence gives instruments whose frequencies have the
+The above produces a keyboard whose frequencies have the
 form $f_0 \cdot 2^{n/k}$, where $f_0$ is an arbitrary reference (e.g. standard pitch
 $440\ \mathrm{Hz}$), $n$ is the signed key distance, and $k$ is the number of keys per octave.
 Setting $k = 12$ produces the familiar 12-TET tuning.
@@ -89,7 +91,6 @@ We want the fewest keys meeting the other requirements. The viable $k$-TETs are 
 favouring **12-TET** — with two caveats:
 
 - the bin radius may be too large, forcing 19 or even 34 (unique binnings) keys;
-- the solution may be *too* perfect, allowing too little dissonance. Effects
-  like string bending introduce sliding dissonance that listeners enjoy. 12-TET still allows
-  some dissonance: none of the 13 standard good fractions map to key 6 (the tritone, the "Devil's
+- the solution may be *too* perfect. Popular effects such as string bending on guitar moves across key boundaries.
+ 12-TET does still allow some out-of-tune possibilities: none of the 13 standard good fractions map to key 6 (the tritone, the "Devil's
   interval"), and keys 2 (10/9, 9/8) and 10 (16/9, 9/5) have ambiguous mappings.
