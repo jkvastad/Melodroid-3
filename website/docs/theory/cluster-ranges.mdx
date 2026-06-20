@@ -59,13 +59,13 @@ value as a percentage. The final row handles the octave wrap by pairing the larg
 fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows. The caption surfaces the
 minimum $c$ — the largest JND a listener could have before *any* adjacent bins overlap.
 
-The minimum bin radius for LCM 24 is thus $1/161 \approx 0.621\%$
+The minimum unique bin radius for LCM 24 is thus $1/161 \approx 0.621\%$
 
 ## Full Match and Octave Sweep
 
 Any frequency can serve as a reference point. Some reference points renormalise a set of ratios
 into good fractions with a relatively low combined LCM. Sampling reference points across
-$[1, 2)$, renormalising the given ratios and binning them cyclically (a value near $2$ can bin
+$[1, 2)$, octave renormalising the given ratios and binning them cyclically (a value near $2$ can bin
 to $1$) against the good fractions is called an **octave sweep**.
 
 For bin radius below $1/161$ no bins overlap and binning is unambiguous. If every ratio in a set
@@ -97,18 +97,7 @@ is required (space-separated decimals on $[1, 2)$). See the
 
 Each row shows the reference ratio, one cell per good-fraction column (signed % distance when
 the renormalised ratio fell in that bin), the LCM of the matched denominators, and a `Full?`
-marker. Strict full matches are highlighted green. When a ratio falls in two overlapping bins
-(only possible at radius $\geq 1/161$), the row is flagged ambiguous: each competing column is
-filled with a `~` prefix and the row is highlighted yellow; its LCM cell shows the **minimum**
-LCM across candidate readings with a `?` suffix (e.g. `9?`).
-
-The full table is one row per swept reference (≈1000 by default) and one column per good
-fraction, too wide to reproduce here.
-
-Some common reference sets:
-
-- (LCM 4) `1.0 1.25 1.5`
-- (LCM 8) `1.0 1.125 1.25 1.5 1.875`
+marker.
 
 ### Centered Full Matches
 

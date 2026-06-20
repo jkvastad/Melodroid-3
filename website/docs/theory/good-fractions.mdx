@@ -27,23 +27,20 @@ cap the WPL at $5$, allowing very few patterns. However, this limit is an estima
 Two factors keep the WPL manageable:
 
 - **Small numerators/denominators.** The WPL is the $\operatorname{lcm}$ of the denominators,
-  so small values keep it low; by octave equivalence the numerators inherit the same
-  constraint.
+  so small values keep it low. The numerators inherit the same
+  constraint via renormalisation.
 - **Small primes.** Because the WPL is an $\operatorname{lcm}$, denominators built from small primes ($2, 3, 5$)
-  cancel against each other when a set is renormalised to a different base, keeping the total
-  WPL lenient.
+  cancel against each other when a set is renormalised to a different base, beneficial for small WPL.
 
 In practice a WPL of up to **24** is of interest. This is heavily influenced by the fact that the major
-scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. WPL $24$ also allows the 12-tone equal temperament (12-TET) semitone approximation $16/15$, as well as a combination of WPL $8$ and $3$.
-
-## Definition
+scale played as a chord (the $G13 / \mathrm{Cmaj}13$ voicing) is a pattern of WPL $24$. WPL $24$ also allows the 12-tone equal temperament (12-TET) semitone approximation $16/15$.
 
 The possible good fractions are therefore a function of two parameters:
 
 - `--max-size` — the largest allowed numerator or denominator (default $24$);
 - `--max-prime` — the largest prime allowed in their factorisations (default $5$).
 
-Every good fraction is mapped onto $[1, 2)$ by octave equivalence.
+Every good fraction is mapped onto $[1, 2)$ for simplicity of expression.
 
 ## Listing Fractions
 

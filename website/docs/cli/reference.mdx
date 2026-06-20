@@ -48,6 +48,16 @@ Sweeps a reference ratio across $[1, 2)$, binning each input ratio against the g
 flags full matches and centered full matches. `--ratios` is required (space-separated decimals on
 $[1, 2)$).
 
+Strict full matches are highlighted green. When a ratio falls in two overlapping bins
+(only possible at radius $\geq 1/161$ for defaults), the row is flagged ambiguous: each competing column is
+filled with a `~` prefix and the row is highlighted yellow; its LCM cell shows the **minimum**
+LCM across candidate readings with a `?` suffix (e.g. `9?`).
+
+Some common reference sets:
+
+- (LCM 4) `1.0 1.25 1.5`
+- (LCM 8) `1.0 1.125 1.25 1.5 1.875`
+
 ### `ktet-cutoffs`
 
 ```bash
