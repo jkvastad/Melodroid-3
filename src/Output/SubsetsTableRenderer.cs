@@ -14,6 +14,7 @@ public static class SubsetsTableRenderer
         double binRadius,
         bool strictOnly,
         bool truncated,
+        int maxAmbiguousMatches = 1,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -46,9 +47,21 @@ public static class SubsetsTableRenderer
             {
                 if (byRef[n] is SubsetMatch hit)
                 {
-                    var colour = hit.Strict ? "green" : "yellow";
-                    var text = hit.Lcm.ToString(CultureInfo.InvariantCulture) + (hit.Strict ? "" : "?");
-                    cells[n + 1] = $"[{colour}]{Markup.Escape(text)}[/]";
+                    if (hit.Strict)
+                    {
+                        var text = hit.Lcm.ToString(CultureInfo.InvariantCulture);
+                        cells[n + 1] = $"[green]{Markup.Escape(text)}[/]";
+                    }
+                    else
+                    {
+                        // Ambiguous: list the best-fit LCM then the next-best candidates, each with a
+                        // trailing '?', e.g. "8? 9?". Capped at maxAmbiguousMatches.
+                        var text = string.Join(
+                            " ",
+                            hit.Lcms.Take(maxAmbiguousMatches)
+                                .Select(lcm => lcm.ToString(CultureInfo.InvariantCulture) + "?"));
+                        cells[n + 1] = $"[yellow]{Markup.Escape(text)}[/]";
+                    }
                 }
                 else
                 {

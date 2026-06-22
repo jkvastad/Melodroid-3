@@ -34,6 +34,37 @@ public class SubsetsTests
     }
 
     [Fact]
+    public void Enumerate_strict_match_exposes_a_single_candidate_lcm()
+    {
+        var baseKeys = new[] { 0, 4, 7 };
+        var radius = RadiusFor(Ktet);
+
+        var (matches, _) = Subsets.Enumerate(baseKeys, GoodFractionsStd(), Ktet, radius, strictOnly: false, maxResults: 1000);
+
+        var strict = matches.First(m =>
+            m.Keys.SequenceEqual(new[] { 0, 4, 7 }) && m.Reference == 0 && m.Strict);
+        strict.Lcms.Should().ContainSingle().Which.Should().Be(4);
+        strict.Lcm.Should().Be(strict.Lcms[0]);
+    }
+
+    [Fact]
+    public void Enumerate_ambiguous_match_lists_candidate_lcms_ascending_best_fit_first()
+    {
+        var (baseKeys, radius) = SetupForLcm(15);
+
+        var (matches, _) = Subsets.Enumerate(baseKeys, GoodFractionsStd(), Ktet, radius, strictOnly: false, maxResults: 1000);
+
+        var ambiguous = matches.Where(m => !m.Strict).ToList();
+        ambiguous.Should().NotBeEmpty();
+        ambiguous.Should().OnlyContain(m => m.Lcms.Count >= 1);
+        // Candidates are sorted ascending, with the best fit (PostBinLcm equivalent) first.
+        ambiguous.Should().OnlyContain(m => m.Lcms.SequenceEqual(m.Lcms.OrderBy(x => x)));
+        ambiguous.Should().OnlyContain(m => m.Lcm == m.Lcms.Min());
+        // At least one ambiguous cell offers a genuine next-best alternative.
+        ambiguous.Should().Contain(m => m.Lcms.Count >= 2);
+    }
+
+    [Fact]
     public void Enumerate_never_returns_subsets_smaller_than_two_keys()
     {
         var (baseKeys, radius) = SetupForLcm(15);

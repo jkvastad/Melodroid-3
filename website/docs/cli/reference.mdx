@@ -132,7 +132,7 @@ Lowest-penalty voicings from each root. Exactly one of `--lcm` / `--keys`.
 ```bash
 melodroid table subsets (--lcm 15 [--at 0] | --keys 0 4 7) \
   [--ktet 12] [--bin-radius <c>] [--only-full-matches] [--max-results 200] \
-  [--max-size 24] [--max-prime 5] [--max-lcm 24]
+  [--ambiguous-matches 1] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
 Enumerates every size-≥2 subset of the base key set (an `--lcm@--at` placement or a literal
@@ -141,8 +141,10 @@ reference key `n`, with each cell holding the LCM the subset full-matches at tha
 surfaces the renormalized-subset relations of the `graph lcm-families` output at the keyboard
 level — e.g. `--lcm 15` reveals subsets that full-match LCM 20. Ambiguous full matches (marked
 with a trailing `?`) are included by default; `--only-full-matches` restricts to strict matches.
-`--max-results` caps the number of subset rows. Exactly one of `--lcm` / `--keys`. `--bin-radius`
-defaults to the `c_k` cutoff (as in `key-sweep`).
+An ambiguous cell can full-match more than one LCM family; `--ambiguous-matches` (default 1) sets
+how many candidate LCMs each ambiguous cell lists, ascending best-fit (shortest wave pattern
+length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` caps the number of subset rows. Exactly one of
+`--lcm` / `--keys`. `--bin-radius` defaults to the `c_k` cutoff (as in `key-sweep`).
 
 ### `chord-melody`
 

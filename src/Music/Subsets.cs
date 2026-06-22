@@ -3,8 +3,12 @@ namespace Melodroid_3.Music;
 public readonly record struct SubsetMatch(
     IReadOnlyList<int> Keys,   // the subset of base keys (sorted ascending)
     int Reference,             // reference key n where the subset full-matches
-    int Lcm,                   // KeySweepRow.PostBinLcm for that reference
-    bool Strict);              // true = strict full match, false = ambiguous full match
+    IReadOnlyList<int> Lcms,   // candidate LCMs ascending (best fit first); single value when Strict
+    bool Strict)               // true = strict full match, false = ambiguous full match
+{
+    // The best-fit LCM (shortest wave pattern length) — equals KeySweepRow.PostBinLcm.
+    public int Lcm => Lcms[0];
+}
 
 public static class Subsets
 {
@@ -56,9 +60,10 @@ public static class Subsets
                 bool strict = row.FullMatch;
                 bool ambiguousFull = row.Ambiguous && row.AllInputsBinned;
                 if (!strict && (strictOnly || !ambiguousFull)) continue;
-                if (row.PostBinLcm is not int lcm) continue;
+                if (row.PostBinLcm is null) continue;
 
-                subsetMatches.Add(new SubsetMatch(subsetKeys, row.KeyIndex, lcm, strict));
+                var lcms = OctaveSweep.CandidateLcmsAscending(row.Cells);
+                subsetMatches.Add(new SubsetMatch(subsetKeys, row.KeyIndex, lcms, strict));
             }
 
             if (subsetMatches.Count == 0) continue;

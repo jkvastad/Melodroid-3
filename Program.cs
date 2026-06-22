@@ -727,6 +727,11 @@ class Program
             Description = "Maximum number of subset rows to display. Default 200.",
             DefaultValueFactory = _ => 200,
         };
+        var subsetsAmbiguousMatchesOption = new Option<int>("--ambiguous-matches")
+        {
+            Description = "Maximum number of candidate LCMs to list per ambiguous cell, ascending best-fit first (e.g. \"8? 9?\"). Default 1.",
+            DefaultValueFactory = _ => 1,
+        };
 
         var subsetsCommand = new Command(
             "subsets",
@@ -741,6 +746,7 @@ class Program
         subsetsCommand.Add(keySweepBinRadiusOption);
         subsetsCommand.Add(subsetsOnlyFullMatchesOption);
         subsetsCommand.Add(subsetsMaxResultsOption);
+        subsetsCommand.Add(subsetsAmbiguousMatchesOption);
         subsetsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -753,12 +759,14 @@ class Program
             var binRadiusOverride = parse.GetValue(keySweepBinRadiusOption);
             var strictOnly = parse.GetValue(subsetsOnlyFullMatchesOption);
             var maxResults = parse.GetValue(subsetsMaxResultsOption);
+            var ambiguousMatches = parse.GetValue(subsetsAmbiguousMatchesOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
             if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
+            if (ambiguousMatches < 1) { AnsiConsole.MarkupLine("[red]--ambiguous-matches must be ≥ 1.[/]"); return 1; }
             if (binRadiusOverride is double overrideValue && !(overrideValue > 0.0 && overrideValue < 1.0))
             {
                 AnsiConsole.MarkupLine("[red]--bin-radius must be in (0, 1).[/]");
@@ -813,7 +821,7 @@ class Program
 
             var effectiveRadius = binRadiusOverride ?? KeysNeeded.WorstCaseForK(fractions, k).Radius;
             var (matches, truncated) = Subsets.Enumerate(baseKeys, fractions, k, effectiveRadius, strictOnly, maxResults);
-            SubsetsTableRenderer.Render(inputLabel, baseKeys, matches, k, effectiveRadius, strictOnly, truncated);
+            SubsetsTableRenderer.Render(inputLabel, baseKeys, matches, k, effectiveRadius, strictOnly, truncated, ambiguousMatches);
             return 0;
         });
 

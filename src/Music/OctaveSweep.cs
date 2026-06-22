@@ -129,6 +129,37 @@ public static class OctaveSweep
         return best;
     }
 
+    /// <summary>
+    /// The distinct LCMs reachable by choosing one matched good fraction per cell, in ascending
+    /// order (best fit — shortest wave pattern length — first). For an unambiguous row this is a
+    /// single value; for an ambiguous full match the later entries are the next-best candidate LCMs.
+    /// Assumes every cell has at least one match (i.e. a no-miss row).
+    /// </summary>
+    public static IReadOnlyList<int> CandidateLcmsAscending(IReadOnlyList<OctaveSweepCell> cells)
+    {
+        var lcms = new SortedSet<int>();
+        CollectLcms(cells, 0, 1, lcms);
+        return lcms.ToList();
+    }
+
+    private static void CollectLcms(
+        IReadOnlyList<OctaveSweepCell> cells,
+        int index,
+        int runningLcm,
+        SortedSet<int> lcms)
+    {
+        if (index == cells.Count)
+        {
+            lcms.Add(runningLcm);
+            return;
+        }
+        foreach (var match in cells[index].Matches)
+        {
+            var next = IntegerMath.Lcm(runningLcm, match.Fraction.Denominator);
+            CollectLcms(cells, index + 1, next, lcms);
+        }
+    }
+
     private static void Enumerate(
         IReadOnlyList<OctaveSweepCell> cells,
         int index,
