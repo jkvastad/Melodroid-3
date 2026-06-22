@@ -702,6 +702,121 @@ class Program
             return 0;
         });
 
+        var subsetsLcmOption = new Option<int?>("--lcm")
+        {
+            Description = "LCM (wave pattern length) of the family whose placement's keys form the base set. Combined with --at. Mutually exclusive with --keys.",
+            DefaultValueFactory = _ => null,
+        };
+        var subsetsAtOption = new Option<int>("--at")
+        {
+            Description = "Anchor key for the --lcm placement (the family's reference maps here). Default 0.",
+            DefaultValueFactory = _ => 0,
+        };
+        var subsetsKeysOption = new Option<int[]>("--keys")
+        {
+            Description = "Base key indices on a --ktet keyboard, space-separated. Any integer is accepted and octave-normalized into [0, ktet-1]. Duplicates are folded. Mutually exclusive with --lcm.",
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var subsetsOnlyFullMatchesOption = new Option<bool>("--only-full-matches")
+        {
+            Description = "Restrict to strict full matches (every subset key bins uniquely). By default ambiguous full matches are included too.",
+            DefaultValueFactory = _ => false,
+        };
+        var subsetsMaxResultsOption = new Option<int>("--max-results")
+        {
+            Description = "Maximum number of subset rows to display. Default 200.",
+            DefaultValueFactory = _ => 200,
+        };
+
+        var subsetsCommand = new Command(
+            "subsets",
+            "Enumerate every size-≥2 subset of a key set (from --lcm@--at or --keys) and key-sweep each one, reporting the LCM families those subsets full-match and the reference keys where they do. Surfaces the renormalized-subset relations of the lcm-families graph at the keyboard level.");
+        subsetsCommand.Add(maxSizeOption);
+        subsetsCommand.Add(maxPrimeOption);
+        subsetsCommand.Add(maxLcmOption);
+        subsetsCommand.Add(subsetsLcmOption);
+        subsetsCommand.Add(subsetsAtOption);
+        subsetsCommand.Add(subsetsKeysOption);
+        subsetsCommand.Add(ktetOption);
+        subsetsCommand.Add(keySweepBinRadiusOption);
+        subsetsCommand.Add(subsetsOnlyFullMatchesOption);
+        subsetsCommand.Add(subsetsMaxResultsOption);
+        subsetsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var lcm = parse.GetValue(subsetsLcmOption);
+            var at = parse.GetValue(subsetsAtOption);
+            var keys = parse.GetValue(subsetsKeysOption) ?? Array.Empty<int>();
+            var k = parse.GetValue(ktetOption);
+            var binRadiusOverride = parse.GetValue(keySweepBinRadiusOption);
+            var strictOnly = parse.GetValue(subsetsOnlyFullMatchesOption);
+            var maxResults = parse.GetValue(subsetsMaxResultsOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
+            if (binRadiusOverride is double overrideValue && !(overrideValue > 0.0 && overrideValue < 1.0))
+            {
+                AnsiConsole.MarkupLine("[red]--bin-radius must be in (0, 1).[/]");
+                return 1;
+            }
+
+            var hasLcm = lcm.HasValue;
+            var hasKeys = keys.Length > 0;
+            if (hasLcm == hasKeys)
+            {
+                AnsiConsole.MarkupLine("[red]must provide exactly one of --lcm or --keys.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            if (fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No good fractions under --max-size {maxSize} --max-prime {maxPrime}.[/]");
+                return 1;
+            }
+
+            IReadOnlyList<int> baseKeys;
+            string inputLabel;
+            if (hasKeys)
+            {
+                baseKeys = keys.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
+                inputLabel = $"{{{string.Join(" ", baseKeys)}}}";
+            }
+            else
+            {
+                if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+
+                var families = LcmFamilies.Compute(fractions, maxLcm);
+                var family = families.FirstOrDefault(f => f.Lcm == lcm);
+                if (family.Fractions is null || family.Fractions.Count == 0)
+                {
+                    AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                    return 1;
+                }
+
+                var normalizedAt = ((at % k) + k) % k;
+                var placement = Placements.Compute(family, normalizedAt, k);
+                baseKeys = placement.Keys.Distinct().OrderBy(x => x).ToList();
+                inputLabel = $"{lcm}@{normalizedAt}";
+            }
+
+            if (baseKeys.Count < 2)
+            {
+                AnsiConsole.MarkupLine("[red]need at least 2 distinct base keys to form subsets.[/]");
+                return 1;
+            }
+
+            var effectiveRadius = binRadiusOverride ?? KeysNeeded.WorstCaseForK(fractions, k).Radius;
+            var (matches, truncated) = Subsets.Enumerate(baseKeys, fractions, k, effectiveRadius, strictOnly, maxResults);
+            SubsetsTableRenderer.Render(inputLabel, baseKeys, matches, k, effectiveRadius, strictOnly, truncated);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
@@ -715,6 +830,7 @@ class Program
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(voicingsCommand);
+        tableCommand.Add(subsetsCommand);
 
         var modeOption = new Option<string>("--mode")
         {

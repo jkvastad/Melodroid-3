@@ -3,7 +3,6 @@ sidebar_position: 2
 ---
 
 import Player from '@site/src/components/Player';
-import SequencePlayer from '@site/src/components/SequencePlayer';
 import TimbreMorphPlayer from '@site/src/components/TimbreMorphPlayer';
 
 # Voicings and LCM Families
@@ -23,14 +22,15 @@ Our good-fraction LCM families mostly correspond to traditional chords and scale
 | 20 | — | <Player keys={[0, 4, 8, 11, 15, 18]} gain={0.8} label="▶ 0 4 8 11 15 18" /> | <Player keys={[0, 4, 8, 11, 15, 18]} mode="arpeggio" gain={0.8} label="▶ 0 4 8 11 15 18" /> |
 | 24 | Major 13 | <Player keys={[0, 4, 7, 10, 14, 17, 21]} gain={0.7} label="▶ 0 4 7 10 14 17 21" /> | <Player keys={[0, 4, 7, 10, 14, 17, 21]} mode="arpeggio" gain={0.7} label="▶ 0 4 7 10 14 17 21" /> |
 
-Several of these are harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and
-20 map to no traditional chords and seem to lack consonant voicings. Traditionally
-consonant voicings favour triads (intervals 3, 4 in 12-TET) and avoid semitones (interval 1) —
-both easier on the hand and lower in dissonance.[^lots-stone]
+Several of these are harmonic-sounding chords and scales (Major 13 is the major scale). LCM 15 and 20 map to no traditional chords and sound a bit tense.
+Traditionally consonant voicings favor triads (intervals 3, 4 in 12-TET) and avoid semitones (interval 1) - 
+both easier on the hand and lower in dissonance.[^lots-stone] 
+Consonance however is a complex subject, depending both on harmonicity, timbre and culture - 
+[see related research on consonance.](/docs/related-research/consonance)
 
 ## Scoring voicings
 
-We can rank a voicing by scoring each interval and summing:
+To create some nicely spread out voicings we can rank a voicing by scoring each interval and summing:
 
 - intervals in $\{3, 4\}$ (triadic) cost $0$;
 - intervals in $\{2, 5\}$ (near-triadic) cost $1$;
@@ -49,16 +49,23 @@ ascending sequence (so `7 11 2` means `7 11 14`). Every root of the C major scal
 `0`; root 7 is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate
 voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
 
-## Dissonant LCM
+## LCM 15 and 20
 
-For `15@0` = `{0 1 3 5 8 9 10}` the `{8 9 10}` cluster forces every voicing to include a
-near-triadic step; the best score from any root is `1` (e.g. from roots 8 and 10, such as
-`10 1 5 9 0 3 8`, note the high dim), the rest reach `2`. `20@0` = `{0 3 4 7 8 10}` is more
-forgiving: from root 4 a pure-triadic voicing exists (`4 8 0 3 7 10`, penalty `0`, note the early
-aug), other roots reach `1` or `2`.
+For `15@0` the best score from any root is 1 with `{10 1 5 9 0 3 8}`. For `20@0` it is 0 with `{4 8 0 3 7 10}`. 
+These voicings are available for listening in the introductory lcm table on this page.
 
-Even the best voicings for 15 and 20 sound tense (see table above). Perhaps from the high dim and low aug, perhaps from the
-semitone clusters. Perhaps for other reasons - e.g. the simple interval 16/15 sounds tense as a sustained note both in close and wide position (32/15).
+Even the best voicings for 15 and 20 sound tense. 
+Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation.
+
+Deferred: all of the below is sketchpad
+
+TODO: 
+* look at reduced sets, compare to other LCMS
+* bridge into melodies i.e. large sets might still be useful scales. 
+* compare with harmonic minor scale - seems to be the lcm 15 flavor as if 15 is a bad subset of harmonic minor.
+ * Research on why there are scales?
+* perhaps start randomising chords and melody -> some notes sound bad, some note sets cause a certain flavour (even/odd/uniform)
+ * Research on why there are chord progressions? Relation to melody? 
 
 At this point we should make some notes on the validity of harmonic pattern theory - what exactly is it about?
 
@@ -81,73 +88,6 @@ but instead the brain tries to interpret them as a preferred LCM with some bad n
 * **Symmetric Chords** - In 12-TET the chords 0 3 6 9 and 0 4 8 are **symmetric**, meaning there is no way apart from lowest/highest frequency to prefer a reference point.
 Such chords have a distinct tension different from the dissonance in e.g. a semitone cluster. (TODO: example audio).
 Symmetric chords are present in both lcm 15 and 20 and might contribute in some way to their dissonant voicings.
-
-### Semitone or Major Seven?
-There is a curious case regarding the semitone: Whether written as 16/15 or 15/8 the relative difference is the same. 
-However, it seems that framing a melody of repeating semitones as 15/8 sounds harmonious while framing it as 16/15 sounds dissonant. Observe:
-
-The player below realises this as a continuous three-measure gallop at 90 BPM (a
-triplet grid — each quarter note divided in three — grouped in 3-beat cells, a
-long `-1` and a short `0`, so 12 beats per measure). The first measure is the bare
-semitone melody: restless and dissonant. At the second measure a sustained LCM-8 chord
-enters at anchor `-12`, voiced with the 9 up an octave so the root is a clear major
-triad (`{-12, -8, -5, 2}` — the `-1` / major seventh is left out of the block because
-the melody already supplies it). Each `-1` now lands as the chord's `15/8`, the major
-seventh, and the same semitone figure resolves. The third measure strips the chord away,
-returning to the bare semitone.
-
-<SequencePlayer
-  beatSec={60 / 90 / 3}
-  label="▶ semitone gallop → reframed as 15/8 of LCM-8"
-  melody={[
-    {key: -1, beat: 0, beats: 2}, {key: 0, beat: 2, beats: 1},
-    {key: -1, beat: 3, beats: 2}, {key: 0, beat: 5, beats: 1},
-    {key: -1, beat: 6, beats: 2}, {key: 0, beat: 8, beats: 1},
-    {key: -1, beat: 9, beats: 2}, {key: 0, beat: 11, beats: 1},
-    {key: -1, beat: 12, beats: 2}, {key: 0, beat: 14, beats: 1},
-    {key: -1, beat: 15, beats: 2}, {key: 0, beat: 17, beats: 1},
-    {key: -1, beat: 18, beats: 2}, {key: 0, beat: 20, beats: 1},
-    {key: -1, beat: 21, beats: 2}, {key: 0, beat: 23, beats: 1},
-    {key: -1, beat: 24, beats: 2}, {key: 0, beat: 26, beats: 1},
-    {key: -1, beat: 27, beats: 2}, {key: 0, beat: 29, beats: 1},
-    {key: -1, beat: 30, beats: 2}, {key: 0, beat: 32, beats: 1},
-    {key: -1, beat: 33, beats: 2}, {key: 0, beat: 35, beats: 1},
-  ]}
-  chords={[{keys: [-12, -8, -5, 2], beat: 12, beats: 12, velocity: 0.7}]}
-/>
-
-The same reframing transposes up a semitone. The melody below alternates a long `0`
-and a short `1` — the bare semitone restless in the first measure. At the second measure
-a sustained LCM-8 chord enters at anchor `1` (`{-11, -7, -4, 3}` — root, major third,
-fifth, and the 9 up an octave, with the `0` / major seventh left out of the block
-because the melody supplies it). Now each `0` lands as the chord's `15/8`, and the
-`0, 1` figure resolves where before it was the dissonant one. The chord drops out in
-the third measure.
-
-<SequencePlayer
-  beatSec={60 / 90 / 3}
-  label="▶ semitone gallop → reframed as 15/8 of LCM-8 (8@1)"
-  melody={[
-    {key: 0, beat: 0, beats: 2}, {key: 1, beat: 2, beats: 1},
-    {key: 0, beat: 3, beats: 2}, {key: 1, beat: 5, beats: 1},
-    {key: 0, beat: 6, beats: 2}, {key: 1, beat: 8, beats: 1},
-    {key: 0, beat: 9, beats: 2}, {key: 1, beat: 11, beats: 1},
-    {key: 0, beat: 12, beats: 2}, {key: 1, beat: 14, beats: 1},
-    {key: 0, beat: 15, beats: 2}, {key: 1, beat: 17, beats: 1},
-    {key: 0, beat: 18, beats: 2}, {key: 1, beat: 20, beats: 1},
-    {key: 0, beat: 21, beats: 2}, {key: 1, beat: 23, beats: 1},
-    {key: 0, beat: 24, beats: 2}, {key: 1, beat: 26, beats: 1},
-    {key: 0, beat: 27, beats: 2}, {key: 1, beat: 29, beats: 1},
-    {key: 0, beat: 30, beats: 2}, {key: 1, beat: 32, beats: 1},
-    {key: 0, beat: 33, beats: 2}, {key: 1, beat: 35, beats: 1},
-  ]}
-  chords={[{keys: [-11, -7, -4, 3], beat: 12, beats: 12, velocity: 0.7}]}
-/>
-
-TODO: investigate why e.g. interval 11 sounds consonant as part of lcm 8, but less so when isolated and even less when played as 13. 
-Similarly -1, 0 sounds dissonant but frame the -1 as the 11 in lcm 8 and it sounds better. Why do these different representations of the semitone sound consonant/dissonant?
-Example: play major chord then melody alternating either -1, 0 or 0,1. 
-The latter sounds dissonant until we raise the framing chord from e.g. 0 4 7 to 1 5 8 - making the old -1 0 dissonant and 0 1 consonant.
 
 
 **Work in progress below**
