@@ -22,7 +22,7 @@ public static class SubsetsTableRenderer
         // One row per subset; one column per reference key n (0..k-1). Cells hold the LCM the
         // subset full-matches at that reference (green strict, yellow ambiguous with a trailing ?).
         var table = new Table();
-        table.AddColumn(new TableColumn("Subset \\ ref n").LeftAligned());
+        table.AddColumn(new TableColumn("Subset").LeftAligned());
         for (var n = 0; n < k; n++)
         {
             table.AddColumn(new TableColumn(n.ToString(CultureInfo.InvariantCulture)).RightAligned());

@@ -55,7 +55,41 @@ For `15@0` the best score from any root is 1 with `{10 1 5 9 0 3 8}`. For `20@0`
 These voicings are available for listening in the introductory lcm table on this page.
 
 Even the best voicings for 15 and 20 sound tense. 
-Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation.
+Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation (20@5 $\subset$ 15@0).
+Lcm 15 and 20 might for instance be useful scales rather than block chords.
+
+Another reason for sounding tense is simply that larger clusters of notes become increasingly harder to keep consonant. 
+Let's look at the subsets of lcm 15:
+
+```bash
+melodroid table subsets --lcm 15 --at 0 --ktet 12
+```
+
+The command enumerates every size-≥2 subset of `15@0` and key-sweeps each one. Each row is a subset, each
+column a reference key `n`, and a cell holds the LCM that subset full-matches when anchored at
+`n` (a trailing `?` marks an ambiguous match). Pass `--keys` instead of `--lcm@--at` to
+sweep an arbitrary key set. 
+
+For example the lcm 15 subsets produced by dropping a single key from
+`15@0` together with the full set look like this (smaller subsets cropped):
+
+```text
+┌────────────────┬─────┬──────┬──────┬─────┬─────┬─────┬──────┬─────┬──────┬─────┬──────┬──────┐
+│ Subset         │   0 │    1 │    2 │   3 │   4 │   5 │    6 │   7 │    8 │   9 │   10 │   11 │
+├────────────────┼─────┼──────┼──────┼─────┼─────┼─────┼──────┼─────┼──────┼─────┼──────┼──────┤
+│ 0 1 3 5 8 9    │  15 │  40? │      │     │ 120 │ 20? │      │     │   60 │     │ 120? │      │
+│ 0 1 3 5 8 10   │ 15? │  24? │      │ 18? │     │ 30? │      │     │  24? │     │  90? │      │
+│ 0 1 3 5 9 10   │ 15? │ 120? │ 120? │     │     │ 60? │      │     │ 120? │     │ 120? │      │
+│ 0 1 3 8 9 10   │ 15? │ 120? │      │     │     │ 60? │      │     │ 120? │     │ 120? │ 120? │
+│ 0 1 5 8 9 10   │ 15? │  120 │      │     │     │  60 │      │     │ 120? │ 120 │  40? │      │
+│ 0 3 5 8 9 10   │ 15? │ 120? │      │     │     │ 60? │      │ 45? │ 120? │     │  72? │      │
+│ 1 3 5 8 9 10   │ 15? │ 120? │      │     │     │ 60? │ 120? │     │  90? │     │ 120? │      │
+│ 0 1 3 5 8 9 10 │ 15? │ 120? │      │     │     │ 60? │      │     │ 120? │     │ 120? │      │
+└────────────────┴─────┴──────┴──────┴─────┴─────┴─────┴──────┴─────┴──────┴─────┴──────┴──────┘
+```
+
+Dropping key 10 gives `{0 1 3 5 8 9}` which full-matches `20` at key 5 (the `20?` in the first row).
+Dropping key 9 gives `{0 1 3 5 8 10}` (row 2) which full-matches `18` at key 3 and `24` at both 1 and 8, all of which are traditionally considered consonant.
 
 Deferred: all of the below is sketchpad
 
