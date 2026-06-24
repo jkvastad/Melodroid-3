@@ -126,6 +126,17 @@ note's pitch class intact while randomly reassigning each note to one of three o
 Listeners who were not told the tune's name failed to recognise it. The melody had dissolved, even though, by
 the logic of octave equivalence, "the same notes" were being played.
 
+## Speech and Melody degradation
+In "Distinct sensitivity to spectrotemporal modulation supports brain asymmetry for speech and melody"[^albouy] 
+the authors experimented with degrading either temporal or spectral components of sung acapella songs to investigate recognition of speech and melody.
+The songs were degraded using the the spectrotemporal modulation framework[^elliott]:
+the spectrogram is transformed into a modulation power spectrum with separate temporal-modulation (Hz) and spectral-modulation (cycles/kHz) axes. 
+* Temporal degradation low-pass-filters the temporal axis, smearing the signal in time and erasing the sharp envelope changes that distinguish syllables and phonemes. 
+* Spectral degradation low-pass-filters the spectral axis, blurring the fine harmonic/pitch detail across frequency. 
+Temporal loss impaired speech recognition only, spectral loss impaired melody recognition only.
+
+You can try the demo at the labs website: [https://www.zlab.mcgill.ca/spectro_temporal_modulations/](https://www.zlab.mcgill.ca/spectro_temporal_modulations/).
+
 [^deutsch]: Deutsch, D. (1972). _Octave generalization and tune recognition._ Perception &
     Psychophysics, 11(6), 411–412.
     [doi:10.3758/BF03206280](https://doi.org/10.3758/BF03206280)
@@ -134,3 +145,7 @@ the logic of octave equivalence, "the same notes" were being played.
     splitting into several octaves: Effects of increasing proximity and melodic contour._
     Perception & Psychophysics, 21(1), 60–64.
     [doi:10.3758/BF03199469](https://doi.org/10.3758/BF03199469)
+
+[^albouy]: Albouy, Philippe, et al. "Distinct sensitivity to spectrotemporal modulation supports brain asymmetry for speech and melody." Science 367.6481 (2020): 1043-1047.
+
+[^elliott]: Elliott, Taffeta M., and Frédéric E. Theunissen. "The modulation transfer function for speech intelligibility." PLoS computational biology 5.3 (2009): e1000302.

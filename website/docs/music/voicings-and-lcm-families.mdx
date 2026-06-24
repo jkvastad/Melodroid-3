@@ -51,12 +51,12 @@ voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic m
 
 ## LCM 15 and 20
 
-For `15@0` the best score from any root is 1 with `{10 1 5 9 0 3 8}`. For `20@0` it is 0 with `{4 8 0 3 7 10}`. 
-These voicings are available for listening in the introductory lcm table on this page.
+For `15@0` the best score from any root is 1 with `{10 1 5 9 0 3 8}`. For `20@0` it is 0 with `{4 8 0 3 7 10}` 
+(the voicings are available for listening in the introductory lcm table on this page).
 
 Even the best voicings for 15 and 20 sound tense. 
 Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation (20@5 $\subset$ 15@0).
-Lcm 15 and 20 might for instance be useful scales rather than block chords.
+Lcm 15 and 20 might for instance be useful scales rather than block chords, or the tension is perhaps useful in and of itself (e.g. uniform chords dim7, aug).
 
 Another reason for sounding tense is simply that larger clusters of notes become increasingly harder to keep consonant. 
 Let's look at the subsets of lcm 15:
@@ -89,12 +89,37 @@ For example the lcm 15 subsets produced by dropping a single key from
 ```
 
 Dropping key 10 gives `{0 1 3 5 8 9}` which full-matches `20` at key 5 (the `20?` in the first row).
-Dropping key 9 gives `{0 1 3 5 8 10}` (row 2) which full-matches `18` at key 3 and `24` at both 1 and 8, all of which are traditionally considered consonant.
+Dropping key 9 gives `{0 1 3 5 8 10}` (row 2) which full-matches `18` at key 3 and `24` at both 1 and 8, all of which are traditionally considered consonant (18@3 is a subset of 24@1,8).
+
+Since dropping a key from lcm 15 produced subsets of 24, illustrating that the two scales are adjacent in terms of absolute keys,
+perhaps dropping a key from lcm 20 provides some insight. 
+Indeed, dropping key 9 from `{0 1 3 5 8 9}` produces `{0 1 3 5 8}` with 8@1 and the accompanying isomorphic 9@3, 10@5 and 12@8.
+
+With this nested structure of lcm family subsets there is a possiblity that the brain prefers to look for some lcms over others, perhaps the isomorphisms of lcm 8.
+In such a case lcm 15 and 20 could in certain contexts be parsed as "lcm 8 with extra bad notes" rather than as proper lcm 15 and 20.
+Perhaps playing something other than block chords will produce some insight.
+
+## LCM melodies
+To play melodies we will need to move from playing block chords in static time into dynamic time. 
+This produces structures of beats implicit in the change of notes.
+
+The simplest kind of beat is the isochronic beat, where a beat occurs every time period $T$. 
+These time periods can then be divided, producing time grids where beats may or may not occur (notably the original time period can itself be a sub-division beat in a larger grid).
+Skipping beats is called syncopation and can make a rhythm feel groovy, with groove referring to a feeling of motion from audio.
+
+TODO: example rhythms: 
+* isochronic
+* isochronic then adding in subdivisions
+* Isochronic then adding in "superdivisions", making the original turn out to be a subdivision
+* Removing beats to produce off beat syncopation
+* Removing beats to produce groove
+* Aksak and Jembe rhythms (non even vs. non isochronous?)
+
 
 Deferred: all of the below is sketchpad
 
 TODO: 
-* look at reduced sets, compare to other LCMS
+* investigate uniform chords - 12 tet can be divided in 2,3 and 4.
 * bridge into melodies i.e. large sets might still be useful scales. 
 * compare with harmonic minor scale - seems to be the lcm 15 flavor as if 15 is a bad subset of harmonic minor.
  * Research on why there are scales?
