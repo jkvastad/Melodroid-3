@@ -3,6 +3,9 @@ sidebar_position: 4
 description: Rhythm in related research
 ---
 
+import SequencePlayer from '@site/src/components/SequencePlayer';
+import {pulsePattern} from '@site/src/lib/rhythm';
+
 # Rhythm
 Sound waves are in the abstract amplitude modulations,
 with the frequency of modulation being perceived as pitch and the amplitude as loudness.
@@ -10,14 +13,27 @@ This loudness can change over time and thus carry patterns for the brain to inte
 
 The loudness pulses are often called beats, especially when isochronous. and different structures of pulses have different names.
 The most common groupings are meter and rhythm. 
-Meter is the organization of beats into recurring groups of strong and weak pulses (*One*-two-three, *One*-two-three...),
-while rhythm is the pattern of sounds and silences as played.
+* Meter is a more strict organization of beats into recurring groups of strong and weak pulses (*One*-two-three, *One*-two-three...),
+* Rhythm is the pattern of sounds and silences as played.
+By increasing the resolution of a meter (dividing pulses into smaller silent pulses) one can create rhythms by sounding these sub pulses.
 
-## Additive and Divisive Rhythm
-Rhythm can be categorised as [additive or divisive](https://en.wikipedia.org/wiki/Additive_rhythm_and_divisive_rhythm).
-TODO: Example of additive and divisive rhythm with 
-* common 4/4 time (reproduce wikipedia example) 
-* some aksak e.g. 9/8 as 2+2+2+3 and 8/8 as 3+3+2
+## Additive and Divisive Patterns
+Meter (and rhythm) can be categorised as [additive or divisive](https://en.wikipedia.org/wiki/Additive_rhythm_and_divisive_rhythm).
+
+A **divisive** meter takes one span and splits it into equal units. 
+The common 4/4 divides a measure into halves then quarters, so the first beat is strongest and the third
+beat is a slightly weaker secondary stress. Below, this is played as a stream of eighth pulses
+grouped 2+2+2+2 — listen for the strong *one* and the medium *three*.
+
+<SequencePlayer beatSec={0.2} gain={1.4} label="▶ 4/4 — divisive (2+2+2+2)" melody={pulsePattern([4, 4])} />
+
+An **additive** meter instead concatenates groups of pulses which do not produce a divise rhythm e.g. $\frac{2}{8} + \frac{3}{8} = \frac{5}{8}$. 
+This necesitates uneven groupings which produces a characteristic limping feel well known in [aksak music](https://en.wikipedia.org/wiki/Aksak).
+Note that the pulse rate is identical to the 4/4 example above — only the grouping changes, but the feel is drastically different.
+
+<SequencePlayer beatSec={0.2} gain={1.4} label="▶ 9/8 aksak — 2+2+2+3" melody={pulsePattern([2, 2, 2, 3])} />
+
+<SequencePlayer beatSec={0.2} gain={1.4} label="▶ 8/8 aksak — 3+3+2" melody={pulsePattern([3, 3, 2])} />
 
 ## Rhythmic Perference of Integer Ratios
 When presented with random sequences of three interval rhythms (e.g. 1.6:2.14:1) and asked to iteratively reproduce the rhythms, 
