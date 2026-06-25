@@ -1,35 +1,36 @@
 import type {SequenceNote} from '@site/src/components/SequencePlayerClient';
 
-// Build a repeating stream of eighth-note pulses from an additive grouping.
-// First pulse of the whole pattern = downbeat (strong); first pulse of each later
-// group = secondary stress; everything else = weak. Accents are encoded as
-// pitch (k-tet key) + velocity so SequencePlayer's sine renders strong/weak clicks.
-export function pulsePattern(
-  groups: number[],
-  {cycles = 4, beats = 0.5}: {cycles?: number; beats?: number} = {},
-): SequenceNote[] {
-  const len = groups.reduce((a, b) => a + b, 0);
-  const heads = new Set<number>();
-  let p = 0;
-  for (const g of groups) {
-    heads.add(p);
-    p += g;
-  }
+// Named accent presets. Each pulse is one isochronous click; its accent maps to a
+// (velocity, k-tet key) pair so SequencePlayer's sine renders a strong/medium/weak
+// blip. Pitch (octave / fifth / root) reinforces the velocity contrast.
+const ACCENTS = {
+  S: {velocity: 1.0, key: 12}, // strong downbeat (octave)
+  m: {velocity: 0.85, key: 7}, // medium / secondary stress (fifth)
+  w: {velocity: 0.6, key: 0}, // weak (root)
+} as const;
 
+export type Accent = keyof typeof ACCENTS;
+
+// Expand an explicit accent sequence into a repeating pulse stream. Each symbol is
+// one pulse, exactly one grid beat apart, so the pulse rate is fixed regardless of
+// accent strength or grouping. `repetitions` loops the whole sequence with onsets
+// continuous across cycles; `beats` is the short blip duration.
+export function pulses(
+  pattern: Accent[],
+  {repetitions = 4, beats = 0.5}: {repetitions?: number; beats?: number} = {},
+): SequenceNote[] {
   const out: SequenceNote[] = [];
-  for (let c = 0; c < cycles; c++) {
-    for (let i = 0; i < len; i++) {
-      const downbeat = i === 0;
-      const head = heads.has(i);
+  const len = pattern.length;
+  for (let r = 0; r < repetitions; r++) {
+    pattern.forEach((sym, i) => {
+      const {velocity, key} = ACCENTS[sym];
       out.push({
-        key: downbeat ? 12 : head ? 7 : 0, // octave / fifth / root
-        beat: c * len + i, // continuous across cycles
+        key,
+        beat: r * len + i, // continuous across cycles
         beats, // short blip
-        // Tightened range: a clearly audible weak floor so the accent
-        // contrast reads as stress, not near-silence.
-        velocity: downbeat ? 1 : head ? 0.85 : 0.6,
+        velocity,
       });
-    }
+    });
   }
   return out;
 }
