@@ -43,6 +43,9 @@ DONE (related-research/consonance.mdx — "Mixed timbres with a bonang"): Add th
 This allows the user to sweep across the semitones and note for themselves where consonance arrises.
 TODO: Triad experiment with a slider for overtone stretch and a two-dimensional surface where the user can move a mouse to adjust intervals (as in their study 5). This way a user can listen to triad chord consonance.
 
+TODO: compare LCMs with modes - e.g. playing Mixolydian C is just playing Major scale F but using the C note as tonic.
+ * True tonic is perhaps the reference point and playing music as if another note is the reference point produces a certain feel (probably juking/jiving/feinting/unexpected feelings).
+
 Perhaps the lots-stone reference is not perfect as we are not really interested in their result but rather the background for helmholtz dyads they discuss.
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
