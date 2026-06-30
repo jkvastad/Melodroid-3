@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as Tone from 'tone';
+import {streamTempos} from '@site/src/lib/rhythm';
 
 // A scheduled melody/chord note, addressed in k-tet keys and grid beats.
 export type SequenceNote = {
@@ -25,6 +26,13 @@ export type SequencePlayerProps = {
   label?: string; // default 'Play'
   oscillator?: 'sine' | 'triangle' | 'square' | 'sawtooth'; // default 'sine'
   gain?: number; // linear amplitude multiplier; default 0.6 (chord + melody stack)
+  loopBeats?: number; // if set, repeat `melody`/`chords` every loopBeats grid-beats until Stop
+  tempoSlider?: {
+    streams: number[]; // onset counts per voice, e.g. [2, 3] — labels each stream's BPM
+    minBeatSec?: number; // default 0.08
+    maxBeatSec?: number; // default 0.32
+    step?: number; // default 0.005
+  };
 };
 
 // Plays a timed sequence of notes/chords (the site's first non-sustained player).
@@ -41,10 +49,22 @@ export default function SequencePlayerClient({
   label = 'Play',
   oscillator = 'sine',
   gain = 0.6,
+  loopBeats,
+  tempoSlider,
 }: SequencePlayerProps) {
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [playing, setPlaying] = useState(false);
+
+  // Live tempo: starts at the beatSec prop and tracks the slider. A ref mirrors it so the
+  // scheduler always reads the current value without restarting the play closure.
+  const [tempo, setTempo] = useState(beatSec);
+  const tempoRef = useRef(beatSec);
+  const setTempoBoth = (s: number) => {
+    tempoRef.current = s;
+    setTempo(s);
+  };
 
   const keyToFreq = (k: number) => fundamental * Math.pow(2, k / ktet);
 
@@ -66,6 +86,10 @@ export default function SequencePlayerClient({
       clearTimeout(endTimerRef.current);
       endTimerRef.current = null;
     }
+    if (loopTimerRef.current) {
+      clearInterval(loopTimerRef.current);
+      loopTimerRef.current = null;
+    }
     synthRef.current?.dispose(); // cancels future scheduled notes + cuts sounding voices
     synthRef.current = null; // a disposed synth can't retrigger; rebuild next play
     setPlaying(false);
@@ -73,46 +97,114 @@ export default function SequencePlayerClient({
 
   useEffect(() => () => stop(), []); // dispose on unmount
 
-  const play = async () => {
-    await Tone.start(); // unlock audio on user gesture
-    const synth = getSynth();
-    const t0 = Tone.now() + 0.05; // small lead-in so the first note isn't clipped
+  // Schedule one pass of the sequence starting at audio time `at`, using the current tempo.
+  const scheduleCycle = (synth: Tone.PolySynth, at: number, sec: number) => {
     for (const n of melody) {
-      const dur = Math.max((n.beats ?? noteBeats) * beatSec, 0.01);
+      const dur = Math.max((n.beats ?? noteBeats) * sec, 0.01);
       synth.triggerAttackRelease(
         keyToFreq(n.key),
         dur,
-        t0 + n.beat * beatSec,
+        at + n.beat * sec,
         n.velocity ?? 1,
       );
     }
     for (const c of chords) {
-      const dur = Math.max(c.beats * beatSec, 0.01);
+      const dur = Math.max(c.beats * sec, 0.01);
       synth.triggerAttackRelease(
         c.keys.map(keyToFreq),
         dur,
-        t0 + c.beat * beatSec,
+        at + c.beat * sec,
         c.velocity ?? 1,
       );
     }
+  };
+
+  const play = async () => {
+    await Tone.start(); // unlock audio on user gesture
+    const synth = getSynth();
+    const sec = tempoRef.current;
+    const t0 = Tone.now() + 0.05; // small lead-in so the first note isn't clipped
+    setPlaying(true);
+
+    if (loopBeats) {
+      // Continuous loop: keep an audio-time anchor and schedule successive cycles a little
+      // ahead of the clock so onsets stay sample-accurate (no setInterval drift). Runs until
+      // Stop. The reader gets unlimited time to tap along and settle on a beat.
+      const cycleSec = loopBeats * sec;
+      const lookAheadSec = 0.3; // schedule this far ahead of the audio clock
+      let nextTime = t0;
+      const pump = () => {
+        // Schedule every cycle whose start falls within the look-ahead window. The window
+        // exceeds the poll interval so each cycle is queued well before it must sound.
+        while (nextTime < Tone.now() + lookAheadSec) {
+          scheduleCycle(synth, nextTime, sec);
+          nextTime += cycleSec;
+        }
+      };
+      pump();
+      loopTimerRef.current = setInterval(pump, 80); // poll well inside the look-ahead window
+      return;
+    }
+
+    scheduleCycle(synth, t0, sec);
     const endBeat = Math.max(
       0,
       ...melody.map((n) => n.beat + (n.beats ?? noteBeats)),
       ...chords.map((c) => c.beat + c.beats),
     );
-    setPlaying(true);
     endTimerRef.current = setTimeout(
       () => setPlaying(false),
-      endBeat * beatSec * 1000 + 200,
+      endBeat * sec * 1000 + 200,
     );
   };
 
-  return (
+  // Re-tempo a running loop: dragging updates the caption live (state), but rescheduling
+  // happens on release so the audio doesn't thrash mid-drag. A quick stop+play restarts the
+  // loop seamlessly at the new tempo; when stopped it simply takes effect on the next Play.
+  const onTempoRelease = () => {
+    if (playing) {
+      stop();
+      play();
+    }
+  };
+
+  const button = (
     <button
       className="button button--primary button--sm"
       style={{margin: '0.4rem 0'}}
       onClick={playing ? stop : play}>
       {playing ? 'Stop' : label}
     </button>
+  );
+
+  if (!tempoSlider) return button;
+
+  const {streams, minBeatSec = 0.08, maxBeatSec = 0.32, step = 0.005} = tempoSlider;
+  const caption = streamTempos(streams, tempo)
+    .map((s) => `${s.count}-beat: ${s.bpm} BPM`)
+    .join(' · ');
+
+  return (
+    <div style={{margin: '0.4rem 0'}}>
+      <span style={{marginRight: '0.8rem'}}>{button}</span>
+      <input
+        type="range"
+        min={minBeatSec}
+        max={maxBeatSec}
+        step={step}
+        // Slider runs fast→slow left→right (larger beatSec = slower tatum); flipping the
+        // value keeps the conventional left=slow, right=fast feel.
+        value={minBeatSec + maxBeatSec - tempo}
+        aria-label={caption}
+        onChange={(e) =>
+          setTempoBoth(minBeatSec + maxBeatSec - parseFloat(e.target.value))
+        }
+        onMouseUp={onTempoRelease}
+        onTouchEnd={onTempoRelease}
+        onKeyUp={onTempoRelease}
+        style={{verticalAlign: 'middle', width: '14rem'}}
+      />
+      <code style={{marginLeft: '0.8rem'}}>{caption}</code>
+    </div>
   );
 }

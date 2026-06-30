@@ -4,7 +4,7 @@ description: Rhythm in related research
 ---
 
 import SequencePlayer from '@site/src/components/SequencePlayer';
-import {pulses} from '@site/src/lib/rhythm';
+import {pulses, polyrhythm} from '@site/src/lib/rhythm';
 
 # Rhythm
 Sound waves are in the abstract amplitude modulations,
@@ -57,8 +57,61 @@ An isochronous pulse train consisting of the fastest pulse can be grouped by two
 The groupings themselves are not isochronous as they do have different sizes ($7 \neq 2 \neq 3$), and in general isochrony is not needed for rhythm, 
 nor is is important that the fastest pulse has a fixed time length over a piece as it may accelerate/decelarate.[^polak]
 
+## Perceiving and Producing Polyrythms
+Above we listened to examples of additive and divise meters and rhythms. Now we turn to simultaneous rhythms. Perhaps the simplest polyrythm is $3:2$:
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 3:2 polyrhythm" melody={pulses(['m', 's', 'm', 'm', 'm', 's'])} />
+
+If you try to tap this rhythm using first one hand for the $2:1$ beat and then adding in the other for the $3:1$ you will most likely run into problems.
+If instead you try to structure it in your mind as one single pattern over six pulses it will suddenly become easy.[^maslovat] For example try thinking of it as two blocks:
+* both hands (2 pulses)
+* left (1), right(1), left(2)
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 3:2 polyrhythm" melody={polyrhythm(2, 3)} />
+
+With 10 pulses we have $5:2$
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:5 polyrhythm" melody={polyrhythm(2,5)} />
+* both hands(2 pulses), left(2)
+* left(1), right(1)
+* left(2), left(2)
+
+With 12 pulses we have $4:3$
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 4:3 polyrhythm" melody={polyrhythm(4,3)} />
+* both hands(3 pulses)
+* right(1), left(2), right(2)
+* left(1), right(3)
+
+The above examples are played at the same tempo - the fastest pulse has the same length for all examples. 
+If you listen to them and tap along you will find a beat division of the pattern. Changing the tempo changes the preference for where this beat is perceived.[^moller]
+
+## Tempo and the Perceived Beat
+The same polyrhythm affords more than one metrical reading. A $2:3$ polyrhythm can be heard either as a
+**2-beat** pulse train — each beat split into three tatums (a *ternary* subdivision) — or as a **3-beat**
+pulse train — each beat split into two tatums (a *binary* subdivision). Møller and colleagues asked which
+of these listeners spontaneously tap to, and how that depends on tempo.[^moller]
+
+Their finding is that listeners overwhelmingly favour the stream that admits a **binary** subdivision (here
+the 3-beat stream). This preference holds across slow and moderate tempi *regardless of tempo*; only when the
+pulse gets very fast do listeners jump up to the whole-cycle level rather than ever adopting the ternary
+2-beat stream. The preferred beat itself sits around $80$–$160$ BPM. In short: time is structured in binary units.
+
+Start a looping player below, tap along until a beat settles, then drag the tempo slider. Notice that as you
+sweep from slow to fast the felt beat tends to stay on the binary-subdividable stream — the slider caption
+shows each stream's beat rate in BPM so you can see which candidate you have locked onto.
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:3 — tap and find the beat" melody={polyrhythm(2, 3, {cycles: 1})} loopBeats={6} tempoSlider={{streams: [2, 3]}} />
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:5 — tap and find the beat" melody={polyrhythm(2, 5, {cycles: 1})} loopBeats={10} tempoSlider={{streams: [2, 5]}} />
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 4:3 — tap and find the beat" melody={polyrhythm(4, 3, {cycles: 1})} loopBeats={12} tempoSlider={{streams: [4, 3]}} />
+
+
 [^jacoby]: Jacoby, Nori, and Josh H. McDermott. "Integer ratio priors on musical rhythm revealed cross-culturally by iterated reproduction." Current Biology 27.3 (2017): 359-370.
 
 [^jacoby2]: Jacoby, Nori, et al. "Commonality and variation in mental representations of music revealed by a cross-cultural comparison of rhythm priors in 15 countries." Nature Human Behaviour 8.5 (2024): 846-877.
 
 [^polak]: Polak, Rainer, Justin London, and Nori Jacoby. "Both isochronous and non-isochronous metrical subdivision afford precise and stable ensemble entrainment: A corpus study of Malian jembe drumming." Frontiers in Neuroscience 10 (2016): 285.
+
+[^moller]: Møller, Cecilie, et al. "Beat perception in polyrhythms: Time is structured in binary units." Plos one 16.8 (2021): e0252174.
+
+[^maslovat]: Maslovat, Dana, and Stuart T. Klapp. "Trouble doing two differently timed actions at once: What is the problem?." Psychological Review 131.1 (2024): 231.
