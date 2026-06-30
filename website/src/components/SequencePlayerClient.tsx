@@ -122,7 +122,6 @@ export default function SequencePlayerClient({
   const play = async () => {
     await Tone.start(); // unlock audio on user gesture
     const synth = getSynth();
-    const sec = tempoRef.current;
     const t0 = Tone.now() + 0.05; // small lead-in so the first note isn't clipped
     setPlaying(true);
 
@@ -130,10 +129,15 @@ export default function SequencePlayerClient({
       // Continuous loop: keep an audio-time anchor and schedule successive cycles a little
       // ahead of the clock so onsets stay sample-accurate (no setInterval drift). Runs until
       // Stop. The reader gets unlimited time to tap along and settle on a beat.
-      const cycleSec = loopBeats * sec;
       const lookAheadSec = 0.3; // schedule this far ahead of the audio clock
       let nextTime = t0;
       const pump = () => {
+        // Read the live tempo each poll so dragging the slider retunes the loop seamlessly:
+        // newly scheduled cycles adopt the new tatum while already-queued cycles finish at
+        // their old one. nextTime only ever advances by the current cycle length, so there's
+        // no phase reset on a tempo change.
+        const sec = tempoRef.current;
+        const cycleSec = loopBeats * sec;
         // Schedule every cycle whose start falls within the look-ahead window. The window
         // exceeds the poll interval so each cycle is queued well before it must sound.
         while (nextTime < Tone.now() + lookAheadSec) {
@@ -146,6 +150,7 @@ export default function SequencePlayerClient({
       return;
     }
 
+    const sec = tempoRef.current;
     scheduleCycle(synth, t0, sec);
     const endBeat = Math.max(
       0,
@@ -156,16 +161,6 @@ export default function SequencePlayerClient({
       () => setPlaying(false),
       endBeat * sec * 1000 + 200,
     );
-  };
-
-  // Re-tempo a running loop: dragging updates the caption live (state), but rescheduling
-  // happens on release so the audio doesn't thrash mid-drag. A quick stop+play restarts the
-  // loop seamlessly at the new tempo; when stopped it simply takes effect on the next Play.
-  const onTempoRelease = () => {
-    if (playing) {
-      stop();
-      play();
-    }
   };
 
   const button = (
@@ -193,15 +188,14 @@ export default function SequencePlayerClient({
         max={maxBeatSec}
         step={step}
         // Slider runs fast→slow left→right (larger beatSec = slower tatum); flipping the
-        // value keeps the conventional left=slow, right=fast feel.
+        // value keeps the conventional left=slow, right=fast feel. A running loop reads the
+        // tempo live each poll, so dragging retunes it immediately; when stopped the new
+        // value simply takes effect on the next Play.
         value={minBeatSec + maxBeatSec - tempo}
         aria-label={caption}
         onChange={(e) =>
           setTempoBoth(minBeatSec + maxBeatSec - parseFloat(e.target.value))
         }
-        onMouseUp={onTempoRelease}
-        onTouchEnd={onTempoRelease}
-        onKeyUp={onTempoRelease}
         style={{verticalAlign: 'middle', width: '14rem'}}
       />
       <code style={{marginLeft: '0.8rem'}}>{caption}</code>
