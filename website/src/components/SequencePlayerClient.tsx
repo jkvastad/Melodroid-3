@@ -126,23 +126,59 @@ export default function SequencePlayerClient({
     setPlaying(true);
 
     if (loopBeats) {
-      // Continuous loop: keep an audio-time anchor and schedule successive cycles a little
-      // ahead of the clock so onsets stay sample-accurate (no setInterval drift). Runs until
-      // Stop. The reader gets unlimited time to tap along and settle on a beat.
+      // Continuous loop: schedule onset-by-onset a little ahead of the clock so onsets stay
+      // sample-accurate (no setInterval drift) and so a slider drag retunes the rhythm *within*
+      // a cycle, not just at cycle boundaries. Runs until Stop; the reader gets unlimited time
+      // to tap along and settle on a beat.
       const lookAheadSec = 0.3; // schedule this far ahead of the audio clock
-      let nextTime = t0;
+
+      // Flatten one cycle into its onsets, sorted by beat. Coincident onsets (e.g. the
+      // polyrhythm's shared downbeat) are separate entries at the same beat — a zero gap.
+      const events: {beat: number; fire: (at: number, sec: number) => void}[] = [];
+      for (const n of melody) {
+        events.push({
+          beat: n.beat,
+          fire: (at, sec) =>
+            synth.triggerAttackRelease(
+              keyToFreq(n.key),
+              Math.max((n.beats ?? noteBeats) * sec, 0.01),
+              at,
+              n.velocity ?? 1,
+            ),
+        });
+      }
+      for (const c of chords) {
+        events.push({
+          beat: c.beat,
+          fire: (at, sec) =>
+            synth.triggerAttackRelease(
+              c.keys.map(keyToFreq),
+              Math.max(c.beats * sec, 0.01),
+              at,
+              c.velocity ?? 1,
+            ),
+        });
+      }
+      events.sort((a, b) => a.beat - b.beat);
+
+      const N = events.length;
+      let i = 0; // absolute onset index across cycles
+      let prevBeat = 0; // beat of the last *scheduled* onset (absolute)
+      let prevTime = t0; // audio time of that onset
       const pump = () => {
-        // Read the live tempo each poll so dragging the slider retunes the loop seamlessly:
-        // newly scheduled cycles adopt the new tatum while already-queued cycles finish at
-        // their old one. nextTime only ever advances by the current cycle length, so there's
-        // no phase reset on a tempo change.
+        // Read the live tempo each poll; each not-yet-due onset is (re)computed as
+        // prevTime + gap * tempo, anchored on the last onset actually queued — so dragging
+        // the slider stretches the rhythm continuously from there, with no phase reset.
         const sec = tempoRef.current;
-        const cycleSec = loopBeats * sec;
-        // Schedule every cycle whose start falls within the look-ahead window. The window
-        // exceeds the poll interval so each cycle is queued well before it must sound.
-        while (nextTime < Tone.now() + lookAheadSec) {
-          scheduleCycle(synth, nextTime, sec);
-          nextTime += cycleSec;
+        while (N > 0) {
+          const ev = events[i % N];
+          const absBeat = Math.floor(i / N) * loopBeats + ev.beat;
+          const at = prevTime + (absBeat - prevBeat) * sec;
+          if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
+          ev.fire(at, sec);
+          prevTime = at;
+          prevBeat = absBeat;
+          i++;
         }
       };
       pump();
