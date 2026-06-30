@@ -58,7 +58,7 @@ The groupings themselves are not isochronous as they do have different sizes ($7
 nor is is important that the fastest pulse has a fixed time length over a piece as it may accelerate/decelarate.[^polak]
 
 ## Perceiving and Producing Polyrythms
-Above we listened to examples of additive and divise meters and rhythms. Now we turn to simultaneous rhythms. Perhaps the simplest polyrythm is $3:2$:
+Above we listened to examples of additive and divise meters and rhythms. Now we turn to simultaneous rhythms. Perhaps the simplest polyrythm is $3:2$
 
 <SequencePlayer beatSec={0.2} gain={1} label="▶ 3:2 polyrhythm" melody={pulses(['m', 's', 'm', 'm', 'm', 's'])} />
 
@@ -81,23 +81,11 @@ With 12 pulses we have $4:3$
 * right(1), left(2), right(2)
 * left(1), right(3)
 
+### Tempo and Preferred Subdivisions
 The above examples are played at the same tempo - the fastest pulse has the same length for all examples. 
-If you listen to them and tap along you will find a beat division of the pattern. Changing the tempo changes the preference for where this beat is perceived.[^moller]
-
-## Tempo and the Perceived Beat
-The same polyrhythm affords more than one metrical reading. A $2:3$ polyrhythm can be heard either as a
-**2-beat** pulse train — each beat split into three tatums (a *ternary* subdivision) — or as a **3-beat**
-pulse train — each beat split into two tatums (a *binary* subdivision). Møller and colleagues asked which
-of these listeners spontaneously tap to, and how that depends on tempo.[^moller]
-
-Their finding is that listeners overwhelmingly favour the stream that admits a **binary** subdivision (here
-the 3-beat stream). This preference holds across slow and moderate tempi *regardless of tempo*; only when the
-pulse gets very fast do listeners jump up to the whole-cycle level rather than ever adopting the ternary
-2-beat stream. The preferred beat itself sits around $80$–$160$ BPM. In short: time is structured in binary units.
-
-Start a looping player below, tap along until a beat settles, then drag the tempo slider. Notice that as you
-sweep from slow to fast the felt beat tends to stay on the binary-subdividable stream — the slider caption
-shows each stream's beat rate in BPM so you can see which candidate you have locked onto.
+If you listen to them and tap along you can find a beat which divides the pattern into equal parts.
+Changing the tempo changes the preference for where this beat is perceived.[^moller]
+Try this out below and note where in the pattern you place the finger taps based on low/mid/high tempo.
 
 <SequencePlayer beatSec={0.2} gain={1} label="▶ 2:3 — tap and find the beat" melody={polyrhythm(2, 3, {cycles: 1})} loopBeats={6} tempoSlider={{streams: [2, 3]}} />
 
@@ -105,6 +93,17 @@ shows each stream's beat rate in BPM so you can see which candidate you have loc
 
 <SequencePlayer beatSec={0.2} gain={1} label="▶ 4:3 — tap and find the beat" melody={polyrhythm(4, 3, {cycles: 1})} loopBeats={12} tempoSlider={{streams: [4, 3]}} />
 
+As noted earlier a $2:3$ polyrhythm can be thought of as a pattern of six pulses. 
+This allows us to hear a 2-beat pulse train consisting of three pulses each (a ternary subdivision)
+or hear a 3-beat pulse train with each beat split into two pulses (a binary subdivision).
+
+Møller et al. found that western listeners overwhelmingly prefer tapping beats which produce binary subdivision[^moller] (3-beats for $3:2$).
+This preference holds across both slow and moderate tempi. 
+When the pulse gets very fast, listeners will prefer to tap at the whole-cycle level rather than adopting the ternary
+2-beat tapping. The preferred beat itself sits around $80$–$160$ BPM - a preferred frequency by humans in both tool use[^starke] and walking[^macdougall].
+
+The preference for binary subdivisions has as of writing not been cross-culturally validated yet,
+but given the results on integer ratio preference[^jacoby2] a cultural preference for e.g. ternary divisions would not be unexpected.
 
 [^jacoby]: Jacoby, Nori, and Josh H. McDermott. "Integer ratio priors on musical rhythm revealed cross-culturally by iterated reproduction." Current Biology 27.3 (2017): 359-370.
 
@@ -115,3 +114,7 @@ shows each stream's beat rate in BPM so you can see which candidate you have loc
 [^moller]: Møller, Cecilie, et al. "Beat perception in polyrhythms: Time is structured in binary units." Plos one 16.8 (2021): e0252174.
 
 [^maslovat]: Maslovat, Dana, and Stuart T. Klapp. "Trouble doing two differently timed actions at once: What is the problem?." Psychological Review 131.1 (2024): 231.
+
+[^macdougall]: MacDougall, Hamish G., and Steven T. Moore. "Marching to the beat of the same drummer: the spontaneous tempo of human locomotion." Journal of applied physiology 99.3 (2005): 1164-1173.
+
+[^starke]: Starke, Sandra Dorothee, and Chris Baber. "Movement consistency during repetitive tool use action." PLoS One 12.3 (2017): e0173281.
