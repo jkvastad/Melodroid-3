@@ -7,6 +7,7 @@ const ACCENTS = {
   S: {velocity: 1.0, key: 12}, // strong downbeat (octave)
   m: {velocity: 0.85, key: 7}, // medium / secondary stress (fifth)
   w: {velocity: 0.6, key: 0}, // weak (root)
+  s: {velocity: 0.0, key: 0}, // silent (root)
 } as const;
 
 export type Accent = keyof typeof ACCENTS;

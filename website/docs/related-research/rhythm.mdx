@@ -11,11 +11,11 @@ Sound waves are in the abstract amplitude modulations,
 with the frequency of modulation being perceived as pitch and the amplitude as loudness.
 This loudness can change over time and thus carry patterns for the brain to interpret.
 
-The loudness pulses are often called beats, especially when isochronous. and different structures of pulses have different names.
+The loudness pulses are often called beats, especially when isochronous, with different structures of pulses having different names.
 The most common groupings are meter and rhythm. 
 * Meter is a more strict organization of beats into recurring groups of strong and weak pulses (*One*-two-three, *One*-two-three...),
 * Rhythm is the pattern of sounds and silences as played.
-By increasing the resolution of a meter (dividing pulses into smaller silent pulses) one can create rhythms by sounding these sub pulses.
+By dividing a meter into smaller (possibly silent) pulses one can create rhythms by sounding these subdivisions.
 
 ## Additive and Divisive Patterns
 Meter (and rhythm) can be categorised as [additive or divisive](https://en.wikipedia.org/wiki/Additive_rhythm_and_divisive_rhythm).
@@ -29,13 +29,36 @@ An **additive** meter instead concatenates groups of pulses which do not produce
 This necessitates uneven groupings which produces a characteristic limping feel well known in [aksak music](https://en.wikipedia.org/wiki/Aksak).
 Note that the pulse rate is identical to the 4/4 example above — only the grouping changes, but the feel is drastically different.
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 9/8 aksak — 2+2+2+3" melody={pulses(['S', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 9/8 Aksak — 2+2+2+3" melody={pulses(['S', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 8/8 aksak — 3+3+2" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'm', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 8/8 Aksak — 3+3+2" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'm', 'w'])} />
 
 ## Rhythmic Perference of Integer Ratios
-When presented with random sequences of three interval rhythms (e.g. 1.6:2.14:1) and asked to iteratively reproduce the rhythms, 
-both western (US) and non-western (Bolivian Tsimane) listeners converge to simple integer ratios over a handful of iterations[^jacoby] (notably this convergence effect translates poorly to speech).
+When presented with random sequences of three interval rhythms (e.g. $1.6:2.14:1$) and asked to iteratively reproduce the rhythms, 
+both western (US) and non-western (Bolivian Tsimane) listeners converge to simple integer ratios over a handful of iterations[^jacoby] 
+(notably this convergence effect translates poorly to speech). 
 
+This was later reproduced in 15 countries on 5 continents[^jacoby2] - everyone prefers integer ratios, but the exact ratios preferred vary by culture.
+For example in Mali there is a relatively popular Maraka rhythm of $7:2:3$
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Maraka — 7+2+3 ([2+2+3]+2+3)" melody={pulses(['S', 'w', 'm', 'w', 'm', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+
+and also Manjanin/Woloso[^polak] with $3:4:5$ (slowed down to show the structure)
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Manjanin/Woloso — 3+4+5" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'w', 'm', 'w', 'w', 'w', 'w'])} />
+
+<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Manjanin/Woloso — 3+4+5 (3+[2+2+2]+3)" melody={pulses(['S', 'w', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+
+Original recordings can be found at [Polak's field recordings site](https://www.rainerpolak.de/field-recordings/audio-albums/).
+
+A consequence of integer ratio rhythms is that there exists a (possibly silent/virtual) reference pulse since all integer ratios are by definition multiples of the integer one.
+Such a fastest pulse is also known as the [Tatum](https://en.wikipedia.org/wiki/Tatum_(music)). 
+
+An isochronous pulse train consisting of the fastest pulse can be grouped by twos and threes to produce any ratios e.g. $7+2+3 = (2+2+3)+2+3$.
+The groupings themselves are not isochronous as they do have different sizes ($7 \neq 2 \neq 3$), and in general isochrony is not needed for rhythm, 
+nor is is important that the fastest pulse has a fixed time length over a piece as it may accelerate/decelarate.[^polak]
 
 [^jacoby]: Jacoby, Nori, and Josh H. McDermott. "Integer ratio priors on musical rhythm revealed cross-culturally by iterated reproduction." Current Biology 27.3 (2017): 359-370.
+
+[^jacoby2]: Jacoby, Nori, et al. "Commonality and variation in mental representations of music revealed by a cross-cultural comparison of rhythm priors in 15 countries." Nature Human Behaviour 8.5 (2024): 846-877.
+
+[^polak]: Polak, Rainer, Justin London, and Nori Jacoby. "Both isochronous and non-isochronous metrical subdivision afford precise and stable ensemble entrainment: A corpus study of Malian jembe drumming." Frontiers in Neuroscience 10 (2016): 285.
