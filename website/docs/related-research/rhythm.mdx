@@ -33,7 +33,7 @@ Note that the pulse rate is identical to the 4/4 example above — only the grou
 
 <SequencePlayer beatSec={0.2} gain={1} label="▶ 8/8 Aksak — 3+3+2" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'm', 'w'])} />
 
-## Rhythmic Perference of Integer Ratios
+## Rhythmic Preference of Integer Ratios
 When presented with random sequences of three interval rhythms (e.g. $1.6:2.14:1$) and asked to iteratively reproduce the rhythms, 
 both western (US) and non-western (Bolivian Tsimane) listeners converge to simple integer ratios over a handful of iterations[^jacoby] 
 (notably this convergence effect translates poorly to speech). 
@@ -105,6 +105,35 @@ When the pulse gets very fast, listeners will prefer to tap at the whole-cycle l
 The preference for binary subdivisions has as of writing not been cross-culturally validated yet,
 but given the results on integer ratio preference[^jacoby2] a cultural preference for e.g. ternary divisions would not be unexpected.
 
+## Groove
+When listening to music it is common to perceive a pleasurable urge to move. This urge is called groove.
+Groove arises from an interaction of rhythm perception, sensorimotor prediction, and reward processing in the brain.[^etani]
+
+The maximisation of groove depends partially on factors out of control for the composer, namely each individual listeners personal and cultural background.
+Factors within control of the composer include syncopation, tempo, microtiming and harmony. 
+In short, the highest groove seems to occur for happy chord progressions with consonant harmony, moderate syncopation with no microtiming and a bpm of 100-120.
+
+### Syncopation
+Syncopation refers to deviations from the accents in a meter or pattern. 
+There is an inverted-U shape for the relationship between groove and syncopation in a familiar meter.[^witek][^spiech]
+Too little and the pattern is accented as expected. Shift some accents from expectation and groove increases. 
+Shift too much and groove decreases - likely the original pattern has become ambigous at this point.
+
+This inverted-U shape instead favors lower complexity for non-familiar meters, e.g. 7/8 or 5/4 for western listeners.[^spiech]
+Possibly the unfamiliar meter gives weaker expectations and a moderate complexity produces less tension.
+
+### Tempo
+Tempo refers to the rate of beats in a meter (usually beats per minute, bpm). The optimal tempo range for groove seems to sit in the 100-120bpm range.[^etani]
+
+### Microtiming
+Microtiming refers to small expressive deviations from strict meter (for anyone working with MIDI in a DAW think of the "humanize" functionality). 
+In empirical studies microtiming turns out to be mostly detrimental to groove.[^davies][^fruhauf]
+
+### Harmony
+Harmony refers to the interplay of sound frequencies. Low frequency amplitude seems beneficial to groove, with higher amplitudes eliciting more groove.[^duncan]
+Dissonant chords detract from groove, possibly by reducing the overall pleasure of the music.[^matthews] 
+A similar result occurs when looking at how happy or sad chord progressions, with happier progressions eliciting more groove than the sad ones.[^kawase]
+
 [^jacoby]: Jacoby, Nori, and Josh H. McDermott. "Integer ratio priors on musical rhythm revealed cross-culturally by iterated reproduction." Current Biology 27.3 (2017): 359-370.
 
 [^jacoby2]: Jacoby, Nori, et al. "Commonality and variation in mental representations of music revealed by a cross-cultural comparison of rhythm priors in 15 countries." Nature Human Behaviour 8.5 (2024): 846-877.
@@ -118,3 +147,21 @@ but given the results on integer ratio preference[^jacoby2] a cultural preferenc
 [^macdougall]: MacDougall, Hamish G., and Steven T. Moore. "Marching to the beat of the same drummer: the spontaneous tempo of human locomotion." Journal of applied physiology 99.3 (2005): 1164-1173.
 
 [^starke]: Starke, Sandra Dorothee, and Chris Baber. "Movement consistency during repetitive tool use action." PLoS One 12.3 (2017): e0173281.
+
+[^etani]: Etani, Takahide, et al. "A review of psychological and neuroscientific research on musical groove." Neuroscience & Biobehavioral Reviews 158 (2024): 105522.
+
+[^etani2]: Etani, Takahide, et al. "Optimal tempo for groove: Its relation to directions of body movement and Japanese nori." Frontiers in psychology 9 (2018): 462.
+
+[^davies]: Davies, Matthew, et al. "The effect of microtiming deviations on the perception of groove in short rhythms." Music Perception: An Interdisciplinary Journal 30.5 (2012): 497-510.
+
+[^fruhauf]: Frühauf, Jan, Reinhard Kopiez, and Friedrich Platz. "Music on the timing grid: The influence of microtiming on the perceived groove quality of a simple drum pattern performance." Musicae scientiae 17.2 (2013): 246-260.
+
+[^witek]: Witek, Maria AG, et al. "Syncopation, body-movement and pleasure in groove music." PloS one 9.4 (2014): e94446.
+
+[^duncan]: Duncan, Sean-Lee, and Guido Orgs. "Move your body! Low-frequency amplitude and syncopation increase groove perception in house music." Music Perception: An Interdisciplinary Journal 42.2 (2024): 95-108.
+
+[^matthews]: Matthews, Tomas E., et al. "The sensation of groove is affected by the interaction of rhythmic and harmonic complexity." PLoS One 14.1 (2019): e0204539.
+
+[^kawase]: Kawase, Satoshi. "Is happier music groovier? The influence of emotional characteristics of musical chord progressions on groove." Psychological Research 88.2 (2024): 438-448.
+
+[^spiech]: Spiech, Connor, et al. "4/4 and more, rhythmic complexity more strongly predicts groove in common meters." Communications Psychology 3.1 (2025): 185.
