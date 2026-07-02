@@ -64,6 +64,17 @@ function gridPlugin(lines: GridSpec): uPlot.Plugin {
   };
 }
 
+// syncopation and resolution live in [0,1]; clamp typed entries into range.
+const clampUnit = (x: number): number => Math.max(0, Math.min(1, x));
+
+// Render a unit value with at least one decimal place so the number boxes read as
+// fractional (0 → "0.0", 1 → "1.0") without truncating finer slider steps
+// (0.37 stays "0.37").
+function fmtUnit(x: number): string {
+  const s = String(x);
+  return s.includes('.') ? s : s + '.0';
+}
+
 export default function RhythmPatternPlayerClient({
   meter: meterProp = '4',
   subdivisions: subProp = '2',
@@ -101,7 +112,9 @@ export default function RhythmPatternPlayerClient({
   const [subdivisions, setSubdivisions] = useState<number[]>(initial.s);
   const [subError, setSubError] = useState<string | null>(null);
   const [syncopation, setSyncopation] = useState(syncProp);
+  const [syncText, setSyncText] = useState(() => fmtUnit(syncProp));
   const [resolution, setResolution] = useState(resProp);
+  const [resText, setResText] = useState(() => fmtUnit(resProp));
   const [seed, setSeed] = useState(1);
   const [pattern, setPattern] = useState<RenderedPattern | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -115,9 +128,6 @@ export default function RhythmPatternPlayerClient({
     tempoRef.current = 60 / clamped;
     setBpm(clamped);
   };
-
-  // syncopation and resolution are both [0,1]; clamp typed entries into range.
-  const clampUnit = (x: number) => Math.max(0, Math.min(1, x));
 
   const synthRef = useRef<Tone.Synth | null>(null);
   const gainRef = useRef<Tone.Gain | null>(null);
@@ -153,6 +163,19 @@ export default function RhythmPatternPlayerClient({
     } catch (e) {
       setSubError((e as Error).message);
     }
+  };
+
+  // Number-box entry for the two [0,1] sliders. Keep the raw text while editing so
+  // decimals type smoothly; update the numeric value (clamped) whenever it parses.
+  const onSyncText = (text: string) => {
+    setSyncText(text);
+    const v = parseFloat(text);
+    if (!Number.isNaN(v)) setSyncopation(clampUnit(v));
+  };
+  const onResText = (text: string) => {
+    setResText(text);
+    const v = parseFloat(text);
+    if (!Number.isNaN(v)) setResolution(clampUnit(v));
   };
 
   const hasError = meterError !== null || subError !== null;
@@ -395,19 +418,19 @@ export default function RhythmPatternPlayerClient({
             max={1}
             step={0.01}
             value={syncopation}
-            onChange={(e) => setSyncopation(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const v = clampUnit(parseFloat(e.target.value));
+              setSyncopation(v);
+              setSyncText(fmtUnit(v));
+            }}
             style={rangeStyle}
           />
           <input
-            type="number"
-            min={0}
-            max={1}
-            step={0.01}
-            value={syncopation}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (!Number.isNaN(v)) setSyncopation(clampUnit(v));
-            }}
+            type="text"
+            inputMode="decimal"
+            value={syncText}
+            onChange={(e) => onSyncText(e.target.value)}
+            onBlur={() => setSyncText(fmtUnit(syncopation))}
             style={{width: '4.5rem'}}
             aria-label="syncopation amount"
           />
@@ -420,19 +443,19 @@ export default function RhythmPatternPlayerClient({
             max={1}
             step={0.01}
             value={resolution}
-            onChange={(e) => setResolution(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const v = clampUnit(parseFloat(e.target.value));
+              setResolution(v);
+              setResText(fmtUnit(v));
+            }}
             style={rangeStyle}
           />
           <input
-            type="number"
-            min={0}
-            max={1}
-            step={0.01}
-            value={resolution}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (!Number.isNaN(v)) setResolution(clampUnit(v));
-            }}
+            type="text"
+            inputMode="decimal"
+            value={resText}
+            onChange={(e) => onResText(e.target.value)}
+            onBlur={() => setResText(fmtUnit(resolution))}
             style={{width: '4.5rem'}}
             aria-label="resolution amount"
           />
