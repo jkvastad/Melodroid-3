@@ -18,7 +18,7 @@ export type RhythmPatternPlayerProps = {
   maxBpm?: number;
   syncopation?: number; // initial [0,1]; default 0
   resolution?: number; // initial [0,1]; default 1
-  pitchHz?: number; // fixed blip pitch in Hz; default 330
+  pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
 };
 
@@ -72,7 +72,7 @@ export default function RhythmPatternPlayerClient({
   maxBpm = 240,
   syncopation: syncProp = 0,
   resolution: resProp = 1,
-  pitchHz = 330,
+  pitchHz = 196,
   height = 240,
 }: RhythmPatternPlayerProps) {
   // Parse the author-supplied defaults once, falling back to a sane starter if the
@@ -264,7 +264,7 @@ export default function RhythmPatternPlayerClient({
       cursor: {show: false},
       scales: {
         x: {time: false, range: () => [-0.2, totalBeats + 0.2]},
-        y: {range: () => [0, 132]},
+        y: {range: () => [0, 127]},
       },
       axes: [
         {label: 'position (unit beats)', splits: () => lines.unitBeats},

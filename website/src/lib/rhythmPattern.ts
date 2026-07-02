@@ -50,7 +50,7 @@ export function parseSubdivisions(text: string, meterLen: number): number[] {
 
 export type Pulse = {
   unitBeat: number; // onset in unit beats (fractional for subdivision pulses)
-  velocity: number; // MIDI velocity, integer [0,127]; 0 = silent / inactive
+  velocity: number; // MIDI velocity, integer [0,100]; 0 = silent / inactive
 };
 
 export type PatternParams = {
@@ -67,7 +67,13 @@ const HEAVY = 1.0; // group-start beat — the heavy meter accent
 const BEAT = 0.72; // on-beat that is not a group start
 const SUB_FALLOFF = 0.62; // each subdivision depth is this much weaker than a beat
 
-const MIN_ACTIVE_VELOCITY = 24; // floor so a firing pulse is still audible/visible
+// The heaviest accent maps to this MIDI velocity rather than the full 127 — a velocity
+// of 127 is extreme in common musical use, so we leave headroom and let every lighter
+// tier scale proportionally beneath it. The plot keeps a 0–127 axis and draws these
+// true velocities, so the heaviest accent reads at 96 with the rest of the MIDI range
+// left as visible headroom.
+const MAX_VELOCITY = 96;
+const MIN_ACTIVE_VELOCITY = 19; // audibility floor so a firing pulse stays audible/visible
 const DEMOTE_PROB = 0.7; // ceiling on how often a heavy beat is knocked down at y=1
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
@@ -151,8 +157,8 @@ function mulberry32(seed: number): () => number {
 }
 
 function toVelocity(strength01: number): number {
-  const v = Math.round(strength01 * 127);
-  return Math.max(MIN_ACTIVE_VELOCITY, Math.min(127, v));
+  const v = Math.round(strength01 * MAX_VELOCITY);
+  return Math.max(MIN_ACTIVE_VELOCITY, Math.min(MAX_VELOCITY, v));
 }
 
 // Realize a concrete pattern from the parameters and a seed.
