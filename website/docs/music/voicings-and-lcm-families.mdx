@@ -101,11 +101,37 @@ Perhaps playing something other than block chords will produce some insight.
 
 ## LCM melodies
 To play melodies we will need to move from playing block chords in static time into dynamic time. 
-This produces structures of beats implicit in the change of notes.
+This produces structures of beats implicit in the change of notes (see [Rhythm chapter](/docs/related-research/rhythm) for related research and basic concepts).
 
-The simplest kind of beat is the isochronic beat, where a beat occurs every time period $T$. 
-These time periods can then be divided, producing time grids where beats may or may not occur (notably the original time period can itself be a sub-division beat in a larger grid).
-Skipping beats is called syncopation and can make a rhythm feel groovy, with groove referring to a feeling of motion from audio.
+Musical patterns can be constructed by:
+
+* Selecting a meter consisting of a series of integers e.g. `{4}` or `{7,2,3}`. These number signify the heavy accents on beats in the reccuring pattern.
+* Selecting a tempo (beats per minute, bpm) by choosing the rate of the (possibly implicit) unit beat. 
+Since meters come in integer ratios there is always a unit beat e.g. `{4}={4,1}`.
+* Selecting a grid resolution or fastest pulse by choosing the largest division of the unit beat. 
+This subdivision is typically in the range of 1-8 since maximum groove is about 100-120bpm, producing a fastest pulse of 62.5ms. 
+Any faster and the pulse starts intruding on the pitch domain.
+* Accenting pulses (possibly silent) in the pattern. This decides long, heavy, light, short, moderate, etc., note amplitude and length.
+When accenting pulses a moderate deviation from the meter produces the highest groove.
+
+The above procedure produces an amplitude pattern consisting of meter and rhythm. 
+This pattern can then be decorated with pitch at active (non-silent) pulses.
+
+TODO:
+Implement sliders and number inputs for the reader to try out and play a rhythmic pattern without pitch (they can add pitch in later sections).
+The reader wants to...
+* enter sets of numbers for the meter
+* use a tempo slider with number entry for setting tempo. The slider should continously update played tempo for live adjustment.
+* enter a maximum subdivision of the unit beat. 
+This can be several numbers matching the meter numbers (different resolution per beat of the meter) or just one number for the entire meter
+* A slider for syncopation - deviation from meter.
+No syncopation means only the meter beats get heavy accents.
+High syncopation moves probability of heavier accents to other pulses within each beat.
+* A slider for rhythmic resolution - highest resolution means all pulses are active, lowest means only main beats are active.
+* A visual on the generated pattern. This should show velocity on the y axis and pulse position on the x axis, with grid lines for the meter beat positions and pulse grid.
+The visual should be accompanied by a play and a generate button. Pressing play loops the pattern. Pressing generate stops play and creates a new pattern.
+
+Deferred: all of the below is sketchpad
 
 TODO: example rhythms: 
 * isochronic
@@ -114,9 +140,6 @@ TODO: example rhythms:
 * Removing beats to produce off beat syncopation
 * Removing beats to produce groove
 * Aksak and Jembe rhythms (non even vs. non isochronous?)
-
-
-Deferred: all of the below is sketchpad
 
 TODO: 
 * investigate uniform chords - 12 tet can be divided in 2,3 and 4.
