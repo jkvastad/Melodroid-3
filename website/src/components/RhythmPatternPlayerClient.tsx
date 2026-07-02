@@ -116,6 +116,9 @@ export default function RhythmPatternPlayerClient({
     setBpm(clamped);
   };
 
+  // syncopation and resolution are both [0,1]; clamp typed entries into range.
+  const clampUnit = (x: number) => Math.max(0, Math.min(1, x));
+
   const synthRef = useRef<Tone.Synth | null>(null);
   const gainRef = useRef<Tone.Gain | null>(null);
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -395,7 +398,19 @@ export default function RhythmPatternPlayerClient({
             onChange={(e) => setSyncopation(parseFloat(e.target.value))}
             style={rangeStyle}
           />
-          <code>{syncopation.toFixed(2)}</code>
+          <input
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={syncopation}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!Number.isNaN(v)) setSyncopation(clampUnit(v));
+            }}
+            style={{width: '4.5rem'}}
+            aria-label="syncopation amount"
+          />
         </label>
         <label style={labelStyle}>
           resolution
@@ -408,7 +423,19 @@ export default function RhythmPatternPlayerClient({
             onChange={(e) => setResolution(parseFloat(e.target.value))}
             style={rangeStyle}
           />
-          <code>{resolution.toFixed(2)}</code>
+          <input
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={resolution}
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              if (!Number.isNaN(v)) setResolution(clampUnit(v));
+            }}
+            style={{width: '4.5rem'}}
+            aria-label="resolution amount"
+          />
         </label>
       </div>
 
