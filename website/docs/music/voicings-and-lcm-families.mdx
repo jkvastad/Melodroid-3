@@ -4,6 +4,7 @@ sidebar_position: 2
 
 import Player from '@site/src/components/Player';
 import TimbreMorphPlayer from '@site/src/components/TimbreMorphPlayer';
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 
 # Voicings and LCM Families
 
@@ -117,19 +118,22 @@ When accenting pulses a moderate deviation from the meter produces the highest g
 The above procedure produces an amplitude pattern consisting of meter and rhythm. 
 This pattern can then be decorated with pitch at active (non-silent) pulses.
 
-TODO:
-Implement sliders and number inputs for the reader to try out and play a rhythmic pattern without pitch (they can add pitch in later sections).
-The reader wants to...
-* enter sets of numbers for the meter
-* use a tempo slider with number entry for setting tempo. The slider should continously update played tempo for live adjustment.
-* enter a maximum subdivision of the unit beat. 
-This can be several numbers matching the meter numbers (different resolution per beat of the meter) or just one number for the entire meter
-* A slider for syncopation - deviation from meter.
-No syncopation means only the meter beats get heavy accents.
-High syncopation moves probability of heavier accents to other pulses within each beat.
-* A slider for rhythmic resolution - highest resolution means all pulses are active, lowest means only main beats are active.
-* A visual on the generated pattern. This should show velocity on the y axis and pulse position on the x axis, with grid lines for the meter beat positions and pulse grid.
-The visual should be accompanied by a play and a generate button. Pressing play loops the pattern. Pressing generate stops play and creates a new pattern.
+Try it below — a pitchless groove machine. Enter a **meter** (one number per accent
+group, e.g. `4` or `7 2 3`) and a **subdivision** (a single number for the whole meter,
+or one per group), then shape the pattern with two sliders:
+
+* **Resolution** — how much of the pulse grid is active. At the low end only the main
+beats fire; at the high end every subdivision does.
+* **Syncopation** — deviation from the meter. At zero the heavy accents sit exactly on
+the meter beats; as it rises the accents redistribute, drifting onto off-beat pulses
+while some meter beats drop to lighter tiers.
+
+Press **Generate** to sample a concrete pattern from the current settings (it changes
+only when you press it), and **Play** to loop it. The plot shows each pulse's velocity
+against its position in unit beats, with grid lines for the meter accents (bold), unit
+beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while playing.
+
+<RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} />
 
 Deferred: all of the below is sketchpad
 
