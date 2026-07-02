@@ -122,6 +122,48 @@ function gridPlugin(lines: GridSpec): uPlot.Plugin {
   };
 }
 
+// "Sing-along" playhead: marks the latest-sounded bar during playback. Drawn on the `draw`
+// hook (after the series, so it sits on top of the bars). `beatRef` holds the current bar's
+// unitBeat x, or null when stopped. Reads the ref at draw time so a cheap redraw() moves it.
+function playheadPlugin(beatRef: {current: number | null}): uPlot.Plugin {
+  const FILL = '#f08c00'; // amber — reads over both the blue and spectrum bars, either theme
+  const STROKE = 'rgba(80,40,0,0.9)';
+  return {
+    hooks: {
+      draw: (u) => {
+        const beat = beatRef.current;
+        if (beat == null) return;
+        const cx = Math.round(u.valToPos(beat, 'x', true));
+        const top = u.bbox.top;
+        const base = u.bbox.top + u.bbox.height; // baseline (velocity 0), foot of the bars
+        const {ctx} = u;
+        ctx.save();
+        // Faint vertical guide through the current bar.
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(240,140,0,0.35)';
+        ctx.moveTo(cx, top);
+        ctx.lineTo(cx, base);
+        ctx.stroke();
+        // Upward-pointing triangle in the bottom margin, apex at the baseline.
+        const half = 6;
+        const h = 9;
+        ctx.beginPath();
+        ctx.moveTo(cx, base); // apex (points up at the bar)
+        ctx.lineTo(cx - half, base + h);
+        ctx.lineTo(cx + half, base + h);
+        ctx.closePath();
+        ctx.fillStyle = FILL;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = STROKE;
+        ctx.stroke();
+        ctx.restore();
+      },
+    },
+  };
+}
+
 // syncopation and resolution live in [0,1]; clamp typed entries into range.
 const clampUnit = (x: number): number => Math.max(0, Math.min(1, x));
 
@@ -205,6 +247,13 @@ export default function RhythmPatternPlayerClient({
   // baked-colour effect and the live loop-off scheduler write them and cheap-redraw.
   const fillColorsRef = useRef<string[] | null>(null);
   const strokeColorsRef = useRef<string[] | null>(null);
+
+  // Sing-along playhead: the current bar's unitBeat (null when stopped), read by
+  // playheadPlugin. playRunRef tags each play() run so scheduled callbacks left in flight
+  // after Stop/Generate no-op — the global Tone.getDraw() is shared by both players on the
+  // page, so we invalidate per-instance by run id rather than cancelling it globally.
+  const playheadBeatRef = useRef<number | null>(null);
+  const playRunRef = useRef(0);
 
   // --- Melody: pitch pool + per-event pitch assignment ---
 
@@ -340,6 +389,10 @@ export default function RhythmPatternPlayerClient({
     synthRef.current = null; // a disposed synth can't retrigger; rebuild next play
     gainRef.current?.dispose();
     gainRef.current = null;
+    // Invalidate in-flight Draw callbacks (up to the ~0.3 s look-ahead) and hide the marker.
+    playRunRef.current++;
+    playheadBeatRef.current = null;
+    plotRef.current?.redraw(false, false);
     setPlaying(false);
   };
 
@@ -356,6 +409,7 @@ export default function RhythmPatternPlayerClient({
     const firingPulseIdx = firingPulseIndices(pulses);
     const N = events.length;
     if (N === 0) return;
+    const runId = ++playRunRef.current; // tags this run; stale Draw callbacks no-op
     setPlaying(true);
 
     // Continuous look-ahead loop copied from SequencePlayerClient: schedule each onset
@@ -380,6 +434,9 @@ export default function RhythmPatternPlayerClient({
         // the root pitchHz (key 0) via the 12-TET ratio 2^(key/12).
         const okeys = octaveKeysRef.current;
         let freq = pitchHz;
+        // Loop-off re-rolls each hit; capture that key so the Draw callback can light up this
+        // bar's spectrum colour when it sounds (loop-on / non-melody leave colourKey null).
+        let colourKey: number | null = null;
         if (okeys && okeys.length > 0) {
           const baked = bakedKeysRef.current;
           const loopOn = loopMelodyRef.current && baked;
@@ -387,24 +444,26 @@ export default function RhythmPatternPlayerClient({
             ? baked![i % N]
             : okeys[Math.floor(Math.random() * okeys.length)];
           freq = pitchHz * Math.pow(2, key / 12);
-          // Loop-off re-rolls each hit; light up this bar's spectrum colour exactly when
-          // it sounds so the colours visibly change every cycle (loop-on is already baked).
-          if (!loopOn) {
-            const bar = firingPulseIdx[i % N];
-            Tone.getDraw().schedule(() => {
-              if (!plotRef.current) return;
-              (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[
-                bar
-              ] = pitchFill(key);
-              (strokeColorsRef.current ??= Array<string>(pulses.length).fill(
-                BLUE_STROKE,
-              ))[bar] = pitchStroke(key);
-              // rebuildPaths=true so disp re-reads the updated colour; setScale=false keeps
-              // the axes fixed (see the baked-colour effect for the same reasoning).
-              plotRef.current.redraw(true, false);
-            }, at);
-          }
+          if (!loopOn) colourKey = key;
         }
+        // One Draw callback per onset, fired exactly when it sounds: move the sing-along
+        // playhead to this bar (all players) and, for loop-off melody, recolour it live.
+        const bar = firingPulseIdx[i % N];
+        const beat = ev.unitBeat;
+        Tone.getDraw().schedule(() => {
+          if (playRunRef.current !== runId || !plotRef.current) return; // stale run / no plot
+          playheadBeatRef.current = beat;
+          if (colourKey != null) {
+            (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
+              pitchFill(colourKey);
+            (strokeColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_STROKE))[
+              bar
+            ] = pitchStroke(colourKey);
+          }
+          // Rebuild paths only when a colour changed (so disp re-reads); otherwise a cheap
+          // repaint that still re-runs the playhead draw hook. setScale=false keeps the axes.
+          plotRef.current.redraw(colourKey != null, false);
+        }, at);
         synth.triggerAttackRelease(freq, durSec, at, vel);
         prevTime = at;
         prevBeat = absBeat;
@@ -492,7 +551,7 @@ export default function RhythmPatternPlayerClient({
           points: {show: false},
         },
       ],
-      plugins: [gridPlugin(lines)],
+      plugins: [gridPlugin(lines), playheadPlugin(playheadBeatRef)],
     };
 
     const u = new uPlot(opts, [xs, ys] as uPlot.AlignedData, container);
