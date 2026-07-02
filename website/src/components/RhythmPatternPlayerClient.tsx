@@ -73,6 +73,13 @@ const spectrumHue = (key: number): number => ((((key % 12) + 12) % 12) / 12) * 2
 const pitchFill = (key: number): string => `hsla(${spectrumHue(key)}, 85%, 55%, 0.6)`;
 const pitchStroke = (key: number): string => `hsl(${spectrumHue(key)}, 85%, 45%)`;
 
+// The same red→violet ramp as the bars, as a CSS gradient for the plot's legend swatch:
+// one stop per pitch class 0…11 so the legend gradient matches the bar colours exactly.
+const SPECTRUM_GRADIENT = `linear-gradient(to right, ${Array.from(
+  {length: 12},
+  (_, k) => `hsl(${spectrumHue(k)}, 85%, 55%)`,
+).join(', ')})`;
+
 // A rendered pattern together with the meter/subdivisions it was built from, so the
 // plot's grid lines and x-range always match the bars (both only change on Generate).
 type RenderedPattern = {
@@ -515,7 +522,42 @@ export default function RhythmPatternPlayerClient({
 
   return (
     <div style={{margin: '1rem 0'}}>
-      <div ref={containerRef} style={{width: '100%', minHeight: height}} />
+      <div style={{position: 'relative'}}>
+        <div ref={containerRef} style={{width: '100%', minHeight: height}} />
+        {/* Spectrum legend — only when pitch colouring is active (a family selected). The
+            uPlot container mutates its own DOM, so this overlay is a sibling, not a child. */}
+        {octaveKeys && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 12,
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.7rem',
+              color: 'var(--ifm-font-color-base)',
+              background: 'var(--ifm-background-surface-color)',
+              borderRadius: '4px',
+              padding: '0.2rem 0.4rem',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+            }}>
+            <span style={{opacity: 0.75}}>pitch</span>
+            <span style={{opacity: 0.85}}>low</span>
+            <span
+              style={{
+                display: 'inline-block',
+                width: 72,
+                height: 9,
+                borderRadius: '3px',
+                background: SPECTRUM_GRADIENT,
+              }}
+            />
+            <span style={{opacity: 0.85}}>high</span>
+          </div>
+        )}
+      </div>
       <div
         style={{
           fontSize: '0.8rem',
