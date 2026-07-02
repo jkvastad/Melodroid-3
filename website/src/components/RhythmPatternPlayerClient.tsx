@@ -26,9 +26,12 @@ export type RhythmPatternPlayerProps = {
 
 // The LCM families of the intro table on voicings-and-lcm-families.mdx, keyed to that
 // table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
-// player folds them into a single octave before drawing pitches from them.
+// player folds them into a single octave before drawing pitches from them. The leading
+// id '0' is not a family: it is the chromatic draw pool — all 12 pitch classes, a uniform
+// random draw over the whole octave rather than a good-fraction subset.
 type LcmFamily = {id: string; label: string; keys: number[]};
 const LCM_FAMILIES: LcmFamily[] = [
+  {id: '0', label: '0 · Chromatic', keys: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]},
   {id: '1', label: '1 · Unison', keys: [0]},
   {id: '2', label: '2 · Perfect Fifth', keys: [0, 7]},
   {id: '3,4', label: '3,4 · Major Third', keys: [0, 4, 7]},
@@ -49,6 +52,26 @@ const foldOctave = (keys: number[]): number[] =>
 // baked melody assigns one key per event in exactly that order (play() reuses this).
 const firingEvents = (pulses: Pulse[]): Pulse[] =>
   pulses.filter((p) => p.velocity > 0).sort((a, b) => a.unitBeat - b.unitBeat);
+
+// Index into `pulses` of each firing event, in firing order — the bridge from a per-event
+// key list (bakedKeys / a live loop-off roll) back to the per-bar color array, which is
+// indexed by position in the full `pulses` array. Reference identity is safe because
+// firingEvents just filters the same objects out of `pulses`.
+const firingPulseIndices = (pulses: Pulse[]): number[] => {
+  const idxOf = new Map<Pulse, number>(pulses.map((p, i) => [p, i]));
+  return firingEvents(pulses).map((e) => idxOf.get(e)!);
+};
+
+// Default (no-melody) bar colors — the original single blue used before pitch coloring.
+const BLUE_FILL = 'rgba(30,90,168,0.55)';
+const BLUE_STROKE = 'rgba(30,90,168,0.95)';
+
+// Map a pitch class to a visible-spectrum colour: low pitch (long wavelength) → red,
+// high pitch → blue/violet. Hue 0° (red) … 285° (violet) across the octave; the pitch
+// class is folded into [0,12) first so any raw key lands somewhere on the gradient.
+const spectrumHue = (key: number): number => ((((key % 12) + 12) % 12) / 12) * 285;
+const pitchFill = (key: number): string => `hsla(${spectrumHue(key)}, 85%, 55%, 0.6)`;
+const pitchStroke = (key: number): string => `hsl(${spectrumHue(key)}, 85%, 45%)`;
 
 // A rendered pattern together with the meter/subdivisions it was built from, so the
 // plot's grid lines and x-range always match the bars (both only change on Generate).
@@ -151,7 +174,7 @@ export default function RhythmPatternPlayerClient({
   // Melody (only surfaced when `melody`): which intro-table LCM family to draw pitches
   // from ('' = fixed pitch, today's behavior), and whether the drawn pitches are baked
   // into a repeating phrase (loop on) or re-rolled on every hit (loop off).
-  const [selectedLcm, setSelectedLcm] = useState(melody ? '24' : '');
+  const [selectedLcm, setSelectedLcm] = useState(melody ? '8,9,10,12' : '');
   const [loopMelody, setLoopMelody] = useState(true);
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
@@ -169,6 +192,12 @@ export default function RhythmPatternPlayerClient({
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
+
+  // Per-bar spectrum colours, indexed by position in the current pattern's `pulses`
+  // (null ⇒ fall back to flat blue). The uPlot bar series reads these via `disp`; the
+  // baked-colour effect and the live loop-off scheduler write them and cheap-redraw.
+  const fillColorsRef = useRef<string[] | null>(null);
+  const strokeColorsRef = useRef<string[] | null>(null);
 
   // --- Melody: pitch pool + per-event pitch assignment ---
 
@@ -204,6 +233,36 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     loopMelodyRef.current = loopMelody;
   }, [loopMelody]);
+
+  // Spectrum colours for the bars. With a family selected, tint each firing bar by its
+  // baked pitch (deterministic per pattern/seed) — this is the loop-on colouring and the
+  // pre-play preview for loop-off (the live scheduler overwrites those per hit). Without a
+  // family (the non-melody player), leave the refs null so the bars stay flat blue.
+  useEffect(() => {
+    if (!pattern) return;
+    if (!octaveKeys || !bakedKeys) {
+      fillColorsRef.current = null;
+      strokeColorsRef.current = null;
+    } else {
+      const n = pattern.pulses.length;
+      const fills = Array<string>(n).fill(BLUE_FILL);
+      const strokes = Array<string>(n).fill(BLUE_STROKE);
+      const idx = firingPulseIndices(pattern.pulses);
+      bakedKeys.forEach((key, e) => {
+        fills[idx[e]] = pitchFill(key);
+        strokes[idx[e]] = pitchStroke(key);
+      });
+      fillColorsRef.current = fills;
+      strokeColorsRef.current = strokes;
+    }
+    // redraw(true, …) rebuilds the bar paths so the disp colour callbacks are re-read; a
+    // bare redraw(false, …) would only repaint cached paths and ignore the new colours.
+    // setScale=false keeps the fixed axis ranges. Handles family changes without a
+    // regenerate (the plot is only recreated on a new pattern).
+    plotRef.current?.redraw(true, false);
+    // loopMelody is a dep so flipping loop back on mid-play restores the baked colours the
+    // live loop-off scheduler had overwritten (the body always paints the baked preview).
+  }, [pattern, octaveKeys, bakedKeys, loopMelody]);
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
@@ -286,6 +345,8 @@ export default function RhythmPatternPlayerClient({
     const {pulses, totalBeats} = pattern;
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
+    // Bar index of each onset, aligned with `events`, for live loop-off recolouring.
+    const firingPulseIdx = firingPulseIndices(pulses);
     const N = events.length;
     if (N === 0) return;
     setPlaying(true);
@@ -314,11 +375,28 @@ export default function RhythmPatternPlayerClient({
         let freq = pitchHz;
         if (okeys && okeys.length > 0) {
           const baked = bakedKeysRef.current;
-          const key =
-            loopMelodyRef.current && baked
-              ? baked[i % N]
-              : okeys[Math.floor(Math.random() * okeys.length)];
+          const loopOn = loopMelodyRef.current && baked;
+          const key = loopOn
+            ? baked![i % N]
+            : okeys[Math.floor(Math.random() * okeys.length)];
           freq = pitchHz * Math.pow(2, key / 12);
+          // Loop-off re-rolls each hit; light up this bar's spectrum colour exactly when
+          // it sounds so the colours visibly change every cycle (loop-on is already baked).
+          if (!loopOn) {
+            const bar = firingPulseIdx[i % N];
+            Tone.getDraw().schedule(() => {
+              if (!plotRef.current) return;
+              (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[
+                bar
+              ] = pitchFill(key);
+              (strokeColorsRef.current ??= Array<string>(pulses.length).fill(
+                BLUE_STROKE,
+              ))[bar] = pitchStroke(key);
+              // rebuildPaths=true so disp re-reads the updated colour; setScale=false keeps
+              // the axes fixed (see the baked-colour effect for the same reasoning).
+              plotRef.current.redraw(true, false);
+            }, at);
+          }
         }
         synth.triggerAttackRelease(freq, durSec, at, vel);
         prevTime = at;
@@ -381,9 +459,29 @@ export default function RhythmPatternPlayerClient({
         {},
         {
           label: 'velocity',
-          stroke: 'rgba(30,90,168,0.95)',
-          fill: 'rgba(30,90,168,0.55)',
-          paths: uPlot.paths.bars!({size: [0.55, 16], align: 0}),
+          stroke: BLUE_STROKE,
+          fill: BLUE_FILL,
+          // Per-bar spectrum colours via disp (unit 3 = Color): the values callbacks read
+          // the live colour refs each draw, so a cheap redraw() repaints without a rebuild.
+          // Null refs (the non-melody player) fall back to flat blue for every bar.
+          paths: uPlot.paths.bars!({
+            size: [0.55, 16],
+            align: 0,
+            disp: {
+              fill: {
+                unit: 3,
+                values: (u) =>
+                  fillColorsRef.current ??
+                  Array<string>(u.data[0].length).fill(BLUE_FILL),
+              },
+              stroke: {
+                unit: 3,
+                values: (u) =>
+                  strokeColorsRef.current ??
+                  Array<string>(u.data[0].length).fill(BLUE_STROKE),
+              },
+            },
+          }),
           points: {show: false},
         },
       ],
@@ -549,7 +647,6 @@ export default function RhythmPatternPlayerClient({
                 value={selectedLcm}
                 onChange={(e) => setSelectedLcm(e.target.value)}
                 aria-label="lcm family for melody pitches">
-                <option value="">— (fixed pitch)</option>
                 {LCM_FAMILIES.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.label}

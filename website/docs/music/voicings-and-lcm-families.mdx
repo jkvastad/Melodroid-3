@@ -139,11 +139,15 @@ beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while pl
 A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
 
 The player below adds an **lcm** dropdown — shown only here — listing the LCM families from the
-table at the top of the page. With a family selected, every active pulse is pitched with a note
-drawn at random from that family's notes, folded into a single octave, instead of the fixed blip
-of the previous player. **Loop melody** bakes the drawn pitches into a repeating phrase; turn it
-off to re-roll a fresh pitch on every hit. **Generate** samples a new rhythm and, with a family
-selected, a new melody to go with it.
+table at the top of the page (it defaults to the LCM 8 family). Every active pulse is pitched
+with a note drawn at random from the selected family's notes, folded into a single octave;
+picking **1 · Unison** reproduces the fixed single blip of the previous player. The extra
+**0 · Chromatic** option is not a family but a uniform random draw over the whole octave (all 12
+pitch classes). Each bar is tinted along the visible spectrum by the pitch it carries — low
+pitch (long wavelength) red, high pitch blue/violet. **Loop melody** bakes the drawn pitches
+into a repeating phrase; turn it off to re-roll a fresh pitch on every hit, in which case each
+bar recolours live as its note sounds (the rhythm still loops). **Generate** samples a new
+rhythm and, with a family selected, a new melody to go with it.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} melody />
 
