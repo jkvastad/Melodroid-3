@@ -104,7 +104,8 @@ Perhaps playing something other than block chords will produce some insight.
 To play melodies we will need to move from playing block chords in static time into dynamic time. 
 This produces structures of beats implicit in the change of notes (see [Rhythm chapter](/docs/related-research/rhythm) for related research and basic concepts).
 
-Musical patterns can be constructed by:
+### Rhythmic Patterns
+Rhythmic patterns can be constructed by:
 
 * Selecting a meter consisting of a series of integers e.g. `{4}` or `{7,2,3}`. These number signify the heavy accents on beats in the reccuring pattern.
 * Selecting a tempo (beats per minute, bpm) by choosing the rate of the (possibly implicit) unit beat. 
@@ -133,6 +134,18 @@ against its position in unit beats, with grid lines for the meter accents (bold)
 beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while playing.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} />
+
+### Melody
+A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
+
+The player below adds an **lcm** dropdown — shown only here — listing the LCM families from the
+table at the top of the page. With a family selected, every active pulse is pitched with a note
+drawn at random from that family's notes, folded into a single octave, instead of the fixed blip
+of the previous player. **Loop melody** bakes the drawn pitches into a repeating phrase; turn it
+off to re-roll a fresh pitch on every hit. **Generate** samples a new rhythm and, with a family
+selected, a new melody to go with it.
+
+<RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} melody />
 
 Deferred: all of the below is sketchpad
 

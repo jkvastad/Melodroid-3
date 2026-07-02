@@ -143,10 +143,11 @@ export function metricStrength(
   return buildGrid(meter, subdivisions).map((p) => p.strength);
 }
 
-// Small, fast seeded PRNG (Tommy Ettinger's mulberry32). Kept local so generation is
+// Small, fast seeded PRNG (Tommy Ettinger's mulberry32). Kept here so generation is
 // pure and reproducible: a given seed always yields the same pattern, and Generate
-// just advances the seed.
-function mulberry32(seed: number): () => number {
+// just advances the seed. Exported so the player can pitch a pattern deterministically
+// (the same seed → same melody) from this one source of randomness.
+export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return function () {
     a = (a + 0x6d2b79f5) | 0;

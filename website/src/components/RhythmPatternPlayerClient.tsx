@@ -5,6 +5,7 @@ import 'uplot/dist/uPlot.min.css';
 import {
   generatePattern,
   gridLines,
+  mulberry32,
   parseMeter,
   parseSubdivisions,
   type Pulse,
@@ -20,7 +21,34 @@ export type RhythmPatternPlayerProps = {
   resolution?: number; // initial [0,1]; default 1
   pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
+  melody?: boolean; // show the lcm-family melody controls (this page only); default false
 };
+
+// The LCM families of the intro table on voicings-and-lcm-families.mdx, keyed to that
+// table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
+// player folds them into a single octave before drawing pitches from them.
+type LcmFamily = {id: string; label: string; keys: number[]};
+const LCM_FAMILIES: LcmFamily[] = [
+  {id: '1', label: '1 · Unison', keys: [0]},
+  {id: '2', label: '2 · Perfect Fifth', keys: [0, 7]},
+  {id: '3,4', label: '3,4 · Major Third', keys: [0, 4, 7]},
+  {id: '5,6', label: '5,6 · Add 9', keys: [0, 2, 4, 7]},
+  {id: '8,9,10,12', label: '8,9,10,12 · Major 9', keys: [0, 4, 7, 11, 14]},
+  {id: '15', label: '15', keys: [0, 3, 7, 11, 14, 17, 22]},
+  {id: '18', label: '18 · Minor 11', keys: [0, 3, 7, 10, 14, 17]},
+  {id: '20', label: '20', keys: [0, 4, 8, 11, 15, 18]},
+  {id: '24', label: '24 · Major 13', keys: [0, 4, 7, 10, 14, 17, 21]},
+];
+
+// Fold a voicing into one octave of distinct pitch classes [0,12), sorted low → high —
+// "an octave of pitches comprising the lcm family" for the melody to draw from.
+const foldOctave = (keys: number[]): number[] =>
+  [...new Set(keys.map((k) => ((k % 12) + 12) % 12))].sort((a, b) => a - b);
+
+// The pulses that actually sound, in the order the scheduler fires them. Factored so the
+// baked melody assigns one key per event in exactly that order (play() reuses this).
+const firingEvents = (pulses: Pulse[]): Pulse[] =>
+  pulses.filter((p) => p.velocity > 0).sort((a, b) => a.unitBeat - b.unitBeat);
 
 // A rendered pattern together with the meter/subdivisions it was built from, so the
 // plot's grid lines and x-range always match the bars (both only change on Generate).
@@ -85,6 +113,7 @@ export default function RhythmPatternPlayerClient({
   resolution: resProp = 1,
   pitchHz = 196,
   height = 240,
+  melody = false,
 }: RhythmPatternPlayerProps) {
   // Parse the author-supplied defaults once, falling back to a sane starter if the
   // MDX passes something malformed.
@@ -119,6 +148,12 @@ export default function RhythmPatternPlayerClient({
   const [pattern, setPattern] = useState<RenderedPattern | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  // Melody (only surfaced when `melody`): which intro-table LCM family to draw pitches
+  // from ('' = fixed pitch, today's behavior), and whether the drawn pitches are baked
+  // into a repeating phrase (loop on) or re-rolled on every hit (loop off).
+  const [selectedLcm, setSelectedLcm] = useState(melody ? '24' : '');
+  const [loopMelody, setLoopMelody] = useState(true);
+
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
   const [bpm, setBpm] = useState(bpmProp);
@@ -134,6 +169,41 @@ export default function RhythmPatternPlayerClient({
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
+
+  // --- Melody: pitch pool + per-event pitch assignment ---
+
+  // The selected family folded to one octave, or null for fixed pitch.
+  const octaveKeys = useMemo(() => {
+    const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
+    return fam ? foldOctave(fam.keys) : null;
+  }, [selectedLcm]);
+
+  // Loop-on melody: one random key per firing event, drawn with the same seeded RNG as
+  // the rhythm so a given (pattern, family, seed) always yields the same phrase. Re-rolls
+  // when the rhythm (pattern/seed) or the family changes; null when fixed pitch.
+  const bakedKeys = useMemo(() => {
+    if (!pattern || !octaveKeys) return null;
+    const rng = mulberry32(seed);
+    return firingEvents(pattern.pulses).map(
+      () => octaveKeys[Math.floor(rng() * octaveKeys.length)],
+    );
+  }, [pattern, octaveKeys, seed]);
+
+  // Mirror the melody config into refs so the look-ahead scheduler (play's pump) reads the
+  // current values live, exactly like tempoRef — switching family / loop retunes a running
+  // loop without a replay.
+  const octaveKeysRef = useRef(octaveKeys);
+  const bakedKeysRef = useRef(bakedKeys);
+  const loopMelodyRef = useRef(loopMelody);
+  useEffect(() => {
+    octaveKeysRef.current = octaveKeys;
+  }, [octaveKeys]);
+  useEffect(() => {
+    bakedKeysRef.current = bakedKeys;
+  }, [bakedKeys]);
+  useEffect(() => {
+    loopMelodyRef.current = loopMelody;
+  }, [loopMelody]);
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
@@ -215,9 +285,7 @@ export default function RhythmPatternPlayerClient({
     const synth = getSynth();
     const {pulses, totalBeats} = pattern;
     // Only firing pulses become onsets, sorted by position within the cycle.
-    const events = pulses
-      .filter((p) => p.velocity > 0)
-      .sort((a, b) => a.unitBeat - b.unitBeat);
+    const events = firingEvents(pulses);
     const N = events.length;
     if (N === 0) return;
     setPlaying(true);
@@ -239,7 +307,20 @@ export default function RhythmPatternPlayerClient({
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
         const vel = ev.velocity / 127;
         const durSec = 0.03 + 0.12 * vel; // heavier accents are both louder and longer
-        synth.triggerAttackRelease(pitchHz, durSec, at, vel);
+        // Pitch: the fixed pitchHz unless an lcm family is selected, in which case draw a
+        // key from its octave — baked (a repeating phrase) or fresh per hit — placed above
+        // the root pitchHz (key 0) via the 12-TET ratio 2^(key/12).
+        const okeys = octaveKeysRef.current;
+        let freq = pitchHz;
+        if (okeys && okeys.length > 0) {
+          const baked = bakedKeysRef.current;
+          const key =
+            loopMelodyRef.current && baked
+              ? baked[i % N]
+              : okeys[Math.floor(Math.random() * okeys.length)];
+          freq = pitchHz * Math.pow(2, key / 12);
+        }
+        synth.triggerAttackRelease(freq, durSec, at, vel);
         prevTime = at;
         prevBeat = absBeat;
         i++;
@@ -460,6 +541,33 @@ export default function RhythmPatternPlayerClient({
             aria-label="resolution amount"
           />
         </label>
+        {melody && (
+          <>
+            <label style={labelStyle}>
+              lcm
+              <select
+                value={selectedLcm}
+                onChange={(e) => setSelectedLcm(e.target.value)}
+                aria-label="lcm family for melody pitches">
+                <option value="">— (fixed pitch)</option>
+                {LCM_FAMILIES.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              <input
+                type="checkbox"
+                checked={loopMelody}
+                onChange={(e) => setLoopMelody(e.target.checked)}
+                aria-label="loop the drawn melody"
+              />
+              loop melody
+            </label>
+          </>
+        )}
       </div>
 
       {(meterError || subError) && (
