@@ -30,3 +30,9 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Chapter index (generated-index) card lists: one card per row so pages
+   read as a chronological list instead of a two-column grid. */
+article[class*='docCardListItem'] {
+  --ifm-col-width: 100%;
+}
