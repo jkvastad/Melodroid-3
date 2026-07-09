@@ -28,10 +28,15 @@ export type RhythmPatternPlayerProps = {
 // table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
 // player folds them into a single octave before drawing pitches from them. The leading
 // id '0' is not a family: it is the chromatic draw pool — all 12 pitch classes, a uniform
-// random draw over the whole octave rather than a good-fraction subset.
+// random draw over the whole octave rather than a good-fraction subset. The RANDOM_ID
+// entry is not a family either: it draws a continuous frequency anywhere in the octave
+// (a real key in [0,12), unquantized) to contrast truly random pitch against the 12 keys;
+// its `keys` is unused (the octaveKeys memo short-circuits on RANDOM_ID).
+const RANDOM_ID = 'random';
 type LcmFamily = {id: string; label: string; keys: number[]};
 const LCM_FAMILIES: LcmFamily[] = [
   {id: '0', label: '0 · Chromatic', keys: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]},
+  {id: RANDOM_ID, label: '∅ · Random Pitch', keys: []},
   {id: '1', label: '1 · Unison', keys: [0]},
   {id: '2', label: '2 · Perfect Fifth', keys: [0, 7]},
   {id: '3,4', label: '3,4 · Major Third', keys: [0, 4, 7]},
@@ -257,22 +262,28 @@ export default function RhythmPatternPlayerClient({
 
   // --- Melody: pitch pool + per-event pitch assignment ---
 
-  // The selected family folded to one octave, or null for fixed pitch.
+  // Random Pitch draws a continuous key in [0,12) rather than a discrete family pool.
+  const isRandomPitch = selectedLcm === RANDOM_ID;
+  // The selected family folded to one octave, or null for fixed pitch / random pitch.
   const octaveKeys = useMemo(() => {
+    if (selectedLcm === RANDOM_ID) return null;
     const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
     return fam ? foldOctave(fam.keys) : null;
   }, [selectedLcm]);
+  // Melody is active (pitch varies + bars are spectrum-coloured) for a family or random
+  // pitch — the single flag that replaces the old `octaveKeys`-truthiness tests.
+  const melodyOn = isRandomPitch || octaveKeys != null;
 
   // Loop-on melody: one random key per firing event, drawn with the same seeded RNG as
   // the rhythm so a given (pattern, family, seed) always yields the same phrase. Re-rolls
   // when the rhythm (pattern/seed) or the family changes; null when fixed pitch.
   const bakedKeys = useMemo(() => {
-    if (!pattern || !octaveKeys) return null;
+    if (!pattern || !melodyOn) return null;
     const rng = mulberry32(seed);
-    return firingEvents(pattern.pulses).map(
-      () => octaveKeys[Math.floor(rng() * octaveKeys.length)],
+    return firingEvents(pattern.pulses).map(() =>
+      isRandomPitch ? rng() * 12 : octaveKeys![Math.floor(rng() * octaveKeys!.length)],
     );
-  }, [pattern, octaveKeys, seed]);
+  }, [pattern, melodyOn, isRandomPitch, octaveKeys, seed]);
 
   // Mirror the melody config into refs so the look-ahead scheduler (play's pump) reads the
   // current values live, exactly like tempoRef — switching family / loop retunes a running
@@ -280,6 +291,8 @@ export default function RhythmPatternPlayerClient({
   const octaveKeysRef = useRef(octaveKeys);
   const bakedKeysRef = useRef(bakedKeys);
   const loopMelodyRef = useRef(loopMelody);
+  const melodyOnRef = useRef(melodyOn);
+  const isRandomPitchRef = useRef(isRandomPitch);
   useEffect(() => {
     octaveKeysRef.current = octaveKeys;
   }, [octaveKeys]);
@@ -289,6 +302,12 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     loopMelodyRef.current = loopMelody;
   }, [loopMelody]);
+  useEffect(() => {
+    melodyOnRef.current = melodyOn;
+  }, [melodyOn]);
+  useEffect(() => {
+    isRandomPitchRef.current = isRandomPitch;
+  }, [isRandomPitch]);
 
   // Spectrum colours for the bars. With a family selected, tint each firing bar by its
   // baked pitch (deterministic per pattern/seed) — this is the loop-on colouring and the
@@ -296,7 +315,7 @@ export default function RhythmPatternPlayerClient({
   // family (the non-melody player), leave the refs null so the bars stay flat blue.
   useEffect(() => {
     if (!pattern) return;
-    if (!octaveKeys || !bakedKeys) {
+    if (!melodyOn || !bakedKeys) {
       fillColorsRef.current = null;
       strokeColorsRef.current = null;
     } else {
@@ -318,7 +337,7 @@ export default function RhythmPatternPlayerClient({
     plotRef.current?.redraw(true, false);
     // loopMelody is a dep so flipping loop back on mid-play restores the baked colours the
     // live loop-off scheduler had overwritten (the body always paints the baked preview).
-  }, [pattern, octaveKeys, bakedKeys, loopMelody]);
+  }, [pattern, melodyOn, octaveKeys, bakedKeys, loopMelody]);
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
@@ -429,20 +448,23 @@ export default function RhythmPatternPlayerClient({
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
         const vel = ev.velocity / 127;
         const durSec = 0.03 + 0.12 * vel; // heavier accents are both louder and longer
-        // Pitch: the fixed pitchHz unless an lcm family is selected, in which case draw a
-        // key from its octave — baked (a repeating phrase) or fresh per hit — placed above
-        // the root pitchHz (key 0) via the 12-TET ratio 2^(key/12).
+        // Pitch: the fixed pitchHz unless a melody is active, in which case draw a key —
+        // baked (a repeating phrase) or fresh per hit — placed above the root pitchHz
+        // (key 0) via the 12-TET ratio 2^(key/12). A family draws a discrete key from its
+        // octave pool; random pitch draws a continuous key in [0,12).
         const okeys = octaveKeysRef.current;
         let freq = pitchHz;
         // Loop-off re-rolls each hit; capture that key so the Draw callback can light up this
         // bar's spectrum colour when it sounds (loop-on / non-melody leave colourKey null).
         let colourKey: number | null = null;
-        if (okeys && okeys.length > 0) {
+        if (melodyOnRef.current) {
           const baked = bakedKeysRef.current;
           const loopOn = loopMelodyRef.current && baked;
           const key = loopOn
             ? baked![i % N]
-            : okeys[Math.floor(Math.random() * okeys.length)];
+            : isRandomPitchRef.current
+              ? Math.random() * 12
+              : okeys![Math.floor(Math.random() * okeys!.length)];
           freq = pitchHz * Math.pow(2, key / 12);
           if (!loopOn) colourKey = key;
         }
@@ -583,9 +605,9 @@ export default function RhythmPatternPlayerClient({
     <div style={{margin: '1rem 0'}}>
       <div style={{position: 'relative'}}>
         <div ref={containerRef} style={{width: '100%', minHeight: height}} />
-        {/* Spectrum legend — only when pitch colouring is active (a family selected). The
-            uPlot container mutates its own DOM, so this overlay is a sibling, not a child. */}
-        {octaveKeys && (
+        {/* Spectrum legend — only when pitch colouring is active (a family or random pitch).
+            The uPlot container mutates its own DOM, so this overlay is a sibling, not a child. */}
+        {melodyOn && (
           <div
             style={{
               position: 'absolute',
