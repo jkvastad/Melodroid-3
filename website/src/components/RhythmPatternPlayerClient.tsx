@@ -10,6 +10,7 @@ import {
   parseSubdivisions,
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
+import {keySweepChord, placementKeys, type FullMatch} from '@site/src/lib/keySweep';
 
 export type RhythmPatternPlayerProps = {
   meter?: string; // initial meter, e.g. '4' or '7 2 3'; default '4'
@@ -22,7 +23,33 @@ export type RhythmPatternPlayerProps = {
   pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
   melody?: boolean; // show the lcm-family melody controls (this page only); default false
+  chord?: boolean; // chord mode: roll a random chord, key-sweep it, draw melody from a
+  // matched family, and sound the chord as a pad (this page only); default false
 };
+
+// Roll a random chord (2–7 distinct chromatic keys) and key-sweep it, retrying until it
+// full-matches at least one LCM family. Returns the chord together with its full matches.
+// A large but bounded retry cap guards against the rare all-miss draw; the [0,4,7] major
+// triad is a guaranteed-matching fallback if the cap is ever hit.
+function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const size = 2 + Math.floor(rng() * 6); // 2..7
+    const pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    // Partial Fisher–Yates: take the first `size` after shuffling those slots.
+    for (let i = 0; i < size; i++) {
+      const j = i + Math.floor(rng() * (pool.length - i));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const keys = pool.slice(0, size).sort((a, b) => a - b);
+    const matches = keySweepChord(keys);
+    if (matches.length > 0) return {keys, matches};
+  }
+  const keys = [0, 4, 7];
+  return {keys, matches: keySweepChord(keys)};
+}
+
+// A full match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
+const matchLabel = (m: FullMatch): string => `${m.lcm} @ ${m.referenceKey}`;
 
 // The LCM families of the intro table on voicings-and-lcm-families.mdx, keyed to that
 // table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
@@ -191,6 +218,7 @@ export default function RhythmPatternPlayerClient({
   pitchHz = 196,
   height = 240,
   melody = false,
+  chord = false,
 }: RhythmPatternPlayerProps) {
   // Parse the author-supplied defaults once, falling back to a sane starter if the
   // MDX passes something malformed.
@@ -231,6 +259,16 @@ export default function RhythmPatternPlayerClient({
   const [selectedLcm, setSelectedLcm] = useState(melody ? '8,9,10,12' : '');
   const [loopMelody, setLoopMelody] = useState(true);
 
+  // Chord mode (only when `chord`): a randomly rolled chord together with the LCM families
+  // it full-matches when key-swept, and which of those matches drives the melody. The chord
+  // itself is re-rolled only on Generate; switching selectedMatchIdx re-interprets the same
+  // chord as a different family (the "ambiguous context" of the surrounding prose).
+  const [chordState, setChordState] = useState<{
+    keys: number[];
+    matches: FullMatch[];
+  } | null>(null);
+  const [selectedMatchIdx, setSelectedMatchIdx] = useState(0);
+
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
   const [bpm, setBpm] = useState(bpmProp);
@@ -243,6 +281,9 @@ export default function RhythmPatternPlayerClient({
 
   const synthRef = useRef<Tone.Synth | null>(null);
   const gainRef = useRef<Tone.Gain | null>(null);
+  // Chord-mode accompaniment: a polyphonic pad holding the chord under the melody blips.
+  const chordSynthRef = useRef<Tone.PolySynth | null>(null);
+  const chordGainRef = useRef<Tone.Gain | null>(null);
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
@@ -262,14 +303,21 @@ export default function RhythmPatternPlayerClient({
 
   // --- Melody: pitch pool + per-event pitch assignment ---
 
-  // Random Pitch draws a continuous key in [0,12) rather than a discrete family pool.
-  const isRandomPitch = selectedLcm === RANDOM_ID;
-  // The selected family folded to one octave, or null for fixed pitch / random pitch.
+  // Random Pitch draws a continuous key in [0,12) rather than a discrete family pool
+  // (never in chord mode, which always draws from a chord-matched family).
+  const isRandomPitch = !chord && selectedLcm === RANDOM_ID;
+  // The pitch pool folded to one octave, or null for fixed pitch / random pitch. In chord
+  // mode it is the selected full match's LCM family placed at the swept reference key; in
+  // melody mode it is the chosen intro-table family.
   const octaveKeys = useMemo(() => {
+    if (chord) {
+      const m = chordState?.matches[selectedMatchIdx];
+      return m ? foldOctave(placementKeys(m.lcm, m.referenceKey)) : null;
+    }
     if (selectedLcm === RANDOM_ID) return null;
     const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
     return fam ? foldOctave(fam.keys) : null;
-  }, [selectedLcm]);
+  }, [chord, chordState, selectedMatchIdx, selectedLcm]);
   // Melody is active (pitch varies + bars are spectrum-coloured) for a family or random
   // pitch — the single flag that replaces the old `octaveKeys`-truthiness tests.
   const melodyOn = isRandomPitch || octaveKeys != null;
@@ -293,6 +341,12 @@ export default function RhythmPatternPlayerClient({
   const loopMelodyRef = useRef(loopMelody);
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
+  // The current chord's keys, read by the scheduler so the sustained pad follows a
+  // newly generated chord without a replay (mirrors octaveKeysRef).
+  const chordKeysRef = useRef<number[] | null>(chordState?.keys ?? null);
+  useEffect(() => {
+    chordKeysRef.current = chordState?.keys ?? null;
+  }, [chordState]);
   useEffect(() => {
     octaveKeysRef.current = octaveKeys;
   }, [octaveKeys]);
@@ -399,6 +453,19 @@ export default function RhythmPatternPlayerClient({
     return synthRef.current;
   };
 
+  // Lazily build the chord pad: a soft sustained sine PolySynth, mixed well below the
+  // melody blips so they stay audible over it. Only used in chord mode.
+  const getChordSynth = () => {
+    if (!chordSynthRef.current) {
+      chordGainRef.current = new Tone.Gain(0.16).toDestination();
+      chordSynthRef.current = new Tone.PolySynth(Tone.Synth, {
+        oscillator: {type: 'sine'},
+        envelope: {attack: 0.06, decay: 0.2, sustain: 0.7, release: 0.4},
+      }).connect(chordGainRef.current);
+    }
+    return chordSynthRef.current;
+  };
+
   const stop = () => {
     if (loopTimerRef.current) {
       clearInterval(loopTimerRef.current);
@@ -408,6 +475,10 @@ export default function RhythmPatternPlayerClient({
     synthRef.current = null; // a disposed synth can't retrigger; rebuild next play
     gainRef.current?.dispose();
     gainRef.current = null;
+    chordSynthRef.current?.dispose(); // cut the sustained pad too
+    chordSynthRef.current = null;
+    chordGainRef.current?.dispose();
+    chordGainRef.current = null;
     // Invalidate in-flight Draw callbacks (up to the ~0.3 s look-ahead) and hide the marker.
     playRunRef.current++;
     playheadBeatRef.current = null;
@@ -421,6 +492,7 @@ export default function RhythmPatternPlayerClient({
     if (!pattern) return;
     await Tone.start(); // unlock audio on the user gesture
     const synth = getSynth();
+    const chordSynth = chord ? getChordSynth() : null;
     const {pulses, totalBeats} = pattern;
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
@@ -446,6 +518,15 @@ export default function RhythmPatternPlayerClient({
         const absBeat = Math.floor(i / N) * totalBeats + ev.unitBeat;
         const at = prevTime + (absBeat - prevBeat) * sec;
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
+        // Chord pad: re-voice the sustained chord at the top of each loop cycle, held for
+        // the whole cycle (in live-tempo seconds) so it tracks tempo changes and re-rolls.
+        if (chordSynth && i % N === 0) {
+          const chordKeys = chordKeysRef.current;
+          if (chordKeys && chordKeys.length > 0) {
+            const freqs = chordKeys.map((k) => pitchHz * Math.pow(2, k / 12));
+            chordSynth.triggerAttackRelease(freqs, totalBeats * sec, at);
+          }
+        }
         const vel = ev.velocity / 127;
         const durSec = 0.03 + 0.12 * vel; // heavier accents are both louder and longer
         // Pitch: the fixed pitchHz unless a melody is active, in which case draw a key —
@@ -506,15 +587,26 @@ export default function RhythmPatternPlayerClient({
     setPattern({...p, meter, subdivisions});
   };
 
+  // Chord mode: roll a fresh chord + its full matches, and pick a random matched family
+  // as the melody's default interpretation. The dropdown can then switch among the rest.
+  const rollNewChord = () => {
+    const {keys, matches} = rollChord(Math.random);
+    setChordState({keys, matches});
+    setSelectedMatchIdx(Math.floor(Math.random() * matches.length));
+  };
+
   const generate = () => {
     stop();
+    if (chord) rollNewChord();
     const nextSeed = (seed + 1) >>> 0;
     setSeed(nextSeed);
     regenerate(nextSeed);
   };
 
-  // First mount: seed the visual so it isn't empty (uses the initial seed=1).
+  // First mount: seed the visual so it isn't empty (uses the initial seed=1), and in chord
+  // mode roll the first chord so the player has a melody family to draw from immediately.
   useEffect(() => {
+    if (chord) rollNewChord();
     regenerate(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -762,31 +854,51 @@ export default function RhythmPatternPlayerClient({
             aria-label="resolution amount"
           />
         </label>
-        {melody && (
+        {melody && !chord && (
+          <label style={labelStyle}>
+            lcm
+            <select
+              value={selectedLcm}
+              onChange={(e) => setSelectedLcm(e.target.value)}
+              aria-label="lcm family for melody pitches">
+              {LCM_FAMILIES.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {chord && chordState && (
           <>
+            <span style={labelStyle}>
+              chord&nbsp;<code>{chordState.keys.join(' ')}</code>
+            </span>
             <label style={labelStyle}>
               lcm
               <select
-                value={selectedLcm}
-                onChange={(e) => setSelectedLcm(e.target.value)}
-                aria-label="lcm family for melody pitches">
-                {LCM_FAMILIES.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
+                value={selectedMatchIdx}
+                onChange={(e) => setSelectedMatchIdx(Number(e.target.value))}
+                aria-label="matched lcm family for melody pitches">
+                {chordState.matches.map((m, i) => (
+                  <option key={i} value={i}>
+                    {matchLabel(m)}
                   </option>
                 ))}
               </select>
             </label>
-            <label style={labelStyle}>
-              <input
-                type="checkbox"
-                checked={loopMelody}
-                onChange={(e) => setLoopMelody(e.target.checked)}
-                aria-label="loop the drawn melody"
-              />
-              loop melody
-            </label>
           </>
+        )}
+        {(melody || chord) && (
+          <label style={labelStyle}>
+            <input
+              type="checkbox"
+              checked={loopMelody}
+              onChange={(e) => setLoopMelody(e.target.checked)}
+              aria-label="loop the drawn melody"
+            />
+            loop melody
+          </label>
         )}
       </div>
 

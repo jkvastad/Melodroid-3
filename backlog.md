@@ -21,6 +21,7 @@ Perhaps the docusaurus default boxed layout of subsections should instead be a l
 
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+TODO: chord player draws melody from one match at a time via drop down list, perhaps expand it to some sort of toggle list so the user can create superpositions of the available full matches.
 TODO: Scales which are not LCM but sound good (pentatonic, harmonic minor)
 TODO: Chord progressions
 TODO: Triad experiment from ""Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"" with a slider for overtone stretch and a two-dimensional surface where the user can move a mouse to adjust intervals (as in their study 5). This way a user can listen to triad chord consonance.

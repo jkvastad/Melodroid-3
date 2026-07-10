@@ -139,19 +139,52 @@ beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while pl
 ### Melody
 A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
 
-The player below adds an **lcm** dropdown — shown only here — listing the LCM families from the
-table at the top of the page (it defaults to the LCM 8 family). Every active pulse is pitched
-with a note drawn at random from the selected family's notes, folded into a single octave;
-picking **1 · Unison** reproduces the fixed single blip of the previous player. The extra
-**0 · Chromatic** option is not a family but a uniform random draw over the whole octave (all 12
-pitch classes). Each bar is tinted along the visible spectrum by the pitch it carries — low
-pitch (long wavelength) red, high pitch blue/violet. **Loop melody** bakes the drawn pitches
-into a repeating phrase; turn it off to re-roll a fresh pitch on every hit, in which case each
-bar recolours live as its note sounds (the rhythm still loops). **Generate** samples a new
-rhythm and, with a family selected, a new melody to go with it.
+The player below adds an lcm dropdown listing the LCM families from the table at the top of the page. 
+Pulses are pitched with a note drawn at random from the selected family's notes, folded into a single octave.
+Each bar is tinted along the visible spectrum by the pitch it carries — low
+pitch (long wavelength) red, high pitch blue/violet. 
+
+**Loop melody** bakes the drawn pitches into a repeating phrase; turn it off to re-roll a fresh pitch on every hit.
+ **Generate** samples a new rhythm and a new melody to go with it.
+
+ You can also listen to a chromatic scale and true random pitch.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} melody />
 
+Anecdotally the random pitches and chromatic scale sound quite similar, a quality perhaps best described as chaotic or psychadelic. 
+Lcm families up to and including 12 instead sound pleasant/soft/round/free of tension, while above it more tension is added. 
+This is especially true for lcm 15 and 20 with sound reminiscent of the random/chromatic pitches.
+
+Notably the tones used here are sines and do not sound wrong in and of themselves (no overtones to produce roughness).
+Additionally, the soft sounding lcms are subsets of the chromatic scale and so by random chance it is possible to produce these subsets when playing chromatically.
+
+Where then does the chaotic sound come from? Perhaps it is from context - the listener expects certain pitches from preceding notes (or even having heard/reconigizing a melody beforehand).
+A common context in music is chords - a set of notes played statically along with the melody.
+
+### Chords as accompaniment
+Let's now look at chords as subsets of lcm families consisting of at least two notes.
+Key sweeping a chord produces at least the full match for the superset lcm family, but likely produces additional full matches, making chords provide an ambigous context.
+If melody is pitches from the active lcm family then melody perhaps plays on this ambiguity by modulating between possible interpretations of the currently sounding pitches.
+
+We can create a chord by taking between two to seven notes from the chromatic scale (no lcm family is larger than 7 members). 
+We can then keysweep this chord for lcm families and draw melody from those sets in different ways.
+Lets start with the most naive approach, taking a random chord until we produce at least one full match from key sweeping, then choosing a random lcm and playing melody from it.
+
+The player below does exactly this. **Generate** rolls a random chord of 2–7 chromatic
+keys and key-sweeps it, re-rolling until the chord full-matches at least one LCM family.
+The chord sounds as a sustained pad while the melody is drawn — as before — from an LCM
+family's notes, this time the family the chord matched (folded into an octave and placed at
+the sweep's reference key). The **lcm** dropdown lists every full match `lcm @ reference`
+the current chord produced; switch it to reinterpret the same held chord through a different
+family, hearing the ambiguity directly. **loop melody** and the rhythm controls behave as
+above.
+
+<RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />
+
+This is deliberately the crudest version: the chord is random and the melody notes are drawn
+uniformly at random from the matched family. It already hints at how a chord can anchor a
+melody, and sets up the next steps — choosing chords deliberately, moving between them, and
+shaping the melody rather than sampling it uniformly.
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
 2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).
