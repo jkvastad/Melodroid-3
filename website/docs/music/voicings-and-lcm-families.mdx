@@ -172,7 +172,7 @@ The latter is easy to miss if you only look at the single lcm a chord folds to w
 
 We can create a chord by taking between two to seven notes from the chromatic scale (no lcm family is larger than 7 members). 
 We can then find every lcm family placement containing this chord and draw melody from those sets in different ways.
-Lets start with the most naive approach, taking a random chord until at least one lcm family placement (with lcm ≤ 24) contains it, then defaulting to the tightest match and playing melody from it.
+The player below rolls a random chord until at least one lcm family placement (with lcm ≤ 24) contains it and then plays melody from it.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />
 
