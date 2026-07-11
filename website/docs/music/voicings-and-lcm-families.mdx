@@ -163,30 +163,35 @@ A common context in music is chords - a set of notes played statically along wit
 
 ### Chords as accompaniment
 Let's now look at chords as subsets of lcm families consisting of at least two notes.
-Key sweeping a chord produces at least the full match for the superset lcm family, but likely produces additional full matches, making chords provide an ambigous context.
+For a given chord we can ask which lcm families _contain_ it: every family placement (an lcm family anchored on some key) whose keys are a superset of the chord's keys — the `table key-supersets` operation.
+A chord is usually contained by several placements — the smallest family it spells out and larger families it sits inside — so a chord provides an ambiguous context.
 If melody is pitches from the active lcm family then melody perhaps plays on this ambiguity by modulating between possible interpretations of the currently sounding pitches.
 
+For example the major triad `0 4 7` is contained by `3 @ 7` (the lcm 3 family anchored on key 7) but also by the larger `15 @ 7`.
+The latter is easy to miss if you only look at the single lcm a chord folds to when binned note-by-note; enumerating supersets surfaces both interpretations.
+
 We can create a chord by taking between two to seven notes from the chromatic scale (no lcm family is larger than 7 members). 
-We can then keysweep this chord for lcm families and draw melody from those sets in different ways.
-Lets start with the most naive approach, taking a random chord until we produce at least one full match from key sweeping, then choosing a random lcm and playing melody from it.
+We can then find every lcm family placement containing this chord and draw melody from those sets in different ways.
+Lets start with the most naive approach, taking a random chord until at least one lcm family placement (with lcm ≤ 24) contains it, then defaulting to the tightest match and playing melody from it.
 
 The player below does exactly this. **Roll chord** rolls a random chord of 2–7 chromatic
-keys and key-sweeps it, re-rolling until the chord full-matches at least one LCM family
-with LCM ≤ 24 (our current study range — key-sweeping otherwise yields folded LCMs up to
-~120, which we set aside for now). You can also type your own chord straight into the
-**chord** box — 2–7 distinct keys `0`–`11`, e.g. `0 4 7` — to choose a chord deliberately
-rather than rolling one; if the chord happens to full-match no family with LCM ≤ 24 it still
-sounds as accompaniment, just without a melody. The chord sounds as a set of long notes
-re-struck at the start of each meter group — once per bar for a simple meter like `4`, three
-times for `7 2 3` — each held for that group's length, a slow harmonic pulse beneath the
-melody, which still refreshes on every pulse. The melody is drawn — as before — from an LCM
-family's notes, this time the family the chord matched (folded into an octave and placed at
-the sweep's reference key). Rather than cramming the chord onto a single octave (which, as
-[Scoring voicings](#scoring-voicings) notes, easily produces harsh clusters) the chord is
-voiced with the lowest-penalty voicing and rooted one octave below the melody, so it spreads
-out beneath the melody instead of competing with it. The **lcm** dropdown lists
-every full match `lcm @ reference` with LCM ≤ 24 the current chord produced; switch it to
-reinterpret the same held chord through a different family, hearing the ambiguity directly.
+keys and finds every LCM family placement that contains it, re-rolling until at least one
+family with LCM ≤ 24 does (our current study range — larger families are set aside for now).
+You can also type your own chord straight into the **chord** box — 2–7 distinct keys `0`–`11`,
+e.g. `0 4 7` — to choose a chord deliberately rather than rolling one; if no family with
+LCM ≤ 24 contains the chord it still sounds as accompaniment, just without a melody. The chord
+sounds as a set of long notes re-struck at the start of each meter group — once per bar for a
+simple meter like `4`, three times for `7 2 3` — each held for that group's length, a slow
+harmonic pulse beneath the melody, which still refreshes on every pulse. The melody is drawn —
+as before — from an LCM family's notes, this time the family whose placement matched (that
+placement's keys, folded into an octave — a superset of the chord). Rather than cramming the
+chord onto a single octave (which, as [Scoring voicings](#scoring-voicings) notes, easily
+produces harsh clusters) the chord is voiced with the lowest-penalty voicing and rooted one
+octave below the melody, so it spreads out beneath the melody instead of competing with it. The
+**lcm** dropdown lists every match `lcm @ anchor` with LCM ≤ 24 that contains the current chord,
+ranked tightest-first (fewest extra keys); switch it to reinterpret the same held chord through
+a different family, hearing the ambiguity directly. For `0 4 7` it now offers both `3 @ 7` and
+`15 @ 7`, where the old note-by-note sweep showed only the former.
 **Generate** now re-samples only the rhythm, keeping the current chord in place.
 **loop melody** and the rhythm controls behave as above.
 

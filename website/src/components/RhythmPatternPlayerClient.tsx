@@ -10,7 +10,7 @@ import {
   parseSubdivisions,
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
-import {keySweepChord, placementKeys, type FullMatch} from '@site/src/lib/keySweep';
+import {findSupersets, type Superset} from '@site/src/lib/placements';
 import {bestVoicing} from '@site/src/lib/voicings';
 
 export type RhythmPatternPlayerProps = {
@@ -24,25 +24,22 @@ export type RhythmPatternPlayerProps = {
   pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
   melody?: boolean; // show the lcm-family melody controls (this page only); default false
-  chord?: boolean; // chord mode: roll a random chord, key-sweep it, draw melody from a
-  // matched family, and sound the chord as long notes re-struck each meter group (this
-  // page only); default false
+  chord?: boolean; // chord mode: roll a random chord, find the LCM families whose placement
+  // contains it, draw melody from a matched family, and sound the chord as long notes
+  // re-struck each meter group (this page only); default false
 };
 
-// Chord mode only auditions folded LCMs within the study range; larger folded LCMs
-// (key-sweeping routinely yields values up to ~120) are not offered as interpretations.
+// Chord mode only auditions LCM families within the study range; larger folded LCMs
+// (a chord can sit inside placements of much larger families) are not offered as
+// interpretations. Passed to findSupersets as its maxLcm.
 const MAX_CHORD_LCM = 24;
 
-// Full matches within the study range — a chord's *legal* interpretations (see MAX_CHORD_LCM).
-const legalMatches = (matches: FullMatch[]): FullMatch[] =>
-  matches.filter((m) => m.lcm <= MAX_CHORD_LCM);
-
-// Roll a random chord (2–7 distinct chromatic keys) and key-sweep it, retrying until it
-// full-matches at least one LCM family with LCM ≤ MAX_CHORD_LCM. Returns the chord together
-// with those legal full matches. A large but bounded retry cap guards against the rare
-// no-legal-match draw; the [0,4,7] major triad (LCM 3/4) is a guaranteed-legal fallback if
-// the cap is ever hit.
-function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
+// Roll a random chord (2–7 distinct chromatic keys) and find its superset placements, retrying
+// until it is a subset of at least one LCM family placement with LCM ≤ MAX_CHORD_LCM. Returns
+// the chord together with those matches (ranked tightest-first). A large but bounded retry cap
+// guards against the rare no-match draw; the [0,4,7] major triad is a guaranteed-legal fallback
+// if the cap is ever hit.
+function rollChord(rng: () => number): {keys: number[]; matches: Superset[]} {
   for (let attempt = 0; attempt < 500; attempt++) {
     const size = 2 + Math.floor(rng() * 6); // 2..7
     const pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -52,11 +49,11 @@ function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     const keys = pool.slice(0, size).sort((a, b) => a - b);
-    const legal = legalMatches(keySweepChord(keys));
-    if (legal.length > 0) return {keys, matches: legal};
+    const matches = findSupersets(keys, 12, MAX_CHORD_LCM);
+    if (matches.length > 0) return {keys, matches};
   }
   const keys = [0, 4, 7];
-  return {keys, matches: legalMatches(keySweepChord(keys))};
+  return {keys, matches: findSupersets(keys, 12, MAX_CHORD_LCM)};
 }
 
 // Parse a user-typed chord ("0 4 7" / "0,4,7") into distinct pitch classes 0..11, sorted
@@ -90,8 +87,8 @@ function chordOffsets(keys: number[] | null): number[] | null {
   return keys.map((k) => k - 12);
 }
 
-// A full match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
-const matchLabel = (m: FullMatch): string => `${m.lcm} @ ${m.referenceKey}`;
+// A match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
+const matchLabel = (m: Superset): string => `${m.lcm} @ ${m.at}`;
 
 // The LCM families of the intro table on voicings-and-lcm-families.mdx, keyed to that
 // table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
@@ -301,13 +298,13 @@ export default function RhythmPatternPlayerClient({
   const [selectedLcm, setSelectedLcm] = useState(melody ? '8,9,10,12' : '');
   const [loopMelody, setLoopMelody] = useState(true);
 
-  // Chord mode (only when `chord`): a randomly rolled chord together with the LCM families
-  // it full-matches when key-swept, and which of those matches drives the melody. The chord
-  // itself is re-rolled only on Generate; switching selectedMatchIdx re-interprets the same
-  // chord as a different family (the "ambiguous context" of the surrounding prose).
+  // Chord mode (only when `chord`): a randomly rolled chord together with the LCM family
+  // placements that contain it as a subset, and which of those matches drives the melody. The
+  // chord itself is re-rolled only on Generate; switching selectedMatchIdx re-interprets the
+  // same chord as a different family (the "ambiguous context" of the surrounding prose).
   const [chordState, setChordState] = useState<{
     keys: number[];
-    matches: FullMatch[];
+    matches: Superset[];
   } | null>(null);
   const [selectedMatchIdx, setSelectedMatchIdx] = useState(0);
   // The chord input box: text mirrors what's typed; chordError holds an inline validation
@@ -354,12 +351,12 @@ export default function RhythmPatternPlayerClient({
   // (never in chord mode, which always draws from a chord-matched family).
   const isRandomPitch = !chord && selectedLcm === RANDOM_ID;
   // The pitch pool folded to one octave, or null for fixed pitch / random pitch. In chord
-  // mode it is the selected full match's LCM family placed at the swept reference key; in
+  // mode it is the selected match's LCM family placement (a superset of the chord); in
   // melody mode it is the chosen intro-table family.
   const octaveKeys = useMemo(() => {
     if (chord) {
       const m = chordState?.matches[selectedMatchIdx];
-      return m ? foldOctave(placementKeys(m.lcm, m.referenceKey)) : null;
+      return m ? foldOctave(m.keys) : null;
     }
     if (selectedLcm === RANDOM_ID) return null;
     const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
@@ -474,15 +471,15 @@ export default function RhythmPatternPlayerClient({
     }
   };
 
-  // Chord entry (chord mode): key-sweep the typed chord for its LCM ≤ 24 full matches and
-  // make it the sounding chord. A chord with no legal match is still valid — it sounds as
-  // accompaniment (driven by chordState.keys) with the melody off. Only malformed input
-  // (bad keys / wrong count) is an error, which keeps the last valid chord.
+  // Chord entry (chord mode): find the typed chord's LCM ≤ 24 superset placements and make it
+  // the sounding chord. A chord with no match is still valid — it sounds as accompaniment
+  // (driven by chordState.keys) with the melody off. Only malformed input (bad keys / wrong
+  // count) is an error, which keeps the last valid chord.
   const onChordText = (text: string) => {
     setChordText(text);
     try {
       const keys = parseChordKeys(text);
-      setChordState({keys, matches: legalMatches(keySweepChord(keys))});
+      setChordState({keys, matches: findSupersets(keys, 12, MAX_CHORD_LCM)});
       setSelectedMatchIdx(0);
       setChordError(null);
     } catch (e) {
@@ -674,12 +671,13 @@ export default function RhythmPatternPlayerClient({
     setPattern({...p, meter, subdivisions});
   };
 
-  // Chord mode: roll a fresh chord + its full matches, and pick a random matched family
-  // as the melody's default interpretation. The dropdown can then switch among the rest.
+  // Chord mode: roll a fresh chord + its superset matches, defaulting the melody to the
+  // tightest match (fewest extra keys — matches are ranked tightest-first). The dropdown can
+  // then switch among the rest to hear the ambiguity.
   const rollNewChord = () => {
     const {keys, matches} = rollChord(Math.random);
     setChordState({keys, matches});
-    setSelectedMatchIdx(Math.floor(Math.random() * matches.length));
+    setSelectedMatchIdx(0);
     // Mirror the rolled chord into the editable box (and clear any stale error).
     setChordText(keys.join(' '));
     setChordError(null);
