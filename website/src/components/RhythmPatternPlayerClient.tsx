@@ -11,6 +11,7 @@ import {
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
 import {keySweepChord, placementKeys, type FullMatch} from '@site/src/lib/keySweep';
+import {bestVoicing} from '@site/src/lib/voicings';
 
 export type RhythmPatternPlayerProps = {
   meter?: string; // initial meter, e.g. '4' or '7 2 3'; default '4'
@@ -55,6 +56,18 @@ function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
   }
   const keys = [0, 4, 7];
   return {keys, matches: legalMatches(keySweepChord(keys))};
+}
+
+// Voice a chord as semitone offsets from pitchHz (key 0 = pitchHz, the melody's root):
+// the lowest-penalty ascending, semitone-avoiding voicing with its root dropped one octave
+// below the melody octave (the `- 12`), keeping each note's pitch class aligned with the
+// melody. Falls back to the raw chord placed an octave below when no semitone-free voicing
+// exists (the rare all-semitone chord, e.g. a bare semitone dyad).
+function chordOffsets(keys: number[] | null): number[] | null {
+  if (!keys || keys.length === 0) return null;
+  const v = bestVoicing(keys);
+  if (v) return v.offsets.map((off) => v.root - 12 + off);
+  return keys.map((k) => k - 12);
 }
 
 // A full match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
@@ -350,11 +363,15 @@ export default function RhythmPatternPlayerClient({
   const loopMelodyRef = useRef(loopMelody);
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
-  // The current chord's keys, read by the scheduler so the sustained pad follows a
-  // newly generated chord without a replay (mirrors octaveKeysRef).
-  const chordKeysRef = useRef<number[] | null>(chordState?.keys ?? null);
+  // The pad's voicing as semitone offsets from pitchHz, read by the scheduler so the
+  // sustained pad follows a newly generated chord without a replay (mirrors octaveKeysRef):
+  // the lowest-penalty ascending, semitone-avoiding ordering (see §Scoring voicings) with
+  // its root dropped one octave below the melody octave, so the chord underpins the melody
+  // instead of clustering on top of it. Precomputed on a chord change so the scheduler need
+  // not re-voice per cycle.
+  const chordVoicingRef = useRef<number[] | null>(chordOffsets(chordState?.keys ?? null));
   useEffect(() => {
-    chordKeysRef.current = chordState?.keys ?? null;
+    chordVoicingRef.current = chordOffsets(chordState?.keys ?? null);
   }, [chordState]);
   useEffect(() => {
     octaveKeysRef.current = octaveKeys;
@@ -529,10 +546,12 @@ export default function RhythmPatternPlayerClient({
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
         // Chord pad: re-voice the sustained chord at the top of each loop cycle, held for
         // the whole cycle (in live-tempo seconds) so it tracks tempo changes and re-rolls.
+        // Offsets are the precomputed lowest-penalty voicing, rooted an octave below the
+        // melody (see chordVoicingRef); map them to frequencies via the 12-TET ratio.
         if (chordSynth && i % N === 0) {
-          const chordKeys = chordKeysRef.current;
-          if (chordKeys && chordKeys.length > 0) {
-            const freqs = chordKeys.map((k) => pitchHz * Math.pow(2, k / 12));
+          const offsets = chordVoicingRef.current;
+          if (offsets && offsets.length > 0) {
+            const freqs = offsets.map((off) => pitchHz * Math.pow(2, off / 12));
             chordSynth.triggerAttackRelease(freqs, totalBeats * sec, at);
           }
         }
