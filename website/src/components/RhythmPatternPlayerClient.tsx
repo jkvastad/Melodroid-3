@@ -523,7 +523,7 @@ export default function RhythmPatternPlayerClient({
   // used in chord mode.
   const getChordSynth = () => {
     if (!chordSynthRef.current) {
-      chordGainRef.current = new Tone.Gain(0.16).toDestination();
+      chordGainRef.current = new Tone.Gain(0.12).toDestination();
       chordSynthRef.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: {type: 'sine'},
         envelope: {attack: 0.03, decay: 0.15, sustain: 0.7, release: 0.5},
