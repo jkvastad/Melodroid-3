@@ -11,7 +11,7 @@ import {
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
 import {findSupersets, type Superset} from '@site/src/lib/placements';
-import {bestVoicing} from '@site/src/lib/voicings';
+import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
 
 export type RhythmPatternPlayerProps = {
   meter?: string; // initial meter, e.g. '4' or '7 2 3'; default '4'
@@ -33,6 +33,11 @@ export type RhythmPatternPlayerProps = {
 // (a chord can sit inside placements of much larger families) are not offered as
 // interpretations. Passed to findSupersets as its maxLcm.
 const MAX_CHORD_LCM = 24;
+
+// Chord-mode accompaniment floor: the voicing is dropped an octave below the melody, so its
+// bottom note (its root) can land very low. Skip to the next-best voicing whose bottom note
+// clears this (~C3) rather than let the chord get muddy.
+const MIN_CHORD_HZ = 130;
 
 // Roll a random chord (2–7 distinct chromatic keys) and find its superset placements, retrying
 // until it is a subset of at least one LCM family placement with LCM ≤ MAX_CHORD_LCM. Returns
@@ -76,15 +81,26 @@ function parseChordKeys(text: string): number[] {
 }
 
 // Voice a chord as semitone offsets from pitchHz (key 0 = pitchHz, the melody's root):
-// the lowest-penalty ascending, semitone-avoiding voicing with its root dropped one octave
-// below the melody octave (the `- 12`), keeping each note's pitch class aligned with the
-// melody. Falls back to the raw chord placed an octave below when no semitone-free voicing
-// exists (the rare all-semitone chord, e.g. a bare semitone dyad).
-function chordOffsets(keys: number[] | null): number[] | null {
+// an ascending, semitone-avoiding voicing with its root dropped one octave below the melody
+// octave (the `- 12`), keeping each note's pitch class aligned with the melody. Normally the
+// lowest-penalty voicing, but the octave drop can push its bottom note (always its root) very
+// low, so we skip to the next-best voicing whose bottom note clears MIN_CHORD_HZ. When no
+// voicing clears it (all chord keys are low) we take the highest-rooted one (least low). Falls
+// back to the raw chord placed an octave below when no semitone-free voicing exists at all
+// (the rare all-semitone chord, e.g. a bare semitone dyad).
+function chordOffsets(keys: number[] | null, pitchHz: number): number[] | null {
   if (!keys || keys.length === 0) return null;
-  const v = bestVoicing(keys);
-  if (v) return v.offsets.map((off) => v.root - 12 + off);
-  return keys.map((k) => k - 12);
+  const voicings = enumerateAll(keys).sort(
+    (a, b) => a.penalty - b.penalty || a.span - b.span,
+  );
+  if (voicings.length === 0) return keys.map((k) => k - 12); // all-semitone chord
+  // Bottom note is the root, dropped one octave; keep it at/above the threshold.
+  const clears = (v: Voicing) =>
+    pitchHz * Math.pow(2, (v.root - 12) / 12) >= MIN_CHORD_HZ;
+  const pick =
+    voicings.find(clears) ??
+    voicings.reduce((a, b) => (b.root > a.root ? b : a)); // none clears: least low
+  return pick.offsets.map((off) => pick.root - 12 + off);
 }
 
 // A match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
@@ -386,15 +402,17 @@ export default function RhythmPatternPlayerClient({
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
   // The chord's voicing as semitone offsets from pitchHz, read by the scheduler so the
-  // chord follows a newly generated one without a replay (mirrors octaveKeysRef):
-  // the lowest-penalty ascending, semitone-avoiding ordering (see §Scoring voicings) with
-  // its root dropped one octave below the melody octave, so the chord underpins the melody
-  // instead of clustering on top of it. Precomputed on a chord change so the scheduler need
-  // not re-voice per hit.
-  const chordVoicingRef = useRef<number[] | null>(chordOffsets(chordState?.keys ?? null));
+  // chord follows a newly generated one without a replay (mirrors octaveKeysRef): an
+  // ascending, semitone-avoiding ordering (see §Scoring voicings) with its root dropped one
+  // octave below the melody octave, so the chord underpins the melody instead of clustering on
+  // top of it — the lowest-penalty such voicing whose bottom note clears MIN_CHORD_HZ (see
+  // chordOffsets). Precomputed on a chord change so the scheduler need not re-voice per hit.
+  const chordVoicingRef = useRef<number[] | null>(
+    chordOffsets(chordState?.keys ?? null, pitchHz),
+  );
   useEffect(() => {
-    chordVoicingRef.current = chordOffsets(chordState?.keys ?? null);
-  }, [chordState]);
+    chordVoicingRef.current = chordOffsets(chordState?.keys ?? null, pitchHz);
+  }, [chordState, pitchHz]);
   useEffect(() => {
     octaveKeysRef.current = octaveKeys;
   }, [octaveKeys]);
