@@ -170,20 +170,24 @@ We can create a chord by taking between two to seven notes from the chromatic sc
 We can then keysweep this chord for lcm families and draw melody from those sets in different ways.
 Lets start with the most naive approach, taking a random chord until we produce at least one full match from key sweeping, then choosing a random lcm and playing melody from it.
 
-The player below does exactly this. **Generate** rolls a random chord of 2–7 chromatic
+The player below does exactly this. **Roll chord** rolls a random chord of 2–7 chromatic
 keys and key-sweeps it, re-rolling until the chord full-matches at least one LCM family
 with LCM ≤ 24 (our current study range — key-sweeping otherwise yields folded LCMs up to
-~120, which we set aside for now). The chord sounds as a set of long notes re-struck at the
-start of each meter group — once per bar for a simple meter like `4`, three times for
-`7 2 3` — each held for that group's length, a slow harmonic pulse beneath the melody, which
-still refreshes on every pulse. The melody is drawn — as before — from an LCM family's notes,
-this time the family the chord matched (folded into an octave and placed at the sweep's
-reference key). Rather than cramming the chord onto a single octave (which, as
+~120, which we set aside for now). You can also type your own chord straight into the
+**chord** box — 2–7 distinct keys `0`–`11`, e.g. `0 4 7` — to choose a chord deliberately
+rather than rolling one; if the chord happens to full-match no family with LCM ≤ 24 it still
+sounds as accompaniment, just without a melody. The chord sounds as a set of long notes
+re-struck at the start of each meter group — once per bar for a simple meter like `4`, three
+times for `7 2 3` — each held for that group's length, a slow harmonic pulse beneath the
+melody, which still refreshes on every pulse. The melody is drawn — as before — from an LCM
+family's notes, this time the family the chord matched (folded into an octave and placed at
+the sweep's reference key). Rather than cramming the chord onto a single octave (which, as
 [Scoring voicings](#scoring-voicings) notes, easily produces harsh clusters) the chord is
 voiced with the lowest-penalty voicing and rooted one octave below the melody, so it spreads
 out beneath the melody instead of competing with it. The **lcm** dropdown lists
 every full match `lcm @ reference` with LCM ≤ 24 the current chord produced; switch it to
 reinterpret the same held chord through a different family, hearing the ambiguity directly.
+**Generate** now re-samples only the rhythm, keeping the current chord in place.
 **loop melody** and the rhythm controls behave as above.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />

@@ -59,6 +59,25 @@ function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
   return {keys, matches: legalMatches(keySweepChord(keys))};
 }
 
+// Parse a user-typed chord ("0 4 7" / "0,4,7") into distinct pitch classes 0..11, sorted
+// ascending (matching how rollChord sorts before sweeping). Throws Error with a friendly
+// message on bad input so the client can show an inline hint and keep the last valid chord.
+// The 2..7 count mirrors rollChord's range — no LCM family exceeds 7 members.
+function parseChordKeys(text: string): number[] {
+  const tokens = text.split(/[\s,]+/).filter((t) => t.length > 0);
+  const keys = tokens.map((t) => {
+    if (!/^\d+$/.test(t)) throw new Error(`"${t}" is not a whole number.`);
+    const n = parseInt(t, 10);
+    if (n < 0 || n > 11) throw new Error(`Keys must be 0–11, got ${n}.`);
+    return n;
+  });
+  if (new Set(keys).size !== keys.length)
+    throw new Error('Chord keys must be distinct.');
+  if (keys.length < 2 || keys.length > 7)
+    throw new Error('Enter 2–7 keys, e.g. "0 4 7".');
+  return [...keys].sort((a, b) => a - b);
+}
+
 // Voice a chord as semitone offsets from pitchHz (key 0 = pitchHz, the melody's root):
 // the lowest-penalty ascending, semitone-avoiding voicing with its root dropped one octave
 // below the melody octave (the `- 12`), keeping each note's pitch class aligned with the
@@ -291,6 +310,10 @@ export default function RhythmPatternPlayerClient({
     matches: FullMatch[];
   } | null>(null);
   const [selectedMatchIdx, setSelectedMatchIdx] = useState(0);
+  // The chord input box: text mirrors what's typed; chordError holds an inline validation
+  // message (the last valid chordState is retained on a bad edit).
+  const [chordText, setChordText] = useState('');
+  const [chordError, setChordError] = useState<string | null>(null);
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
@@ -448,6 +471,22 @@ export default function RhythmPatternPlayerClient({
       setSubError(null);
     } catch (e) {
       setSubError((e as Error).message);
+    }
+  };
+
+  // Chord entry (chord mode): key-sweep the typed chord for its LCM ≤ 24 full matches and
+  // make it the sounding chord. A chord with no legal match is still valid — it sounds as
+  // accompaniment (driven by chordState.keys) with the melody off. Only malformed input
+  // (bad keys / wrong count) is an error, which keeps the last valid chord.
+  const onChordText = (text: string) => {
+    setChordText(text);
+    try {
+      const keys = parseChordKeys(text);
+      setChordState({keys, matches: legalMatches(keySweepChord(keys))});
+      setSelectedMatchIdx(0);
+      setChordError(null);
+    } catch (e) {
+      setChordError((e as Error).message);
     }
   };
 
@@ -641,11 +680,13 @@ export default function RhythmPatternPlayerClient({
     const {keys, matches} = rollChord(Math.random);
     setChordState({keys, matches});
     setSelectedMatchIdx(Math.floor(Math.random() * matches.length));
+    // Mirror the rolled chord into the editable box (and clear any stale error).
+    setChordText(keys.join(' '));
+    setChordError(null);
   };
 
   const generate = () => {
     stop();
-    if (chord) rollNewChord();
     const nextSeed = (seed + 1) >>> 0;
     setSeed(nextSeed);
     regenerate(nextSeed);
@@ -919,22 +960,35 @@ export default function RhythmPatternPlayerClient({
         )}
         {chord && chordState && (
           <>
-            <span style={labelStyle}>
-              chord&nbsp;<code>{chordState.keys.join(' ')}</code>
-            </span>
             <label style={labelStyle}>
-              lcm
-              <select
-                value={selectedMatchIdx}
-                onChange={(e) => setSelectedMatchIdx(Number(e.target.value))}
-                aria-label="matched lcm family for melody pitches">
-                {chordState.matches.map((m, i) => (
-                  <option key={i} value={i}>
-                    {matchLabel(m)}
-                  </option>
-                ))}
-              </select>
+              chord
+              <input
+                type="text"
+                value={chordText}
+                onChange={(e) => onChordText(e.target.value)}
+                style={{width: '7rem'}}
+                aria-label="chord keys 0-11"
+              />
             </label>
+            {chordState.matches.length > 0 ? (
+              <label style={labelStyle}>
+                lcm
+                <select
+                  value={selectedMatchIdx}
+                  onChange={(e) => setSelectedMatchIdx(Number(e.target.value))}
+                  aria-label="matched lcm family for melody pitches">
+                  {chordState.matches.map((m, i) => (
+                    <option key={i} value={i}>
+                      {matchLabel(m)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <span style={{...labelStyle, opacity: 0.7, fontStyle: 'italic'}}>
+                no LCM ≤ 24 match
+              </span>
+            )}
           </>
         )}
         {(melody || chord) && (
@@ -950,14 +1004,14 @@ export default function RhythmPatternPlayerClient({
         )}
       </div>
 
-      {(meterError || subError) && (
+      {(meterError || subError || chordError) && (
         <div
           style={{
             color: 'var(--ifm-color-danger)',
             fontSize: '0.85rem',
             marginTop: '0.4rem',
           }}>
-          {meterError ?? subError}
+          {meterError ?? subError ?? chordError}
         </div>
       )}
 
@@ -978,6 +1032,14 @@ export default function RhythmPatternPlayerClient({
           }>
           Generate
         </button>
+        {chord && (
+          <button
+            className="button button--secondary button--sm"
+            onClick={rollNewChord}
+            title="Roll a fresh random chord">
+            Roll chord
+          </button>
+        )}
       </div>
     </div>
   );
