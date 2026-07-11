@@ -25,7 +25,8 @@ export type RhythmPatternPlayerProps = {
   height?: number; // plot height in px; default 240
   melody?: boolean; // show the lcm-family melody controls (this page only); default false
   chord?: boolean; // chord mode: roll a random chord, key-sweep it, draw melody from a
-  // matched family, and sound the chord as a pad (this page only); default false
+  // matched family, and sound the chord as long notes re-struck each meter group (this
+  // page only); default false
 };
 
 // Chord mode only auditions folded LCMs within the study range; larger folded LCMs
@@ -303,7 +304,8 @@ export default function RhythmPatternPlayerClient({
 
   const synthRef = useRef<Tone.Synth | null>(null);
   const gainRef = useRef<Tone.Gain | null>(null);
-  // Chord-mode accompaniment: a polyphonic pad holding the chord under the melody blips.
+  // Chord-mode accompaniment: a polyphonic synth sounding the chord as long notes,
+  // re-struck at each meter group start, beneath the melody blips.
   const chordSynthRef = useRef<Tone.PolySynth | null>(null);
   const chordGainRef = useRef<Tone.Gain | null>(null);
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -363,12 +365,12 @@ export default function RhythmPatternPlayerClient({
   const loopMelodyRef = useRef(loopMelody);
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
-  // The pad's voicing as semitone offsets from pitchHz, read by the scheduler so the
-  // sustained pad follows a newly generated chord without a replay (mirrors octaveKeysRef):
+  // The chord's voicing as semitone offsets from pitchHz, read by the scheduler so the
+  // chord follows a newly generated one without a replay (mirrors octaveKeysRef):
   // the lowest-penalty ascending, semitone-avoiding ordering (see §Scoring voicings) with
   // its root dropped one octave below the melody octave, so the chord underpins the melody
   // instead of clustering on top of it. Precomputed on a chord change so the scheduler need
-  // not re-voice per cycle.
+  // not re-voice per hit.
   const chordVoicingRef = useRef<number[] | null>(chordOffsets(chordState?.keys ?? null));
   useEffect(() => {
     chordVoicingRef.current = chordOffsets(chordState?.keys ?? null);
@@ -479,14 +481,16 @@ export default function RhythmPatternPlayerClient({
     return synthRef.current;
   };
 
-  // Lazily build the chord pad: a soft sustained sine PolySynth, mixed well below the
-  // melody blips so they stay audible over it. Only used in chord mode.
+  // Lazily build the chord synth: a soft sine PolySynth, mixed well below the melody blips
+  // so they stay audible over it. A short release keeps each meter group's chord a distinct
+  // long note (re-articulated per group) rather than washing into a continuous pad. Only
+  // used in chord mode.
   const getChordSynth = () => {
     if (!chordSynthRef.current) {
       chordGainRef.current = new Tone.Gain(0.16).toDestination();
       chordSynthRef.current = new Tone.PolySynth(Tone.Synth, {
         oscillator: {type: 'sine'},
-        envelope: {attack: 0.06, decay: 0.2, sustain: 0.7, release: 0.4},
+        envelope: {attack: 0.03, decay: 0.15, sustain: 0.7, release: 0.5},
       }).connect(chordGainRef.current);
     }
     return chordSynthRef.current;
@@ -501,7 +505,7 @@ export default function RhythmPatternPlayerClient({
     synthRef.current = null; // a disposed synth can't retrigger; rebuild next play
     gainRef.current?.dispose();
     gainRef.current = null;
-    chordSynthRef.current?.dispose(); // cut the sustained pad too
+    chordSynthRef.current?.dispose(); // cut the sounding chord too
     chordSynthRef.current = null;
     chordGainRef.current?.dispose();
     chordGainRef.current = null;
@@ -519,7 +523,18 @@ export default function RhythmPatternPlayerClient({
     await Tone.start(); // unlock audio on the user gesture
     const synth = getSynth();
     const chordSynth = chord ? getChordSynth() : null;
-    const {pulses, totalBeats} = pattern;
+    const {pulses, totalBeats, meter: patternMeter} = pattern;
+    // Chord onsets: map each meter group-start unit beat → that group's length in unit
+    // beats (cumulative sums over the meter, as in gridLines' groupStarts). The chord
+    // re-strikes at each group start, held for its group's length. Group starts are integer
+    // on-beats that always fire, so exact key lookup against a firing event's unitBeat is
+    // safe and every group start is reached by the events/i iteration below.
+    const groupBeatsByStart = new Map<number, number>();
+    let groupAcc = 0;
+    for (const m of patternMeter) {
+      groupBeatsByStart.set(groupAcc, m);
+      groupAcc += m;
+    }
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
     // Bar index of each onset, aligned with `events`, for live loop-off recolouring.
@@ -544,15 +559,20 @@ export default function RhythmPatternPlayerClient({
         const absBeat = Math.floor(i / N) * totalBeats + ev.unitBeat;
         const at = prevTime + (absBeat - prevBeat) * sec;
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
-        // Chord pad: re-voice the sustained chord at the top of each loop cycle, held for
-        // the whole cycle (in live-tempo seconds) so it tracks tempo changes and re-rolls.
-        // Offsets are the precomputed lowest-penalty voicing, rooted an octave below the
-        // melody (see chordVoicingRef); map them to frequencies via the 12-TET ratio.
-        if (chordSynth && i % N === 0) {
+        // Chord: re-strike the whole voicing at each meter group start, held for that
+        // group's length (in live-tempo seconds) so it tracks tempo changes — a slow
+        // harmonic pulse beneath the faster melody. Offsets are the precomputed
+        // lowest-penalty voicing, rooted an octave below the melody (see chordVoicingRef);
+        // map them to frequencies via the 12-TET ratio.
+        const groupBeats = groupBeatsByStart.get(ev.unitBeat);
+        if (chordSynth && groupBeats !== undefined) {
           const offsets = chordVoicingRef.current;
           if (offsets && offsets.length > 0) {
             const freqs = offsets.map((off) => pitchHz * Math.pow(2, off / 12));
-            chordSynth.triggerAttackRelease(freqs, totalBeats * sec, at);
+            // Hold for most of the group but stop short of the next group start, leaving a
+            // brief gap (like the melody's short blips) so each re-strike articulates
+            // instead of butting up against the next and sounding continuous.
+            chordSynth.triggerAttackRelease(freqs, groupBeats * sec * 0.95, at);
           }
         }
         const vel = ev.velocity / 127;
