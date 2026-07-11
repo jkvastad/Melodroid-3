@@ -174,33 +174,7 @@ We can create a chord by taking between two to seven notes from the chromatic sc
 We can then find every lcm family placement containing this chord and draw melody from those sets in different ways.
 Lets start with the most naive approach, taking a random chord until at least one lcm family placement (with lcm ≤ 24) contains it, then defaulting to the tightest match and playing melody from it.
 
-The player below does exactly this. **Roll chord** rolls a random chord of 2–7 chromatic
-keys and finds every LCM family placement that contains it, re-rolling until at least one
-family with LCM ≤ 24 does (our current study range — larger families are set aside for now).
-You can also type your own chord straight into the **chord** box — 2–7 distinct keys `0`–`11`,
-e.g. `0 4 7` — to choose a chord deliberately rather than rolling one; if no family with
-LCM ≤ 24 contains the chord it still sounds as accompaniment, just without a melody. The chord
-sounds as a set of long notes re-struck at the start of each meter group — once per bar for a
-simple meter like `4`, three times for `7 2 3` — each held for that group's length, a slow
-harmonic pulse beneath the melody, which still refreshes on every pulse. The melody is drawn —
-as before — from an LCM family's notes, this time the family whose placement matched (that
-placement's keys, folded into an octave — a superset of the chord). Rather than cramming the
-chord onto a single octave (which, as [Scoring voicings](#scoring-voicings) notes, easily
-produces harsh clusters) the chord is voiced with the lowest-penalty voicing and rooted one
-octave below the melody, so it spreads out beneath the melody instead of competing with it. The
-**lcm** dropdown lists every match `lcm @ anchor` with LCM ≤ 24 that contains the current chord,
-ranked tightest-first (fewest extra keys); switch it to reinterpret the same held chord through
-a different family, hearing the ambiguity directly. For `0 4 7` it now offers both `3 @ 7` and
-`15 @ 7`, where the old note-by-note sweep showed only the former.
-**Generate** now re-samples only the rhythm, keeping the current chord in place.
-**loop melody** and the rhythm controls behave as above.
-
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />
-
-This is deliberately the crudest version: the chord is random and the melody notes are drawn
-uniformly at random from the matched family. It already hints at how a chord can anchor a
-melody, and sets up the next steps — choosing chords deliberately, moving between them, and
-shaping the melody rather than sampling it uniformly.
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
 2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).

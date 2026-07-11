@@ -1028,7 +1028,7 @@ export default function RhythmPatternPlayerClient({
               ? 'Fix the meter / subdivision input first'
               : 'Stop and sample a new pattern'
           }>
-          Generate
+          Generate Rhythm
         </button>
         {chord && (
           <button
