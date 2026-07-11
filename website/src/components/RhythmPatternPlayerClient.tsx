@@ -27,10 +27,19 @@ export type RhythmPatternPlayerProps = {
   // matched family, and sound the chord as a pad (this page only); default false
 };
 
+// Chord mode only auditions folded LCMs within the study range; larger folded LCMs
+// (key-sweeping routinely yields values up to ~120) are not offered as interpretations.
+const MAX_CHORD_LCM = 24;
+
+// Full matches within the study range — a chord's *legal* interpretations (see MAX_CHORD_LCM).
+const legalMatches = (matches: FullMatch[]): FullMatch[] =>
+  matches.filter((m) => m.lcm <= MAX_CHORD_LCM);
+
 // Roll a random chord (2–7 distinct chromatic keys) and key-sweep it, retrying until it
-// full-matches at least one LCM family. Returns the chord together with its full matches.
-// A large but bounded retry cap guards against the rare all-miss draw; the [0,4,7] major
-// triad is a guaranteed-matching fallback if the cap is ever hit.
+// full-matches at least one LCM family with LCM ≤ MAX_CHORD_LCM. Returns the chord together
+// with those legal full matches. A large but bounded retry cap guards against the rare
+// no-legal-match draw; the [0,4,7] major triad (LCM 3/4) is a guaranteed-legal fallback if
+// the cap is ever hit.
 function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
   for (let attempt = 0; attempt < 500; attempt++) {
     const size = 2 + Math.floor(rng() * 6); // 2..7
@@ -41,11 +50,11 @@ function rollChord(rng: () => number): {keys: number[]; matches: FullMatch[]} {
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     const keys = pool.slice(0, size).sort((a, b) => a - b);
-    const matches = keySweepChord(keys);
-    if (matches.length > 0) return {keys, matches};
+    const legal = legalMatches(keySweepChord(keys));
+    if (legal.length > 0) return {keys, matches: legal};
   }
   const keys = [0, 4, 7];
-  return {keys, matches: keySweepChord(keys)};
+  return {keys, matches: legalMatches(keySweepChord(keys))};
 }
 
 // A full match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
