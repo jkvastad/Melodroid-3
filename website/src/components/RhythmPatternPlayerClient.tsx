@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import * as Tone from 'tone';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
 import {
@@ -38,6 +39,18 @@ const MAX_CHORD_LCM = 24;
 // bottom note (its root) can land very low. Skip to the next-best voicing whose bottom note
 // clears this (~C3) rather than let the chord get muddy.
 const MIN_CHORD_HZ = 130;
+
+// Sampled-piano note map for the optional "Piano" instrument. A small C-per-octave subset
+// of the Salamander Grand Piano (see static/samples/piano/NOTICE.txt); Tone.Sampler
+// pitch-shifts these across the keyboard, so a few files cover the whole range. Fetched
+// lazily on the first Play with Piano selected — nothing downloads for the sine default.
+const PIANO_URLS: Record<string, string> = {
+  C2: 'C2.mp3',
+  C3: 'C3.mp3',
+  C4: 'C4.mp3',
+  C5: 'C5.mp3',
+  C6: 'C6.mp3',
+};
 
 // Roll a random chord (2–7 distinct chromatic keys) and find its superset placements, retrying
 // until it is a subset of at least one LCM family placement with LCM ≤ MAX_CHORD_LCM. Returns
@@ -308,6 +321,13 @@ export default function RhythmPatternPlayerClient({
   const [pattern, setPattern] = useState<RenderedPattern | null>(null);
   const [playing, setPlaying] = useState(false);
 
+  // Instrument timbre: the theory-faithful sine/triangle synths (default) or a sampled
+  // piano. Piano governs both the melody blips and (in chord mode) the chord accompaniment.
+  // Read at Play time — changing it mid-playback applies on the next Play. `pianoLoading`
+  // gates the first Play with Piano selected while the samples fetch.
+  const [instrument, setInstrument] = useState<'sine' | 'piano'>('sine');
+  const [pianoLoading, setPianoLoading] = useState(false);
+
   // Melody (only surfaced when `melody`): which intro-table LCM family to draw pitches
   // from ('' = fixed pitch, today's behavior), and whether the drawn pitches are baked
   // into a repeating phrase (loop on) or re-rolled on every hit (loop off).
@@ -344,6 +364,15 @@ export default function RhythmPatternPlayerClient({
   // re-struck at each meter group start, beneath the melody blips.
   const chordSynthRef = useRef<Tone.PolySynth | null>(null);
   const chordGainRef = useRef<Tone.Gain | null>(null);
+  // Sampled-piano voices for the "Piano" instrument (one for melody, one for the chord pad),
+  // each on its own persistent gain node. Unlike the sine synths (rebuilt each Play), these
+  // are built once and cached for the component's life so Sine↔Piano and Stop↔Play never
+  // re-download or re-decode; disposed only on unmount. Sample paths honour the site baseUrl.
+  const pianoMelodyRef = useRef<Tone.Sampler | null>(null);
+  const pianoMelodyGainRef = useRef<Tone.Gain | null>(null);
+  const pianoChordRef = useRef<Tone.Sampler | null>(null);
+  const pianoChordGainRef = useRef<Tone.Gain | null>(null);
+  const sampleBase = useBaseUrl('/samples/piano/');
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
@@ -550,6 +579,36 @@ export default function RhythmPatternPlayerClient({
     return chordSynthRef.current;
   };
 
+  // Lazily build the sampled-piano melody voice: a Tone.Sampler over the C-per-octave
+  // samples, on its own persistent gain node (kept for the component's life). Same
+  // triggerAttackRelease(freqHz, durSec, at, vel) surface as the sine synths, so the
+  // scheduler treats it identically. Samples fetch on first build; the caller awaits load.
+  const getPianoMelody = () => {
+    if (!pianoMelodyRef.current) {
+      pianoMelodyGainRef.current = new Tone.Gain(0.5).toDestination();
+      pianoMelodyRef.current = new Tone.Sampler({
+        urls: PIANO_URLS,
+        baseUrl: sampleBase,
+        release: 0.8,
+      }).connect(pianoMelodyGainRef.current);
+    }
+    return pianoMelodyRef.current;
+  };
+
+  // Lazily build the sampled-piano chord voice — same Sampler, its own gain node mixed a
+  // touch below the melody so the blips stay audible over the pad. Only used in chord mode.
+  const getPianoChord = () => {
+    if (!pianoChordRef.current) {
+      pianoChordGainRef.current = new Tone.Gain(0.4).toDestination();
+      pianoChordRef.current = new Tone.Sampler({
+        urls: PIANO_URLS,
+        baseUrl: sampleBase,
+        release: 0.8,
+      }).connect(pianoChordGainRef.current);
+    }
+    return pianoChordRef.current;
+  };
+
   const stop = () => {
     if (loopTimerRef.current) {
       clearInterval(loopTimerRef.current);
@@ -563,6 +622,10 @@ export default function RhythmPatternPlayerClient({
     chordSynthRef.current = null;
     chordGainRef.current?.dispose();
     chordGainRef.current = null;
+    // Piano voices are cached across Stop/Play (see builders); just cut any ringing notes
+    // rather than disposing, so the next Play reuses the loaded samples without re-fetching.
+    pianoMelodyRef.current?.releaseAll();
+    pianoChordRef.current?.releaseAll();
     // Invalidate in-flight Draw callbacks (up to the ~0.3 s look-ahead) and hide the marker.
     playRunRef.current++;
     playheadBeatRef.current = null;
@@ -570,13 +633,36 @@ export default function RhythmPatternPlayerClient({
     setPlaying(false);
   };
 
-  useEffect(() => () => stop(), []); // dispose on unmount
+  useEffect(
+    () => () => {
+      stop();
+      // Piano voices survive Stop; tear them (and their gains) down for good on unmount.
+      pianoMelodyRef.current?.dispose();
+      pianoMelodyGainRef.current?.dispose();
+      pianoChordRef.current?.dispose();
+      pianoChordGainRef.current?.dispose();
+    },
+    [],
+  ); // dispose on unmount
 
   const play = async () => {
     if (!pattern) return;
     await Tone.start(); // unlock audio on the user gesture
-    const synth = getSynth();
-    const chordSynth = chord ? getChordSynth() : null;
+    // Pick the active voices from the current instrument. Piano builds its samplers on first
+    // use and fetches samples; gate playback on Tone.loaded() so the first note isn't silent.
+    const usePiano = instrument === 'piano';
+    if (usePiano) {
+      getPianoMelody();
+      if (chord) getPianoChord();
+      setPianoLoading(true);
+      try {
+        await Tone.loaded();
+      } finally {
+        setPianoLoading(false);
+      }
+    }
+    const synth = usePiano ? getPianoMelody() : getSynth();
+    const chordSynth = chord ? (usePiano ? getPianoChord() : getChordSynth()) : null;
     const {pulses, totalBeats, meter: patternMeter} = pattern;
     // Chord onsets: map each meter group-start unit beat → that group's length in unit
     // beats (cumulative sums over the meter, as in gridLines' groupStarts). The chord
@@ -959,6 +1045,19 @@ export default function RhythmPatternPlayerClient({
             aria-label="resolution amount"
           />
         </label>
+        <label style={labelStyle}>
+          instrument
+          <select
+            value={instrument}
+            onChange={(e) => setInstrument(e.target.value as 'sine' | 'piano')}
+            aria-label="instrument timbre">
+            <option value="sine">Sine</option>
+            <option value="piano">Piano</option>
+          </select>
+          {pianoLoading && (
+            <span style={{opacity: 0.7, fontStyle: 'italic'}}>loading…</span>
+          )}
+        </label>
         {melody && !chord && (
           <label style={labelStyle}>
             lcm
@@ -1034,8 +1133,9 @@ export default function RhythmPatternPlayerClient({
       <div style={{marginTop: '0.7rem', display: 'flex', gap: '0.6rem'}}>
         <button
           className="button button--primary button--sm"
-          onClick={playing ? stop : play}>
-          {playing ? 'Stop' : 'Play'}
+          onClick={playing ? stop : play}
+          disabled={pianoLoading}>
+          {pianoLoading ? 'Loading…' : playing ? 'Stop' : 'Play'}
         </button>
         <button
           className="button button--secondary button--sm"

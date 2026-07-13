@@ -174,10 +174,17 @@ We can create a chord by taking between two to seven notes from the chromatic sc
 We can then find every lcm family placement containing this chord and draw melody from those sets in different ways.
 The player below rolls a random chord until at least one lcm family placement (with lcm ≤ 24) contains it and then plays melody from it.
 
+The **instrument** dropdown switches both the melody and the chord between the theory-faithful sines and a sampled piano.[^salamander] Sines stay the default (no overtones, so any roughness is from the intervals alone); the piano only loads its samples the first time you press Play with it selected.
+
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
 2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).
+
+[^salamander]: Piano samples are a small C-per-octave subset of the
+[Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by
+Alexander Holm, [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/),
+pitch-shifted across the keyboard via Tone.js's `Sampler`.
 
 [^lots-stone]: Inbal Shapira Lots & Lewi Stone, "Perception of musical consonance
 and dissonance: an outcome of neural synchronization," *Journal of the Royal
