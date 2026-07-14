@@ -132,6 +132,8 @@ type LcmFamily = {id: string; label: string; keys: number[]};
 const LCM_FAMILIES: LcmFamily[] = [
   {id: '0', label: '0 · Chromatic', keys: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]},
   {id: RANDOM_ID, label: '∅ · Random Pitch', keys: []},
+  {id: 'major-pentatonic', label: 'Major Pentatonic', keys: [0, 2, 4, 7, 9]},
+  {id: 'harmonic-minor', label: 'Harmonic Minor', keys: [0, 1, 4, 5, 7, 8, 10]},
   {id: '1', label: '1 · Unison', keys: [0]},
   {id: '2', label: '2 · Perfect Fifth', keys: [0, 7]},
   {id: '3,4', label: '3,4 · Major Third', keys: [0, 4, 7]},
