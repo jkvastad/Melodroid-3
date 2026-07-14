@@ -11,6 +11,7 @@ Mixed usage of katex for e.g. hz - sometimes inline mathrm, sometimes just plain
 Perhaps the docusaurus default boxed layout of subsections should instead be a list as sections build on each other top to bottom?
 ### Good Fractions (theory/good-fractions.mdx)
 ### LCM Families (theory/lcm-families.mdx)
+TODO: add in mermaid graph for "graph lcm-families --mode full --max-size 16 --max-lcm 12" - perhaps 16 is the largest lcm and the isomorphic 8-12 group is the largest lcm family, with 15, 18, 20 and 24 just being melody style superpositions?
 ### Cluster Ranges (theory/cluster-ranges.mdx)
 ### Playing Fractions (theory/playing-fractions.mdx)
 ## The Keyboard
@@ -22,7 +23,14 @@ Perhaps the docusaurus default boxed layout of subsections should instead be a l
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
 TODO: chord player draws melody from one match at a time via drop down list, perhaps expand it to some sort of toggle list so the user can create superpositions of the available full matches.
-TODO: Scales which are not LCM but sound good (pentatonic, harmonic minor)
+TODO: Scales which are not LCM but sound good (pentatonic, harmonic minor). 
+Perhaps lcm 24 is too big, max might be 16 with 24 consisting of e.g. 8@0 + 12@0. 
+This could mean the large isomorphic 5-member group is the largest lcm, with larger groups consisiting of superpositions of this group, functioning like modulating sets for melody.
+15@0 is at best 10@0 + 12@0 which leaves key 9 out, perhaps why it lacks a consonant voicing
+The voicings of larger groups spanning more than an octave might sound better or worse due to auxiliary effects e.g. lcm 24 might be perceived as multiple separate simultaneous chords.
+* Pentatonic - melodies congruent with an 0 4 7 chord and the shared notes of its 3 possible lcm 24 interpretations at 0, 5, 7(lcm 24 is 8@0 + 8@5 = 8@0 + 12@0 produces overlapping families)
+* Harmonic minor - construct from lcm 8 families?
+* 0 3 7 6 - e.g. fur elise. Why does the 6 sound good?
 TODO: Chord progressions
 TODO: Triad experiment from ""Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"" with a slider for overtone stretch and a two-dimensional surface where the user can move a mouse to adjust intervals (as in their study 5). This way a user can listen to triad chord consonance.
 TODO: compare LCMs with modes - e.g. playing Mixolydian C is just playing Major scale F but using the C note as tonic.
