@@ -45,22 +45,128 @@ wides.
 melodroid table voicings --lcm 24 --ktet 12
 ```
 
-prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. Each row is
-`Root | Voicing | Intervals | Span | Penalty`, where `Voicing` is the key read as a strictly
-ascending sequence (so `7 11 2` means `7 11 14`). Every root of the C major scale reaches penalty
-`0`; root 7 is the G13 voicing `7 11 2 5 9 0 4`. Pass `--keys` instead of `--lcm` to enumerate
-voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
+prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. 
+Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
 
-## LCM 15 and 20
+## High LCMs
 
-For `15@0` the best score from any root is 1 with `{10 1 5 9 0 3 8}`. For `20@0` it is 0 with `{4 8 0 3 7 10}` 
-(the voicings are available for listening in the introductory lcm table on this page).
+As can be heard in the intro table, lcms of 12 or less have a softer sound while the larger lcms of 15 or higher have more tension, especially 15 and 20.
+The best voicings for the high lcms are:
+
+* `15@0` with `0 3 7 11 14 17 22` at score 1 
+* `18@0` with `0 3 7 10 14 17` at score 0
+* `20@0` with `0 4 8 11 15 18` at score 0
+* `24@0` with `0 4 7 10 14 17 21` at score 0
 
 Even the best voicings for 15 and 20 sound tense. 
 Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation (20@5 $\subset$ 15@0).
 Lcm 15 and 20 might for instance be useful scales rather than block chords, or the tension is perhaps useful in and of itself (e.g. uniform chords dim7, aug).
+Other reasons for sounding tense include:
+* Increasingly large clusters of notes become increasingly harder to keep consonant.
+* The largest lcm family recognized by the brain might be the isomorphic lcm 8-12 group. Higher lcms are perhaps parsed as superpositions of lower lcms.
+* Some lcms might be preferred over others, e.g. 15 is close to 24 in the sense that dropping key 9 from 15@0 gives 
+`{0 1 3 5 8 10}` which full-matches 18 at key 3 and 24 at both 1 and 8. 
+Lcm 15 might then be parsed as 24 with bad notes, and perhaps only under certain circumstances such as including not 8 (root for 24@8, 3/2 ratio relative 24@1).
 
-Another reason for sounding tense is simply that larger clusters of notes become increasingly harder to keep consonant. 
+### High LCMs as compositions of low LCMs
+A high lcm family can sometimes be expressed as a composition of lower lcm families.
+Since all families $\leq$ 12 are subsets or isomorphisms of each other it seems prudent to use this largest isomorphic group (lcm 8-12) as the building block.
+This can be explored using the superpositions subcommand:
+
+`melodroid table superpositions --keys 0 2 4 5 7 9 11 --min-block-lcm 8 --max-block-lcm 12`
+
+#### LCM 24
+Running the superpositions command produces the (truncated) output below for 24@0 = `{0 2 4 5 7 9 11}`
+
+| # | Ref | LCM | Pieces | Union (12-tet) | Extra | Disjoint? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2 | 0 | 24 | 8@0 + 12@0 | 0 2 4 5 7 9 11 | | |
+| 2 | 7 | 36 | 9@7 + 12@7 | 0 2 4 5 7 9 11 | | |
+
+From this we see that 24@0 can (at least) be thought of as 8@0 + 12@0 or 9@7 + 12@7. 
+These two pairs of small lcms have overlapping sets: 
+
+8@0 = `{0 2 4 7 11}`, 12@0 = `{0 4 5 7 9}` $\rightarrow$ 8@0 $\cap$ 12@0 = `{0 4 7}`
+
+9@7 = `{7 9 0 4 5}`, 12@7 = `{7 11 0 2 4}` $\rightarrow$ 9@7 $\cap$ 12@7 = `{0 4 7}`
+
+Which turn out to be the same the major chord (which is just 4@0 $\subset$ 8@0), 
+suggesting that perhaps there is no lcm 24 but instead it is better thought of as these superpositions.
+
+#### LCM 20
+For 20@0 = `{0 3 4 5 7 8 10}` we have
+
+| # | Ref | LCM | Pieces | Union (12-tet) | Extra | Disjoint? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2 | 0 | 60 | 10@0 + 12@0 | 0 3 4 5 7 8 9 10 | 9 | |
+
+The extra 9 means there is no perfect composition of smaller lcms, perhaps why a full voicing of 20 sounds tense.
+Looking at overlapp we see
+
+10@0 = `{0 3 7 8 10}`, 12@0 = `{0 4 5 7 9}` $\rightarrow$ 10@0 $\cap$ 12@0 = `{0 7}`
+
+`{0 7}` being the smallest good fraction has quite a lot of possible interpretations. 
+If lcms above 12 are compositions of lower lcms then the keys corresponding to a hypothetical lcm 20 might not simply produce anything of particular interest,
+ explaining the tense sound of lcm 20 (random noise).
+
+#### LCM 18
+For 18@0 = `{0 2 5 7 9 10}` we have
+
+| # | Ref | LCM | Pieces | Union (12-tet) | Extra | Disjoint? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2 | 0 | 36 | 9@0 + 12@0 | 0 2 4 5 7 9 10 | 4 | |
+| 2 | 5 | 24 | 8@5 + 12@5 | 0 2 4 5 7 9 10 | 4 | |
+| 2 | 5 | 36 | 9@5 + 12@5 | 0 2 3 5 7 9 10 | 3 | |
+| 2 | 10 | 24 | 8@10 + 12@10 | 0 2 3 5 7 9 10 | 3 | |
+
+Every union carries an extra note (4 or 3), meaning there is no perfect composition of smaller lcms.
+
+The overlaps come in two pairs:
+
+9@0 = `{0 2 5 9 10}`, 12@0 = `{0 4 5 7 9}` $\rightarrow$ 9@0 $\cap$ 12@0 = `{0 5 9}`
+
+8@5 = `{5 7 9 0 4}`, 12@5 = `{5 9 10 0 2}` $\rightarrow$ 8@5 $\cap$ 12@5 = `{0 5 9}`
+
+9@5 = `{5 7 10 2 3}`, 12@5 = `{5 9 10 0 2}` $\rightarrow$ 9@5 $\cap$ 12@5 = `{2 5 10}`
+
+8@10 = `{10 0 2 5 9}`, 12@10 = `{10 2 3 5 7}` $\rightarrow$ 8@10 $\cap$ 12@10 = `{2 5 10}`
+
+Notably lcm 18 and 24 share the same structure: lcm 9 + 12 or 8 + 12 share a root, so perhaps lcm 18 is also better thought of as a superposition of lower lcms.
+
+#### LCM 15
+For 15@0 = `{0 1 3 5 8 9 10}` we have
+
+| # | Ref | LCM | Pieces | Union (12-tet) | Extra | Disjoint? |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2 | 5 | 60 | 10@5 + 12@5 | 0 1 2 3 5 8 9 10 | 2 | |
+
+There is only one composition of two smaller lcms, which also has the best fit but still requiring an extra note (key 2).
+The overlap is
+
+10@5 = `{5 8 0 1 3}`, 12@5 = `{5 9 10 0 2}` $\rightarrow$ 10@5 $\cap$ 12@5 = `{0 5}`
+
+`{0 5}` is a bare fifth (2@5), again the smallest good fraction — as with lcm 20's `{0 7}` the two pieces barely overlap, perhaps why a full voicing of 15 also sounds tense.
+
+#### Concluding remarks
+Looking at high LCMs as compositions of low lcms we have the following patterns:
+
+* 24@0 is (perfectly) 
+  * 8@0 + 12@0 
+  * 9@7 + 12@7
+* 20@0 is 10@0 + 12@0 (extra 9)
+* 18@0 is 
+  * 9@0 + 12@0 (extra 4)
+  * 8@5 + 12@5 (extra 4)  
+  * 9@5 + 12@5 (extra 3)
+  * 8@10 + 12@10 (extra 3)
+* 15@0 is 10@5 + 12@5 (extra 2)
+
+From this we see that the structure of 18@0 (adding in the extra key) is identical to 24@5 and 24@10.
+Similarly lcm 15 and 20 share structure with 15@0 being 20@5 expressed as 10@5 + 12@5.
+These pairs of structures are not so different, yet 15 and 20 sound quite more tense than 24/18. 
+Perhaps it is that the total lcm of the composing smaller lcms is much greater for 15/20 (lcm 60) vs. 18/24 with 24 (or 36).
+
+### Adjacent key sets and preference
 Let's look at the subsets of lcm 15:
 
 ```bash
