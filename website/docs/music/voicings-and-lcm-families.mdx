@@ -167,45 +167,83 @@ These pairs of structures are not so different, yet 15 and 20 sound quite more t
 Perhaps it is that the total lcm of the composing smaller lcms is much greater for 15/20 (lcm 60) vs. 18/24 with 24 (or 36).
 
 ### Adjacent key sets and preference
-Let's look at the subsets of lcm 15:
+Assuming the brain does not passively parse incoming sounds but rather looks actively for patterns, we would expect preference for certain patterns.
+This could for instance mean that some lcms are preferred over others. 
+Since most lcms are subsets of each other certain contexts might cause an "obvious" pattern to be ignored in favor of a preferred pattern.
+By looking at subsets of lcms we can gain some insight into these possible competing interpretations.
+For this purpose we have the subsets subcommand:
 
 ```bash
 melodroid table subsets --lcm 15 --at 0 --ktet 12
 ```
 
-The command enumerates every size-≥2 subset of `15@0` and key-sweeps each one. Each row is a subset, each
-column a reference key `n`, and a cell holds the LCM that subset full-matches when anchored at
-`n` (a trailing `?` marks an ambiguous match). Pass `--keys` instead of `--lcm@--at` to
-sweep an arbitrary key set. 
+#### LCM 24
+The lcm 24 subsets produced by dropping a single key from `24@0` = `{0 2 4 5 7 9 11}`
+together with the full set look like this (smaller subsets cropped):
 
-For example the lcm 15 subsets produced by dropping a single key from
-`15@0` together with the full set look like this (smaller subsets cropped):
+| Subset | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 2 4 5 7 9 | 24? | | 90? | | 15? | 24? | | 18? | | 30? | | |
+| 0 2 4 5 7 11 | 24? | | 45? | 120? | 30? | | | 36? | | 90? | | |
+| 0 2 4 5 9 11 | 24? | 120? | 90? | | 30? | | | 36? | | 90? | | |
+| 0 2 4 7 9 11 | 24? | | 18? | | 30? | | | 24? | | 90? | | 15? |
+| 0 2 5 7 9 11 | 24? | | 30? | | 30? | | | 36? | | 45? | 120? | |
+| 0 4 5 7 9 11 | 24 | | 90? | | 30 | | | 36? | 120 | 40? | | |
+| 2 4 5 7 9 11 | 24? | | 90? | | 30? | | 120? | 36? | | 90? | | |
+| 0 2 4 5 7 9 11 | 24? | | 90? | | 30? | | | 36? | | 90? | | |
 
-```text
-┌────────────────┬─────┬──────┬──────┬─────┬─────┬─────┬──────┬─────┬──────┬─────┬──────┬──────┐
-│ Subset         │   0 │    1 │    2 │   3 │   4 │   5 │    6 │   7 │    8 │   9 │   10 │   11 │
-├────────────────┼─────┼──────┼──────┼─────┼─────┼─────┼──────┼─────┼──────┼─────┼──────┼──────┤
-│ 0 1 3 5 8 9    │  15 │  40? │      │     │ 120 │ 20? │      │     │   60 │     │ 120? │      │
-│ 0 1 3 5 8 10   │ 15? │  24? │      │ 18? │     │ 30? │      │     │  24? │     │  90? │      │
-│ 0 1 3 5 9 10   │ 15? │ 120? │ 120? │     │     │ 60? │      │     │ 120? │     │ 120? │      │
-│ 0 1 3 8 9 10   │ 15? │ 120? │      │     │     │ 60? │      │     │ 120? │     │ 120? │ 120? │
-│ 0 1 5 8 9 10   │ 15? │  120 │      │     │     │  60 │      │     │ 120? │ 120 │  40? │      │
-│ 0 3 5 8 9 10   │ 15? │ 120? │      │     │     │ 60? │      │ 45? │ 120? │     │  72? │      │
-│ 1 3 5 8 9 10   │ 15? │ 120? │      │     │     │ 60? │ 120? │     │  90? │     │ 120? │      │
-│ 0 1 3 5 8 9 10 │ 15? │ 120? │      │     │     │ 60? │      │     │ 120? │     │ 120? │      │
-└────────────────┴─────┴──────┴──────┴─────┴─────┴─────┴──────┴─────┴──────┴─────┴──────┴──────┘
-```
+Notably dropping key 11 produces 15@4 and dropping key 5 produces 15@11.
 
-Dropping key 10 gives `{0 1 3 5 8 9}` which full-matches `20` at key 5 (the `20?` in the first row).
+#### LCM 20
+The lcm 20 subsets produced by dropping a single key from `20@0` = `{0 3 4 7 8 10}`
+together with the full set look like this (smaller subsets cropped):
+
+| Subset | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 3 4 7 8 | 20 | | | 60 | 40 | 40? | | 15 | 40 | | | 60 |
+| 0 3 4 7 10 | 20? | | 45? | 60 | | 72? | | 15 | 40? | | | 120 |
+| 0 3 4 8 10 | 20? | 120? | | 30 | | 120? | | 15 | 40? | | | 120 |
+| 0 3 7 8 10 | 10? | | | 12 | | 90? | | 15 | 8? | | 9? | 120 |
+| 0 4 7 8 10 | 20? | | | 60 | | 120? | | 15 | 40? | 120? | | 120 |
+| 3 4 7 8 10 | 20? | | | 60 | | 120? | 120? | 15 | 40? | | | 120 |
+| 0 3 4 7 8 10 | 20? | | | 60 | | 120? | | 15 | 40? | | | 120 |
+
+Notably dropping key 4 produces 8@8, so perhaps lcm 20 is perceived as a bad 8@8.
+
+#### LCM 18
+The lcm 18 subsets produced by dropping a single key from `18@0` = `{0 2 5 7 9 10}`
+together with the full set look like this (smaller subsets cropped):
+
+| Subset | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 2 5 7 9 | 18? | | 30? | | 15? | 24? | | 18? | | 15? | 24? | |
+| 0 2 5 7 10 | 18? | | 15? | 24? | | 18? | | 30? | | 15? | 24? | |
+| 0 2 5 9 10 | 9? | 120 | 10? | | | 12 | | 90? | | 15 | 8? | |
+| 0 2 7 9 10 | 18? | | 30? | | | 24? | | 90? | | 15? | 24? | 120 |
+| 0 5 7 9 10 | 18? | | 30? | | | 24? | | 45? | 120 | 15? | 24? | |
+| 2 5 7 9 10 | 18? | | 30 | | | 24? | 120 | 40? | | 15? | 24 | |
+| 0 2 5 7 9 10 | 18? | | 30? | | | 24? | | 90? | | 15? | 24? | |
+
+As discussed in compositions, 18@0 is basically 24@5,10.
+
+#### LCM 15
+The lcm 15 subsets produced by dropping a single key from `15@0` together with the full set look like this (smaller subsets cropped):
+
+| Subset | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 1 3 5 8 9 | 15 | 40? | | | 120 | 20? | | | 60 | | 120? | |
+| 0 1 3 5 8 10 | 15? | 24? | | 18? | | 30? | | | 24? | | 90? | |
+| 0 1 3 5 9 10 | 15? | 120? | 120? | | | 60? | | | 120? | | 120? | |
+| 0 1 3 8 9 10 | 15? | 120? | | | | 60? | | | 120? | | 120? | 120? |
+| 0 1 5 8 9 10 | 15? | 120 | | | | 60 | | | 120? | 120 | 40? | |
+| 0 3 5 8 9 10 | 15? | 120? | | | | 60? | | 45? | 120? | | 72? | |
+| 1 3 5 8 9 10 | 15? | 120? | | | | 60? | 120? | | 90? | | 120? | |
+| 0 1 3 5 8 9 10 | 15? | 120? | | | | 60? | | | 120? | | 120? | |
+
+Dropping key 10 gives `{0 1 3 5 8 9}` which full-matches `20` at key 5.
+
 Dropping key 9 gives `{0 1 3 5 8 10}` (row 2) which full-matches `18` at key 3 and `24` at both 1 and 8, all of which are traditionally considered consonant (18@3 is a subset of 24@1,8).
-
-Since dropping a key from lcm 15 produced subsets of 24, illustrating that the two scales are adjacent in terms of absolute keys,
-perhaps dropping a key from lcm 20 provides some insight. 
-Indeed, dropping key 9 from `{0 1 3 5 8 9}` produces `{0 1 3 5 8}` with 8@1 and the accompanying isomorphic 9@3, 10@5 and 12@8.
-
-With this nested structure of lcm family subsets there is a possiblity that the brain prefers to look for some lcms over others, perhaps the isomorphisms of lcm 8.
-In such a case lcm 15 and 20 could in certain contexts be parsed as "lcm 8 with extra bad notes" rather than as proper lcm 15 and 20.
-Perhaps playing something other than block chords will produce some insight.
+24@1 is in turn composed of 8@1 + 12@1 (8@8) so perhaps 15@0 is perceived as bad 8@1,8.
 
 ## LCM melodies
 To play melodies we will need to move from playing block chords in static time into dynamic time. 

@@ -22,6 +22,7 @@ TODO: add in mermaid graph for "graph lcm-families --mode full --max-size 16 --m
 
 ### Voicings and Placements (music/voicings-and-placements.mdx)
 ### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+TODO: different flavors of sound - e.g. major/minor has distinct sounds, Harmonic minor (lcm 15), lcm 8 (major scale), uniform chords (dim7 vs. aug, aug sounds similar to 2-2-2-etc). Even chromatic has a certain feel (kinda chaotic/clownish, similar to random pitches).
 TODO: chord player draws melody from one match at a time via drop down list, perhaps expand it to some sort of toggle list so the user can create superpositions of the available full matches.
 TODO: Scales which are not LCM but sound good (pentatonic, harmonic minor). 
 Perhaps lcm 24 is too big, max might be 16 with 24 consisting of e.g. 8@0 + 12@0. 
