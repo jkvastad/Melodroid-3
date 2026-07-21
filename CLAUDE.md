@@ -78,6 +78,7 @@ table superpositions    minimal ways to cover --keys as a union of LCM-family pl
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table subsets           key-sweep every size-≥2 subset of a key set (--lcm@--at or --keys), listing the LCM families those subsets full-match
 table chord-melody      matrix of maximal-LCM placements containing a chord vs each key
+table chords            unique chords per k-tet under transposition (necklaces), filtered by note count
 graph lcm-families      Mermaid relation graph (--mode full|collapsed)
 plot  lcm-families      ScottPlot waveform (--mode all|sum|constituents|difference, --subset-lcm)
 ```

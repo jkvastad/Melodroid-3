@@ -292,6 +292,7 @@ pitch (long wavelength) red, high pitch blue/violet.
  **Generate** samples a new rhythm and a new melody to go with it.
 
  You can also listen to a chromatic scale, true random pitch, two familiar tonal scales (major pentatonic and harmonic minor), and the symmetric chords that divide the octave evenly (whole tone, diminished 7th, augmented) for comparison.
+ The **instrument** dropdown switches both the melody and the chord between the theory-faithful sines and a sampled piano.[^salamander]
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} melody />
 
@@ -309,19 +310,49 @@ Perhaps it comes from context - the listener expects certain pitches from preced
 A common context in music is chords - a set of notes played statically along with the melody.
 
 ### Chords as accompaniment
-Let's now look at chords as subsets of lcm families consisting of at least two notes.
-For a given chord we can ask which lcm families _contain_ it: every family placement (an lcm family anchored on some key) whose keys are a superset of the chord's keys — the `table key-supersets` operation.
-A chord is usually contained by several placements — the smallest family it spells out and larger families it sits inside — so a chord provides an ambiguous context.
-If melody is pitches from the active lcm family then melody perhaps plays on this ambiguity by modulating between possible interpretations of the currently sounding pitches.
+Let's now look at chords. In their most general form chords are two or more simultaneous notes.
+In the 12 tet system there are $2^12 = 4096$ possible key combinations per octave, including the empty set.
+In particular we are interested in unique chords under octave renormalization e.g. 0 4 7, 0 3 8 and 0 5 9 are the same.
+Counting a chord and all its transpositions once collapses the 4096 combinations to just 352 unique chords (the binary *necklaces* of length 12), or 280 across the 2–7 note range we care about.
+These can be enumerated with the `chords` subcommand:
 
-For example the major triad `0 4 7` is contained by `3 @ 7` (the lcm 3 family anchored on key 7) but also by the larger `15 @ 7`.
-The latter is easy to miss if you only look at the single lcm a chord folds to when binned note-by-note; enumerating supersets surfaces both interpretations.
+```bash
+melodroid table chords --min-notes 2 --max-notes 7
+```
 
-We can create a chord by taking between two to seven notes from the chromatic scale (no lcm family is larger than 7 members). 
-We can then find every lcm family placement containing this chord and draw melody from those sets in different ways.
-The player below rolls a random chord until at least one lcm family placement (with lcm ≤ 24) contains it and then plays melody from it.
+There is also an interesting observation regarding the minor second versus major seventh (interval 0 1 vs. 0 11): 
+a minor second sounds quite harsh, but a major seventh does not - particularly when it is part of an lcm 8 voicing. 
 
-The **instrument** dropdown switches both the melody and the chord between the theory-faithful sines and a sampled piano.[^salamander] Sines stay the default (no overtones, so any roughness is from the intervals alone); the piano only loads its samples the first time you press Play with it selected.
+
+
+In the context of accompaniment for a given chord we must then choose a set of notes from which to draw melody.
+
+This presents us with two questions - how do we choose chords and how do we choose the corresponding melody set?
+For constructing chords in we have several options:
+
+* Random notes
+* A subset to an lcm
+* Symmetric chords, possibly a subset of larger symmetric structures (e.g. the whole tone scale)
+
+In HPT the only governing structure is the lcms of the constituent good fractions. 
+Choosing random chords should thus either produce lcm subsets by luck or no structure at all.
+Symmetric chords are notable because of their ambiguity: it is not the lcm structure in and of itself which is ultimately interesting but our perception of the structure.
+
+For constructing a melody set we also have several options:
+
+* Random notes
+* The notes constituting the chord
+* Notes from an lcm for which the chord is a subset (full matches)
+
+We previousy listened to random notes and observed they have a specific almost chaotic quality.
+Melodic notes constituting a chord will likely inherit its qualities from whatever structure the chord has.
+Notes from an lcm should similarly produce soft/harmonious melodies from lcms $\leq$ 12.
+
+Notably a chord can be a subset to several lcms simultaneously and a union or intersection of such shared lcms might be an interesting melodic set,
+providing some form of modulation between lcms.
+
+The largest lcm family consist of 7 members, which is also large enough to include the whole tone scale and the harmonic minor.
+We can thus create chords by selecting between 2 and 7 notes.
 
 <RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} chord />
 

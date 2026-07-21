@@ -825,6 +825,49 @@ class Program
             return 0;
         });
 
+        var chordsMinNotesOption = new Option<int>("--min-notes")
+        {
+            Description = "Minimum number of notes per chord. Default 2.",
+            DefaultValueFactory = _ => 2,
+        };
+        var chordsMaxNotesOption = new Option<int>("--max-notes")
+        {
+            Description = "Maximum number of notes per chord. Default 7.",
+            DefaultValueFactory = _ => 7,
+        };
+        var chordsMaxResultsOption = new Option<int>("--max-results")
+        {
+            Description = "Maximum number of chord rows to display. Default 1000.",
+            DefaultValueFactory = _ => 1000,
+        };
+
+        var chordsCommand = new Command(
+            "chords",
+            "Enumerate the unique chords of a --ktet keyboard, deduplicated under transposition (each chord and all its transpositions count once, e.g. 0 4 7 = 0 3 8 = 0 5 9). Lists the canonical key set, its interval gaps around the octave, and its orbit size (number of distinct transpositions). Filtered by note count via --min-notes / --max-notes.");
+        chordsCommand.Add(ktetOption);
+        chordsCommand.Add(chordsMinNotesOption);
+        chordsCommand.Add(chordsMaxNotesOption);
+        chordsCommand.Add(chordsMaxResultsOption);
+        chordsCommand.SetAction(parse =>
+        {
+            var k = parse.GetValue(ktetOption);
+            var minNotes = parse.GetValue(chordsMinNotesOption);
+            var maxNotes = parse.GetValue(chordsMaxNotesOption);
+            var maxResults = parse.GetValue(chordsMaxResultsOption);
+
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+            if (k > 48) { AnsiConsole.MarkupLine("[red]--ktet must be ≤ 48 (enumeration grows combinatorially).[/]"); return 1; }
+            if (minNotes < 1) { AnsiConsole.MarkupLine("[red]--min-notes must be ≥ 1.[/]"); return 1; }
+            if (maxNotes < minNotes) { AnsiConsole.MarkupLine("[red]--max-notes must be ≥ --min-notes.[/]"); return 1; }
+            if (minNotes > k) { AnsiConsole.MarkupLine($"[red]--min-notes {minNotes} exceeds --ktet {k}.[/]"); return 1; }
+            if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
+
+            var effectiveMaxNotes = Math.Min(maxNotes, k);
+            var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults);
+            ChordsTableRenderer.Render(chords, k, minNotes, effectiveMaxNotes, truncated);
+            return 0;
+        });
+
         var tableCommand = new Command("table", "Console-table output commands.");
         tableCommand.Add(goodFractionsCommand);
         tableCommand.Add(lcmFamiliesCommand);
@@ -839,6 +882,7 @@ class Program
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
+        tableCommand.Add(chordsCommand);
 
         var modeOption = new Option<string>("--mode")
         {
