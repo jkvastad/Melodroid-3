@@ -12,6 +12,7 @@ public static class ChordsTableRenderer
         int minNotes,
         int maxNotes,
         bool truncated,
+        bool noMinorSeconds = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -38,9 +39,10 @@ public static class ChordsTableRenderer
             .Select(g => g.Count().ToString(CultureInfo.InvariantCulture));
         var breakdown = string.Join(" · ", perSize);
         var sizeLabel = minNotes == maxNotes ? $"size {minNotes}" : $"sizes {minNotes}–{maxNotes}";
+        var filterClause = noMinorSeconds ? " · no minor seconds" : "";
         var truncClause = truncated ? " [red](truncated by --max-results)[/]" : "";
         table.Caption(
-            $"chords: {ktet}-tet · {sizeLabel} · " +
+            $"chords: {ktet}-tet · {sizeLabel}{filterClause} · " +
             $"{chords.Count} unique under transposition" +
             (breakdown.Length > 0 ? $" ({breakdown})" : "") +
             truncClause);

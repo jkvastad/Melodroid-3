@@ -119,6 +119,90 @@ public class ChordsTests
         }
     }
 
+    [Fact]
+    public void Enumerate_no_minor_seconds_revoices_the_major_seventh_dyad()
+    {
+        // The minor-second and major-seventh dyads are one necklace, canonically 0 1. Under the
+        // filter it is kept but re-voiced to 0 11 so it reads as a major seventh, not a minor second.
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeMinorSeconds: true);
+
+        chords.Should().ContainSingle(c => c.Keys.SequenceEqual(new[] { 0, 11 }));
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 1 }));
+    }
+
+    [Fact]
+    public void Enumerate_no_minor_seconds_drops_chords_with_an_internal_minor_second()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeMinorSeconds: true);
+
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 1, 2 }));
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 1, 6 }));
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 2, 3 }));
+    }
+
+    [Fact]
+    public void Enumerate_no_minor_seconds_keeps_semitone_free_chords()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeMinorSeconds: true);
+
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 7 })); // major triad
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 8 })); // augmented triad
+    }
+
+    [Fact]
+    public void Enumerate_no_minor_seconds_keeps_all_six_dyads()
+    {
+        // No dyad has two notes a semitone apart except the semitone class itself (0 1 → 0 11),
+        // so all six interval classes survive; only that one's display changes.
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 2, maxResults: 100000, excludeMinorSeconds: true);
+
+        chords.Should().HaveCount(6);
+        chords.Should().ContainSingle(c => c.Keys.SequenceEqual(new[] { 0, 11 }));
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 1 }));
+    }
+
+    [Fact]
+    public void Enumerate_no_minor_seconds_leaves_no_semitone_except_the_revoiced_major_seventh()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeMinorSeconds: true);
+
+        foreach (var chord in chords)
+        {
+            var keys = chord.Keys;
+            // Independent oracle: recompute the cyclic semitone gaps straight from Keys.
+            var hasSemitone = false;
+            for (var i = 0; i < keys.Count; i++)
+            {
+                var next = i + 1 < keys.Count ? keys[i + 1] : keys[0] + Ktet;
+                if (next - keys[i] == 1) { hasSemitone = true; break; }
+            }
+
+            var isRevoicedMajorSeventh = keys.SequenceEqual(new[] { 0, 11 });
+            (hasSemitone && !isRevoicedMajorSeventh).Should().BeFalse(
+                "chord {0} keeps a minor second but is not the re-voiced major seventh 0 11",
+                string.Join(" ", keys));
+        }
+    }
+
+    [Fact]
+    public void Enumerate_no_minor_seconds_stays_sorted_by_size_then_keys()
+    {
+        // Re-voicing 0 1 → 0 11 moves it out of generation order; the result must still be sorted.
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 5, maxResults: 100000, excludeMinorSeconds: true);
+
+        for (var i = 1; i < chords.Count; i++)
+        {
+            var prev = chords[i - 1];
+            var cur = chords[i];
+            var order = prev.Keys.Count.CompareTo(cur.Keys.Count);
+            if (order == 0)
+            {
+                order = Lexicographic(prev.Keys, cur.Keys);
+            }
+            order.Should().BeLessThanOrEqualTo(0);
+        }
+    }
+
     private static int Lexicographic(IReadOnlyList<int> a, IReadOnlyList<int> b)
     {
         for (var i = 0; i < Math.Min(a.Count, b.Count); i++)

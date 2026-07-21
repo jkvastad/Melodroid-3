@@ -15,16 +15,21 @@ public static class Chords
     /// "normal order" of music set theory, e.g. the major triad canonicalises to 0 4 7. Results are
     /// sorted by size then keys lexicographically; <paramref name="maxResults"/> caps the rows
     /// returned (sets Truncated).
+    /// <para>
+    /// When <paramref name="excludeMinorSeconds"/> is set, chords containing a minor second (two
+    /// notes a semitone apart) are dropped, except the bare major-seventh dyad, which is re-voiced
+    /// to {0, ktet-1} (0 11 in 12-tet) so it reads as a major seventh rather than a minor second.
+    /// </para>
     /// </summary>
     public static (IReadOnlyList<Chord> Chords, bool Truncated) Enumerate(
-        int ktet, int minNotes, int maxNotes, int maxResults)
+        int ktet, int minNotes, int maxNotes, int maxResults, bool excludeMinorSeconds = false)
     {
         var chords = new List<Chord>();
         if (ktet < 1 || minNotes < 1 || maxNotes < minNotes || maxResults < 1)
             return (chords, false);
 
         var truncated = false;
-        for (var size = minNotes; size <= Math.Min(maxNotes, ktet); size++)
+        for (var size = minNotes; !truncated && size <= Math.Min(maxNotes, ktet); size++)
         {
             // A canonical chord always contains key 0, so choose 0 plus (size-1) of the remaining
             // keys 1..ktet-1. Keep only those equal to their own min-rotation (one per class).
@@ -36,12 +41,48 @@ public static class Chords
 
                 if (!IsCanonical(keys, ktet)) continue;
 
-                if (chords.Count >= maxResults) { truncated = true; return (chords, truncated); }
-                chords.Add(new Chord(keys, Intervals(keys, ktet), OrbitSize(keys, ktet)));
+                var intervals = Intervals(keys, ktet);
+                if (excludeMinorSeconds && !KeepUnderNoMinorSeconds(ref keys, ref intervals, ktet))
+                    continue;
+
+                if (chords.Count >= maxResults) { truncated = true; break; }
+                chords.Add(new Chord(keys, intervals, OrbitSize(keys, ktet)));
             }
         }
 
+        // Re-voicing the major-seventh dyad (below) moves it out of generation order; restore the
+        // documented sort (size, then keys lexicographically) when the minor-second filter is on.
+        if (excludeMinorSeconds) chords.Sort(CompareBySizeThenKeys);
+
         return (chords, truncated);
+    }
+
+    // Applies the --no-minor-seconds rule to one canonical chord. Returns false to drop chords
+    // containing a minor second (two notes a semitone apart), with one exception: the bare
+    // major-seventh dyad {0, 1}, which is re-voiced in place to {0, ktet-1} so it reads as a
+    // major seventh (0 11 in 12-tet) rather than a root plus a minor second. All other kept
+    // chords are left untouched.
+    private static bool KeepUnderNoMinorSeconds(ref int[] keys, ref int[] intervals, int ktet)
+    {
+        if (keys.Length == 2 && keys[1] == 1)
+        {
+            keys = new[] { 0, ktet - 1 };
+            intervals = Intervals(keys, ktet);
+            return true;
+        }
+        return !HasMinorSecond(intervals);
+    }
+
+    private static int CompareBySizeThenKeys(Chord a, Chord b)
+    {
+        var bySize = a.Keys.Count.CompareTo(b.Keys.Count);
+        if (bySize != 0) return bySize;
+        for (var i = 0; i < a.Keys.Count; i++)
+        {
+            var c = a.Keys[i].CompareTo(b.Keys[i]);
+            if (c != 0) return c;
+        }
+        return 0;
     }
 
     // True iff the (sorted, 0-containing) set is the canonical representative of its class:
@@ -108,6 +149,14 @@ public static class Chords
             gaps[i] = next - sortedKeys[i];
         }
         return gaps;
+    }
+
+    // True iff two of the chord's notes are a semitone apart, i.e. any gap around the octave is 1.
+    private static bool HasMinorSecond(int[] intervals)
+    {
+        foreach (var gap in intervals)
+            if (gap == 1) return true;
+        return false;
     }
 
     // All strictly-increasing size-k combinations of the values 0..n-1.
