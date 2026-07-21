@@ -842,8 +842,14 @@ class Program
         };
         var chordsNoMinorSecondsOption = new Option<bool>("--no-minor-seconds")
         {
-            Description = "Drop chords containing a minor second (adjacent notes 1 semitone apart); "
-                + "keeps the 0 11 major seventh. 12-tet only.",
+            Description = "Drop every chord containing a minor second (any two notes a semitone "
+                + "apart), including the bare dyad and the whole major-seventh class. 12-tet only.",
+        };
+        var chordsAllowMaj7Option = new Option<bool>("--allow-maj7")
+        {
+            Description = "Keep chords with a single semitone, re-voiced as a major seventh (top note "
+                + "a semitone below the octave, e.g. 0 4 7 11); still drops chords with two or more "
+                + "semitones. Implies --no-minor-seconds. 12-tet only.",
         };
 
         var chordsCommand = new Command(
@@ -854,13 +860,15 @@ class Program
         chordsCommand.Add(chordsMaxNotesOption);
         chordsCommand.Add(chordsMaxResultsOption);
         chordsCommand.Add(chordsNoMinorSecondsOption);
+        chordsCommand.Add(chordsAllowMaj7Option);
         chordsCommand.SetAction(parse =>
         {
             var k = parse.GetValue(ktetOption);
             var minNotes = parse.GetValue(chordsMinNotesOption);
             var maxNotes = parse.GetValue(chordsMaxNotesOption);
             var maxResults = parse.GetValue(chordsMaxResultsOption);
-            var noMinorSeconds = parse.GetValue(chordsNoMinorSecondsOption);
+            var allowMaj7 = parse.GetValue(chordsAllowMaj7Option);
+            var noMinorSeconds = parse.GetValue(chordsNoMinorSecondsOption) || allowMaj7;
 
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
             if (k > 48) { AnsiConsole.MarkupLine("[red]--ktet must be ≤ 48 (enumeration grows combinatorially).[/]"); return 1; }
@@ -868,11 +876,11 @@ class Program
             if (maxNotes < minNotes) { AnsiConsole.MarkupLine("[red]--max-notes must be ≥ --min-notes.[/]"); return 1; }
             if (minNotes > k) { AnsiConsole.MarkupLine($"[red]--min-notes {minNotes} exceeds --ktet {k}.[/]"); return 1; }
             if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
-            if (noMinorSeconds && k != 12) { AnsiConsole.MarkupLine("[red]--no-minor-seconds only applies to --ktet 12 (minor second / major seventh are a 12-tet concept).[/]"); return 1; }
+            if (noMinorSeconds && k != 12) { AnsiConsole.MarkupLine("[red]--no-minor-seconds / --allow-maj7 only apply to --ktet 12 (minor second / major seventh are a 12-tet concept).[/]"); return 1; }
 
             var effectiveMaxNotes = Math.Min(maxNotes, k);
-            var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults, noMinorSeconds);
-            ChordsTableRenderer.Render(chords, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds);
+            var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults, noMinorSeconds, allowMaj7);
+            ChordsTableRenderer.Render(chords, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7);
             return 0;
         });
 

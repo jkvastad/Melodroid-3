@@ -160,7 +160,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 
 ```bash
 melodroid table chords \
-  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds]
+  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7]
 ```
 
 Enumerates the unique chords of a `--ktet` keyboard, deduplicated under **transposition**:
@@ -172,10 +172,13 @@ order" of set theory, e.g. the major triad as `0 4 7`), its interval gaps around
 (summing to `k`), and its orbit size (the number of distinct transpositions; symmetric chords
 like the augmented triad `0 4 8` have small orbits). `--min-notes` / `--max-notes` filter by
 note count; `--max-results` caps the rows. `--no-minor-seconds` (12-tet only) drops every chord
-with a minor second (two notes a semitone apart), with one exception: the semitone class is one
-necklace — the minor second and major seventh are the same dyad, canonically `0 1` — and it is
-kept, re-voiced to `0 11` so it reads as a major seventh rather than a root plus minor second.
-This command is self-contained — it does not touch good fractions or LCM families.
+with a minor second (any two notes a semitone apart) — including the bare semitone dyad and the
+whole major-seventh class, since on the chromatic circle a chord's seventh and root are adjacent.
+`--allow-maj7` (12-tet only, implies `--no-minor-seconds`) relaxes this for chords with exactly
+one semitone: the semitone is re-voiced to the octave boundary so the top note sits a semitone
+below the octave and reads as a major seventh — the dyad `0 1` → `0 11`, and the major-seventh
+chord `0 1 5 8` → `0 4 7 11`; chords with two or more semitones are still dropped. This command is
+self-contained — it does not touch good fractions or LCM families.
 
 ## Graphs
 

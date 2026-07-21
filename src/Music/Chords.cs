@@ -16,13 +16,18 @@ public static class Chords
     /// sorted by size then keys lexicographically; <paramref name="maxResults"/> caps the rows
     /// returned (sets Truncated).
     /// <para>
-    /// When <paramref name="excludeMinorSeconds"/> is set, chords containing a minor second (two
-    /// notes a semitone apart) are dropped, except the bare major-seventh dyad, which is re-voiced
-    /// to {0, ktet-1} (0 11 in 12-tet) so it reads as a major seventh rather than a minor second.
+    /// When <paramref name="excludeMinorSeconds"/> is set, every chord containing a minor second
+    /// (any two notes a semitone apart) is dropped. When <paramref name="allowMajorSevenths"/> is
+    /// also set, a chord with exactly one semitone is instead kept and re-voiced so the semitone
+    /// sits at the octave boundary — the top note lands a semitone below the octave and reads as a
+    /// major seventh (the bare dyad 0 1 → 0 11, and the major-seventh chord's compact form
+    /// 0 1 5 8 → 0 4 7 11). Chords with two or more semitones keep an internal minor second under
+    /// every voicing and are still dropped.
     /// </para>
     /// </summary>
     public static (IReadOnlyList<Chord> Chords, bool Truncated) Enumerate(
-        int ktet, int minNotes, int maxNotes, int maxResults, bool excludeMinorSeconds = false)
+        int ktet, int minNotes, int maxNotes, int maxResults,
+        bool excludeMinorSeconds = false, bool allowMajorSevenths = false)
     {
         var chords = new List<Chord>();
         if (ktet < 1 || minNotes < 1 || maxNotes < minNotes || maxResults < 1)
@@ -42,7 +47,8 @@ public static class Chords
                 if (!IsCanonical(keys, ktet)) continue;
 
                 var intervals = Intervals(keys, ktet);
-                if (excludeMinorSeconds && !KeepUnderNoMinorSeconds(ref keys, ref intervals, ktet))
+                if (excludeMinorSeconds &&
+                    !KeepUnderNoMinorSeconds(ref keys, ref intervals, ktet, allowMajorSevenths))
                     continue;
 
                 if (chords.Count >= maxResults) { truncated = true; break; }
@@ -50,27 +56,44 @@ public static class Chords
             }
         }
 
-        // Re-voicing the major-seventh dyad (below) moves it out of generation order; restore the
-        // documented sort (size, then keys lexicographically) when the minor-second filter is on.
-        if (excludeMinorSeconds) chords.Sort(CompareBySizeThenKeys);
+        // Re-voicing single-semitone chords (below) moves them out of generation order; restore the
+        // documented sort (size, then keys lexicographically) when re-voicing can occur.
+        if (allowMajorSevenths) chords.Sort(CompareBySizeThenKeys);
 
         return (chords, truncated);
     }
 
-    // Applies the --no-minor-seconds rule to one canonical chord. Returns false to drop chords
-    // containing a minor second (two notes a semitone apart), with one exception: the bare
-    // major-seventh dyad {0, 1}, which is re-voiced in place to {0, ktet-1} so it reads as a
-    // major seventh (0 11 in 12-tet) rather than a root plus a minor second. All other kept
-    // chords are left untouched.
-    private static bool KeepUnderNoMinorSeconds(ref int[] keys, ref int[] intervals, int ktet)
+    // Applies the minor-second rule to one canonical chord, returning false to drop it. A chord with
+    // no semitone is always kept. With allowMajorSevenths off, any semitone drops the chord. With it
+    // on, a chord with exactly one semitone is kept and re-voiced in place so the semitone becomes
+    // the wrap gap — the upper note of the semitone pair becomes the new root, leaving the top note a
+    // semitone below the octave (a major seventh); this turns 0 1 → 0 11 and 0 1 5 8 → 0 4 7 11.
+    // Two or more semitones keep an internal minor second under every voicing and are dropped.
+    private static bool KeepUnderNoMinorSeconds(
+        ref int[] keys, ref int[] intervals, int ktet, bool allowMajorSevenths)
     {
-        if (keys.Length == 2 && keys[1] == 1)
-        {
-            keys = new[] { 0, ktet - 1 };
-            intervals = Intervals(keys, ktet);
-            return true;
-        }
-        return !HasMinorSecond(intervals);
+        var semitoneCount = 0;
+        var semitoneIndex = -1;
+        for (var i = 0; i < intervals.Length; i++)
+            if (intervals[i] == 1) { semitoneCount++; semitoneIndex = i; }
+
+        if (semitoneCount == 0) return true;
+        if (!allowMajorSevenths || semitoneCount >= 2) return false;
+
+        // Exactly one semitone: re-voice so its upper note is the root, placing it at the wrap.
+        var root = keys[(semitoneIndex + 1) % keys.Length];
+        keys = RevoiceToRoot(keys, root, ktet);
+        intervals = Intervals(keys, ktet);
+        return true;
+    }
+
+    // Transposes the chord so that pitch class 'root' becomes 0, returning sorted keys in [0, ktet).
+    private static int[] RevoiceToRoot(int[] keys, int root, int ktet)
+    {
+        var revoiced = new int[keys.Length];
+        for (var i = 0; i < keys.Length; i++) revoiced[i] = ((keys[i] - root) % ktet + ktet) % ktet;
+        Array.Sort(revoiced);
+        return revoiced;
     }
 
     private static int CompareBySizeThenKeys(Chord a, Chord b)
@@ -149,14 +172,6 @@ public static class Chords
             gaps[i] = next - sortedKeys[i];
         }
         return gaps;
-    }
-
-    // True iff two of the chord's notes are a semitone apart, i.e. any gap around the octave is 1.
-    private static bool HasMinorSecond(int[] intervals)
-    {
-        foreach (var gap in intervals)
-            if (gap == 1) return true;
-        return false;
     }
 
     // All strictly-increasing size-k combinations of the values 0..n-1.
