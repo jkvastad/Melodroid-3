@@ -160,7 +160,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 
 ```bash
 melodroid table chords \
-  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] \
+  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -178,12 +178,17 @@ whole major-seventh class, since on the chromatic circle a chord's seventh and r
 `--allow-maj7` (12-tet only, implies `--no-minor-seconds`) relaxes this for chords with exactly
 one semitone: the semitone is re-voiced to the octave boundary so the top note sits a semitone
 below the octave and reads as a major seventh — the dyad `0 1` → `0 11`, and the major-seventh
-chord `0 1 5 8` → `0 4 7 11`; chords with two or more semitones are still dropped. A final
+chord `0 1 5 8` → `0 4 7 11`; chords with two or more semitones are still dropped.
+`--no-tritones` (12-tet only, combinable with `--no-minor-seconds`) drops every chord with any
+two notes six semitones apart, including tritone-stacked chords like the diminished seventh
+`0 3 6 9` whose tritones are not adjacent gaps; unlike the semitone filter it has no re-voicing
+relaxation, since a tritone survives every voicing. A final
 **Placements** column lists the LCM-family placements whose keys contain the chord — the inline
 form of feeding the chord's key set to [`key-supersets`](#key-supersets). They are shown tightest
 (fewest extra keys) first, each as `lcm@at` (the family LCM at the anchor key where its `1/1`
-fundamental sits), or `lcm@at+E` when the placement carries `E` keys beyond the chord; the list is
-capped per row, overflowing to ` …(+M)`, and is blank when no family placement contains the chord.
+fundamental sits); any keys a placement carries beyond the chord are left implicit — inspect them
+with `key-supersets`. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
+family placement contains the chord.
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
 generated for this column.
 

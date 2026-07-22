@@ -24,10 +24,18 @@ public static class Chords
     /// 0 1 5 8 → 0 4 7 11). Chords with two or more semitones keep an internal minor second under
     /// every voicing and are still dropped.
     /// </para>
+    /// <para>
+    /// When <paramref name="excludeTritones"/> is set, every chord with two notes a tritone (six
+    /// semitones) apart is dropped, including tritone-stacked chords like the diminished seventh
+    /// 0 3 6 9 whose tritones are not adjacent gaps. The tritone is a transposition-invariant
+    /// interval class, so there is no re-voicing relaxation. 12-tet only; the caller restricts it to
+    /// ktet 12.
+    /// </para>
     /// </summary>
     public static (IReadOnlyList<Chord> Chords, bool Truncated) Enumerate(
         int ktet, int minNotes, int maxNotes, int maxResults,
-        bool excludeMinorSeconds = false, bool allowMajorSevenths = false)
+        bool excludeMinorSeconds = false, bool allowMajorSevenths = false,
+        bool excludeTritones = false)
     {
         var chords = new List<Chord>();
         if (ktet < 1 || minNotes < 1 || maxNotes < minNotes || maxResults < 1)
@@ -50,6 +58,8 @@ public static class Chords
                 if (excludeMinorSeconds &&
                     !KeepUnderNoMinorSeconds(ref keys, ref intervals, ktet, allowMajorSevenths))
                     continue;
+
+                if (excludeTritones && HasTritone(keys)) continue;
 
                 if (chords.Count >= maxResults) { truncated = true; break; }
                 chords.Add(new Chord(keys, intervals, OrbitSize(keys, ktet)));
@@ -85,6 +95,18 @@ public static class Chords
         keys = RevoiceToRoot(keys, root, ktet);
         intervals = Intervals(keys, ktet);
         return true;
+    }
+
+    // True if any two notes are a tritone (six semitones) apart. Unlike a minor second, a tritone's
+    // notes need not be adjacent (e.g. 0 3 6 9), so all pairs are checked, not the adjacent-gap
+    // array. On canonical sorted keys (starting at 0) the forward difference suffices, since in
+    // 12-tet a tritone is its own inversion (6 = 12 - 6). 12-tet only; the caller restricts to ktet 12.
+    private static bool HasTritone(int[] keys)
+    {
+        for (var i = 0; i < keys.Length; i++)
+            for (var j = i + 1; j < keys.Length; j++)
+                if (keys[j] - keys[i] == 6) return true;
+        return false;
     }
 
     // Transposes the chord so that pitch class 'root' becomes 0, returning sorted keys in [0, ktet).

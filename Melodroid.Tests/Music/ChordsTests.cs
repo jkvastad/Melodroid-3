@@ -276,6 +276,69 @@ public class ChordsTests
         AssertSortedBySizeThenKeys(chords);
     }
 
+    [Fact]
+    public void Enumerate_no_tritones_drops_the_tritone_dyad()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeTritones: true);
+
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 6 }));
+    }
+
+    [Fact]
+    public void Enumerate_no_tritones_drops_chords_whose_tritone_is_not_an_adjacent_gap()
+    {
+        // The tritones in these chords sit between non-adjacent notes (0 3 6 9: 0–6 and 3–9;
+        // 0 4 6 10: 0–6 and 4–10), so an adjacent-gap filter would miss them. The all-pairs filter
+        // drops them.
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeTritones: true);
+
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 3, 6, 9 }));  // diminished 7th
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 4, 6, 10 }));
+    }
+
+    [Fact]
+    public void Enumerate_no_tritones_keeps_tritone_free_chords()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeTritones: true);
+
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 7 })); // major triad
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 8 })); // augmented triad
+    }
+
+    [Fact]
+    public void Enumerate_no_tritones_leaves_no_tritone()
+    {
+        var (chords, _) = Chords.Enumerate(Ktet, 2, 7, maxResults: 100000, excludeTritones: true);
+
+        foreach (var chord in chords)
+        {
+            var keys = chord.Keys;
+            // Independent oracle: recompute the circular interval of every pair straight from Keys.
+            var hasTritone = false;
+            for (var i = 0; i < keys.Count && !hasTritone; i++)
+                for (var j = i + 1; j < keys.Count; j++)
+                {
+                    var d = keys[j] - keys[i];
+                    if (Math.Min(d, Ktet - d) == 6) { hasTritone = true; break; }
+                }
+
+            hasTritone.Should().BeFalse(
+                "chord {0} keeps a tritone", string.Join(" ", keys));
+        }
+    }
+
+    [Fact]
+    public void Enumerate_no_tritones_combines_with_no_minor_seconds()
+    {
+        // 0 1 6 has both a semitone (0–1) and a tritone (0–6); with both filters it is dropped,
+        // while a chord free of both survives.
+        var (chords, _) = Chords.Enumerate(
+            Ktet, 2, 7, maxResults: 100000, excludeMinorSeconds: true, excludeTritones: true);
+
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 1, 6 }));
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 7 }));
+    }
+
     private static void AssertSortedBySizeThenKeys(IReadOnlyList<Chord> chords)
     {
         for (var i = 1; i < chords.Count; i++)

@@ -299,7 +299,8 @@ pitch (long wavelength) red, high pitch blue/violet.
 Anecdotally the random pitches and chromatic scale sound quite similar, a quality perhaps best described as chaotic, psychadelic or confusing.
 This quality is shared to some degree with the symmetric chords and harmonic minor. 
 
-Lcm families up to and including 12 instead sound pleasant/soft/round/free of tension, a quality shared with the major pentatonic scale. Lcms 15 and above produce more tension, or perhaps randomness. 
+Lcm families up to and including 12 instead sound pleasant/soft/round/free of tension, a quality shared with the major pentatonic scale (subset of 24@0 among others). 
+Lcms 15 and above produce more tension, or perhaps randomness. 
 This is especially true for lcm 15 and 20 with sound reminiscent of the random/chromatic pitches.
 
 Notably the default tones used here are sines and do not sound wrong in and of themselves (no overtones to produce roughness).
@@ -311,19 +312,30 @@ A common context in music is chords - a set of notes played statically along wit
 
 ### Chords as accompaniment
 Let's now look at chords. In their most general form chords are two or more simultaneous notes.
-In the 12 tet system there are $2^12 = 4096$ possible key combinations per octave, including the empty set.
+In the 12 tet system there are $2^{12} = 4096$ possible key combinations per octave, including the empty set.
 In particular we are interested in unique chords under octave renormalization e.g. 0 4 7, 0 3 8 and 0 5 9 are the same.
-Counting a chord and all its transpositions once collapses the 4096 combinations to just 352 unique chords (the binary *necklaces* of length 12), or 280 across the 2–7 note range we care about.
+
+Counting a chord and all its transpositions once collapses the 4096 combinations to just 352 unique chords (the [binary necklaces](https://en.wikipedia.org/wiki/Necklace_(combinatorics)) of length 12), or 280 across the 2–7 note range we care about.
 These can be enumerated with the `chords` subcommand:
 
 ```bash
 melodroid table chords --min-notes 2 --max-notes 7
 ```
 
-There is also an interesting observation regarding the minor second versus major seventh (interval 0 1 vs. 0 11): 
-a minor second sounds quite harsh, but a major seventh does not - particularly when it is part of an lcm 8 voicing. 
+Additionally most chords do not sound particularly good with minor second or tritone. 
+Removing minor seconds produces 29 chords.
+Removing tritones produces 61 chords.
+Removing both produces 16 chords.
 
+There are however some chords which do have a minor second (m2) of sorts - a major seventh (M7) in e.g. 0 4 7 11 14 (lcm 8@0) sounds quite nice, even if the interval 11 does not.
+Interestingly, playing first 0 4 7 11 followed by 0 11, the 0 11 keeps the rounder/softer quality of the preceding chord. 
+Follow this up with 1 12 to produce a harsh m2/M7 which then becomes soft by adding in the related 8@1 i.e. 1 5 8 12. 
+This process can be repeated with e.g. 1 13 and so on.
 
+TODO: audio example of the resolving process
+
+Such an effect hints at that it matters not just what we hear, but what we recently heard. 
+How recent is recent? Perhaps it is simply what we expect to hear, heavily influenced by what we just heard, but also by other expectations such as familiar melodies and songs.
 
 In the context of accompaniment for a given chord we must then choose a set of notes from which to draw melody.
 

@@ -18,6 +18,7 @@ public static class ChordsTableRenderer
         bool truncated,
         bool noMinorSeconds = false,
         bool allowMajorSevenths = false,
+        bool noTritones = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -45,9 +46,10 @@ public static class ChordsTableRenderer
             .Select(g => g.Count().ToString(CultureInfo.InvariantCulture));
         var breakdown = string.Join(" · ", perSize);
         var sizeLabel = minNotes == maxNotes ? $"size {minNotes}" : $"sizes {minNotes}–{maxNotes}";
-        var filterClause = noMinorSeconds
-            ? " · no minor seconds" + (allowMajorSevenths ? " (maj7 allowed)" : "")
-            : "";
+        var filters = new List<string>();
+        if (noMinorSeconds) filters.Add("no minor seconds" + (allowMajorSevenths ? " (maj7 allowed)" : ""));
+        if (noTritones) filters.Add("no tritones");
+        var filterClause = filters.Count > 0 ? " · " + string.Join(" · ", filters) : "";
         var truncClause = truncated ? " [red](truncated by --max-results)[/]" : "";
         table.Caption(
             $"chords: {ktet}-tet · {sizeLabel}{filterClause} · " +
@@ -59,17 +61,15 @@ public static class ChordsTableRenderer
     }
 
     // The containing LCM-family placements for one chord, tightest first (FindSupersets already
-    // sorts by extra-keys count, then LCM, then anchor). Each token is "lcm@at" for an exact match
-    // (the placement's keys equal the chord) or "lcm@at+E" when the placement carries E extra keys.
-    // Empty for a chord that no family placement contains; overflow past the cap collapses to " …(+M)".
+    // sorts by extra-keys count, then LCM, then anchor). Each token is "lcm@at" — the family LCM at
+    // the anchor key where its 1/1 fundamental sits; any keys the placement carries beyond the chord
+    // are left implicit (inspect them via `key-supersets`). Empty for a chord that no family
+    // placement contains; overflow past the cap collapses to " …(+M)".
     private static string FormatPlacements(IReadOnlyList<KeySupersetRow> rows)
     {
         if (rows.Count == 0) return "";
 
-        var tokens = rows.Take(MaxPlacementsShown).Select(r =>
-            r.ExtraKeysCount == 0
-                ? $"{r.Placement.Lcm}@{r.Placement.At}"
-                : $"{r.Placement.Lcm}@{r.Placement.At}+{r.ExtraKeysCount}");
+        var tokens = rows.Take(MaxPlacementsShown).Select(r => $"{r.Placement.Lcm}@{r.Placement.At}");
         var text = string.Join(" ", tokens);
         if (rows.Count > MaxPlacementsShown) text += $" …(+{rows.Count - MaxPlacementsShown})";
         return text;
