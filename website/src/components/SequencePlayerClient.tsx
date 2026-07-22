@@ -1,6 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as Tone from 'tone';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import {streamTempos} from '@site/src/lib/rhythm';
+import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
 
 // A scheduled melody/chord note, addressed in k-tet keys and grid beats.
 export type SequenceNote = {
@@ -27,6 +29,7 @@ export type SequencePlayerProps = {
   oscillator?: 'sine' | 'triangle' | 'square' | 'sawtooth'; // default 'sine'
   gain?: number; // linear amplitude multiplier; default 0.6 (chord + melody stack)
   loopBeats?: number; // if set, repeat `melody`/`chords` every loopBeats grid-beats until Stop
+  instrumentToggle?: boolean; // show a Sine/Piano selector (adds the sampled piano); default false
   tempoSlider?: {
     streams: number[]; // onset counts per voice, e.g. [2, 3] — labels each stream's BPM
     minBeatSec?: number; // default 0.08
@@ -50,12 +53,22 @@ export default function SequencePlayerClient({
   oscillator = 'sine',
   gain = 0.6,
   loopBeats,
+  instrumentToggle = false,
   tempoSlider,
 }: SequencePlayerProps) {
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [playing, setPlaying] = useState(false);
+
+  // Optional sampled-piano voice (built lazily on first Play with Piano selected). Shares the
+  // exact triggerAttackRelease(freqOrFreqs, dur, at, vel) surface as the sine PolySynth, so the
+  // scheduler below is instrument-agnostic. Kept on its own gain node, disposed alongside it.
+  const pianoRef = useRef<Tone.Sampler | null>(null);
+  const pianoGainRef = useRef<Tone.Gain | null>(null);
+  const [instrument, setInstrument] = useState<'sine' | 'piano'>('sine');
+  const [pianoLoading, setPianoLoading] = useState(false);
+  const sampleBase = useBaseUrl(PIANO_SAMPLE_PATH);
 
   // Live tempo: starts at the beatSec prop and tracks the slider. A ref mirrors it so the
   // scheduler always reads the current value without restarting the play closure.
@@ -81,6 +94,25 @@ export default function SequencePlayerClient({
     return synthRef.current;
   };
 
+  // Lazily build the sampled-piano voice over the C-per-octave Salamander samples; Tone.Sampler
+  // pitch-shifts them across the keyboard. Samples fetch on first build — the caller awaits load.
+  const getPiano = () => {
+    if (!pianoRef.current) {
+      pianoGainRef.current = new Tone.Gain(0.5).toDestination();
+      pianoRef.current = new Tone.Sampler({
+        urls: PIANO_URLS,
+        baseUrl: sampleBase,
+        release: 0.8,
+      }).connect(pianoGainRef.current);
+    }
+    return pianoRef.current;
+  };
+
+  // The active voice for this Play. Both types expose the same triggerAttackRelease/dispose
+  // surface, so scheduleCycle and the look-ahead pump treat them identically.
+  const getVoice = (): Tone.PolySynth | Tone.Sampler =>
+    instrument === 'piano' ? getPiano() : getSynth();
+
   const stop = () => {
     if (endTimerRef.current) {
       clearTimeout(endTimerRef.current);
@@ -92,13 +124,23 @@ export default function SequencePlayerClient({
     }
     synthRef.current?.dispose(); // cancels future scheduled notes + cuts sounding voices
     synthRef.current = null; // a disposed synth can't retrigger; rebuild next play
+    // Same for the piano: dispose to cancel the up-front-scheduled notes (releaseAll would
+    // only cut sounding voices). Samples are HTTP-cached, so re-arming next Play is quick.
+    pianoRef.current?.dispose();
+    pianoRef.current = null;
+    pianoGainRef.current?.dispose();
+    pianoGainRef.current = null;
     setPlaying(false);
   };
 
   useEffect(() => () => stop(), []); // dispose on unmount
 
   // Schedule one pass of the sequence starting at audio time `at`, using the current tempo.
-  const scheduleCycle = (synth: Tone.PolySynth, at: number, sec: number) => {
+  const scheduleCycle = (
+    synth: Tone.PolySynth | Tone.Sampler,
+    at: number,
+    sec: number,
+  ) => {
     for (const n of melody) {
       const dur = Math.max((n.beats ?? noteBeats) * sec, 0.01);
       synth.triggerAttackRelease(
@@ -121,9 +163,15 @@ export default function SequencePlayerClient({
 
   const play = async () => {
     await Tone.start(); // unlock audio on user gesture
-    const synth = getSynth();
-    const t0 = Tone.now() + 0.05; // small lead-in so the first note isn't clipped
     setPlaying(true);
+    const voice = getVoice();
+    if (instrument === 'piano') {
+      setPianoLoading(true);
+      await Tone.loaded(); // wait for sample buffers so the first chord isn't silent
+      setPianoLoading(false);
+      if (!pianoRef.current) return; // Stop pressed while the samples loaded — bail out
+    }
+    const t0 = Tone.now() + 0.05; // small lead-in so the first note isn't clipped
 
     if (loopBeats) {
       // Continuous loop: schedule onset-by-onset a little ahead of the clock so onsets stay
@@ -139,7 +187,7 @@ export default function SequencePlayerClient({
         events.push({
           beat: n.beat,
           fire: (at, sec) =>
-            synth.triggerAttackRelease(
+            voice.triggerAttackRelease(
               keyToFreq(n.key),
               Math.max((n.beats ?? noteBeats) * sec, 0.01),
               at,
@@ -151,7 +199,7 @@ export default function SequencePlayerClient({
         events.push({
           beat: c.beat,
           fire: (at, sec) =>
-            synth.triggerAttackRelease(
+            voice.triggerAttackRelease(
               c.keys.map(keyToFreq),
               Math.max(c.beats * sec, 0.01),
               at,
@@ -187,7 +235,7 @@ export default function SequencePlayerClient({
     }
 
     const sec = tempoRef.current;
-    scheduleCycle(synth, t0, sec);
+    scheduleCycle(voice, t0, sec);
     const endBeat = Math.max(
       0,
       ...melody.map((n) => n.beat + (n.beats ?? noteBeats)),
@@ -208,7 +256,36 @@ export default function SequencePlayerClient({
     </button>
   );
 
-  if (!tempoSlider) return button;
+  // Optional Sine/Piano selector, shown beside the button only when instrumentToggle is set —
+  // so existing embeds (no toggle) render exactly the bare button as before. The choice is read
+  // at Play; switching mid-playback takes effect on the next Play.
+  const instrumentSelect = instrumentToggle ? (
+    <label style={{marginLeft: '0.6rem', fontSize: '0.9em'}}>
+      instrument{' '}
+      <select
+        value={instrument}
+        onChange={(e) => setInstrument(e.target.value as 'sine' | 'piano')}
+        aria-label="instrument timbre">
+        <option value="sine">Sine</option>
+        <option value="piano">Piano</option>
+      </select>
+      {pianoLoading && (
+        <span style={{marginLeft: '0.4rem', opacity: 0.7, fontStyle: 'italic'}}>
+          loading…
+        </span>
+      )}
+    </label>
+  ) : null;
+
+  if (!tempoSlider) {
+    if (!instrumentToggle) return button; // unchanged: a bare button
+    return (
+      <div style={{margin: '0.4rem 0'}}>
+        <span style={{marginRight: '0.8rem'}}>{button}</span>
+        {instrumentSelect}
+      </div>
+    );
+  }
 
   const {streams, minBeatSec = 0.08, maxBeatSec = 0.32, step = 0.005} = tempoSlider;
   const caption = streamTempos(streams, tempo)
@@ -218,6 +295,7 @@ export default function SequencePlayerClient({
   return (
     <div style={{margin: '0.4rem 0'}}>
       <span style={{marginRight: '0.8rem'}}>{button}</span>
+      {instrumentSelect}
       <input
         type="range"
         min={minBeatSec}

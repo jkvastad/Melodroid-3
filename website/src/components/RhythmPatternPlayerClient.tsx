@@ -13,6 +13,7 @@ import {
 } from '@site/src/lib/rhythmPattern';
 import {findSupersets, type Superset} from '@site/src/lib/placements';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
+import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
 
 export type RhythmPatternPlayerProps = {
   meter?: string; // initial meter, e.g. '4' or '7 2 3'; default '4'
@@ -39,18 +40,6 @@ const MAX_CHORD_LCM = 24;
 // bottom note (its root) can land very low. Skip to the next-best voicing whose bottom note
 // clears this (~C3) rather than let the chord get muddy.
 const MIN_CHORD_HZ = 130;
-
-// Sampled-piano note map for the optional "Piano" instrument. A small C-per-octave subset
-// of the Salamander Grand Piano (see static/samples/piano/NOTICE.txt); Tone.Sampler
-// pitch-shifts these across the keyboard, so a few files cover the whole range. Fetched
-// lazily on the first Play with Piano selected — nothing downloads for the sine default.
-const PIANO_URLS: Record<string, string> = {
-  C2: 'C2.mp3',
-  C3: 'C3.mp3',
-  C4: 'C4.mp3',
-  C5: 'C5.mp3',
-  C6: 'C6.mp3',
-};
 
 // Roll a random chord (2–7 distinct chromatic keys) and find its superset placements, retrying
 // until it is a subset of at least one LCM family placement with LCM ≤ MAX_CHORD_LCM. Returns
@@ -377,7 +366,7 @@ export default function RhythmPatternPlayerClient({
   const pianoMelodyGainRef = useRef<Tone.Gain | null>(null);
   const pianoChordRef = useRef<Tone.Sampler | null>(null);
   const pianoChordGainRef = useRef<Tone.Gain | null>(null);
-  const sampleBase = useBaseUrl('/samples/piano/');
+  const sampleBase = useBaseUrl(PIANO_SAMPLE_PATH);
   const loopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);

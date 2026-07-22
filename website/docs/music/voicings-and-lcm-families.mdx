@@ -6,6 +6,7 @@ description: Melody and harmony of LCM families.
 import Player from '@site/src/components/Player';
 import TimbreMorphPlayer from '@site/src/components/TimbreMorphPlayer';
 import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
+import SequencePlayer from '@site/src/components/SequencePlayer';
 
 # Voicings and LCM Families
 
@@ -330,9 +331,26 @@ Removing both produces 16 chords.
 There are however some chords which do have a minor second (m2) of sorts - a major seventh (M7) in e.g. 0 4 7 11 14 (lcm 8@0) sounds quite nice, even if the interval 11 does not.
 Interestingly, playing first 0 4 7 11 followed by 0 11, the 0 11 keeps the rounder/softer quality of the preceding chord. 
 Follow this up with 1 12 to produce a harsh m2/M7 which then becomes soft by adding in the related 8@1 i.e. 1 5 8 12. 
-This process can be repeated with e.g. 1 13 and so on.
+This process can be repeated with e.g. 2 13 and so on.
 
-TODO: audio example of the resolving process
+The player below sounds each root as a bare major seventh (harsh), fills it into a soft major-seventh chord, then plays the bare seventh again — which now keeps the round quality of the chord before it — before climbing a semitone and repeating. Switch between the theory-faithful sine and a sampled piano:
+
+<SequencePlayer
+  label="▶ harsh / soft major sevenths"
+  beatSec={0.4}
+  instrumentToggle
+  chords={[
+    {keys: [0, 11], beat: 0, beats: 3.6, velocity: 1},
+    {keys: [0, 4, 7, 11], beat: 4, beats: 3.6, velocity: 0.85},
+    {keys: [0, 11], beat: 8, beats: 3.6, velocity: 1},
+    {keys: [1, 12], beat: 12, beats: 3.6, velocity: 1},
+    {keys: [1, 5, 8, 12], beat: 16, beats: 3.6, velocity: 0.85},
+    {keys: [1, 12], beat: 20, beats: 3.6, velocity: 1},
+    {keys: [2, 13], beat: 24, beats: 3.6, velocity: 1},
+    {keys: [2, 6, 9, 13], beat: 28, beats: 3.6, velocity: 0.85},
+    {keys: [2, 13], beat: 32, beats: 3.6, velocity: 1},
+  ]}
+/>
 
 Such an effect hints at that it matters not just what we hear, but what we recently heard. 
 How recent is recent? Perhaps it is simply what we expect to hear, heavily influenced by what we just heard, but also by other expectations such as familiar melodies and songs.
