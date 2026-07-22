@@ -861,6 +861,9 @@ class Program
         chordsCommand.Add(chordsMaxResultsOption);
         chordsCommand.Add(chordsNoMinorSecondsOption);
         chordsCommand.Add(chordsAllowMaj7Option);
+        chordsCommand.Add(maxSizeOption);
+        chordsCommand.Add(maxPrimeOption);
+        chordsCommand.Add(maxLcmOption);
         chordsCommand.SetAction(parse =>
         {
             var k = parse.GetValue(ktetOption);
@@ -869,6 +872,9 @@ class Program
             var maxResults = parse.GetValue(chordsMaxResultsOption);
             var allowMaj7 = parse.GetValue(chordsAllowMaj7Option);
             var noMinorSeconds = parse.GetValue(chordsNoMinorSecondsOption) || allowMaj7;
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
 
             if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
             if (k > 48) { AnsiConsole.MarkupLine("[red]--ktet must be ≤ 48 (enumeration grows combinatorially).[/]"); return 1; }
@@ -877,10 +883,16 @@ class Program
             if (minNotes > k) { AnsiConsole.MarkupLine($"[red]--min-notes {minNotes} exceeds --ktet {k}.[/]"); return 1; }
             if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
             if (noMinorSeconds && k != 12) { AnsiConsole.MarkupLine("[red]--no-minor-seconds / --allow-maj7 only apply to --ktet 12 (minor second / major seventh are a 12-tet concept).[/]"); return 1; }
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
 
             var effectiveMaxNotes = Math.Min(maxNotes, k);
             var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults, noMinorSeconds, allowMaj7);
-            ChordsTableRenderer.Render(chords, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7);
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var placements = chords.Select(c => Placements.FindSupersets(c.Keys, families, k)).ToList();
+            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7);
             return 0;
         });
 
