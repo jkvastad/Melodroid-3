@@ -856,6 +856,12 @@ class Program
             Description = "Drop every chord containing a tritone (any two notes six semitones apart), "
                 + "including tritone-stacked chords like the diminished seventh 0 3 6 9. 12-tet only.",
         };
+        var chordsAllowDimOption = new Option<bool>("--allow-dim")
+        {
+            Description = "Keep chords whose every tritone belongs to a diminished triad (p, p+3, p+6), "
+                + "e.g. 0 3 6, 0 3 6 9, 0 3 6 8 (the dominant seventh); still drops chords with an "
+                + "unjustified tritone. Implies --no-tritones. 12-tet only.",
+        };
 
         var chordsCommand = new Command(
             "chords",
@@ -867,6 +873,7 @@ class Program
         chordsCommand.Add(chordsNoMinorSecondsOption);
         chordsCommand.Add(chordsAllowMaj7Option);
         chordsCommand.Add(chordsNoTritonesOption);
+        chordsCommand.Add(chordsAllowDimOption);
         chordsCommand.Add(maxSizeOption);
         chordsCommand.Add(maxPrimeOption);
         chordsCommand.Add(maxLcmOption);
@@ -878,7 +885,8 @@ class Program
             var maxResults = parse.GetValue(chordsMaxResultsOption);
             var allowMaj7 = parse.GetValue(chordsAllowMaj7Option);
             var noMinorSeconds = parse.GetValue(chordsNoMinorSecondsOption) || allowMaj7;
-            var noTritones = parse.GetValue(chordsNoTritonesOption);
+            var allowDim = parse.GetValue(chordsAllowDimOption);
+            var noTritones = parse.GetValue(chordsNoTritonesOption) || allowDim;
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -890,17 +898,17 @@ class Program
             if (minNotes > k) { AnsiConsole.MarkupLine($"[red]--min-notes {minNotes} exceeds --ktet {k}.[/]"); return 1; }
             if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
             if (noMinorSeconds && k != 12) { AnsiConsole.MarkupLine("[red]--no-minor-seconds / --allow-maj7 only apply to --ktet 12 (minor second / major seventh are a 12-tet concept).[/]"); return 1; }
-            if (noTritones && k != 12) { AnsiConsole.MarkupLine("[red]--no-tritones only applies to --ktet 12 (the tritone is a 12-tet interval).[/]"); return 1; }
+            if (noTritones && k != 12) { AnsiConsole.MarkupLine("[red]--no-tritones / --allow-dim only apply to --ktet 12 (the tritone is a 12-tet interval).[/]"); return 1; }
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
 
             var effectiveMaxNotes = Math.Min(maxNotes, k);
-            var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults, noMinorSeconds, allowMaj7, noTritones);
+            var (chords, truncated) = Chords.Enumerate(k, minNotes, effectiveMaxNotes, maxResults, noMinorSeconds, allowMaj7, noTritones, allowDim);
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var placements = chords.Select(c => Placements.FindSupersets(c.Keys, families, k)).ToList();
-            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones);
+            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones, allowDim);
             return 0;
         });
 

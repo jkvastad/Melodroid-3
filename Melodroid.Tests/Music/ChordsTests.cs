@@ -339,6 +339,57 @@ public class ChordsTests
         chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 4, 7 }));
     }
 
+    [Fact]
+    public void Enumerate_allow_dim_keeps_diminished_chords()
+    {
+        // Each tritone here belongs to a diminished triad in the chord: the diminished triad 0 3 6,
+        // the diminished seventh 0 3 6 9, and the dominant seventh (canonical necklace form 0 3 6 8,
+        // i.e. the compact rotation of 0 4 7 10). All survive the tritone filter under allowDim.
+        var (chords, _) = Chords.Enumerate(
+            Ktet, 2, 7, maxResults: 100000, excludeTritones: true, allowDim: true);
+
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 3, 6 }));     // diminished triad
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 3, 6, 9 }));  // diminished seventh
+        chords.Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 3, 6, 8 }));  // dominant seventh
+    }
+
+    [Fact]
+    public void Enumerate_allow_dim_still_drops_unjustified_tritones()
+    {
+        // 0 6 is a bare tritone with no completing third; 0 2 6 8 (canonical) has tritones (0–6,
+        // 2–8) but no diminished triad to justify them. Both are dropped even under allowDim.
+        var (chords, _) = Chords.Enumerate(
+            Ktet, 2, 7, maxResults: 100000, excludeTritones: true, allowDim: true);
+
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 6 }));
+        chords.Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 2, 6, 8 }));
+    }
+
+    [Fact]
+    public void Enumerate_allow_dim_leaves_every_tritone_in_a_diminished_triad()
+    {
+        var (chords, _) = Chords.Enumerate(
+            Ktet, 2, 7, maxResults: 100000, excludeTritones: true, allowDim: true);
+
+        foreach (var chord in chords)
+        {
+            var keys = chord.Keys;
+            var set = new HashSet<int>(keys);
+            // Independent oracle: every tritone pair (circular distance 6) must have a note that
+            // completes a diminished triad on it — a+3 or a+9 (mod ktet) present in the chord.
+            for (var i = 0; i < keys.Count; i++)
+                for (var j = i + 1; j < keys.Count; j++)
+                {
+                    var d = keys[j] - keys[i];
+                    if (Math.Min(d, Ktet - d) != 6) continue;
+                    var a = keys[i];
+                    var justified = set.Contains((a + 3) % Ktet) || set.Contains((a + 9) % Ktet);
+                    justified.Should().BeTrue(
+                        "chord {0} keeps a tritone outside any diminished triad", string.Join(" ", keys));
+                }
+        }
+    }
+
     private static void AssertSortedBySizeThenKeys(IReadOnlyList<Chord> chords)
     {
         for (var i = 1; i < chords.Count; i++)

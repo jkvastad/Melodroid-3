@@ -19,6 +19,7 @@ public static class ChordsTableRenderer
         bool noMinorSeconds = false,
         bool allowMajorSevenths = false,
         bool noTritones = false,
+        bool allowDim = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -48,7 +49,7 @@ public static class ChordsTableRenderer
         var sizeLabel = minNotes == maxNotes ? $"size {minNotes}" : $"sizes {minNotes}–{maxNotes}";
         var filters = new List<string>();
         if (noMinorSeconds) filters.Add("no minor seconds" + (allowMajorSevenths ? " (maj7 allowed)" : ""));
-        if (noTritones) filters.Add("no tritones");
+        if (noTritones) filters.Add("no tritones" + (allowDim ? " (dim allowed)" : ""));
         var filterClause = filters.Count > 0 ? " · " + string.Join(" · ", filters) : "";
         var truncClause = truncated ? " [red](truncated by --max-results)[/]" : "";
         table.Caption(

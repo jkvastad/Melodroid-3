@@ -27,15 +27,19 @@ public static class Chords
     /// <para>
     /// When <paramref name="excludeTritones"/> is set, every chord with two notes a tritone (six
     /// semitones) apart is dropped, including tritone-stacked chords like the diminished seventh
-    /// 0 3 6 9 whose tritones are not adjacent gaps. The tritone is a transposition-invariant
-    /// interval class, so there is no re-voicing relaxation. 12-tet only; the caller restricts it to
-    /// ktet 12.
+    /// 0 3 6 9 whose tritones are not adjacent gaps. When <paramref name="allowDim"/> is also set,
+    /// a chord is instead kept when every one of its tritones belongs to a diminished triad
+    /// (p, p+3, p+6) present in the chord — e.g. the diminished triad 0 3 6, the diminished seventh
+    /// 0 3 6 9, and the dominant seventh (compact form 0 3 6 8, containing 0 3 6); a chord with any
+    /// unjustified tritone is still dropped. Unlike the semitone filter the tritone
+    /// is a transposition-invariant interval class, so there is no re-voicing. 12-tet only; the
+    /// caller restricts it to ktet 12.
     /// </para>
     /// </summary>
     public static (IReadOnlyList<Chord> Chords, bool Truncated) Enumerate(
         int ktet, int minNotes, int maxNotes, int maxResults,
         bool excludeMinorSeconds = false, bool allowMajorSevenths = false,
-        bool excludeTritones = false)
+        bool excludeTritones = false, bool allowDim = false)
     {
         var chords = new List<Chord>();
         if (ktet < 1 || minNotes < 1 || maxNotes < minNotes || maxResults < 1)
@@ -59,7 +63,7 @@ public static class Chords
                     !KeepUnderNoMinorSeconds(ref keys, ref intervals, ktet, allowMajorSevenths))
                     continue;
 
-                if (excludeTritones && HasTritone(keys)) continue;
+                if (excludeTritones && !KeptUnderNoTritones(keys, ktet, allowDim)) continue;
 
                 if (chords.Count >= maxResults) { truncated = true; break; }
                 chords.Add(new Chord(keys, intervals, OrbitSize(keys, ktet)));
@@ -97,16 +101,26 @@ public static class Chords
         return true;
     }
 
-    // True if any two notes are a tritone (six semitones) apart. Unlike a minor second, a tritone's
-    // notes need not be adjacent (e.g. 0 3 6 9), so all pairs are checked, not the adjacent-gap
-    // array. On canonical sorted keys (starting at 0) the forward difference suffices, since in
-    // 12-tet a tritone is its own inversion (6 = 12 - 6). 12-tet only; the caller restricts to ktet 12.
-    private static bool HasTritone(int[] keys)
+    // Applies the tritone rule to one canonical chord, returning false to drop it. A tritone is any
+    // two notes six semitones apart; unlike a minor second its notes need not be adjacent (e.g.
+    // 0 3 6 9), so all pairs are checked, not the adjacent-gap array. On canonical sorted keys
+    // (starting at 0) the forward difference suffices, since in 12-tet a tritone is its own
+    // inversion (6 = 12 - 6). With allowDim off, any tritone drops the chord. With it on, a tritone
+    // (a, a+6) is spared when the chord completes a diminished triad on it — it contains a+3 or a+9
+    // (mod ktet), giving {a, a+3, a+6} or {a+6, a+9, a} — and the chord is kept only if every
+    // tritone is so justified. 12-tet only; the caller restricts to ktet 12.
+    private static bool KeptUnderNoTritones(int[] keys, int ktet, bool allowDim)
     {
+        var set = new HashSet<int>(keys);
         for (var i = 0; i < keys.Length; i++)
             for (var j = i + 1; j < keys.Length; j++)
-                if (keys[j] - keys[i] == 6) return true;
-        return false;
+            {
+                if (keys[j] - keys[i] != 6) continue;
+                if (!allowDim) return false;
+                var a = keys[i];
+                if (!set.Contains((a + 3) % ktet) && !set.Contains((a + 9) % ktet)) return false;
+            }
+        return true;
     }
 
     // Transposes the chord so that pitch class 'root' becomes 0, returning sorted keys in [0, ktet).

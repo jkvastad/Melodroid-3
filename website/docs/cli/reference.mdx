@@ -160,7 +160,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 
 ```bash
 melodroid table chords \
-  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] \
+  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] [--allow-dim] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -182,7 +182,12 @@ chord `0 1 5 8` → `0 4 7 11`; chords with two or more semitones are still drop
 `--no-tritones` (12-tet only, combinable with `--no-minor-seconds`) drops every chord with any
 two notes six semitones apart, including tritone-stacked chords like the diminished seventh
 `0 3 6 9` whose tritones are not adjacent gaps; unlike the semitone filter it has no re-voicing
-relaxation, since a tritone survives every voicing. A final
+relaxation, since a tritone survives every voicing.
+`--allow-dim` (12-tet only, implies `--no-tritones`) relaxes this for diminished chords: a chord is
+kept when every one of its tritones belongs to a diminished triad (`p, p+3, p+6`) present in the
+chord — the diminished triad `0 3 6`, the diminished seventh `0 3 6 9`, and the dominant seventh
+(shown in its compact necklace form `0 3 6 8`, which contains `0 3 6`); a chord with any
+unjustified tritone is still dropped. A final
 **Placements** column lists the LCM-family placements whose keys contain the chord — the inline
 form of feeding the chord's key set to [`key-supersets`](#key-supersets). They are shown tightest
 (fewest extra keys) first, each as `lcm@at` (the family LCM at the anchor key where its `1/1`
