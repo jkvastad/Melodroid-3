@@ -390,6 +390,44 @@ public class ChordsTests
         }
     }
 
+    // --lcm-only guards: the CLI filter keeps only necklaces some family placement contains. These
+    // replace the retired lcm-chords command (whose bottom-up enumeration was proven equal to this
+    // filter), pinning the counts documented in the theory page / CLI reference.
+    [Theory]
+    [InlineData(24, 102)]
+    [InlineData(12, 20)]
+    public void LcmOnly_default_range_totals(int maxLcm, int expectedCount)
+    {
+        LcmOnly(minNotes: 2, maxNotes: 7, maxLcm).Should().HaveCount(expectedCount);
+    }
+
+    [Fact]
+    public void LcmOnly_tritone_dyad_needs_a_high_lcm_family()
+    {
+        // {0 6} appears only via the lcm 15/20/24 families; capping at lcm 12 removes it.
+        LcmOnly(2, 2, maxLcm: 24).Should().Contain(c => c.Keys.SequenceEqual(new[] { 0, 6 }));
+        LcmOnly(2, 2, maxLcm: 12).Should().NotContain(c => c.Keys.SequenceEqual(new[] { 0, 6 }));
+    }
+
+    [Fact]
+    public void LcmOnly_lower_max_lcm_is_a_subset_of_higher_max_lcm()
+    {
+        var low = LcmOnly(2, 7, maxLcm: 12).Select(c => string.Join(" ", c.Keys)).ToHashSet();
+        var high = LcmOnly(2, 7, maxLcm: 24).Select(c => string.Join(" ", c.Keys)).ToHashSet();
+
+        low.Should().BeSubsetOf(high);
+    }
+
+    // Mirrors the CLI: enumerate necklaces, keep those a family placement contains.
+    private static IReadOnlyList<Chord> LcmOnly(int minNotes, int maxNotes, int maxLcm)
+    {
+        var families = LcmFamilies.Compute(GoodFractions.Enumerate(maxSize: 24, maxPrime: 5), maxLcm);
+        var (chords, _) = Chords.Enumerate(Ktet, minNotes, maxNotes, maxResults: 100000);
+        return chords
+            .Where(c => Placements.FindSupersets(c.Keys, families, Ktet).Count > 0)
+            .ToList();
+    }
+
     private static void AssertSortedBySizeThenKeys(IReadOnlyList<Chord> chords)
     {
         for (var i = 1; i < chords.Count; i++)

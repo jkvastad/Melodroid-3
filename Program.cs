@@ -862,6 +862,12 @@ class Program
                 + "e.g. 0 3 6, 0 3 6 9, 0 3 6 8 (the dominant seventh); still drops chords with an "
                 + "unjustified tritone. Implies --no-tritones. 12-tet only.",
         };
+        var chordsLcmOnlyOption = new Option<bool>("--lcm-only")
+        {
+            Description = "Keep only chords that are a subset of ≥1 available LCM family — the LCM "
+                + "approach; equivalent to hiding rows with an empty Placements column. Bounded by "
+                + "--max-lcm.",
+        };
 
         var chordsCommand = new Command(
             "chords",
@@ -874,6 +880,7 @@ class Program
         chordsCommand.Add(chordsAllowMaj7Option);
         chordsCommand.Add(chordsNoTritonesOption);
         chordsCommand.Add(chordsAllowDimOption);
+        chordsCommand.Add(chordsLcmOnlyOption);
         chordsCommand.Add(maxSizeOption);
         chordsCommand.Add(maxPrimeOption);
         chordsCommand.Add(maxLcmOption);
@@ -887,6 +894,7 @@ class Program
             var noMinorSeconds = parse.GetValue(chordsNoMinorSecondsOption) || allowMaj7;
             var allowDim = parse.GetValue(chordsAllowDimOption);
             var noTritones = parse.GetValue(chordsNoTritonesOption) || allowDim;
+            var lcmOnly = parse.GetValue(chordsLcmOnlyOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -908,7 +916,19 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var placements = chords.Select(c => Placements.FindSupersets(c.Keys, families, k)).ToList();
-            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones, allowDim);
+
+            if (lcmOnly)
+            {
+                // The LCM approach: keep only necklaces that some family placement contains — the
+                // same set the retired `lcm-chords` command enumerated bottom-up (proven equal).
+                var kept = chords.Zip(placements, (chord, rows) => (chord, rows))
+                    .Where(pair => pair.rows.Count > 0)
+                    .ToList();
+                chords = kept.Select(pair => pair.chord).ToList();
+                placements = kept.Select(pair => pair.rows).ToList();
+            }
+
+            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones, allowDim, lcmOnly, maxLcm);
             return 0;
         });
 

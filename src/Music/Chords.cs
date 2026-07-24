@@ -77,6 +77,48 @@ public static class Chords
         return (chords, truncated);
     }
 
+    /// <summary>
+    /// Canonicalises an arbitrary key set to the representative of its transposition class — the
+    /// same normal order <see cref="Enumerate"/> emits: the most-compact rotation (smallest span
+    /// from lowest to highest key, ties broken lexicographically), transposed to start at 0. Input
+    /// keys may be any integers; they are octave-normalised into [0, ktet), de-duplicated and sorted
+    /// first. The set must be non-empty.
+    /// </summary>
+    public static Chord Canonicalize(IReadOnlyCollection<int> keys, int ktet)
+    {
+        var sorted = keys
+            .Select(k => (k % ktet + ktet) % ktet)
+            .Distinct()
+            .OrderBy(k => k)
+            .ToArray();
+
+        // The canonical form is the smallest rotation under (span, then lexicographic). Only
+        // rotations that map a member onto 0 can compete; try each and keep the minimum.
+        int[]? best = null;
+        foreach (var member in sorted)
+        {
+            var rotated = new int[sorted.Length];
+            for (var i = 0; i < sorted.Length; i++)
+                rotated[i] = ((sorted[i] - member) % ktet + ktet) % ktet;
+            Array.Sort(rotated);
+            if (best is null || IsMoreCompact(rotated, best)) best = rotated;
+        }
+
+        return new Chord(best!, Intervals(best!, ktet), OrbitSize(best!, ktet));
+    }
+
+    // Orders two 0-starting, equal-length, sorted key arrays by span (largest key) then
+    // lexicographically; true when 'candidate' is the more-compact/smaller form. Mirrors the order
+    // used by CompareRotation / IsCanonical.
+    private static bool IsMoreCompact(int[] candidate, int[] current)
+    {
+        var last = candidate.Length - 1;
+        if (candidate[last] != current[last]) return candidate[last] < current[last];
+        for (var i = 0; i < candidate.Length; i++)
+            if (candidate[i] != current[i]) return candidate[i] < current[i];
+        return false;
+    }
+
     // Applies the minor-second rule to one canonical chord, returning false to drop it. A chord with
     // no semitone is always kept. With allowMajorSevenths off, any semitone drops the chord. With it
     // on, a chord with exactly one semitone is kept and re-voiced in place so the semitone becomes

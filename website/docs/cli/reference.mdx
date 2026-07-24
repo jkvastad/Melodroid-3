@@ -160,7 +160,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 
 ```bash
 melodroid table chords \
-  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] [--allow-dim] \
+  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] [--allow-dim] [--lcm-only] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -194,8 +194,14 @@ form of feeding the chord's key set to [`key-supersets`](#key-supersets). They a
 fundamental sits); any keys a placement carries beyond the chord are left implicit — inspect them
 with `key-supersets`. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
 family placement contains the chord.
+`--lcm-only` (the **LCM approach** to chords) keeps only the chords that are a subset of at least
+one available LCM family — i.e. it hides every row whose Placements column would be blank, leaving
+the chords Harmonic Pattern Theory actually predicts. `--max-lcm` bounds which families count as
+available: at the default 24 there are 102 such chords across 2–7 notes, collapsing to 20 when
+capped at `--max-lcm 12` (only the isomorphic ≤12 group), which is where the tritone dyad `0 6` — a
+subset of the lcm 15/20/24 families alone — drops out.
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
-generated for this column.
+generated for the Placements column (and the `--lcm-only` filter).
 
 ## Graphs
 

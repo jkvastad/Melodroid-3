@@ -311,7 +311,7 @@ Where does the chaotic sound come from? There are at least two flavors - random/
 Perhaps it comes from context - the listener expects certain pitches from preceding notes (or even having heard/recognizing a melody beforehand).
 A common context in music is chords - a set of notes played statically along with the melody.
 
-### Chords as accompaniment
+### Chords
 Let's now look at chords. In their most general form chords are two or more simultaneous notes.
 In the 12 tet system there are $2^{12} = 4096$ possible key combinations per octave, including the empty set.
 In particular we are interested in unique chords under octave renormalization e.g. 0 4 7, 0 3 8 and 0 5 9 are the same.
@@ -323,7 +323,7 @@ These can be enumerated with the `chords` subcommand:
 melodroid table chords --min-notes 2 --max-notes 7
 ```
 
-Additionally most chords do not sound particularly good with minor second or tritone. 
+We note that most of these chords do not sound particularly good with a minor second or tritone. 
 Removing minor seconds produces 29 chords.
 Removing tritones produces 61 chords.
 Removing both produces 16 chords.
@@ -358,6 +358,38 @@ This also calls to mind the McGurk effect (see e.g. [this BBC clip](https://www.
 There are also chord with tritones which sound good. These are primarily dim (0 3 6) and chords containing it e.g. dim7 (0 3 6 9) and seven chords (e.g. 0 4 7 10).
 Perhaps the characteristic dramatic sound stems from the symmetric dim7 chord.
 
+#### Chords as placement indicators
+Another way to look at chords from HPT is as indicators for lcm family placements. 
+The idea is that the brain tries to match sound to a root and lcm family, and that this heavily influences our perception of the current harmony.
+
+Looking at e.g. the major chord 0 4 7 we have 23 possible placements containing this chord, including 4@0, 8@0 and 24@0. 
+Looking at e.g. the minor chord 0 3 7 we have 12 possible placements containing this chord, including 10@0, 15@2, 8@8 and 24@8.
+
+While the chords are subsets, some of their possible placements are in turn also supersets of each other (e.g. 4@0, 8@0 and 24@0 or 10@0 and 24@8). 
+Some chord supersets are also isomorphic, such as the minor chords 10@0 and 8@8.
+
+This raises several questions about what to expect of placement based perception:
+* Do we hear the predicted top superset, e.g. instead of 4@0 we hear 24@0?
+  * If so, what are the top supersets? E.g. as we saw earlier, high lcms such as 24 can be composed by lower lcms such as 8 and 12.
+* Do we hear a single placement or several?
+  * If several, our perception might be some sort of aggregation of possible interpretations.
+  * If only one, how does the brain pick one placement over competing placements? (Especially for isomorphisms)
+
+The number of possible chords from a placement indicator perspective becomes another kind of combinatorial exercise.
+This time instead of all possible key combinations in a k-tet, we require a chord to be a subset of at least one lcm family.
+This means all binary necklaces with an lcm family.
+
+The `chords --lcm-only` option does exactly this:
+
+```bash
+melodroid table chords --lcm-only --max-lcm 24
+```
+
+With the default `--max-lcm 24` there are 102 chords across 2–7 notes. 
+Notably only the tritone `0 6` has no low-LCM placement — it is only a subset of the lcm 15/20/24 families. 
+Restricting to the isomorphic ≤12 group therefore drops it and collapses the set from 102 to 20 chords.
+
+#### Chords as accompaniment
 In the context of accompaniment for a given chord we must then choose a set of notes from which to draw melody.
 
 This presents us with two questions - how do we choose chords and how do we choose the corresponding melody set?
