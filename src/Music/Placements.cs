@@ -79,6 +79,22 @@ public static class Placements
             .ToList();
     }
 
+    // Collapse placements that cover the identical key set (isomorphic / coincident) down
+    // to the single lowest-LCM representative. Assumes `rows` is already sorted by
+    // (extra, lcm, at) as FindSupersets returns, so the first row seen per key set is the
+    // lowest LCM. Used by `table chords`; FindSupersets itself stays exhaustive.
+    public static IReadOnlyList<KeySupersetRow> CollapseIsomorphic(IReadOnlyList<KeySupersetRow> rows)
+    {
+        var seen = new HashSet<string>();
+        var result = new List<KeySupersetRow>();
+        foreach (var r in rows)
+        {
+            var signature = string.Join(",", r.Placement.Keys.OrderBy(k => k));
+            if (seen.Add(signature)) result.Add(r);
+        }
+        return result;
+    }
+
     public static IReadOnlyList<int> MaximalLcms(
         IReadOnlyList<LcmFamily> families,
         IReadOnlyList<FamilyRelation> relations)

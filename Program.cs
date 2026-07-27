@@ -868,6 +868,11 @@ class Program
                 + "approach; equivalent to hiding rows with an empty Placements column. Bounded by "
                 + "--max-lcm.",
         };
+        var chordsExplicitPlacementsOption = new Option<bool>("--explicit-placements")
+        {
+            Description = "Show every containing placement in the Placements column instead of "
+                + "collapsing isomorphic duplicates (those covering the same keys) to the lowest LCM.",
+        };
 
         var chordsCommand = new Command(
             "chords",
@@ -881,6 +886,7 @@ class Program
         chordsCommand.Add(chordsNoTritonesOption);
         chordsCommand.Add(chordsAllowDimOption);
         chordsCommand.Add(chordsLcmOnlyOption);
+        chordsCommand.Add(chordsExplicitPlacementsOption);
         chordsCommand.Add(maxSizeOption);
         chordsCommand.Add(maxPrimeOption);
         chordsCommand.Add(maxLcmOption);
@@ -895,6 +901,7 @@ class Program
             var allowDim = parse.GetValue(chordsAllowDimOption);
             var noTritones = parse.GetValue(chordsNoTritonesOption) || allowDim;
             var lcmOnly = parse.GetValue(chordsLcmOnlyOption);
+            var explicitPlacements = parse.GetValue(chordsExplicitPlacementsOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -917,6 +924,13 @@ class Program
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var placements = chords.Select(c => Placements.FindSupersets(c.Keys, families, k)).ToList();
 
+            if (!explicitPlacements)
+            {
+                // Default: fold placements that cover the same keys (isomorphic / coincident) to
+                // their lowest LCM. Independent of --lcm-only, which only checks Count > 0.
+                placements = placements.Select(Placements.CollapseIsomorphic).ToList();
+            }
+
             if (lcmOnly)
             {
                 // The LCM approach: keep only necklaces that some family placement contains — the
@@ -928,7 +942,7 @@ class Program
                 placements = kept.Select(pair => pair.rows).ToList();
             }
 
-            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones, allowDim, lcmOnly, maxLcm);
+            ChordsTableRenderer.Render(chords, placements, k, minNotes, effectiveMaxNotes, truncated, noMinorSeconds, allowMaj7, noTritones, allowDim, lcmOnly, maxLcm, explicitPlacements);
             return 0;
         });
 

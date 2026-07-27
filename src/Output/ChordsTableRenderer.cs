@@ -22,10 +22,12 @@ public static class ChordsTableRenderer
         bool allowDim = false,
         bool lcmOnly = false,
         int maxLcm = 0,
+        bool explicitPlacements = false,
         IAnsiConsole? console = null)
     {
         var filters = new List<string>();
         if (lcmOnly) filters.Add($"lcm-only (max-lcm {maxLcm})");
+        filters.Add(explicitPlacements ? "explicit placements" : "collapsed placements");
         if (noMinorSeconds) filters.Add("no minor seconds" + (allowMajorSevenths ? " (maj7 allowed)" : ""));
         if (noTritones) filters.Add("no tritones" + (allowDim ? " (dim allowed)" : ""));
         var filterClause = filters.Count > 0 ? " · " + string.Join(" · ", filters) : "";
@@ -90,8 +92,10 @@ public static class ChordsTableRenderer
     // The containing LCM-family placements for one chord, tightest first (FindSupersets already
     // sorts by extra-keys count, then LCM, then anchor). Each token is "lcm@at" — the family LCM at
     // the anchor key where its 1/1 fundamental sits; any keys the placement carries beyond the chord
-    // are left implicit (inspect them via `key-supersets`). Empty for a chord that no family
-    // placement contains; overflow past the cap collapses to " …(+M)".
+    // are left implicit (inspect them via `key-supersets`). By default placements covering the same
+    // keys (isomorphic duplicates) are collapsed to their lowest LCM; --explicit-placements shows
+    // them all. Empty for a chord that no family placement contains; overflow past the cap collapses
+    // to " …(+M)".
     private static string FormatPlacements(IReadOnlyList<KeySupersetRow> rows)
     {
         if (rows.Count == 0) return "";

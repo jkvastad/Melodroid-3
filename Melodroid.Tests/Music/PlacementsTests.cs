@@ -100,6 +100,38 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void CollapseIsomorphic_triad_folds_same_key_placements_to_lowest_lcm()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+
+        var rows = Placements.FindSupersets(new[] { 0, 4, 7 }, families, ktet: 12);
+        var collapsed = Placements.CollapseIsomorphic(rows);
+
+        // Every surviving row has a unique key set.
+        collapsed
+            .Select(r => string.Join(",", r.Placement.Keys.OrderBy(k => k)))
+            .Should().OnlyHaveUniqueItems();
+
+        // The tightest fit is the single isomorphic pair {3@7, 4@0}, both covering {0,4,7};
+        // only the lowest-LCM one (3@7) survives.
+        collapsed.Where(r => r.ExtraKeysCount == 0)
+            .Select(r => (r.Placement.Lcm, r.Placement.At))
+            .Should().BeEquivalentTo(new[] { (3, 7) });
+
+        // Each surviving row is the lowest LCM among all rows sharing its key set.
+        foreach (var r in collapsed)
+        {
+            var signature = string.Join(",", r.Placement.Keys.OrderBy(k => k));
+            var minLcm = rows
+                .Where(o => string.Join(",", o.Placement.Keys.OrderBy(k => k)) == signature)
+                .Min(o => o.Placement.Lcm);
+            r.Placement.Lcm.Should().Be(minLcm);
+        }
+    }
+
+    [Fact]
     public void FindSupersets_rows_are_sorted_by_extra_then_lcm_then_at()
     {
         var families = LcmFamilies.Compute(

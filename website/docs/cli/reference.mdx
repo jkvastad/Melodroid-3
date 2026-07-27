@@ -160,7 +160,7 @@ Matrix of maximal-LCM placements containing the chord vs each key.
 
 ```bash
 melodroid table chords \
-  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] [--allow-dim] [--lcm-only] \
+  [--ktet 12] [--min-notes 2] [--max-notes 7] [--max-results 1000] [--no-minor-seconds] [--allow-maj7] [--no-tritones] [--allow-dim] [--lcm-only] [--explicit-placements] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -192,7 +192,10 @@ unjustified tritone is still dropped. A final
 form of feeding the chord's key set to [`key-supersets`](#key-supersets). They are shown tightest
 (fewest extra keys) first, each as `lcm@at` (the family LCM at the anchor key where its `1/1`
 fundamental sits); any keys a placement carries beyond the chord are left implicit — inspect them
-with `key-supersets`. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
+with `key-supersets`. By default, placements that cover the **same keys** (isomorphic families
+sweep out identical key patterns, so their matching placements coincide — e.g. the major triad's
+`3@7` and `4@0` both land on `0 4 7`) are collapsed to the lowest LCM; `--explicit-placements`
+restores the full list. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
 family placement contains the chord.
 `--lcm-only` (the **LCM approach** to chords) keeps only the chords that are a subset of at least
 one available LCM family — i.e. it hides every row whose Placements column would be blank, leaving
