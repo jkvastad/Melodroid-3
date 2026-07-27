@@ -328,7 +328,7 @@ Removing minor seconds produces 29 chords.
 Removing tritones produces 61 chords.
 Removing both produces 16 chords.
 
-There are however some chords which do have a minor second (m2) of sorts - a major seventh (M7) in e.g. 0 4 7 11 14 (lcm 8@0) sounds quite nice, even if the interval 11 does not.
+There are however some chords which do have a nice sounding minor second (m2) of sorts - a major seventh (M7) in e.g. 0 4 7 11 14 (lcm 8@0) sounds quite nice, even if the interval 11 does not.
 
 Interestingly, playing first 0 4 7 11 and then playing 0 11, the 0 11 keeps the rounder/softer quality of the preceding chord. 
 Follow this up with 1 12 to produce a harsh m2/M7 which then becomes soft by adding in the related 8@1 i.e. 1 5 8 12. 
@@ -353,29 +353,29 @@ This process can be repeated with e.g. 2 13 and so on:
 
 Such an effect hints that it matters not just what we hear, but what we recently heard. 
 How recent is recent? Perhaps it is simply what we expect to hear, heavily influenced by what we just heard, but also by other expectations such as familiar melodies and songs.
-This also calls to mind the McGurk effect (see e.g. [this BBC clip](https://www.youtube.com/watch?v=2k8fHR9jKVM) illustrating how "Ba" turns into "Fa" when seeing lips produce "Fa", even though the audio is still "Ba").
+This calls to mind the McGurk effect, an effect where context affects perception (see e.g. [this BBC clip](https://www.youtube.com/watch?v=2k8fHR9jKVM) illustrating how "Ba" turns into "Fa" when seeing lips produce "Fa", even though the audio is still "Ba").
 
 There are also chord with tritones which sound good. These are primarily dim (0 3 6) and chords containing it e.g. dim7 (0 3 6 9) and seven chords (e.g. 0 4 7 10).
 Perhaps the characteristic dramatic sound stems from the symmetric dim7 chord.
 
 #### Chords as placement indicators
 Another way to look at chords from HPT is as indicators for lcm family placements. 
-The idea is that the brain tries to match sound to a root and lcm family, and that this heavily influences our perception of the current harmony.
+The idea is that the brain tries to match sound to a root and lcm family, and that this heavily influences our perception of harmony.
 
-Looking at e.g. the major chord 0 4 7 we have 23 possible placements containing this chord, including 4@0, 8@0 and 24@0. 
-Looking at e.g. the minor chord 0 3 7 we have 12 possible placements containing this chord, including 10@0, 15@2, 8@8 and 24@8.
+Looking at the major chord 0 4 7 we have 23 possible placements containing this chord, including 4@0, 8@0 and 24@0. 
+Looking at the minor chord 0 3 7 we have 12 possible placements containing this chord, including 10@0, 15@2, 8@8 and 24@8.
 
-While the chords are subsets, some of their possible placements are in turn also supersets of each other (e.g. 4@0, 8@0 and 24@0 or 10@0 and 24@8). 
+While these chords are subsets of lcm families, some of their possible placements are in turn also supersets of each other (e.g. 4@0, 8@0 and 24@0 or 10@0 and 24@8). 
 Some chord supersets are also isomorphic, such as the minor chords 10@0 and 8@8.
 
 This raises several questions about what to expect of placement based perception:
 * Do we hear the predicted top superset, e.g. instead of 4@0 we hear 24@0?
-  * If so, what are the top supersets? E.g. as we saw earlier, high lcms such as 24 can be composed by lower lcms such as 8 and 12.
+  * If so, what are the top supersets? As we saw earlier, high lcms such as 24 can be composed by lower lcms such as 8 and 12.
 * Do we hear a single placement or several?
-  * If several, our perception might be some sort of aggregation of possible interpretations.
+  * If several, is our perception an aggregation of possible interpretations? Is it more akin to the cocktail party effect where some parts receive focused? Is it a mix?
   * If only one, how does the brain pick one placement over competing placements? (Especially for isomorphisms)
 
-The number of possible chords from a placement indicator perspective becomes another kind of combinatorial exercise.
+The number of possible chords from a placement indicator perspective is similar to the combinatorial necklaces discussed above.
 This time instead of all possible key combinations in a k-tet, we require a chord to be a subset of at least one lcm family.
 This means all binary necklaces with an lcm family.
 
@@ -388,6 +388,32 @@ melodroid table chords --lcm-only --max-lcm 24
 With the default `--max-lcm 24` there are 102 chords across 2–7 notes. 
 Notably only the tritone `0 6` has no low-LCM placement — it is only a subset of the lcm 15/20/24 families. 
 Restricting to the isomorphic ≤12 group therefore drops it and collapses the set from 102 to 20 chords.
+
+##### Placement indicators
+Looking at a select number of chords as placement indicators we can get a feel for how they might produce perception.
+
+For instance, the major chord 0 4 7 which is the placement 4@0 is also a subset of 8@0. The latter contains 4 7 11, a minor chord also with 10@4 but also 8@0. 
+These have typical major/minor flavor but also work well in series, hinting at a mechanism for harmonic progressions.
+
+The simplest chord in 12-tet is perhaps the minor second 0 1 with only two notes and the smallest separation. 
+As noted above when looking at major sevenths, which are just differently spaced minor seconds, they can sound quite harsh on their own but adding in context softens the dyad.
+
+Similarly for 0 1, we see that it has placements of 8@1 and 15@0. Playing the dyad high as 12 13 (for some tonal height), 
+we can soften it two different ways — first with the full 8@1 family (1 5 8 12 13 15), then with a 15@0 subset (10 12 13 17, a minor chord plus the m2):
+
+<SequencePlayer
+  label="▶ harsh / soft minor seconds"
+  beatSec={0.4}
+  instrumentToggle
+  chords={[
+    {keys: [12, 13], beat: 0, beats: 3.6, velocity: 1},
+    {keys: [1, 5, 8, 12, 13, 15], beat: 4, beats: 3.6, velocity: 0.85},
+    {keys: [12, 13], beat: 8, beats: 3.6, velocity: 1},
+    {keys: [12, 13], beat: 16, beats: 3.6, velocity: 1},
+    {keys: [10, 12, 13, 17], beat: 20, beats: 3.6, velocity: 0.85},
+    {keys: [12, 13], beat: 24, beats: 3.6, velocity: 1},
+  ]}
+/>
 
 #### Chords as accompaniment
 In the context of accompaniment for a given chord we must then choose a set of notes from which to draw melody.
