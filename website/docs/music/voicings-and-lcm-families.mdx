@@ -415,6 +415,25 @@ we can soften it two different ways — first with the full 8@1 family (1 5 8 12
   ]}
 />
 
+Adding context produces quite different perceptions. For contrast the dyads 0 7 and 0 4 sound quite complete as-is — 
+both are subsets of 8@0, so we can frame each one with the same 0 4 7 11 14 context:
+
+<SequencePlayer
+  label="▶ complete dyads in context"
+  beatSec={0.4}
+  instrumentToggle
+  chords={[
+    {keys: [0, 4], beat: 0, beats: 3.6, velocity: 1},
+    {keys: [0, 4, 7, 11, 14], beat: 4, beats: 3.6, velocity: 0.8},
+    {keys: [0, 4], beat: 8, beats: 3.6, velocity: 1},
+    {keys: [0, 7], beat: 16, beats: 3.6, velocity: 1},
+    {keys: [0, 4, 7, 11, 14], beat: 20, beats: 3.6, velocity: 0.8},
+    {keys: [0, 7], beat: 24, beats: 3.6, velocity: 1},
+  ]}
+/>
+
+Unlike the minor second, these dyads need no context — the 8@0 frame confirms what they already are rather than transforming them.
+
 #### Chords as accompaniment
 In the context of accompaniment for a given chord we must then choose a set of notes from which to draw melody.
 
