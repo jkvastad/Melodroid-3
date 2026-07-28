@@ -150,6 +150,41 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void CompareSupersets_partitions_two_key_sets_by_placement_identity()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+
+        var keysA = new[] { 0, 4, 7 };
+        var keysB = new[] { 0, 3, 7 };
+        var supersetsA = Placements.FindSupersets(keysA, families, ktet: 12);
+        var supersetsB = Placements.FindSupersets(keysB, families, ktet: 12);
+
+        var (common, onlyA, onlyB) = Placements.CompareSupersets(supersetsA, supersetsB);
+
+        static (int, int) Id(KeySupersetRow r) => (r.Placement.Lcm, r.Placement.At);
+        var idsA = supersetsA.Select(Id).ToHashSet();
+        var idsB = supersetsB.Select(Id).ToHashSet();
+
+        // Common ∪ OnlyA reconstructs A's identity set; Common ∪ OnlyB reconstructs B's.
+        common.Concat(onlyA).Select(Id).Should().BeEquivalentTo(idsA);
+        common.Concat(onlyB).Select(Id).Should().BeEquivalentTo(idsB);
+
+        // Common identities live in both inputs; OnlyA/OnlyB in exactly one.
+        common.Select(Id).Should().OnlyContain(id => idsA.Contains(id) && idsB.Contains(id));
+        onlyA.Select(Id).Should().OnlyContain(id => !idsB.Contains(id));
+        onlyB.Select(Id).Should().OnlyContain(id => !idsA.Contains(id));
+
+        // Every common placement's keys are a superset of both requested sets.
+        common.Should().OnlyContain(r =>
+            keysA.All(key => r.Placement.Keys.Contains(key)) &&
+            keysB.All(key => r.Placement.Keys.Contains(key)));
+
+        common.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void FindMaximalContaining_triad_returns_15_at_4_7_11_and_24_at_0_5_7()
     {
         var families = LcmFamilies.Compute(

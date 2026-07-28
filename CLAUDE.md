@@ -73,7 +73,7 @@ table ktet-cutoffs      worst-case covering radius c_k per k-tet keyboard
 table key-sweep         bin --keys / --ratios stepping through a k-tet tuning's keys
 table placement         map an LCM family's fractions onto k-tet keys at a chosen anchor
 table family-overlap    sweep one family's placements against a reference family
-table key-supersets     placements whose keys are a superset of given --keys
+table key-supersets     placements whose keys are a superset of given --keys (--compare splits vs a second key set: common / only-A / only-B)
 table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors)
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table subsets           key-sweep every size-≥2 subset of a key set (--lcm@--at or --keys), listing the LCM families those subsets full-match

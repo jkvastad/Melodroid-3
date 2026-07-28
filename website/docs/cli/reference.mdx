@@ -99,11 +99,11 @@ Sweeps one LCM shape against a reference family; green rows sit wholly inside th
 ### `key-supersets`
 
 ```bash
-melodroid table key-supersets --keys 0 4 7 \
+melodroid table key-supersets --keys 0 4 7 [--compare 0 3 7] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists every placement whose keys contain the requested set, tightest fits first. `--keys` accepts any integer and octave-normalizes it into `[0, ktet-1]` (e.g. `14 → 2`, `-1 → ktet-1`).
+Lists every placement whose keys contain the requested set, tightest fits first. `--keys` accepts any integer and octave-normalizes it into `[0, ktet-1]` (e.g. `14 → 2`, `-1 → ktet-1`). Pass `--compare` with a second key set (normalized the same way) to split the supersets into three tables: **Common** — placements that are a superset of both sets (matched by `(lcm, at)` identity) — then those unique to `--keys` and unique to `--compare`.
 
 ### `superpositions`
 

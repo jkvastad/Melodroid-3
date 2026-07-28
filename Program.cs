@@ -479,13 +479,20 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
+        var keySupersetsCompareOption = new Option<int[]>("--compare")
+        {
+            Description = "Optional second key set to compare against --keys. When given, supersets are split into three tables: common to both, unique to --keys, and unique to --compare. Octave-normalized and folded like --keys.",
+            AllowMultipleArgumentsPerToken = true,
+        };
+
         var keySupersetsCommand = new Command(
             "key-supersets",
-            "Enumerate every (lcm, at) placement whose k-tet keys are a superset of the given --keys; ranked by smallest extra-keys count.");
+            "Enumerate every (lcm, at) placement whose k-tet keys are a superset of the given --keys; ranked by smallest extra-keys count. Pass --compare to split supersets against a second key set.");
         keySupersetsCommand.Add(maxSizeOption);
         keySupersetsCommand.Add(maxPrimeOption);
         keySupersetsCommand.Add(maxLcmOption);
         keySupersetsCommand.Add(keySupersetsKeysOption);
+        keySupersetsCommand.Add(keySupersetsCompareOption);
         keySupersetsCommand.Add(ktetOption);
         keySupersetsCommand.SetAction(parse =>
         {
@@ -493,6 +500,7 @@ class Program
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var keys = parse.GetValue(keySupersetsKeysOption) ?? Array.Empty<int>();
+            var compare = parse.GetValue(keySupersetsCompareOption) ?? Array.Empty<int>();
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -506,7 +514,17 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var rows = Placements.FindSupersets(dedupKeys, families, k);
-            KeySupersetsTableRenderer.Render(dedupKeys, k, rows);
+
+            if (compare.Length == 0)
+            {
+                KeySupersetsTableRenderer.Render(dedupKeys, k, rows);
+                return 0;
+            }
+
+            var compareKeys = compare.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
+            var compareRows = Placements.FindSupersets(compareKeys, families, k);
+            var (common, onlyA, onlyB) = Placements.CompareSupersets(rows, compareRows);
+            KeySupersetsTableRenderer.RenderComparison(dedupKeys, compareKeys, k, common, onlyA, onlyB);
             return 0;
         });
 

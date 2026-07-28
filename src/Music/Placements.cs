@@ -79,6 +79,28 @@ public static class Placements
             .ToList();
     }
 
+    // Partition two superset result lists (from FindSupersets) by placement identity (Lcm, At):
+    // Common = placements that are a superset of both key sets; OnlyA / OnlyB = placements unique
+    // to one. Incoming sort order (extra → lcm → at) is preserved. Used by `key-supersets --compare`.
+    public static (
+        IReadOnlyList<KeySupersetRow> Common,
+        IReadOnlyList<KeySupersetRow> OnlyA,
+        IReadOnlyList<KeySupersetRow> OnlyB) CompareSupersets(
+            IReadOnlyList<KeySupersetRow> supersetsA,
+            IReadOnlyList<KeySupersetRow> supersetsB)
+    {
+        static (int, int) Id(KeySupersetRow r) => (r.Placement.Lcm, r.Placement.At);
+
+        var idsA = new HashSet<(int, int)>(supersetsA.Select(Id));
+        var idsB = new HashSet<(int, int)>(supersetsB.Select(Id));
+
+        var common = supersetsA.Where(r => idsB.Contains(Id(r))).ToList();
+        var onlyA = supersetsA.Where(r => !idsB.Contains(Id(r))).ToList();
+        var onlyB = supersetsB.Where(r => !idsA.Contains(Id(r))).ToList();
+
+        return (common, onlyA, onlyB);
+    }
+
     // Collapse placements that cover the identical key set (isomorphic / coincident) down
     // to the single lowest-LCM representative. Assumes `rows` is already sorted by
     // (extra, lcm, at) as FindSupersets returns, so the first row seen per key set is the
