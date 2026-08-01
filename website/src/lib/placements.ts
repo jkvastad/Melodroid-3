@@ -64,6 +64,19 @@ function familyPlacementKeys(family: Fraction[], at: number, k: number): number[
   return [...new Set(keys)].sort((a, b) => a - b);
 }
 
+// One LCM family placement's k-tet keys: `lcm@at` → folded, sorted key set — the same keys
+// findSupersets enumerates, exposed so callers can resolve a placement by (lcm, at) without
+// re-deriving the family. Matches `melodroid table placement --lcm <lcm> --at <at>`.
+export function placementKeys(
+  lcm: number,
+  at: number,
+  k = 12,
+  maxSize = 24,
+  maxPrime = 5,
+): number[] {
+  return familyPlacementKeys(lcmFamily(lcm, maxSize, maxPrime), at, k);
+}
+
 // One (lcm, at) placement whose k-tet keys contain the requested chord keys as a subset.
 // `extra` is how many keys the placement adds beyond the chord — 0 means an exact key set.
 export type Superset = {lcm: number; at: number; keys: number[]; extra: number};

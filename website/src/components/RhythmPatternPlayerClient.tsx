@@ -11,7 +11,11 @@ import {
   parseSubdivisions,
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
-import {findSupersets, type Superset} from '@site/src/lib/placements';
+import {
+  findSupersets,
+  placementKeys,
+  type Superset,
+} from '@site/src/lib/placements';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
 import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
 
@@ -29,7 +33,17 @@ export type RhythmPatternPlayerProps = {
   chord?: boolean; // chord mode: roll a random chord, find the LCM families whose placement
   // contains it, draw melody from a matched family, and sound the chord as long notes
   // re-struck each meter group (this page only); default false
+  presets?: DuetChord[]; // guided chord mode (with `chord`): fixed chord + melody-set choices
+  // via two linked dropdowns instead of a random roll (this page only)
 };
+
+// A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
+// placementKeys) or an explicit folded key set (for scales that are not a plain placement,
+// e.g. the harmonic minor `0 3 4 6 7 9 11`). `label` is what the dropdown shows.
+export type DuetMelody = {label: string; lcm?: number; at?: number; keys?: number[]};
+// A guided-mode chord: its 12-tet keys (sounded as the low, re-struck accompaniment) plus
+// the melody sets offered under it. Two of these (minor / major) drive the two dropdowns.
+export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
 
 // Chord mode only auditions LCM families within the study range; larger folded LCMs
 // (a chord can sit inside placements of much larger families) are not offered as
@@ -281,7 +295,12 @@ export default function RhythmPatternPlayerClient({
   height = 240,
   melody = false,
   chord = false,
+  presets,
 }: RhythmPatternPlayerProps) {
+  // Guided chord mode: the chord and its melody sets come from `presets` (two linked
+  // dropdowns) instead of a random roll. Still runs the full chord-mode engine, so it
+  // requires `chord` — the only divergences are the chord/melody *sources* and the controls.
+  const guided = chord && presets != null;
   // Parse the author-supplied defaults once, falling back to a sane starter if the
   // MDX passes something malformed.
   const initial = useMemo(() => {
@@ -342,6 +361,12 @@ export default function RhythmPatternPlayerClient({
   const [chordText, setChordText] = useState('');
   const [chordError, setChordError] = useState<string | null>(null);
 
+  // Guided chord mode (only when `presets`): which preset chord, and which of its melody
+  // sets, the two linked dropdowns have selected. The melody index resets to 0 on a chord
+  // switch (its option list swaps with the chord).
+  const [selectedChordIdx, setSelectedChordIdx] = useState(0);
+  const [selectedMelodyIdx, setSelectedMelodyIdx] = useState(0);
+
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
   const [bpm, setBpm] = useState(bpmProp);
@@ -393,6 +418,12 @@ export default function RhythmPatternPlayerClient({
   // mode it is the selected match's LCM family placement (a superset of the chord); in
   // melody mode it is the chosen intro-table family.
   const octaveKeys = useMemo(() => {
+    if (guided) {
+      // Guided mode: the selected preset melody set — an lcm@at placement or explicit keys.
+      const m = presets![selectedChordIdx]?.melodies[selectedMelodyIdx];
+      if (!m) return null;
+      return foldOctave(m.keys ?? placementKeys(m.lcm!, m.at!, 12));
+    }
     if (chord) {
       const m = chordState?.matches[selectedMatchIdx];
       return m ? foldOctave(m.keys) : null;
@@ -400,7 +431,16 @@ export default function RhythmPatternPlayerClient({
     if (selectedLcm === RANDOM_ID) return null;
     const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
     return fam ? foldOctave(fam.keys) : null;
-  }, [chord, chordState, selectedMatchIdx, selectedLcm]);
+  }, [
+    guided,
+    presets,
+    selectedChordIdx,
+    selectedMelodyIdx,
+    chord,
+    chordState,
+    selectedMatchIdx,
+    selectedLcm,
+  ]);
   // Melody is active (pitch varies + bars are spectrum-coloured) for a family or random
   // pitch — the single flag that replaces the old `octaveKeys`-truthiness tests.
   const melodyOn = isRandomPitch || octaveKeys != null;
@@ -436,6 +476,14 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     chordVoicingRef.current = chordOffsets(chordState?.keys ?? null, pitchHz);
   }, [chordState, pitchHz]);
+  // Guided mode: keep chordState (the voicing source) synced to the selected preset chord,
+  // so switching the chord dropdown re-voices the accompaniment. `matches` stays empty —
+  // guided mode never uses the superset-match dropdown.
+  useEffect(() => {
+    if (!guided) return;
+    const c = presets![selectedChordIdx];
+    if (c) setChordState({keys: c.keys, matches: []});
+  }, [guided, presets, selectedChordIdx]);
   useEffect(() => {
     octaveKeysRef.current = octaveKeys;
   }, [octaveKeys]);
@@ -788,10 +836,11 @@ export default function RhythmPatternPlayerClient({
     regenerate(nextSeed);
   };
 
-  // First mount: seed the visual so it isn't empty (uses the initial seed=1), and in chord
-  // mode roll the first chord so the player has a melody family to draw from immediately.
+  // First mount: seed the visual so it isn't empty (uses the initial seed=1), and in random
+  // chord mode roll the first chord so the player has a melody family to draw from immediately.
+  // Guided mode instead seeds chordState from the first preset (see the guided-sync effect).
   useEffect(() => {
-    if (chord) rollNewChord();
+    if (chord && !guided) rollNewChord();
     regenerate(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1067,7 +1116,40 @@ export default function RhythmPatternPlayerClient({
             </select>
           </label>
         )}
-        {chord && chordState && (
+        {guided && (
+          <>
+            <label style={labelStyle}>
+              chord
+              <select
+                value={selectedChordIdx}
+                onChange={(e) => {
+                  setSelectedChordIdx(Number(e.target.value));
+                  setSelectedMelodyIdx(0); // its melody options swap with the chord
+                }}
+                aria-label="chord for the accompaniment">
+                {presets!.map((c, i) => (
+                  <option key={i} value={i}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              melody
+              <select
+                value={selectedMelodyIdx}
+                onChange={(e) => setSelectedMelodyIdx(Number(e.target.value))}
+                aria-label="melody set to draw pitches from">
+                {presets![selectedChordIdx].melodies.map((m, i) => (
+                  <option key={i} value={i}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+        {chord && !guided && chordState && (
           <>
             <label style={labelStyle}>
               chord
@@ -1142,7 +1224,7 @@ export default function RhythmPatternPlayerClient({
           }>
           Generate Rhythm
         </button>
-        {chord && (
+        {chord && !guided && (
           <button
             className="button button--secondary button--sm"
             onClick={rollNewChord}
