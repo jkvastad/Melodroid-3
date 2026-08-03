@@ -655,9 +655,22 @@ Notably the extra keys are 10 and 3 which do sound quite nice along with the maj
   bpm={100}
   progression={[
     {label: 'blues@5 (5 7 8 9 0 2)', keys: [0, 2, 5, 7, 8, 9]},    
-    {label: '8@10 + 9@10@5 (5 7 8 9 10 0 2 3)', keys: [0, 2, 3, 5, 7, 8, 9, 10]},
+    {label: '8@10 + 8@8 (5 7 8 9 10 0 2 3)', keys: [0, 2, 3, 5, 7, 8, 9, 10]},
   ]}
 />
+
+##### Characteristic chords
+Several of the scales above which are not lcms scales are compositions of two lcm scales, or is heavily related to a symmetric chord.
+This provides a possibility that scales are perhaps best thought of as sets of sets, where a chord provides some sort of context and the melody modulates between possible interpretations of the context.
+
+Earlier we looked at placement indicators, as well as lcm preference in the context of lcm 15.
+Perhaps there is also a preference for how chords are interpreted, producing the well known character/flavor of e.g. major/minor/dim chords.
+
+Running the command 
+
+```bash
+melodroid table chord-melody --chord-keys
+```
 
 TODO: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0

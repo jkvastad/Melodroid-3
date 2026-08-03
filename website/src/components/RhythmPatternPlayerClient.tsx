@@ -53,12 +53,17 @@ export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
 export type ProgressionSet = {label: string; keys: number[]};
 
 // Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
-// chord-pool generator (see progressionTriads memo): "random-triads" draws any minor-second-
-// free triad; "tertian-chords" draws only stacks of thirds (maj/min/aug/dim triads and the
-// tertian seventh chords). The set constrains which of these actually appear.
-type ProgressionHeuristic = {id: 'random-triads' | 'tertian-chords'; label: string};
+// chord-pool generator (see progressionTriads memo): "tertian-triads" draws only the four
+// 3-note triad qualities (maj/min/dim/aug); "tertian-chords" draws any stack of thirds (those
+// triads plus the tertian seventh chords); "random-triads" draws any minor-second-free 3-note
+// triad. The set constrains which of these actually appear.
+type ProgressionHeuristic = {
+  id: 'tertian-triads' | 'tertian-chords' | 'random-triads';
+  label: string;
+};
 const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
-  {id: 'tertian-chords', label: 'Random triads'},
+  {id: 'tertian-triads', label: 'Triads (maj/min/dim/aug)'},
+  {id: 'tertian-chords', label: 'Tertian (triads + 7ths)'},
   {id: 'random-triads', label: 'Random triads (no m2)'},
 ];
 
@@ -235,6 +240,13 @@ function isTertian(notes: number[]): boolean {
 function tertianChords(set: number[]): number[][] {
   const s = foldOctave(set);
   return [...combinations(s, 3), ...combinations(s, 4)].filter(isTertian);
+}
+
+// Progression-mode chord pool: only the four 3-note tertian triad qualities — major
+// [0,4,7], minor [0,3,7], diminished [0,3,6], augmented [0,4,8]. Same third-stack filter
+// as tertianChords but 3-note subsets only, so no seventh chords appear.
+function tertianTriads(set: number[]): number[][] {
+  return combinations(foldOctave(set), 3).filter(isTertian);
 }
 
 // The pulses that actually sound, in the order the scheduler fires them. Factored so the
@@ -588,7 +600,14 @@ export default function RhythmPatternPlayerClient({
     if (!progressionOn) return null;
     const set = progression![selectedProgIdx].keys;
     const id = PROGRESSION_HEURISTICS[selectedHeuristicIdx].id;
-    return id === 'tertian-chords' ? tertianChords(set) : m2FreeTriads(set);
+    switch (id) {
+      case 'tertian-triads':
+        return tertianTriads(set);
+      case 'tertian-chords':
+        return tertianChords(set);
+      case 'random-triads':
+        return m2FreeTriads(set);
+    }
   }, [progressionOn, progression, selectedProgIdx, selectedHeuristicIdx],
   );
   const progressionTriadsRef = useRef(progressionTriads);
