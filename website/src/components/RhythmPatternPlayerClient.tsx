@@ -35,6 +35,8 @@ export type RhythmPatternPlayerProps = {
   // re-struck each meter group (this page only); default false
   presets?: DuetChord[]; // guided chord mode (with `chord`): fixed chord + melody-set choices
   // via two linked dropdowns instead of a random roll (this page only)
+  progression?: ProgressionSet[]; // progression mode: loop random minor-second-free triads
+  // drawn from a fixed set (one per meter group), melody drawn from the whole set (this page only)
 };
 
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
@@ -44,6 +46,18 @@ export type DuetMelody = {label: string; lcm?: number; at?: number; keys?: numbe
 // A guided-mode chord: its 12-tet keys (sounded as the low, re-struck accompaniment) plus
 // the melody sets offered under it. Two of these (minor / major) drive the two dropdowns.
 export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
+
+// A progression-mode source set: a labelled key set (12-tet pitch classes) the progression
+// engine draws minor-second-free triads from, and from which the melody is drawn. The set
+// dropdown lists these; the first is the default (e.g. the stable 15s@0 vs collapsed 24@1/8).
+export type ProgressionSet = {label: string; keys: number[]};
+
+// Progression heuristics — how the per-group chords are chosen from the set. Scaffolded as a
+// dropdown; only "random triads" (a random minor-second-free triad per meter group) for now.
+type ProgressionHeuristic = {id: 'random-triads'; label: string};
+const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
+  {id: 'random-triads', label: 'Random triads'},
+];
 
 // Chord mode only auditions LCM families within the study range; larger folded LCMs
 // (a chord can sit inside placements of much larger families) are not offered as
@@ -155,6 +169,30 @@ const LCM_FAMILIES: LcmFamily[] = [
 // "an octave of pitches comprising the lcm family" for the melody to draw from.
 const foldOctave = (keys: number[]): number[] =>
   [...new Set(keys.map((k) => ((k % 12) + 12) % 12))].sort((a, b) => a - b);
+
+// Progression-mode chord pool: every 3-subset of a folded set that is free of minor seconds
+// (no pair a circular semitone apart, i.e. min(d, 12 - d) !== 1). Returns the raw triads as
+// pitch-class arrays for chordOffsets to voice. Empty only for pathological sets (< 3 keys or
+// all-adjacent), which the progression bake guards against.
+function m2FreeTriads(set: number[]): number[][] {
+  const s = foldOctave(set);
+  const triads: number[][] = [];
+  for (let a = 0; a < s.length; a++)
+    for (let b = a + 1; b < s.length; b++)
+      for (let c = b + 1; c < s.length; c++) {
+        const t = [s[a], s[b], s[c]];
+        const m2 = [
+          [t[0], t[1]],
+          [t[0], t[2]],
+          [t[1], t[2]],
+        ].some(([x, y]) => {
+          const d = Math.abs(x - y);
+          return Math.min(d, 12 - d) === 1;
+        });
+        if (!m2) triads.push(t);
+      }
+  return triads;
+}
 
 // The pulses that actually sound, in the order the scheduler fires them. Factored so the
 // baked melody assigns one key per event in exactly that order (play() reuses this).
@@ -296,11 +334,16 @@ export default function RhythmPatternPlayerClient({
   melody = false,
   chord = false,
   presets,
+  progression,
 }: RhythmPatternPlayerProps) {
   // Guided chord mode: the chord and its melody sets come from `presets` (two linked
   // dropdowns) instead of a random roll. Still runs the full chord-mode engine, so it
   // requires `chord` — the only divergences are the chord/melody *sources* and the controls.
   const guided = chord && presets != null;
+  // Progression mode: loop a baked progression of minor-second-free triads drawn from a fixed
+  // set (one triad per meter group), with the melody drawn from the whole set. Runs the chord
+  // engine like guided mode but chooses a fresh voicing per group instead of one static chord.
+  const progressionOn = progression != null && progression.length > 0;
   // Parse the author-supplied defaults once, falling back to a sane starter if the
   // MDX passes something malformed.
   const initial = useMemo(() => {
@@ -346,6 +389,12 @@ export default function RhythmPatternPlayerClient({
   // into a repeating phrase (loop on) or re-rolled on every hit (loop off).
   const [selectedLcm, setSelectedLcm] = useState(melody ? '8,9,10,12' : '');
   const [loopMelody, setLoopMelody] = useState(true);
+  // Progression mode: whether the chord progression is the baked, repeating phrase (loop on)
+  // or a fresh random triad rolled at every meter group each cycle (loop off) — the chord
+  // analogue of loopMelody. currentChord is the triad sounding now (its pitch classes), shown
+  // in the "playing" readout and updated by the scheduler at each group start.
+  const [loopChords, setLoopChords] = useState(true);
+  const [currentChord, setCurrentChord] = useState<number[] | null>(null);
 
   // Chord mode (only when `chord`): a randomly rolled chord together with the LCM family
   // placements that contain it as a subset, and which of those matches drives the melody. The
@@ -366,6 +415,11 @@ export default function RhythmPatternPlayerClient({
   // switch (its option list swaps with the chord).
   const [selectedChordIdx, setSelectedChordIdx] = useState(0);
   const [selectedMelodyIdx, setSelectedMelodyIdx] = useState(0);
+
+  // Progression mode (only when `progression`): which source set (drawn from + voiced) and
+  // which heuristic the two dropdowns have selected. Both re-bake the progression on change.
+  const [selectedProgIdx, setSelectedProgIdx] = useState(0);
+  const [selectedHeuristicIdx, setSelectedHeuristicIdx] = useState(0);
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
@@ -418,6 +472,10 @@ export default function RhythmPatternPlayerClient({
   // mode it is the selected match's LCM family placement (a superset of the chord); in
   // melody mode it is the chosen intro-table family.
   const octaveKeys = useMemo(() => {
+    if (progressionOn) {
+      // Progression mode: the melody draws from the whole selected source set.
+      return foldOctave(progression![selectedProgIdx].keys);
+    }
     if (guided) {
       // Guided mode: the selected preset melody set — an lcm@at placement or explicit keys.
       const m = presets![selectedChordIdx]?.melodies[selectedMelodyIdx];
@@ -432,6 +490,9 @@ export default function RhythmPatternPlayerClient({
     const fam = LCM_FAMILIES.find((f) => f.id === selectedLcm);
     return fam ? foldOctave(fam.keys) : null;
   }, [
+    progressionOn,
+    progression,
+    selectedProgIdx,
     guided,
     presets,
     selectedChordIdx,
@@ -462,6 +523,7 @@ export default function RhythmPatternPlayerClient({
   const octaveKeysRef = useRef(octaveKeys);
   const bakedKeysRef = useRef(bakedKeys);
   const loopMelodyRef = useRef(loopMelody);
+  const loopChordsRef = useRef(loopChords);
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
   // The chord's voicing as semitone offsets from pitchHz, read by the scheduler so the
@@ -476,6 +538,36 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     chordVoicingRef.current = chordOffsets(chordState?.keys ?? null, pitchHz);
   }, [chordState, pitchHz]);
+  // The minor-second-free triads the selected source set can voice — the live pool the
+  // scheduler draws from when "loop chords" is off (a fresh triad per group each cycle).
+  // Recomputed on a set / heuristic switch. Null outside progression mode.
+  const progressionTriads = useMemo(
+    () =>
+      progressionOn ? m2FreeTriads(progression![selectedProgIdx].keys) : null,
+    [progressionOn, progression, selectedProgIdx, selectedHeuristicIdx],
+  );
+  const progressionTriadsRef = useRef(progressionTriads);
+  useEffect(() => {
+    progressionTriadsRef.current = progressionTriads;
+  }, [progressionTriads]);
+  // Progression mode: the baked progression — one triad per meter group (its pitch classes, for
+  // the "playing" readout, plus its voiced offsets), chosen from progressionTriads with the same
+  // seeded RNG as the rhythm (salted so the chord draw is independent of the melody bake). This
+  // is the phrase looped when "loop chords" is on; it re-bakes on Generate (seed) and on a set /
+  // heuristic switch, so a running loop replays it until then. Null outside progression mode.
+  const progressionChords = useMemo(() => {
+    if (!progressionOn || !pattern || !progressionTriads || progressionTriads.length === 0)
+      return null;
+    const rng = mulberry32(seed ^ 0x9e3779b9);
+    return pattern.meter.map(() => {
+      const triad = progressionTriads[Math.floor(rng() * progressionTriads.length)];
+      return {triad, offsets: chordOffsets(triad, pitchHz)};
+    });
+  }, [progressionOn, pattern, progressionTriads, seed, pitchHz]);
+  const progressionChordsRef = useRef(progressionChords);
+  useEffect(() => {
+    progressionChordsRef.current = progressionChords;
+  }, [progressionChords]);
   // Guided mode: keep chordState (the voicing source) synced to the selected preset chord,
   // so switching the chord dropdown re-voices the accompaniment. `matches` stays empty —
   // guided mode never uses the superset-match dropdown.
@@ -493,6 +585,9 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     loopMelodyRef.current = loopMelody;
   }, [loopMelody]);
+  useEffect(() => {
+    loopChordsRef.current = loopChords;
+  }, [loopChords]);
   useEffect(() => {
     melodyOnRef.current = melodyOn;
   }, [melodyOn]);
@@ -672,6 +767,7 @@ export default function RhythmPatternPlayerClient({
     playRunRef.current++;
     playheadBeatRef.current = null;
     plotRef.current?.redraw(false, false);
+    setCurrentChord(null); // clear the progression "playing" readout
     setPlaying(false);
   };
 
@@ -693,9 +789,10 @@ export default function RhythmPatternPlayerClient({
     // Pick the active voices from the current instrument. Piano builds its samplers on first
     // use and fetches samples; gate playback on Tone.loaded() so the first note isn't silent.
     const usePiano = instrument === 'piano';
+    const chordEngine = chord || progressionOn;
     if (usePiano) {
       getPianoMelody();
-      if (chord) getPianoChord();
+      if (chordEngine) getPianoChord();
       setPianoLoading(true);
       try {
         await Tone.loaded();
@@ -704,19 +801,27 @@ export default function RhythmPatternPlayerClient({
       }
     }
     const synth = usePiano ? getPianoMelody() : getSynth();
-    const chordSynth = chord ? (usePiano ? getPianoChord() : getChordSynth()) : null;
+    const chordSynth = chordEngine
+      ? usePiano
+        ? getPianoChord()
+        : getChordSynth()
+      : null;
     const {pulses, totalBeats, meter: patternMeter} = pattern;
     // Chord onsets: map each meter group-start unit beat → that group's length in unit
     // beats (cumulative sums over the meter, as in gridLines' groupStarts). The chord
     // re-strikes at each group start, held for its group's length. Group starts are integer
     // on-beats that always fire, so exact key lookup against a firing event's unitBeat is
-    // safe and every group start is reached by the events/i iteration below.
+    // safe and every group start is reached by the events/i iteration below. groupIdxByStart
+    // maps the same starts to their 0-based group index, so progression mode can pick that
+    // group's baked triad voicing.
     const groupBeatsByStart = new Map<number, number>();
+    const groupIdxByStart = new Map<number, number>();
     let groupAcc = 0;
-    for (const m of patternMeter) {
+    patternMeter.forEach((m, gi) => {
       groupBeatsByStart.set(groupAcc, m);
+      groupIdxByStart.set(groupAcc, gi);
       groupAcc += m;
-    }
+    });
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
     // Bar index of each onset, aligned with `events`, for live loop-off recolouring.
@@ -744,11 +849,29 @@ export default function RhythmPatternPlayerClient({
         // Chord: re-strike the whole voicing at each meter group start, held for that
         // group's length (in live-tempo seconds) so it tracks tempo changes — a slow
         // harmonic pulse beneath the faster melody. Offsets are the precomputed
-        // lowest-penalty voicing, rooted an octave below the melody (see chordVoicingRef);
-        // map them to frequencies via the 12-TET ratio.
+        // lowest-penalty voicing, rooted an octave below the melody. In progression mode each
+        // group gets a triad: the baked one (loop chords on) or a fresh random draw from the
+        // set's minor-second-free pool (loop off); otherwise it is the single static chord
+        // (chordVoicingRef). displayTriad feeds the "playing" readout via the Draw callback.
         const groupBeats = groupBeatsByStart.get(ev.unitBeat);
+        let displayTriad: number[] | null = null;
         if (chordSynth && groupBeats !== undefined) {
-          const offsets = chordVoicingRef.current;
+          let offsets: number[] | null;
+          if (progressionOn) {
+            const gi = groupIdxByStart.get(ev.unitBeat)!;
+            const pool = progressionTriadsRef.current;
+            const groupChord =
+              loopChordsRef.current || !pool || pool.length === 0
+                ? (progressionChordsRef.current?.[gi] ?? null)
+                : (() => {
+                    const triad = pool[Math.floor(Math.random() * pool.length)];
+                    return {triad, offsets: chordOffsets(triad, pitchHz)};
+                  })();
+            offsets = groupChord?.offsets ?? null;
+            displayTriad = groupChord?.triad ?? null;
+          } else {
+            offsets = chordVoicingRef.current;
+          }
           if (offsets && offsets.length > 0) {
             const freqs = offsets.map((off) => pitchHz * Math.pow(2, off / 12));
             // Hold for most of the group but stop short of the next group start, leaving a
@@ -783,9 +906,13 @@ export default function RhythmPatternPlayerClient({
         // playhead to this bar (all players) and, for loop-off melody, recolour it live.
         const bar = firingPulseIdx[i % N];
         const beat = ev.unitBeat;
+        const isGroupStart = groupBeats !== undefined;
         Tone.getDraw().schedule(() => {
           if (playRunRef.current !== runId || !plotRef.current) return; // stale run / no plot
           playheadBeatRef.current = beat;
+          // At a meter group start in progression mode, surface the sounding triad in the
+          // "playing" readout (a slow, at-most-per-group state update).
+          if (isGroupStart && progressionOn) setCurrentChord(displayTriad);
           if (colourKey != null) {
             (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
               pitchFill(colourKey);
@@ -1116,6 +1243,40 @@ export default function RhythmPatternPlayerClient({
             </select>
           </label>
         )}
+        {progressionOn && (
+          <>
+            <label style={labelStyle}>
+              set
+              <select
+                value={selectedProgIdx}
+                onChange={(e) => setSelectedProgIdx(Number(e.target.value))}
+                aria-label="source set for chords and melody">
+                {progression!.map((p, i) => (
+                  <option key={i} value={i}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              progression
+              <select
+                value={selectedHeuristicIdx}
+                onChange={(e) => setSelectedHeuristicIdx(Number(e.target.value))}
+                aria-label="progression heuristic">
+                {PROGRESSION_HEURISTICS.map((h, i) => (
+                  <option key={h.id} value={i}>
+                    {h.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span style={labelStyle}>
+              playing
+              <code>{currentChord ? currentChord.join(' ') : '—'}</code>
+            </span>
+          </>
+        )}
         {guided && (
           <>
             <label style={labelStyle}>
@@ -1182,7 +1343,7 @@ export default function RhythmPatternPlayerClient({
             )}
           </>
         )}
-        {(melody || chord) && (
+        {(melody || chord || progressionOn) && (
           <label style={labelStyle}>
             <input
               type="checkbox"
@@ -1191,6 +1352,17 @@ export default function RhythmPatternPlayerClient({
               aria-label="loop the drawn melody"
             />
             loop melody
+          </label>
+        )}
+        {progressionOn && (
+          <label style={labelStyle}>
+            <input
+              type="checkbox"
+              checked={loopChords}
+              onChange={(e) => setLoopChords(e.target.checked)}
+              aria-label="loop the chord progression"
+            />
+            loop chords
           </label>
         )}
       </div>
