@@ -595,12 +595,7 @@ Writing 24@1 and 24@8 this way produces the three families 8@1,6,8.
 These families share keys 1 5 8 (4@1).
 
 If note 8 sounds bad in 15@0 due to preference, then this leaves a stable set 15s@0 of 0 1 3 5 9 10.
-Playing triads free of minor seconds from this stable set produces quite a different feel from playing such triads from 24@1,8.
-
-The player below runs a **progression mode**: it loops a rhythm whose chord changes at every meter group, drawing a fresh random triad (free of minor seconds) from the selected **set** while the melody draws from the whole set.
-Start with the stable **15s@0** for reference, then switch the set to the collapsed readings **24@1** and **24@8** — the same engine over the preferred 24 sets — and note the different feel.
-(Why 15 is preferentially collapsed into 24@1 / 24@8 is taken up in more detail later.)
-The **progression** dropdown is a placeholder for further heuristics; for now it offers only random triads.
+Playing triads from this stable set produces quite a different feel from playing such triads from 24@1,8.
 
 <RhythmPatternPlayer
   meter="4 4 4 4"
@@ -608,8 +603,8 @@ The **progression** dropdown is a placeholder for further heuristics; for now it
   bpm={100}
   progression={[
     {label: '15s@0 stable (0 1 3 5 9 10)', keys: [0, 1, 3, 5, 9, 10]},
-    {label: '24@1 collapsed (0 1 3 5 6 8 10)', keys: [0, 1, 3, 5, 6, 8, 10]},
-    {label: '24@8 collapsed (0 1 3 5 7 8 10)', keys: [0, 1, 3, 5, 7, 8, 10]},
+    {label: '24@1 (0 1 3 5 6 8 10)', keys: [0, 1, 3, 5, 6, 8, 10]},
+    {label: '24@8 (0 1 3 5 7 8 10)', keys: [0, 1, 3, 5, 7, 8, 10]},
   ]}
 />
 

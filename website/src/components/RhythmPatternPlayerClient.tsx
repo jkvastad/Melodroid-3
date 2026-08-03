@@ -52,11 +52,14 @@ export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
 // dropdown lists these; the first is the default (e.g. the stable 15s@0 vs collapsed 24@1/8).
 export type ProgressionSet = {label: string; keys: number[]};
 
-// Progression heuristics — how the per-group chords are chosen from the set. Scaffolded as a
-// dropdown; only "random triads" (a random minor-second-free triad per meter group) for now.
-type ProgressionHeuristic = {id: 'random-triads'; label: string};
+// Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
+// chord-pool generator (see progressionTriads memo): "random-triads" draws any minor-second-
+// free triad; "tertian-chords" draws only stacks of thirds (maj/min/aug/dim triads and the
+// tertian seventh chords). The set constrains which of these actually appear.
+type ProgressionHeuristic = {id: 'random-triads' | 'tertian-chords'; label: string};
 const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
-  {id: 'random-triads', label: 'Random triads'},
+  {id: 'random-triads', label: 'Random triads (no m2)'},
+  {id: 'tertian-chords', label: 'Random triads'},
 ];
 
 // Chord mode only auditions LCM families within the study range; larger folded LCMs
@@ -192,6 +195,46 @@ function m2FreeTriads(set: number[]): number[][] {
         if (!m2) triads.push(t);
       }
   return triads;
+}
+
+// All size-k subsets of arr, as index-ordered arrays. Used only on folded key sets (≤ 12
+// elements, in practice ≤ 7), so the naive recursion is fine.
+function combinations<T>(arr: T[], k: number): T[][] {
+  if (k === 0) return [[]];
+  if (k > arr.length) return [];
+  const out: T[][] = [];
+  for (let i = 0; i <= arr.length - k; i++)
+    for (const rest of combinations(arr.slice(i + 1), k - 1))
+      out.push([arr[i], ...rest]);
+  return out;
+}
+
+// True iff the pitch classes form a stack of thirds — some note is a root from which the
+// others rise by adjacent intervals all in {3, 4}. Covers the four triad qualities (2 thirds)
+// and every tertian seventh chord (3 thirds: maj7, dom7, min7, min-maj7, half-dim7, dim7, aug).
+function isTertian(notes: number[]): boolean {
+  for (const root of notes) {
+    const offs = notes.map((n) => ((n - root) % 12 + 12) % 12).sort((a, b) => a - b);
+    let ok = true;
+    for (let i = 1; i < offs.length; i++) {
+      const d = offs[i] - offs[i - 1];
+      if (d !== 3 && d !== 4) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return true;
+  }
+  return false;
+}
+
+// Progression-mode chord pool: every 3- and 4-note subset of a folded set that is a stack of
+// thirds (isTertian). Mixes triads and seventh chords into one pool for chordOffsets to voice.
+// Tertian chords are inherently minor-second-free (min interval 3). Empty for sparse sets that
+// admit no third-stack, which the progression bake / live draw guard against.
+function tertianChords(set: number[]): number[][] {
+  const s = foldOctave(set);
+  return [...combinations(s, 3), ...combinations(s, 4)].filter(isTertian);
 }
 
 // The pulses that actually sound, in the order the scheduler fires them. Factored so the
@@ -538,13 +581,15 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     chordVoicingRef.current = chordOffsets(chordState?.keys ?? null, pitchHz);
   }, [chordState, pitchHz]);
-  // The minor-second-free triads the selected source set can voice — the live pool the
-  // scheduler draws from when "loop chords" is off (a fresh triad per group each cycle).
-  // Recomputed on a set / heuristic switch. Null outside progression mode.
-  const progressionTriads = useMemo(
-    () =>
-      progressionOn ? m2FreeTriads(progression![selectedProgIdx].keys) : null,
-    [progressionOn, progression, selectedProgIdx, selectedHeuristicIdx],
+  // The chord pool the selected source set can voice under the selected heuristic — the live
+  // pool the scheduler draws from when "loop chords" is off (a fresh chord per group each
+  // cycle). Recomputed on a set / heuristic switch. Null outside progression mode.
+  const progressionTriads = useMemo(() => {
+    if (!progressionOn) return null;
+    const set = progression![selectedProgIdx].keys;
+    const id = PROGRESSION_HEURISTICS[selectedHeuristicIdx].id;
+    return id === 'tertian-chords' ? tertianChords(set) : m2FreeTriads(set);
+  }, [progressionOn, progression, selectedProgIdx, selectedHeuristicIdx],
   );
   const progressionTriadsRef = useRef(progressionTriads);
   useEffect(() => {
