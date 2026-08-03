@@ -599,18 +599,65 @@ Playing triads from this stable set produces quite a different feel from playing
 
 <RhythmPatternPlayer
   meter="4 4 4 4"
-  subdivisions="2"
+  subdivisions="4"
   bpm={100}
   progression={[
     {label: '15s@0 stable (0 1 3 5 9 10)', keys: [0, 1, 3, 5, 9, 10]},
+    {label: '15@0 (0 1 3 5 8 9 10)', keys: [0, 1, 3, 5, 8, 9, 10]},
     {label: '24@1 (0 1 3 5 6 8 10)', keys: [0, 1, 3, 5, 6, 8, 10]},
     {label: '24@8 (0 1 3 5 7 8 10)', keys: [0, 1, 3, 5, 7, 8, 10]},
   ]}
 />
 
+Notably when aug chords such as 1 5 9 12 are drawn a shift in mood is also apparent.
+A possibility is that certain chords function as placement indicators with preference and if randomly drawn they induce a certain flavor.
+Along these lines there might be a flavor for randomness or symmetry.
+
 ###### Harmonic Minor
 The harmonic minor scale placed at 0 (harm@0, 0 2 3 5 7 8 11) is quite close to 15@2, exchanging 8 for 6.
 Comparing with 15@0 we have harm@10 with 10 0 1 3 5 6 9, exchanging 8 for 6 which introduces dim7 (0 3 6 9).
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: 'harm@10 (10 0 1 3 5 6 9)', keys: [0, 1, 3, 5, 6, 9, 10]},    
+    {label: '15s@0 stable (0 1 3 5 9 10)', keys: [0, 1, 3, 5, 9, 10]},
+  ]}
+/>
+
+harm@10 and 15s@0 sound quite similar. Perhaps harm@10 is essentially 15s@0 - but how come we can add in key 6? 
+Perhaps it is always possible to extend into symmetric chords.
+
+###### Octatonic Scale
+The (half step) octatonic scale oct@0 is 0 1 3 4 6 7 9 10 which is composed of e.g. 8@2 + 15@2.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: 'oct@10 (0 1 3 4 6 7 9 10)', keys: [0, 1, 3, 4, 6, 7, 9, 10]},    
+    {label: 'harm@10 (10 0 1 3 5 6 9)', keys: [0, 1, 3, 5, 6, 9, 10]},        
+  ]}
+/>
+
+This scale sounds a bit like when playing random but has some merits when the chords drawn are subsets of 0 3 6 9.
+
+###### Blues Scale
+The blues scale blues@5 is 5 7 8 9 0 2 which is composed of 8@10 + 8@8. 
+Notably the extra keys are 10 and 3 which do sound quite nice along with the major chord 0 5 9.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: 'blues@5 (5 7 8 9 0 2)', keys: [0, 2, 5, 7, 8, 9]},    
+    {label: '8@10 + 9@10@5 (5 7 8 9 10 0 2 3)', keys: [0, 2, 3, 5, 7, 8, 9, 10]},
+  ]}
+/>
 
 TODO: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0

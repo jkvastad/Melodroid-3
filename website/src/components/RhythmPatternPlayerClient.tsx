@@ -58,8 +58,8 @@ export type ProgressionSet = {label: string; keys: number[]};
 // tertian seventh chords). The set constrains which of these actually appear.
 type ProgressionHeuristic = {id: 'random-triads' | 'tertian-chords'; label: string};
 const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
-  {id: 'random-triads', label: 'Random triads (no m2)'},
   {id: 'tertian-chords', label: 'Random triads'},
+  {id: 'random-triads', label: 'Random triads (no m2)'},
 ];
 
 // Chord mode only auditions LCM families within the study range; larger folded LCMs
