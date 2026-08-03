@@ -77,7 +77,7 @@ table key-supersets     placements whose keys are a superset of given --keys (--
 table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors)
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table subsets           key-sweep every size-≥2 subset of a key set (--lcm@--at or --keys), listing the LCM families those subsets full-match
-table chord-melody      matrix of maximal-LCM placements containing a chord vs each key
+table chord-melody      matrix of maximal-LCM placements containing a chord vs each key (maximal = not a literal subset of another allowed family; renormalized subsets kept as own rows, but isomorphic families collapse to the lowest-LCM representative)
 table chords            unique chords per k-tet under transposition (necklaces), filtered by note count; each lists the containing LCM-family placements, collapsing same-key (isomorphic) placements to the lowest LCM by default (--explicit-placements shows all; --lcm-only keeps just the chords that are a subset of ≥1 available family, bounded by --max-lcm)
 graph lcm-families      Mermaid relation graph (--mode full|collapsed)
 plot  lcm-families      ScottPlot waveform (--mode all|sum|constituents|difference, --subset-lcm)

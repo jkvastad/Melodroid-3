@@ -185,7 +185,7 @@ public class PlacementsTests
     }
 
     [Fact]
-    public void FindMaximalContaining_triad_returns_15_at_4_7_11_and_24_at_0_5_7()
+    public void FindMaximalContaining_triad_returns_15_18_20_24_placements()
     {
         var families = LcmFamilies.Compute(
             GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
@@ -196,7 +196,13 @@ public class PlacementsTests
 
         placements
             .Select(p => (p.Lcm, p.At))
-            .Should().Equal(new[] { (15, 4), (15, 7), (15, 11), (24, 0), (24, 5), (24, 7) });
+            .Should().Equal(new[]
+            {
+                (15, 4), (15, 7), (15, 11),
+                (18, 2), (18, 7),
+                (20, 0), (20, 4), (20, 9),
+                (24, 0), (24, 5), (24, 7),
+            });
     }
 
     [Fact]
@@ -249,17 +255,18 @@ public class PlacementsTests
     }
 
     [Fact]
-    public void MaximalLcms_with_default_params_yields_15_and_24()
+    public void MaximalLcms_with_default_params_yields_15_18_20_24()
     {
         var families = LcmFamilies.Compute(
             GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
             maxLcm: 24);
         var relations = FamilyRelations.Compute(families);
 
-        // Independent oracle: an LCM is maximal iff no other family contains it (as literal
-        // subset) and no other family contains its renormalization (as renormalized subset).
+        // Independent oracle: an LCM is maximal iff no other family literally contains it as a
+        // subset. Renormalized-subset domination is intentionally NOT applied. Isomorphism collapse
+        // removes nothing further at these params: the isomorphic small families 8/9/10/12 are all
+        // already literal subsets of 24/18/20, so none reach the collapse step.
         var familyByLcm = families.ToDictionary(f => f.Lcm);
-        var unity = new Fraction(1, 1);
         bool IsDominated(int lcm)
         {
             var a = familyByLcm[lcm];
@@ -270,12 +277,6 @@ public class PlacementsTests
                 {
                     var bSet = new HashSet<Fraction>(b.Fractions);
                     if (a.Fractions.All(bSet.Contains)) return true;
-                    foreach (var baseFrac in a.Fractions)
-                    {
-                        if (baseFrac == unity) continue;
-                        var ren = Renormalization.Renormalize(a.Fractions, baseFrac);
-                        if (ren.All(bSet.Contains)) return true;
-                    }
                 }
             }
             return false;
@@ -289,7 +290,38 @@ public class PlacementsTests
         var actual = Placements.MaximalLcms(families, relations);
 
         actual.Should().Equal(expected);
-        expected.Should().Equal(new[] { 15, 24 });
+        expected.Should().Equal(new[] { 15, 18, 20, 24 });
+    }
+
+    [Fact]
+    public void MaximalLcms_collapses_isomorphic_families_to_lowest_lcm()
+    {
+        // At max-lcm 15 the families 8/9/10/12 form one isomorphism class (renormalizations of one
+        // another). None is a literal subset of a surviving family, so all four are candidates;
+        // isomorphism collapse keeps only the lowest LCM (8). lcm 15 is unrelated and survives.
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 15);
+        var relations = FamilyRelations.Compute(families);
+
+        Placements.MaximalLcms(families, relations).Should().Equal(new[] { 8, 15 });
+    }
+
+    [Fact]
+    public void FindMaximalContaining_triad_at_max_lcm_15_collapses_isomorphic_placements()
+    {
+        // 8@0 / 9@2 / 10@4 / 12@7 are the identical key set {0,2,4,7,11}; only the lcm-8
+        // representative survives (likewise 8@5 for {0,4,5,7,9}), alongside the lcm-15 rows.
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 15);
+        var relations = FamilyRelations.Compute(families);
+
+        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
+
+        placements
+            .Select(p => (p.Lcm, p.At))
+            .Should().Equal(new[] { (8, 0), (8, 5), (15, 4), (15, 7), (15, 11) });
     }
 
     private static LcmFamily FamilyFor(int lcm)

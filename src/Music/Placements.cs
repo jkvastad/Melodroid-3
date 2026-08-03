@@ -121,12 +121,44 @@ public static class Placements
         IReadOnlyList<LcmFamily> families,
         IReadOnlyList<FamilyRelation> relations)
     {
+        // Only literal subsets count as domination. Renormalized-subset families are intentionally
+        // NOT dominated here, so a family whose keys are merely subsumed by a larger family's
+        // placement still keeps its own row. (RenormalizedSubset relations are still produced by
+        // FamilyRelations and used by the graph renderer.)
         var dominated = new HashSet<int>(relations
-            .Where(r => r.Kind is RelationKind.LiteralSubset or RelationKind.RenormalizedSubset)
+            .Where(r => r.Kind is RelationKind.LiteralSubset)
             .Select(r => r.FromLcm));
-        return families
+
+        var candidates = families
             .Select(f => f.Lcm)
             .Where(lcm => !dominated.Contains(lcm))
+            .ToList();
+
+        // Collapse each isomorphism class to its lowest-LCM representative: isomorphic families are
+        // renormalizations (keyboard transpositions) of one another, so their placements coincide
+        // across the anchor sweep and only the lowest LCM is kept as the canonical row.
+        var parent = new Dictionary<int, int>();
+        int Find(int x)
+        {
+            if (!parent.TryGetValue(x, out _)) parent[x] = x;
+            while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+            return x;
+        }
+        foreach (var r in relations.Where(r => r.Kind is RelationKind.Isomorphism))
+        {
+            parent[Find(r.FromLcm)] = Find(r.ToLcm);
+        }
+
+        var lowestByRoot = new Dictionary<int, int>();
+        foreach (var lcm in candidates)
+        {
+            var root = Find(lcm);
+            if (!lowestByRoot.TryGetValue(root, out var cur) || lcm < cur) lowestByRoot[root] = lcm;
+        }
+        var representatives = new HashSet<int>(lowestByRoot.Values);
+
+        return candidates
+            .Where(representatives.Contains)
             .OrderBy(lcm => lcm)
             .ToList();
     }
