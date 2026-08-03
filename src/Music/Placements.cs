@@ -119,14 +119,17 @@ public static class Placements
 
     public static IReadOnlyList<int> MaximalLcms(
         IReadOnlyList<LcmFamily> families,
-        IReadOnlyList<FamilyRelation> relations)
+        IReadOnlyList<FamilyRelation> relations,
+        bool dropRenormalizedSubsets = false)
     {
-        // Only literal subsets count as domination. Renormalized-subset families are intentionally
-        // NOT dominated here, so a family whose keys are merely subsumed by a larger family's
-        // placement still keeps its own row. (RenormalizedSubset relations are still produced by
-        // FamilyRelations and used by the graph renderer.)
+        // Literal subsets always count as domination. Renormalized subsets are kept as their own
+        // rows by default (their keys are merely subsumed by a larger family's placement), but
+        // dropRenormalizedSubsets folds them into domination too — the stricter, pre-collapse view.
+        // (RenormalizedSubset relations are always produced by FamilyRelations and used by the
+        // graph renderer regardless of this flag.)
         var dominated = new HashSet<int>(relations
-            .Where(r => r.Kind is RelationKind.LiteralSubset)
+            .Where(r => r.Kind is RelationKind.LiteralSubset
+                || (dropRenormalizedSubsets && r.Kind is RelationKind.RenormalizedSubset))
             .Select(r => r.FromLcm));
 
         var candidates = families
@@ -167,9 +170,10 @@ public static class Placements
         IReadOnlyCollection<int> chordKeys,
         IReadOnlyList<LcmFamily> families,
         IReadOnlyList<FamilyRelation> relations,
-        int ktet)
+        int ktet,
+        bool dropRenormalizedSubsets = false)
     {
-        var maximalSet = new HashSet<int>(MaximalLcms(families, relations));
+        var maximalSet = new HashSet<int>(MaximalLcms(families, relations, dropRenormalizedSubsets));
         var chord = new HashSet<int>(chordKeys);
         var rows = new List<Placement>();
 

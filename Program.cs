@@ -603,6 +603,12 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
+        var chordMelodyDropRenormalizedOption = new Option<bool>("--drop-renormalized-subsets")
+        {
+            Description = "Also treat a family that is a renormalized subset of a larger allowed family as dominated (filtered out), not just literal subsets. Off by default, which keeps renormalized subsets as their own rows.",
+            DefaultValueFactory = _ => false,
+        };
+
         var chordMelodyCommand = new Command(
             "chord-melody",
             "Matrix view: rows are maximal-LCM placements containing the given chord; columns are the k-tet keys; cells mark whether each key is in the placement. Reading column K shows which placements survive playing key K as melody.");
@@ -610,6 +616,7 @@ class Program
         chordMelodyCommand.Add(maxPrimeOption);
         chordMelodyCommand.Add(maxLcmOption);
         chordMelodyCommand.Add(chordMelodyChordKeysOption);
+        chordMelodyCommand.Add(chordMelodyDropRenormalizedOption);
         chordMelodyCommand.Add(ktetOption);
         chordMelodyCommand.SetAction(parse =>
         {
@@ -617,6 +624,7 @@ class Program
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var chordKeys = parse.GetValue(chordMelodyChordKeysOption) ?? Array.Empty<int>();
+            var dropRenormalizedSubsets = parse.GetValue(chordMelodyDropRenormalizedOption);
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -637,8 +645,8 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var relations = FamilyRelations.Compute(families);
-            var maximalLcms = Placements.MaximalLcms(families, relations);
-            var placements = Placements.FindMaximalContaining(dedupChord, families, relations, k);
+            var maximalLcms = Placements.MaximalLcms(families, relations, dropRenormalizedSubsets);
+            var placements = Placements.FindMaximalContaining(dedupChord, families, relations, k, dropRenormalizedSubsets);
             ChordMelodyTableRenderer.Render(dedupChord, maximalLcms, k, placements);
             return 0;
         });

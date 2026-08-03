@@ -308,6 +308,20 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void MaximalLcms_drop_renormalized_subsets_restores_15_and_24()
+    {
+        // With dropRenormalizedSubsets, a renormalized subset of a larger family is dominated too,
+        // reproducing the stricter pre-collapse view: only 15 and 24 survive at default params.
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+
+        Placements.MaximalLcms(families, relations, dropRenormalizedSubsets: true)
+            .Should().Equal(new[] { 15, 24 });
+    }
+
+    [Fact]
     public void FindMaximalContaining_triad_at_max_lcm_15_collapses_isomorphic_placements()
     {
         // 8@0 / 9@2 / 10@4 / 12@7 are the identical key set {0,2,4,7,11}; only the lcm-8
