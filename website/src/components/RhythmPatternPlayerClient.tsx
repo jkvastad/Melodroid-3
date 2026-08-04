@@ -496,6 +496,10 @@ export default function RhythmPatternPlayerClient({
   // in the "playing" readout and updated by the scheduler at each group start.
   const [loopChords, setLoopChords] = useState(false);
   const [currentChord, setCurrentChord] = useState<number[] | null>(null);
+  // Chord-walk mode: the bridging placement the current group draws its melody from (its label,
+  // e.g. "8 @ 5" / "15s @ 7"), shown in the "placement" readout beside currentChord and updated
+  // by the scheduler at each group start (null when stopped / outside chord-walk mode).
+  const [currentPlacement, setCurrentPlacement] = useState<string | null>(null);
 
   // Chord mode (only when `chord`): a randomly rolled chord together with the LCM family
   // placements that contain it as a subset, and which of those matches drives the melody. The
@@ -630,6 +634,7 @@ export default function RhythmPatternPlayerClient({
         WALK_MELODY_STRATEGY === 'bridging' && s.bridgingPlacement
           ? foldOctave(s.bridgingPlacement.keys)
           : null,
+      placementLabel: s.bridgingPlacement?.label ?? null,
     }));
   }, [chordWalkOn, pattern, curatedPool, walkCandidates, chordWalk, seed, pitchHz]);
 
@@ -968,6 +973,7 @@ export default function RhythmPatternPlayerClient({
     playheadBeatRef.current = null;
     plotRef.current?.redraw(false, false);
     setCurrentChord(null); // clear the progression "playing" readout
+    setCurrentPlacement(null); // clear the chord-walk "placement" readout
     setPlaying(false);
   };
 
@@ -1062,6 +1068,7 @@ export default function RhythmPatternPlayerClient({
         // (chordVoicingRef). displayTriad feeds the "playing" readout via the Draw callback.
         const groupBeats = groupBeatsByStart.get(ev.unitBeat);
         let displayTriad: number[] | null = null;
+        let displayPlacement: string | null = null;
         if (chordSynth && groupBeats !== undefined) {
           let offsets: number[] | null;
           if (progressionOn) {
@@ -1083,6 +1090,7 @@ export default function RhythmPatternPlayerClient({
             const step = chordWalkStepsRef.current?.[gi] ?? null;
             offsets = step?.offsets ?? null;
             displayTriad = step?.triad ?? null;
+            displayPlacement = step?.placementLabel ?? null;
           } else {
             offsets = chordVoicingRef.current;
           }
@@ -1134,6 +1142,7 @@ export default function RhythmPatternPlayerClient({
           // At a meter group start in progression mode, surface the sounding triad in the
           // "playing" readout (a slow, at-most-per-group state update).
           if (isGroupStart && (progressionOn || chordWalkOn)) setCurrentChord(displayTriad);
+          if (isGroupStart && chordWalkOn) setCurrentPlacement(displayPlacement);
           if (colourKey != null) {
             (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
               pitchFill(colourKey);
@@ -1516,6 +1525,10 @@ export default function RhythmPatternPlayerClient({
             <span style={labelStyle}>
               playing
               <code>{currentChord ? currentChord.join(' ') : '—'}</code>
+            </span>
+            <span style={labelStyle}>
+              placement
+              <code>{currentPlacement ?? '—'}</code>
             </span>
           </>
         )}
