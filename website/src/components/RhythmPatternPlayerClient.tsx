@@ -443,12 +443,12 @@ export default function RhythmPatternPlayerClient({
   // from ('' = fixed pitch, today's behavior), and whether the drawn pitches are baked
   // into a repeating phrase (loop on) or re-rolled on every hit (loop off).
   const [selectedLcm, setSelectedLcm] = useState(melody ? '8,9,10,12' : '');
-  const [loopMelody, setLoopMelody] = useState(true);
+  const [loopMelody, setLoopMelody] = useState(false);
   // Progression mode: whether the chord progression is the baked, repeating phrase (loop on)
   // or a fresh random triad rolled at every meter group each cycle (loop off) — the chord
   // analogue of loopMelody. currentChord is the triad sounding now (its pitch classes), shown
   // in the "playing" readout and updated by the scheduler at each group start.
-  const [loopChords, setLoopChords] = useState(true);
+  const [loopChords, setLoopChords] = useState(false);
   const [currentChord, setCurrentChord] = useState<number[] | null>(null);
 
   // Chord mode (only when `chord`): a randomly rolled chord together with the LCM family
