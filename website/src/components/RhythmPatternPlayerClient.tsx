@@ -19,6 +19,7 @@ import {
 import {
   expandPlacements,
   generateChordWalk,
+  type CuratedPlacement,
   type PlacementPattern,
 } from '@site/src/lib/chordWalk';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
@@ -72,6 +73,35 @@ export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 // (draw from any placement containing the current chord).
 type WalkMelodyStrategy = 'bridging';
 const WALK_MELODY_STRATEGY: WalkMelodyStrategy = 'bridging';
+
+// A raw chord-walk step before baking: the chord's pitch classes and the placement it bridges from
+// (null only in the degenerate origin-repeat fallback). generateChordWalk returns the non-null form.
+type RawWalkStep = {chord: number[]; bridgingPlacement: CuratedPlacement | null};
+
+// Map a raw walk to the scheduler's baked step shape: the chord's pitch classes (`triad`), its
+// voiced offsets, the folded melody pool (per WALK_MELODY_STRATEGY), and the placement label for the
+// "playing" readout. Shared by the chordWalkSteps memo and the per-cycle regeneration in play() so
+// both bake identically.
+function bakeWalkSteps(walk: RawWalkStep[], pitchHz: number) {
+  return walk.map((s) => ({
+    triad: s.chord,
+    offsets: chordOffsets(s.chord, pitchHz),
+    melodyKeys:
+      WALK_MELODY_STRATEGY === 'bridging' && s.bridgingPlacement
+        ? foldOctave(s.bridgingPlacement.keys)
+        : null,
+    placementLabel: s.bridgingPlacement?.label ?? null,
+  }));
+}
+
+// The degenerate walk used when generateChordWalk finds no length-N cycle: the origin chord repeated
+// in every group, bridged by any curated placement containing it (or null → no melody that group).
+function originWalk(origin: number[], curatedPool: CuratedPlacement[], N: number): RawWalkStep[] {
+  return Array.from({length: N}, () => ({
+    chord: origin,
+    bridgingPlacement: curatedPool.find((p) => origin.every((k) => p.keys.includes(k))) ?? null,
+  }));
+}
 
 // Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
 // chord-pool generator (see progressionTriads memo): "tertian-triads" draws only the four
@@ -614,28 +644,18 @@ export default function RhythmPatternPlayerClient({
   // The baked cyclic walk — one step per meter group: the chord to sound (its pitch classes + voiced
   // offsets) and the folded melody pool (the bridging placement, per WALK_MELODY_STRATEGY). Seeded
   // off the rhythm seed (salted, independent of the melody/progression bakes) so Generate re-rolls
-  // deterministically and loop replays the same cycle. Falls back to the origin repeated in every
-  // group when no length-N cycle exists (generateChordWalk returns null). Null outside chord-walk.
+  // deterministically. This is the FIRST cycle; with loop melody off the scheduler re-rolls a fresh
+  // legal cycle each loop, and with loop melody on it freezes and repeats this one (its baked phrase
+  // stays coherent). Falls back to the origin repeated in every group when no length-N cycle exists
+  // (generateChordWalk returns null). Null outside chord-walk.
   const chordWalkSteps = useMemo(() => {
     if (!chordWalkOn || !pattern || !curatedPool || !walkCandidates) return null;
     const N = pattern.meter.length;
     const origin = foldOctave(chordWalk!.origin);
     const walk =
       generateChordWalk(origin, walkCandidates, curatedPool, N, seed ^ 0x2545f491) ??
-      Array.from({length: N}, () => ({
-        chord: origin,
-        bridgingPlacement:
-          curatedPool.find((p) => origin.every((k) => p.keys.includes(k))) ?? null,
-      }));
-    return walk.map((s) => ({
-      triad: s.chord,
-      offsets: chordOffsets(s.chord, pitchHz),
-      melodyKeys:
-        WALK_MELODY_STRATEGY === 'bridging' && s.bridgingPlacement
-          ? foldOctave(s.bridgingPlacement.keys)
-          : null,
-      placementLabel: s.bridgingPlacement?.label ?? null,
-    }));
+      originWalk(origin, curatedPool, N);
+    return bakeWalkSteps(walk, pitchHz);
   }, [chordWalkOn, pattern, curatedPool, walkCandidates, chordWalk, seed, pitchHz]);
 
   // The pitch pool folded to one octave, or null for fixed pitch / random pitch. In chord
@@ -767,12 +787,24 @@ export default function RhythmPatternPlayerClient({
     progressionChordsRef.current = progressionChords;
   }, [progressionChords]);
   // Chord-walk mode: the baked cyclic walk read by the scheduler (chord voicing per group) — the
-  // analogue of progressionChordsRef. Unlike progression mode the walk never re-rolls per cycle
-  // (that would break the return-to-origin guarantee); it re-bakes only on Generate / heuristic.
+  // seeded first cycle. With loop melody OFF the scheduler re-rolls a fresh legal cycle each loop
+  // (closure preserved: generateChordWalk always returns to origin); with loop melody ON this seeded
+  // walk is frozen and repeated. It re-bakes on Generate / heuristic, seeding the next first cycle.
   const chordWalkStepsRef = useRef(chordWalkSteps);
   useEffect(() => {
     chordWalkStepsRef.current = chordWalkSteps;
   }, [chordWalkSteps]);
+  // The curated placement pool and heuristic chord vocabulary, mirrored into refs so a running loop's
+  // per-cycle regeneration (in play's pump) picks up a mid-play heuristic / set switch live, exactly
+  // like chordWalkStepsRef. generateChordWalk reads both when re-rolling a fresh cycle.
+  const curatedPoolRef = useRef(curatedPool);
+  useEffect(() => {
+    curatedPoolRef.current = curatedPool;
+  }, [curatedPool]);
+  const walkCandidatesRef = useRef(walkCandidates);
+  useEffect(() => {
+    walkCandidatesRef.current = walkCandidates;
+  }, [walkCandidates]);
   // Guided mode: keep chordState (the voicing source) synced to the selected preset chord,
   // so switching the chord dropdown re-voices the accompaniment. `matches` stays empty —
   // guided mode never uses the superset-match dropdown.
@@ -1028,12 +1060,15 @@ export default function RhythmPatternPlayerClient({
       groupIdxByStart.set(groupAcc, gi);
       groupAcc += m;
     });
-    // Chord-walk mode: each meter group draws melody from its own (bridging) placement pool, so
-    // precompute the pool per group plus the ascending group starts to bucket an event into its
-    // group. Null in every other mode (they use the single global octaveKeys pool).
-    const walkPools = chordWalkOn
-      ? (chordWalkStepsRef.current?.map((s) => s.melodyKeys) ?? null)
-      : null;
+    // Chord-walk mode: the walk re-rolls per loop (unless loop melody is on), so keep it cycle-local
+    // rather than static. `cycleSteps` is the current cycle's baked walk (chord voicing + per-group
+    // melody pools); `cycleWalkPools` is the folded melody pool per meter group. Both are seeded with
+    // the baked first cycle and refreshed at each full pass in pump(); `walkStarts` buckets an event
+    // into its meter group. Precompute the meter length and origin for the per-cycle regeneration.
+    const walkMeterLen = patternMeter.length;
+    const originKeys = chordWalkOn ? foldOctave(chordWalk!.origin) : [];
+    let cycleSteps = chordWalkOn ? chordWalkStepsRef.current : null;
+    let cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
     const walkStarts = chordWalkOn ? groupStartBeats(patternMeter) : null;
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
@@ -1059,6 +1094,32 @@ export default function RhythmPatternPlayerClient({
         const absBeat = Math.floor(i / N) * totalBeats + ev.unitBeat;
         const at = prevTime + (absBeat - prevBeat) * sec;
         if (at >= Tone.now() + lookAheadSec) break; // not due yet — recompute next poll
+        // Chord-walk: `i % N === 0` marks the start of each full pass = one walk cycle. Re-roll a
+        // fresh legal cycle then, so successive loops walk different placements — UNLESS loop melody
+        // is on (freeze the seeded walk so its baked phrase stays coherent) or this is the first
+        // cycle (keep Generate deterministic per seed). generateChordWalk always closes on the
+        // origin, so the return-to-origin guarantee survives the re-roll.
+        if (chordWalkOn && walkMeterLen > 1 && i % N === 0) {
+          if (
+            i === 0 ||
+            loopMelodyRef.current ||
+            !curatedPoolRef.current ||
+            !walkCandidatesRef.current
+          ) {
+            cycleSteps = chordWalkStepsRef.current;
+          } else {
+            const walk =
+              generateChordWalk(
+                originKeys,
+                walkCandidatesRef.current,
+                curatedPoolRef.current,
+                walkMeterLen,
+                (Math.random() * 2 ** 32) >>> 0,
+              ) ?? originWalk(originKeys, curatedPoolRef.current, walkMeterLen);
+            cycleSteps = bakeWalkSteps(walk, pitchHz);
+          }
+          cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
+        }
         // Chord: re-strike the whole voicing at each meter group start, held for that
         // group's length (in live-tempo seconds) so it tracks tempo changes — a slow
         // harmonic pulse beneath the faster melody. Offsets are the precomputed
@@ -1084,10 +1145,10 @@ export default function RhythmPatternPlayerClient({
             offsets = groupChord?.offsets ?? null;
             displayTriad = groupChord?.triad ?? null;
           } else if (chordWalkOn) {
-            // The cycle is fixed by the baked walk (re-rolling per group would break the
-            // return-to-origin guarantee), so always use this group's baked step.
+            // Use this group's step from the current cycle's walk (re-rolled per loop unless loop
+            // melody is on; the whole cycle re-rolls at once so it still closes on the origin).
             const gi = groupIdxByStart.get(ev.unitBeat)!;
-            const step = chordWalkStepsRef.current?.[gi] ?? null;
+            const step = cycleSteps?.[gi] ?? null;
             offsets = step?.offsets ?? null;
             displayTriad = step?.triad ?? null;
             displayPlacement = step?.placementLabel ?? null;
@@ -1112,8 +1173,8 @@ export default function RhythmPatternPlayerClient({
         // event's meter-group bridging pool (so the melody modulates group-to-group). Falls back
         // to the global pool for a group whose bridging pool is empty.
         let okeys = octaveKeysRef.current;
-        if (walkPools && walkStarts) {
-          const gp = walkPools[groupIndexOf(ev.unitBeat, walkStarts)];
+        if (cycleWalkPools && walkStarts) {
+          const gp = cycleWalkPools[groupIndexOf(ev.unitBeat, walkStarts)];
           if (gp && gp.length) okeys = gp;
         }
         let freq = pitchHz;

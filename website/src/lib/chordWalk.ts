@@ -156,61 +156,50 @@ export function generateChordWalk(
     return [{chord: originKeys, bridgingPlacement: pool[choices[0]]}];
   }
 
-  // The successor candidates from `cur`: each (bridging placement p, next node n) pair where p
-  // contains cur and n ≠ cur. `requireWrap` (used only for the last chord) additionally requires n
-  // to share a placement with origin, so the wrap edge back to origin is guaranteed to exist.
-  type Edge = {placement: number; next: number};
-  const successors = (cur: number, requireWrap: boolean): Edge[] => {
-    const edges: Edge[] = [];
-    for (const p of nodes[cur].placementIdxs)
-      for (const n of placementMembers[p]) {
-        if (n === cur) continue;
-        if (requireWrap && !nodes[n].placementIdxs.some((q) => originPlacements.has(q))) continue;
-        edges.push({placement: p, next: n});
-      }
-    return edges;
-  };
-
-  // A pool placement shared by node `n` and origin, chosen with the seeded stream (the wrap
-  // bridging placement P_{N-1}).
-  const wrapPlacement = (n: number): CuratedPlacement => {
-    const shared = shuffle(
-      nodes[n].placementIdxs.filter((q) => originPlacements.has(q)),
-      rng,
-    );
-    return pool[shared[0]];
-  };
-
-  // Randomized DFS over positions 1..N-1. `bridges[i]` bridges chord i → chord i+1; on success the
-  // caller reads bridges[0..N-2] and adds the wrap bridge for the last chord. depth counts chords
-  // chosen after origin (1-based); at depth N-1 we are choosing the last chord and require the wrap.
+  // Placement-first randomized DFS with backtracking. For each group i (current chord path[i]),
+  // pick its bridging placement P_i FIRST — uniform-random among the placements containing the
+  // current chord — then draw the next chord uniformly from that placement's members. This makes
+  // the placement an unbiased free pick (a big placement holding many chords no longer gets weighted
+  // by its member count, as the old flat (placement, next) edge list did). On the last group we
+  // additionally require P_{N-1} to contain the origin, so the wrap chord C_N = origin closes the
+  // loop; backtracking explores alternatives until a cycle closes. `chosenPlacements[i]` is the pool
+  // index of P_i — the placement group i draws its melody from, bridging C_i → C_{i+1 mod N}.
   let expansions = 0;
   const path: number[] = [originIdx]; // node indices, path[0] = origin
-  const bridges: number[] = []; // pool indices, bridges[i] bridges path[i] → path[i+1]
+  const chosenPlacements: number[] = []; // pool indices, chosenPlacements[i] bridges path[i] → next
 
-  const dfs = (depth: number): boolean => {
+  const dfs = (i: number): boolean => {
     if (++expansions > MAX_EXPANSIONS) return false;
-    const cur = path[path.length - 1];
-    const last = depth === N - 1;
-    for (const edge of shuffle(successors(cur, last), rng)) {
-      path.push(edge.next);
-      bridges.push(edge.placement);
-      if (last) return true; // last chord chosen with a valid wrap; done
-      if (dfs(depth + 1)) return true;
-      path.pop();
-      bridges.pop();
+    const cur = path[i];
+    const last = i === N - 1;
+    // Placement FIRST: uniform-random among placements containing cur (and, on the last group, also
+    // the origin, so the wrap chord = origin closes the loop). This is the unbiased pick.
+    for (const p of shuffle(
+      nodes[cur].placementIdxs.filter((q) => !last || originPlacements.has(q)),
+      rng,
+    )) {
+      if (last) {
+        chosenPlacements[i] = p; // origin ∈ p ⇒ loop closes
+        return true;
+      }
+      // Next chord drawn FROM P_i (a new chord within the current placement), uniform-random.
+      for (const n of shuffle(
+        placementMembers[p].filter((m) => m !== cur),
+        rng,
+      )) {
+        path[i + 1] = n;
+        chosenPlacements[i] = p;
+        if (dfs(i + 1)) return true; // backtrack until a loop closes
+      }
     }
     return false;
   };
 
-  if (!dfs(1)) return null;
+  if (!dfs(0)) return null;
 
-  // Assemble N steps. bridges[i] bridges chord i → i+1 for i in 0..N-2; the wrap bridge for the
-  // last chord (→ origin) is a placement shared by the last chord and origin.
-  const steps: WalkStep[] = [];
-  for (let i = 0; i < N; i++) {
-    const bridge = i < N - 1 ? pool[bridges[i]] : wrapPlacement(path[i]);
-    steps.push({chord: nodes[path[i]].keys, bridgingPlacement: bridge});
-  }
-  return steps;
+  // One step per group: the chord sounding and the placement P_i it draws melody from.
+  return path.map((node, i) => ({
+    chord: nodes[node].keys,
+    bridgingPlacement: pool[chosenPlacements[i]],
+  }));
 }

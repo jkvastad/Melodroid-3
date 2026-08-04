@@ -768,14 +768,6 @@ Finally this is part of 8@0, so we can move back to 0 4 7.
 The above example illustrates how we can move between placements via shared chords, paving the way for defining legal moves in a progression.
 It also illustrates a larger movement structure on a meter level, where we completed a cycle, returning to our origin chord and placement.
 
-The player below walks such a cycle. Each meter group sounds one chord and draws its melody from the
-*bridging* placement — the placement that contains both the current chord and the next one, foreshadowing
-the move. Adjacent chords, and the wrap from the last group back to the origin, always share a curated
-placement (here the LCM 8 and 24 families plus the stable-15 subset `15s`), so the walk returns to where
-it began. The number of meter groups sets the cycle length: `4 4 4` gives a three-chord cycle like the
-worked example above, while a single group `4` just repeats the origin chord. Pick the chord vocabulary
-and press **Generate Rhythm** to re-roll a fresh legal cycle.
-
 <RhythmPatternPlayer
   meter="4 4 4 4"
   subdivisions="4"
