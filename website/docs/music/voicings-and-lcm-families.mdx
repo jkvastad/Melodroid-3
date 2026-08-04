@@ -570,7 +570,7 @@ Some key notes:
 * we can roll quite dissonant chords e.g. 1 2 3.
 * lcm placements are displayed with redundance (isomorphisms are not collapsed)
 
-##### Melodic supersets
+##### Scales and lcms
 As we noted in the discussion on high lcms as compositions of lower lcms, and in the section on placement indicators,
 some high lcm scales sound harsh/random (15, 20), while some scales with no placement sound fine (harmonic minor, blues scale).
 
@@ -659,9 +659,9 @@ Notably the extra keys are 10 and 3 which do sound quite nice along with the maj
   ]}
 />
 
-##### Characteristic chords
+##### Melodic Supersets
 Several of the scales above which are not lcms scales are compositions of two lcm scales, or is heavily related to a symmetric chord.
-This provides a possibility that scales are perhaps best thought of as sets of sets, where a chord provides some sort of context and the melody modulates between possible interpretations of the context.
+This provides a possibility that scales are perhaps best thought of as melodic sets of sets, where a chord provides some sort of context and the melody modulates between possible interpretations of the context.
 
 Earlier we looked at placement indicators, as well as lcm preference in the context of lcm 15.
 Perhaps there is also a preference for how chords are interpreted, producing the well known character/flavor of e.g. major/minor/dim chords.
@@ -757,17 +757,43 @@ The dim chord 0 3 6 produces
   ]}
 />
 
-TODO: Look at...
+##### Chord Progressions
+Having looked at how melodic supersets can be used to draw melody, we now turn to selecting a progression of chords.
+
+Since HPT is all about lcms, we expect that progressions are driven by relationships between placements.
+For instance the major triad 0 4 7 (4@0) is part of 8@5, which could motivate a move to 5 9 0.
+This in turn is part of 24@0, which could motivate a move to 7 11 2.
+Finally this is part of 8@0, so we can move back to 0 4 7.
+
+The above example illustrates how we can move between placements via shared chords, paving the way for defining legal moves in a progression.
+It also illustrates a larger movement structure on a meter level, where we completed a cycle, returning to our origin chord and placement.
+
+The player below walks such a cycle. Each meter group sounds one chord and draws its melody from the
+*bridging* placement — the placement that contains both the current chord and the next one, foreshadowing
+the move. Adjacent chords, and the wrap from the last group back to the origin, always share a curated
+placement (here the LCM 8 and 24 families plus the stable-15 subset `15s`), so the walk returns to where
+it began. The number of meter groups sets the cycle length: `4 4 4` gives a three-chord cycle like the
+worked example above, while a single group `4` just repeats the origin chord. Pick the chord vocabulary
+and press **Generate Rhythm** to re-roll a fresh legal cycle.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={104}
+  chordWalk={{
+    origin: [0, 4, 7],
+    placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
+  }}
+/>
+
+
+DEFERRED: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0
 * Harmonic minor scale 0 2 3 6 7 9 10 (harm@7) which goes well with 4@2 (12@8, 15@8) but excludes 5 and 11 which when played creates a major feel.
   * Harmonic minor contains two minor chords, 3 6 10 (10@3) and 7 10 2 (10@7) but only the latter feels like harm@7, the former being either harm@3 or 8@11.
 * Blues scale with minor/major expansions (major/minor 7) when accompanied by major/minor chords.
 * lcm 15/24 preference (dropping key 9 from 15@0 produces subsets of 24@1 and 24@8)
-
 Why do these scales sound better/worse depending on the accompanying chord? Is there an answer within lcm composition and preference (e.g. notes 5 and 11 in harm@7 turning it into 8@3 or 8@7?)
-
-
-
 
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
