@@ -239,21 +239,18 @@ export function generateChordWalk(
         chosenPlacements[i] = p; // origin ∈ p ⇒ loop closes
         return true;
       }
-      // Next chord (group i+1) drawn FROM P_i, uniform-random among its members ≠ cur. A chord pin
-      // instead forces the next chord to reuse an earlier group's chord — valid only if that chord
-      // is a member of P_i and differs from cur (the walk never repeats a chord on adjacent groups,
-      // so pinning two neighbours to the same chord is infeasible and backtracks / relaxes).
+      // Next chord (group i+1) drawn FROM P_i, uniform-random among its members. Adjacent chords may
+      // repeat — a random draw can land on cur again, and a chord pin can force it — so a held chord
+      // across two groups is a legal outcome. A chord pin forces the next chord to reuse an earlier
+      // group's chord, valid whenever that chord is a member of P_i (including when it equals cur).
       const chordPin = bindings?.[i + 1]?.chordSource ?? null;
       const candidateNexts =
         chordPin !== null
           ? (() => {
               const pinned = path[chordPin];
-              return placementMembers[p].includes(pinned) && pinned !== cur ? [pinned] : [];
+              return placementMembers[p].includes(pinned) ? [pinned] : [];
             })()
-          : shuffle(
-              placementMembers[p].filter((m) => m !== cur),
-              rng,
-            );
+          : shuffle([...placementMembers[p]], rng);
       for (const n of candidateNexts) {
         path[i + 1] = n;
         chosenPlacements[i] = p;
@@ -309,8 +306,9 @@ export function generateOpenWalk(
 
   // Placement-first randomized DFS with backtracking, mirroring generateChordWalk minus the
   // last-group origin closure: for each group i pick its bridging placement P_i (uniform among the
-  // placements containing cur, or the pinned one), then draw C_{i+1} from P_i's members ≠ cur.
-  // Backtracking only handles the rare dead-end where cur's only placements are singletons.
+  // placements containing cur, or the pinned one), then draw C_{i+1} from P_i's members (which may
+  // include cur — adjacent chords are allowed to repeat).
+  // Backtracking only handles the rare dead-end where a pin cannot be satisfied.
   // path[0..N] are node indices (path[N] = carry); chosenPlacements[i] bridges path[i] → path[i+1].
   let expansions = 0;
   const path: number[] = [startIdx];
@@ -336,12 +334,9 @@ export function generateOpenWalk(
         chordPin !== null
           ? (() => {
               const pinned = path[chordPin];
-              return placementMembers[p].includes(pinned) && pinned !== cur ? [pinned] : [];
+              return placementMembers[p].includes(pinned) ? [pinned] : [];
             })()
-          : shuffle(
-              placementMembers[p].filter((m) => m !== cur),
-              rng,
-            );
+          : shuffle([...placementMembers[p]], rng);
       for (const n of candidateNexts) {
         path[i + 1] = n;
         chosenPlacements[i] = p;
