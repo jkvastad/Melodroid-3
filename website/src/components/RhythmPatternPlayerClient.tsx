@@ -23,6 +23,7 @@ import {
   generateChordWalk,
   type CuratedPlacement,
   type PlacementPattern,
+  type WalkBinding,
 } from '@site/src/lib/chordWalk';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
 import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
@@ -50,6 +51,9 @@ export type RhythmPatternPlayerProps = {
   chordWalk?: ChordWalkSet; // chord-walk mode: a *cyclic* progression — one chord per meter group,
   // adjacent (and wrap) chords linked by a shared curated placement, melody drawn from the bridging
   // placement, returning to the origin chord (this page only)
+  phraseBinds?: PhraseBindMode; // in chord-walk mode, how the phrase binds harmony: 'rhythm'
+  // (default, rhythm only) · 'chords+placements' · 'placements' · 'chords'. Sets the dropdown's
+  // initial value; only meaningful with both `phrases` and `chordWalk` (this page only)
 };
 
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
@@ -105,6 +109,60 @@ function originWalk(origin: number[], curatedPool: CuratedPlacement[], N: number
     chord: origin,
     bridgingPlacement: curatedPool.find((p) => origin.every((k) => p.keys.includes(k))) ?? null,
   }));
+}
+
+// How the rhythm phrase governs the chord walk. 'rhythm' = today's behavior (phrase repeats the
+// rhythm only; chords/placements walk freely). The others additionally pin a full-repeat group's
+// chord and/or bridging placement to the group it repeats (see WalkBinding / deriveWalkBindings).
+export type PhraseBindMode = 'rhythm' | 'chords+placements' | 'placements' | 'chords';
+const PHRASE_BIND_MODES: {id: PhraseBindMode; label: string}[] = [
+  {id: 'rhythm', label: 'Rhythm only'},
+  {id: 'chords+placements', label: 'Chords + placements'},
+  {id: 'placements', label: 'Placements'},
+  {id: 'chords', label: 'Chords'},
+];
+
+// Translate the rhythm phrase (one GroupRepeat per meter group) into per-group walk bindings under
+// the chosen mode. Only FULL repeats (fullSource) bind harmony — a half-repeat has no "first half"
+// of a chord — and only when the mode enables that axis. Returns null when nothing is bound (mode
+// 'rhythm', no phrase, or no full repeats), so callers skip the bound generation entirely.
+function deriveWalkBindings(
+  repeats: GroupRepeat[] | null,
+  mode: PhraseBindMode,
+): WalkBinding[] | null {
+  if (mode === 'rhythm' || !repeats) return null;
+  const bindChords = mode === 'chords' || mode === 'chords+placements';
+  const bindPlacements = mode === 'placements' || mode === 'chords+placements';
+  let any = false;
+  const bindings = repeats.map((rep) => {
+    const src = rep.fullSource; // half-repeats never bind harmony
+    const chordSource = bindChords ? src : null;
+    const placementSource = bindPlacements ? src : null;
+    if (chordSource !== null || placementSource !== null) any = true;
+    return {chordSource, placementSource};
+  });
+  return any ? bindings : null;
+}
+
+// Generate a chord walk honoring phrase bindings, relaxing to a free (unbound) walk only after the
+// bound search has EXHAUSTIVELY proven no cycle exists (generateChordWalk backtracks fully, so a
+// null under active bindings is that proof). Returns the walk plus `unsatisfied` — true iff a
+// binding was requested but could not close a cycle. Never returns null: falls back to originWalk
+// when even the free walk fails.
+function generateWalkRelaxed(
+  origin: number[],
+  candidates: number[][],
+  pool: CuratedPlacement[],
+  N: number,
+  seed: number,
+  bindings: WalkBinding[] | null,
+): {walk: RawWalkStep[]; unsatisfied: boolean} {
+  if (bindings) {
+    const bound = generateChordWalk(origin, candidates, pool, N, seed, bindings);
+    if (bound) return {walk: bound, unsatisfied: false};
+  }
+  const free = generateChordWalk(origin, candidates, pool, N, seed) ?? originWalk(origin, pool, N);
+  return {walk: free, unsatisfied: bindings != null};
 }
 
 // Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
@@ -484,6 +542,7 @@ export default function RhythmPatternPlayerClient({
   presets,
   progression,
   chordWalk,
+  phraseBinds: phraseBindsProp = 'rhythm',
 }: RhythmPatternPlayerProps) {
   // Guided chord mode: the chord and its melody sets come from `presets` (two linked
   // dropdowns) instead of a random roll. Still runs the full chord-mode engine, so it
@@ -597,6 +656,11 @@ export default function RhythmPatternPlayerClient({
   // selected (reuses PROGRESSION_HEURISTICS). Changing it re-bakes the walk. The curated pool and
   // origin are fixed by the prop, so there is no set dropdown here.
   const [walkHeuristicIdx, setWalkHeuristicIdx] = useState(0);
+  // Chord-walk + phrase: how the rhythm phrase binds harmony (see PhraseBindMode). Changing it
+  // re-derives the walk bindings and re-bakes. `bindingUnsatisfied` is set when a requested binding
+  // can't close a cycle (the walk then relaxes to a free progression) — surfaced as an inline note.
+  const [phraseBinds, setPhraseBinds] = useState<PhraseBindMode>(phraseBindsProp);
+  const [bindingUnsatisfied, setBindingUnsatisfied] = useState(false);
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
@@ -680,22 +744,40 @@ export default function RhythmPatternPlayerClient({
       }
     return out;
   }, [chordWalkOn, curatedPool, walkHeuristicIdx]);
+  // Per-group walk bindings derived from the phrase + chosen bind mode — null when nothing binds
+  // ('rhythm' mode, no phrase, or no full repeats), so the walk stays free (today's behavior).
+  const walkBindings = useMemo(
+    () => (chordWalkOn ? deriveWalkBindings(phraseRepeats, phraseBinds) : null),
+    [chordWalkOn, phraseRepeats, phraseBinds],
+  );
   // The baked cyclic walk — one step per meter group: the chord to sound (its pitch classes + voiced
   // offsets) and the folded melody pool (the bridging placement, per WALK_MELODY_STRATEGY). Seeded
   // off the rhythm seed (salted, independent of the melody/progression bakes) so Generate re-rolls
   // deterministically. This is the FIRST cycle; with loop melody off the scheduler re-rolls a fresh
   // legal cycle each loop, and with loop melody on it freezes and repeats this one (its baked phrase
-  // stays coherent). Falls back to the origin repeated in every group when no length-N cycle exists
-  // (generateChordWalk returns null). Null outside chord-walk.
-  const chordWalkSteps = useMemo(() => {
+  // stays coherent). Honors the phrase bindings, relaxing to a free walk (and setting `unsatisfied`)
+  // only after the bound search exhaustively proves no bound cycle exists; falls back to the origin
+  // repeated in every group when even the free walk finds no cycle. Null outside chord-walk.
+  const chordWalkRaw = useMemo(() => {
     if (!chordWalkOn || !pattern || !curatedPool || !walkCandidates) return null;
     const N = pattern.meter.length;
     const origin = foldOctave(chordWalk!.origin);
-    const walk =
-      generateChordWalk(origin, walkCandidates, curatedPool, N, seed ^ 0x2545f491) ??
-      originWalk(origin, curatedPool, N);
-    return bakeWalkSteps(walk, pitchHz);
-  }, [chordWalkOn, pattern, curatedPool, walkCandidates, chordWalk, seed, pitchHz]);
+    const {walk, unsatisfied} = generateWalkRelaxed(
+      origin,
+      walkCandidates,
+      curatedPool,
+      N,
+      seed ^ 0x2545f491,
+      walkBindings,
+    );
+    return {steps: bakeWalkSteps(walk, pitchHz), unsatisfied};
+  }, [chordWalkOn, pattern, curatedPool, walkCandidates, chordWalk, seed, pitchHz, walkBindings]);
+  const chordWalkSteps = chordWalkRaw?.steps ?? null;
+  // Reflect the first cycle's binding status into state for the inline note (setState in an effect,
+  // not during render). The scheduler updates it again per re-rolled cycle (loop melody off).
+  useEffect(() => {
+    setBindingUnsatisfied(chordWalkRaw?.unsatisfied ?? false);
+  }, [chordWalkRaw]);
 
   // The pitch pool folded to one octave, or null for fixed pitch / random pitch. In chord
   // mode it is the selected match's LCM family placement (a superset of the chord); in
@@ -846,6 +928,12 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     walkCandidatesRef.current = walkCandidates;
   }, [walkCandidates]);
+  // The phrase→walk bindings, mirrored so the per-cycle re-roll honors a mid-play bind-mode / phrase
+  // change live (like the pool/candidate refs). generateWalkRelaxed reads it each re-roll.
+  const walkBindingsRef = useRef(walkBindings);
+  useEffect(() => {
+    walkBindingsRef.current = walkBindings;
+  }, [walkBindings]);
   // Guided mode: keep chordState (the voicing source) synced to the selected preset chord,
   // so switching the chord dropdown re-voices the accompaniment. `matches` stays empty —
   // guided mode never uses the superset-match dropdown.
@@ -1172,8 +1260,9 @@ export default function RhythmPatternPlayerClient({
         // Chord-walk: `i % N === 0` marks the start of each full pass = one walk cycle. Re-roll a
         // fresh legal cycle then, so successive loops walk different placements — UNLESS loop melody
         // is on (freeze the seeded walk so its baked phrase stays coherent) or this is the first
-        // cycle (keep Generate deterministic per seed). generateChordWalk always closes on the
-        // origin, so the return-to-origin guarantee survives the re-roll.
+        // cycle (keep Generate deterministic per seed). generateWalkRelaxed honors the phrase
+        // bindings and always closes on the origin, so the return-to-origin guarantee survives the
+        // re-roll; it also refreshes the "binding can't close a cycle" note per cycle.
         if (chordWalkOn && walkMeterLen > 1 && i % N === 0) {
           if (
             i === 0 ||
@@ -1183,14 +1272,15 @@ export default function RhythmPatternPlayerClient({
           ) {
             cycleSteps = chordWalkStepsRef.current;
           } else {
-            const walk =
-              generateChordWalk(
-                originKeys,
-                walkCandidatesRef.current,
-                curatedPoolRef.current,
-                walkMeterLen,
-                (Math.random() * 2 ** 32) >>> 0,
-              ) ?? originWalk(originKeys, curatedPoolRef.current, walkMeterLen);
+            const {walk, unsatisfied} = generateWalkRelaxed(
+              originKeys,
+              walkCandidatesRef.current,
+              curatedPoolRef.current,
+              walkMeterLen,
+              (Math.random() * 2 ** 32) >>> 0,
+              walkBindingsRef.current,
+            );
+            setBindingUnsatisfied(unsatisfied);
             cycleSteps = bakeWalkSteps(walk, pitchHz);
           }
           cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
@@ -1671,6 +1761,21 @@ export default function RhythmPatternPlayerClient({
                 ))}
               </select>
             </label>
+            {phrases && (
+              <label style={labelStyle}>
+                phrase binds
+                <select
+                  value={phraseBinds}
+                  onChange={(e) => setPhraseBinds(e.target.value as PhraseBindMode)}
+                  aria-label="how the phrase binds the chord walk">
+                  {PHRASE_BIND_MODES.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <span style={labelStyle}>
               playing
               <code>{currentChord ? currentChord.join(' ') : '—'}</code>
@@ -1779,6 +1884,17 @@ export default function RhythmPatternPlayerClient({
             marginTop: '0.4rem',
           }}>
           {meterError ?? subError ?? phraseError ?? chordError}
+        </div>
+      )}
+
+      {chordWalkOn && phraseBinds !== 'rhythm' && bindingUnsatisfied && (
+        <div
+          style={{
+            color: 'var(--ifm-color-warning-dark)',
+            fontSize: '0.85rem',
+            marginTop: '0.4rem',
+          }}>
+          Phrase binding can’t close a cycle here — walking freely this loop.
         </div>
       )}
 

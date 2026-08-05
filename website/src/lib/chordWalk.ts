@@ -74,6 +74,13 @@ type ChordNode = {keys: number[]; placementIdxs: number[]};
 // draws that group's melody from `bridgingPlacement`.
 export type WalkStep = {chord: number[]; bridgingPlacement: CuratedPlacement};
 
+// A per-group phrase-binding constraint (from the rhythm phrase, translated to the walk). When a
+// meter group full-repeats an earlier one, the phrase can force this group to reuse that group's
+// chord and/or its bridging placement. `chordSource`/`placementSource` (if set) are the index of an
+// *earlier* group (< this one) whose chord / placement this group must equal; both null ⇒ the group
+// walks freely (today's behavior). Group 0 (the origin) never carries a binding.
+export type WalkBinding = {chordSource: number | null; placementSource: number | null};
+
 // Safety net: cap total DFS node expansions so a pathological graph can never hang the render.
 // The graph is small (≤ a few hundred nodes, each in a handful of placements) so a valid cycle is
 // found in far fewer; hitting the cap returns null and the caller degrades to origin-repeat.
@@ -97,12 +104,19 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 // `candidateChords` are the vocabulary the walk may visit (folded pitch-class arrays, supplied by
 // the caller from the chosen heuristic); `pool` is the expanded curated placement pool; `seed`
 // drives all randomness through a single mulberry32 stream.
+//
+// `bindings` (optional, one per group) lets the rhythm phrase also govern harmony: a group may pin
+// its chord and/or bridging placement to an earlier group's (see WalkBinding). The DFS enforces the
+// pins during search, so a returned null under active bindings is a genuine proof — via exhaustive
+// backtracking — that no cycle satisfies them; the caller then relaxes to an unbound walk. Omitting
+// `bindings` (or passing all-null) reproduces the free walk exactly.
 export function generateChordWalk(
   origin: number[],
   candidateChords: number[][],
   pool: CuratedPlacement[],
   N: number,
   seed: number,
+  bindings?: WalkBinding[],
 ): WalkStep[] | null {
   const originKeys = foldOctave(origin);
 
@@ -172,21 +186,48 @@ export function generateChordWalk(
     if (++expansions > MAX_EXPANSIONS) return false;
     const cur = path[i];
     const last = i === N - 1;
+
     // Placement FIRST: uniform-random among placements containing cur (and, on the last group, also
-    // the origin, so the wrap chord = origin closes the loop). This is the unbiased pick.
-    for (const p of shuffle(
-      nodes[cur].placementIdxs.filter((q) => !last || originPlacements.has(q)),
-      rng,
-    )) {
+    // the origin, so the wrap chord = origin closes the loop). This is the unbiased pick. A
+    // placement pin instead forces P_i to reuse an earlier group's chosen placement — valid only if
+    // it still contains cur (and origin, when last); otherwise this group has no placement and the
+    // branch fails, forcing a backtrack.
+    const placementPin = bindings?.[i]?.placementSource ?? null;
+    const candidatePlacements =
+      placementPin !== null
+        ? (() => {
+            const pinned = chosenPlacements[placementPin];
+            const ok =
+              nodes[cur].placementIdxs.includes(pinned) &&
+              (!last || originPlacements.has(pinned));
+            return ok ? [pinned] : [];
+          })()
+        : shuffle(
+            nodes[cur].placementIdxs.filter((q) => !last || originPlacements.has(q)),
+            rng,
+          );
+
+    for (const p of candidatePlacements) {
       if (last) {
         chosenPlacements[i] = p; // origin ∈ p ⇒ loop closes
         return true;
       }
-      // Next chord drawn FROM P_i (a new chord within the current placement), uniform-random.
-      for (const n of shuffle(
-        placementMembers[p].filter((m) => m !== cur),
-        rng,
-      )) {
+      // Next chord (group i+1) drawn FROM P_i, uniform-random among its members ≠ cur. A chord pin
+      // instead forces the next chord to reuse an earlier group's chord — valid only if that chord
+      // is a member of P_i and differs from cur (the walk never repeats a chord on adjacent groups,
+      // so pinning two neighbours to the same chord is infeasible and backtracks / relaxes).
+      const chordPin = bindings?.[i + 1]?.chordSource ?? null;
+      const candidateNexts =
+        chordPin !== null
+          ? (() => {
+              const pinned = path[chordPin];
+              return placementMembers[p].includes(pinned) && pinned !== cur ? [pinned] : [];
+            })()
+          : shuffle(
+              placementMembers[p].filter((m) => m !== cur),
+              rng,
+            );
+      for (const n of candidateNexts) {
         path[i + 1] = n;
         chosenPlacements[i] = p;
         if (dfs(i + 1)) return true; // backtrack until a loop closes
