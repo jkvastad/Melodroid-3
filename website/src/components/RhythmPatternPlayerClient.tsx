@@ -23,6 +23,7 @@ import {
   bakeMelody,
   expandPlacements,
   generateChordWalk,
+  generateOpenWalk,
   parsePhraseBinds,
   placementPatternLabel,
   type CuratedPlacement,
@@ -168,6 +169,27 @@ function generateWalkRelaxed(
   }
   const free = generateChordWalk(origin, candidates, pool, N, seed) ?? originWalk(origin, pool, N);
   return {walk: free, unsatisfied: bindings != null};
+}
+
+// Free-roam analogue of generateWalkRelaxed: generate an OPEN walk from `start` (no return-to-origin
+// closure), honoring phrase bindings and relaxing to an unbound open walk only after the bound search
+// exhausts. Also returns `next` — the carry chord the following loop pass starts from. Never returns
+// null: falls back to `start` repeated (carry = start) when even the free open walk fails.
+function generateOpenWalkRelaxed(
+  start: number[],
+  candidates: number[][],
+  pool: CuratedPlacement[],
+  N: number,
+  seed: number,
+  bindings: WalkBinding[] | null,
+): {walk: RawWalkStep[]; next: number[]; unsatisfied: boolean} {
+  if (bindings) {
+    const bound = generateOpenWalk(start, candidates, pool, N, seed, bindings);
+    if (bound) return {walk: bound.steps, next: bound.next, unsatisfied: false};
+  }
+  const free = generateOpenWalk(start, candidates, pool, N, seed);
+  if (free) return {walk: free.steps, next: free.next, unsatisfied: bindings != null};
+  return {walk: originWalk(start, pool, N), next: start, unsatisfied: bindings != null};
 }
 
 // Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
@@ -626,6 +648,10 @@ export default function RhythmPatternPlayerClient({
   // analogue of loopMelody. currentChord is the triad sounding now (its pitch classes), shown
   // in the "playing" readout and updated by the scheduler at each group start.
   const [loopChords, setLoopChords] = useState(false);
+  // Chord-walk mode: free-roam. When off (default) the walk is a closed cycle returning to the
+  // origin each loop pass; when on, each pass continues from the chord the previous pass ended on,
+  // so the harmony wanders indefinitely (no effect while loop melody is on, which freezes the walk).
+  const [freeRoam, setFreeRoam] = useState(false);
   const [currentChord, setCurrentChord] = useState<number[] | null>(null);
   // Chord-walk mode: the bridging placement the current group draws its melody from (its label,
   // e.g. "8 @ 5" / "15s @ 7"), shown in the "placement" readout beside currentChord and updated
@@ -902,6 +928,7 @@ export default function RhythmPatternPlayerClient({
   const bakedKeysRef = useRef(bakedKeys);
   const loopMelodyRef = useRef(loopMelody);
   const loopChordsRef = useRef(loopChords);
+  const freeRoamRef = useRef(freeRoam);
   const melodyOnRef = useRef(melodyOn);
   const isRandomPitchRef = useRef(isRandomPitch);
   // The chord's voicing as semitone offsets from pitchHz, read by the scheduler so the
@@ -1012,6 +1039,9 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     loopChordsRef.current = loopChords;
   }, [loopChords]);
+  useEffect(() => {
+    freeRoamRef.current = freeRoam;
+  }, [freeRoam]);
   useEffect(() => {
     melodyOnRef.current = melodyOn;
   }, [melodyOn]);
@@ -1290,6 +1320,10 @@ export default function RhythmPatternPlayerClient({
     const originKeys = chordWalkOn ? foldOctave(chordWalk!.origin) : [];
     let cycleSteps = chordWalkOn ? chordWalkStepsRef.current : null;
     let cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
+    // Free-roam carry: the chord the *next* loop pass starts from. Seeded at the origin and, in
+    // free-roam mode, advanced to each open walk's ending chord so successive passes chain into a
+    // continuous wander (see the re-roll block below). Unused while free roam is off.
+    let carryChord = originKeys;
     const walkStarts = chordWalkOn ? groupStartBeats(patternMeter) : null;
     // Per-group pulse ranges, for the per-cycle melody bake that gives melody binding loop-off
     // parity: `cycleMelody` is this cycle's bound melody (one key per firing event) when melody
@@ -1325,22 +1359,37 @@ export default function RhythmPatternPlayerClient({
         // Chord-walk: `i % N === 0` marks the start of each full pass = one walk cycle. Re-roll a
         // fresh legal cycle then, so successive loops walk different placements — UNLESS loop melody
         // is on (freeze the seeded walk so its baked phrase stays coherent) or this is the first
-        // cycle (keep Generate deterministic per seed). generateWalkRelaxed honors the phrase
-        // bindings and always closes on the origin, so the return-to-origin guarantee survives the
-        // re-roll; it also refreshes the "binding can't close a cycle" note per cycle.
+        // cycle (keep Generate deterministic per seed). Free roam swaps the closed re-roll (always
+        // returns to origin) for an OPEN walk that continues from the previous pass's ending chord
+        // (carryChord), so the harmony wanders indefinitely; loop melody still freezes, so roam has
+        // no effect there. Both honor the phrase bindings and refresh the "binding can't close" note.
         if (chordWalkOn && walkMeterLen > 1 && i % N === 0) {
-          if (
-            i === 0 ||
-            loopMelodyRef.current ||
-            !curatedPoolRef.current ||
-            !walkCandidatesRef.current
-          ) {
+          const roam = freeRoamRef.current && !loopMelodyRef.current;
+          const havePool = curatedPoolRef.current && walkCandidatesRef.current;
+          if (roam && havePool) {
+            // Free roam: open walk from the origin on the first pass (seeded for Generate
+            // determinism), else continuing from the carry chord (live re-roll). The walk's ending
+            // chord becomes the next pass's start, chaining passes into one continuous wander.
+            const start = i === 0 ? originKeys : carryChord;
+            const walkSeed = i === 0 ? seed ^ 0x2545f491 : (Math.random() * 2 ** 32) >>> 0;
+            const {walk, next, unsatisfied} = generateOpenWalkRelaxed(
+              start,
+              walkCandidatesRef.current!,
+              curatedPoolRef.current!,
+              walkMeterLen,
+              walkSeed,
+              walkBindingsRef.current,
+            );
+            setBindingUnsatisfied(unsatisfied);
+            carryChord = next;
+            cycleSteps = bakeWalkSteps(walk, pitchHz);
+          } else if (i === 0 || loopMelodyRef.current || !havePool) {
             cycleSteps = chordWalkStepsRef.current;
           } else {
             const {walk, unsatisfied} = generateWalkRelaxed(
               originKeys,
-              walkCandidatesRef.current,
-              curatedPoolRef.current,
+              walkCandidatesRef.current!,
+              curatedPoolRef.current!,
               walkMeterLen,
               (Math.random() * 2 ** 32) >>> 0,
               walkBindingsRef.current,
@@ -1979,6 +2028,18 @@ export default function RhythmPatternPlayerClient({
               aria-label="loop the drawn melody"
             />
             loop melody
+          </label>
+        )}
+        {chordWalkOn && (
+          <label style={{...labelStyle, opacity: loopMelody ? 0.5 : 1}}>
+            <input
+              type="checkbox"
+              checked={freeRoam}
+              disabled={loopMelody}
+              onChange={(e) => setFreeRoam(e.target.checked)}
+              aria-label="free roam: wander without returning to the origin chord"
+            />
+            free roam
           </label>
         )}
         {progressionOn && (

@@ -92,6 +92,63 @@ export type WalkBinding = {chordSource: number | null; placementSource: number |
 // found in far fewer; hitting the cap returns null and the caller degrades to origin-repeat.
 const MAX_EXPANSIONS = 50_000;
 
+// The walk's search graph: the candidate chord nodes, the inverted placement→members index, and the
+// index of the start node. Shared by the closed (generateChordWalk) and open (generateOpenWalk)
+// generators so the node/placement setup lives in one place.
+type WalkGraph = {nodes: ChordNode[]; placementMembers: number[][]; startIdx: number};
+
+// Build the search graph for a walk starting at `start`: every candidate chord that sits in ≥1
+// placement, plus `start` itself (injected even if it is not in the heuristic vocabulary, so the
+// walk can always begin there). Nodes dedup by key set. Returns null when `start` sits in no
+// placement (no walk can begin). `placementMembers[p]` lists the node indices contained by pool
+// placement p — the walk picks a next chord by first picking a bridging placement its current chord
+// sits in, then one of that placement's members.
+function buildWalkGraph(
+  start: number[],
+  candidates: number[][],
+  pool: CuratedPlacement[],
+): WalkGraph | null {
+  const startKeys = foldOctave(start);
+
+  const placementsFor = (keys: number[]): number[] => {
+    const idxs: number[] = [];
+    for (let p = 0; p < pool.length; p++) if (isSubset(keys, pool[p].keys)) idxs.push(p);
+    return idxs;
+  };
+
+  const nodes: ChordNode[] = [];
+  const nodeIdx = new Map<string, number>();
+  const addNode = (keys: number[]): number => {
+    const id = keyId(keys);
+    const existing = nodeIdx.get(id);
+    if (existing !== undefined) return existing;
+    const placementIdxs = placementsFor(keys);
+    const idx = nodes.length;
+    nodes.push({keys, placementIdxs});
+    nodeIdx.set(id, idx);
+    return idx;
+  };
+  const startIdx = addNode(startKeys);
+  if (nodes[startIdx].placementIdxs.length === 0) return null; // start sits in no placement
+  for (const c of candidates) {
+    const keys = foldOctave(c);
+    const id = keyId(keys);
+    if (nodeIdx.has(id)) continue;
+    const placementIdxs = placementsFor(keys);
+    if (placementIdxs.length === 0) continue;
+    nodes.push({keys, placementIdxs});
+    nodeIdx.set(id, nodes.length - 1);
+  }
+
+  // Inverted index: for each pool placement, the node indices it contains.
+  const placementMembers: number[][] = pool.map(() => []);
+  nodes.forEach((node, n) => {
+    for (const p of node.placementIdxs) placementMembers[p].push(n);
+  });
+
+  return {nodes, placementMembers, startIdx};
+}
+
 // Seeded Fisher–Yates shuffle (in place) using a mulberry32 stream, so a given seed reproduces the
 // same walk (deterministic Generate re-roll / loop replay).
 function shuffle<T>(arr: T[], rng: () => number): T[] {
@@ -126,45 +183,9 @@ export function generateChordWalk(
 ): WalkStep[] | null {
   const originKeys = foldOctave(origin);
 
-  const placementsFor = (keys: number[]): number[] => {
-    const idxs: number[] = [];
-    for (let p = 0; p < pool.length; p++) if (isSubset(keys, pool[p].keys)) idxs.push(p);
-    return idxs;
-  };
-
-  // Build the node set: every candidate chord that sits in ≥1 placement, plus the origin (injected
-  // even if it is not in the heuristic vocabulary, so the walk can always start there). Dedup by
-  // key set. nodeIdx maps a chord id → its node index.
-  const nodes: ChordNode[] = [];
-  const nodeIdx = new Map<string, number>();
-  const addNode = (keys: number[]): number => {
-    const id = keyId(keys);
-    const existing = nodeIdx.get(id);
-    if (existing !== undefined) return existing;
-    const placementIdxs = placementsFor(keys);
-    const idx = nodes.length;
-    nodes.push({keys, placementIdxs});
-    nodeIdx.set(id, idx);
-    return idx;
-  };
-  const originIdx = addNode(originKeys);
-  if (nodes[originIdx].placementIdxs.length === 0) return null; // origin sits in no placement
-  for (const c of candidateChords) {
-    const keys = foldOctave(c);
-    const id = keyId(keys);
-    if (nodeIdx.has(id)) continue;
-    const placementIdxs = placementsFor(keys);
-    if (placementIdxs.length === 0) continue;
-    nodes.push({keys, placementIdxs});
-    nodeIdx.set(id, nodes.length - 1);
-  }
-
-  // Inverted index: for each pool placement, the node indices it contains. The walk picks a next
-  // chord by first picking a bridging placement the current chord sits in, then one of its members.
-  const placementMembers: number[][] = pool.map(() => []);
-  nodes.forEach((node, n) => {
-    for (const p of node.placementIdxs) placementMembers[p].push(n);
-  });
+  const graph = buildWalkGraph(originKeys, candidateChords, pool);
+  if (!graph) return null; // origin sits in no placement
+  const {nodes, placementMembers, startIdx: originIdx} = graph;
 
   const rng = mulberry32(seed);
   const originPlacements = new Set(nodes[originIdx].placementIdxs);
@@ -249,6 +270,96 @@ export function generateChordWalk(
     chord: nodes[node].keys,
     bridgingPlacement: pool[chosenPlacements[i]],
   }));
+}
+
+// --- Open (free-roam) chord walk ------------------------------------------------------------
+
+// Generate an OPEN walk of length N from `start` — like generateChordWalk but with NO closure back
+// to an origin. Groups 0..N-1 each sound C_i and bridge (via P_i) to C_{i+1}, visiting N+1 chords
+// C_0..C_N; C_0 = start and C_N is the *carry* the following cycle starts from. Returns one WalkStep
+// per group plus `next` (the carry chord), or null only when `start` sits in no placement.
+//
+// Free-roam mode calls this once per loop pass, feeding each pass's `next` in as the following pass's
+// `start`, so the harmony wanders indefinitely rather than returning home. Params mirror
+// generateChordWalk; `bindings` (one per group) pin a group's chord/placement to an earlier group's
+// exactly as the closed walk does — group 0 never binds, and the unbound carry C_N carries no pin.
+export function generateOpenWalk(
+  start: number[],
+  candidateChords: number[][],
+  pool: CuratedPlacement[],
+  N: number,
+  seed: number,
+  bindings?: WalkBinding[],
+): {steps: WalkStep[]; next: number[]} | null {
+  const graph = buildWalkGraph(foldOctave(start), candidateChords, pool);
+  if (!graph) return null; // start sits in no placement
+  const {nodes, placementMembers, startIdx} = graph;
+
+  const rng = mulberry32(seed);
+  const startKeys = nodes[startIdx].keys;
+
+  // N = 1: a single group on `start`; pick any placement it sits in as the melody source, then draw
+  // the carry chord from that placement's other members (falling back to `start` if it is a singleton).
+  if (N <= 1) {
+    const p = shuffle([...nodes[startIdx].placementIdxs], rng)[0];
+    const others = placementMembers[p].filter((m) => m !== startIdx);
+    const nextIdx = others.length ? others[Math.floor(rng() * others.length)] : startIdx;
+    return {steps: [{chord: startKeys, bridgingPlacement: pool[p]}], next: nodes[nextIdx].keys};
+  }
+
+  // Placement-first randomized DFS with backtracking, mirroring generateChordWalk minus the
+  // last-group origin closure: for each group i pick its bridging placement P_i (uniform among the
+  // placements containing cur, or the pinned one), then draw C_{i+1} from P_i's members ≠ cur.
+  // Backtracking only handles the rare dead-end where cur's only placements are singletons.
+  // path[0..N] are node indices (path[N] = carry); chosenPlacements[i] bridges path[i] → path[i+1].
+  let expansions = 0;
+  const path: number[] = [startIdx];
+  const chosenPlacements: number[] = [];
+
+  const dfs = (i: number): boolean => {
+    if (i === N) return true; // groups 0..N-1 all assigned; path[N] is the carry
+    if (++expansions > MAX_EXPANSIONS) return false;
+    const cur = path[i];
+
+    const placementPin = bindings?.[i]?.placementSource ?? null;
+    const candidatePlacements =
+      placementPin !== null
+        ? (() => {
+            const pinned = chosenPlacements[placementPin];
+            return nodes[cur].placementIdxs.includes(pinned) ? [pinned] : [];
+          })()
+        : shuffle([...nodes[cur].placementIdxs], rng);
+
+    for (const p of candidatePlacements) {
+      const chordPin = bindings?.[i + 1]?.chordSource ?? null;
+      const candidateNexts =
+        chordPin !== null
+          ? (() => {
+              const pinned = path[chordPin];
+              return placementMembers[p].includes(pinned) && pinned !== cur ? [pinned] : [];
+            })()
+          : shuffle(
+              placementMembers[p].filter((m) => m !== cur),
+              rng,
+            );
+      for (const n of candidateNexts) {
+        path[i + 1] = n;
+        chosenPlacements[i] = p;
+        if (dfs(i + 1)) return true; // backtrack until the whole open walk assigns
+      }
+    }
+    return false;
+  };
+
+  if (!dfs(0)) return null;
+
+  return {
+    steps: chosenPlacements.map((p, i) => ({
+      chord: nodes[path[i]].keys,
+      bridgingPlacement: pool[p],
+    })),
+    next: nodes[path[N]].keys,
+  };
 }
 
 // --- Phrase-bound melody ---------------------------------------------------------------------
