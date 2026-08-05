@@ -798,7 +798,7 @@ We can improve upon this by adding in more structure:
   * Patterns might also be more stylistic, e.g. narrowing down the available options for a move before a loop (e.g. playing 0 4 7 10 only has 20@0, 15@7 and 24@5 as placement, strongly indicating 24@5)
 
 
-Adding in rhythmic phrasing, where Ba in e.g. ABaACa means that rhythmic group B reuses the first half of rhythmic group A.
+Adding in phrasing, where Ba in e.g. ABaACa means that group B reuses the first half of group A.
 <RhythmPatternPlayer
   meter="4 4 4 4"
   subdivisions="4"
@@ -807,23 +807,6 @@ Adding in rhythmic phrasing, where Ba in e.g. ABaACa means that rhythmic group B
   resolution={0.95}
   phrases
   phrase="ABaACa"
-  chordWalk={{
-    origin: [0, 4, 7],
-    placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
-  }}
-/>
-
-For harmonic phrasing we have several options. The same phrase that repeats the *rhythm* can also repeat the *harmony*: the **phrase binds** dropdown chooses what a repeated meter group reuses from the group it repeats — its chord, its bridging placement, both, or neither (rhythm only, the default). Only full repeats bind: a half-repeat (the lowercase `a` in `Ba`) copies half a rhythm, but a chord has no first half, so those groups keep walking freely. When a binding can't close a legal cycle back to the origin, the walk relaxes to a free progression for that loop and says so.
-
-<RhythmPatternPlayer
-  meter="4 4 4 4"
-  subdivisions="4"
-  bpm={108}
-  syncopation={0.25}
-  resolution={0.95}
-  phrases
-  phrase="ABAC"
-  phraseBinds="chords+placements"
   chordWalk={{
     origin: [0, 4, 7],
     placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],

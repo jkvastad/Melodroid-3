@@ -7,7 +7,7 @@
 // this reuses via placementKeys.
 
 import {placementKeys} from './placements';
-import {mulberry32} from './rhythmPattern';
+import {mulberry32, type GroupRepeat} from './rhythmPattern';
 
 // Fold a key list into one octave of distinct pitch classes [0, 12), sorted low → high. Matches
 // the same-named helper in RhythmPatternPlayerClient so patterns and chords compare consistently.
@@ -243,4 +243,95 @@ export function generateChordWalk(
     chord: nodes[node].keys,
     bridgingPlacement: pool[chosenPlacements[i]],
   }));
+}
+
+// --- Phrase-bound melody ---------------------------------------------------------------------
+
+// The three independent axes the rhythm phrase can bind in chord-walk mode: a repeated meter
+// group can reuse the group it repeats's chord, bridging placement, and/or melody. The empty
+// set (no axis) is "rhythm only" — the phrase repeats the rhythm alone (today's default).
+export type PhraseBindAxis = 'chords' | 'placements' | 'melody';
+
+// Parse the `phraseBinds` prop / dropdown value — a '+'-joined subset of the axes, or the
+// sentinel 'rhythm' / empty string for none — into a per-axis boolean flag set. Unknown tokens
+// are ignored, so old values ('chords+placements', 'placements', 'chords') still parse and
+// 'rhythm' maps to all-false. Whitespace around tokens is tolerated.
+export function parsePhraseBinds(s: string): Record<PhraseBindAxis, boolean> {
+  const set = new Set(
+    s
+      .split('+')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0),
+  );
+  return {
+    chords: set.has('chords'),
+    placements: set.has('placements'),
+    melody: set.has('melody'),
+  };
+}
+
+// Bake one melody pitch class per firing event (in firing order), honoring melody phrase
+// binding. Each event belongs to a meter group (its pulse index falls in that group's pulse
+// range); an unbound event draws a random pitch from its group's pool, while a bound event
+// copies the *actual pitch* an earlier group's aligned event played, so a repeated rhythm group
+// restates that group's melodic motif note-for-note.
+//
+// A full-repeat group copies every event from its source; a half-repeat group copies only the
+// events in its first half of pulses (the copied-rhythm region), drawing the rest fresh — a
+// melody, unlike a chord, has a first half. Because the rhythm phrase already copied the source
+// group's pulse velocities into the target, an aligned source event always fires (and sits at a
+// lower pulse index, so its pitch is already assigned); the map lookup falls back to a fresh
+// draw only defensively. When `bindMelody` is false this reproduces the free per-group draw.
+//
+// `firingPulseIdx` is the pulse index of each firing event, in firing order (ascending pulse
+// index); `ranges` are the per-group pulse ranges (groupPulseRanges); `groupPools[g]` is group
+// g's folded melody pool; `fallbackPool` covers a group with an empty pool; `repeats` is the
+// parsed phrase (one per group). All randomness flows through `rng`.
+export function bakeMelody(
+  firingPulseIdx: number[],
+  ranges: {start: number; count: number}[],
+  groupPools: (number[] | null)[],
+  fallbackPool: number[] | null,
+  repeats: GroupRepeat[] | null,
+  bindMelody: boolean,
+  rng: () => number,
+): number[] {
+  // pulse index → firing-event ordinal, so a bound event can find its aligned source event.
+  const eventOfPulse = new Map<number, number>();
+  firingPulseIdx.forEach((pi, e) => eventOfPulse.set(pi, e));
+
+  // The group a pulse index falls in (ranges are contiguous and ascending).
+  const groupOfPulse = (pi: number): number => {
+    for (let g = 0; g < ranges.length; g++)
+      if (pi >= ranges[g].start && pi < ranges[g].start + ranges[g].count) return g;
+    return ranges.length - 1; // defensive: last group
+  };
+
+  const keys: number[] = new Array(firingPulseIdx.length);
+  for (let e = 0; e < firingPulseIdx.length; e++) {
+    const pi = firingPulseIdx[e];
+    const g = groupOfPulse(pi);
+    const offset = pi - ranges[g].start;
+    const rep = repeats?.[g];
+
+    // Try to copy an earlier group's aligned event (full: whole group; half: first half only).
+    if (bindMelody && rep) {
+      let src: number | null = null;
+      if (rep.fullSource !== null) src = rep.fullSource;
+      else if (rep.halfSource !== null && offset < Math.floor(ranges[g].count / 2))
+        src = rep.halfSource;
+      if (src !== null) {
+        const se = eventOfPulse.get(ranges[src].start + offset);
+        if (se !== undefined) {
+          keys[e] = keys[se];
+          continue;
+        }
+      }
+    }
+
+    // Unbound (or defensive fallback): fresh draw from this group's pool.
+    const pool = groupPools[g] ?? fallbackPool;
+    keys[e] = pool && pool.length ? pool[Math.floor(rng() * pool.length)] : 0;
+  }
+  return keys;
 }

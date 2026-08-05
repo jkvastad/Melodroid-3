@@ -6,6 +6,7 @@ import 'uplot/dist/uPlot.min.css';
 import {
   generatePattern,
   gridLines,
+  groupPulseRanges,
   mulberry32,
   parseMeter,
   parsePhrase,
@@ -19,9 +20,12 @@ import {
   type Superset,
 } from '@site/src/lib/placements';
 import {
+  bakeMelody,
   expandPlacements,
   generateChordWalk,
+  parsePhraseBinds,
   type CuratedPlacement,
+  type PhraseBindAxis,
   type PlacementPattern,
   type WalkBinding,
 } from '@site/src/lib/chordWalk';
@@ -51,9 +55,10 @@ export type RhythmPatternPlayerProps = {
   chordWalk?: ChordWalkSet; // chord-walk mode: a *cyclic* progression — one chord per meter group,
   // adjacent (and wrap) chords linked by a shared curated placement, melody drawn from the bridging
   // placement, returning to the origin chord (this page only)
-  phraseBinds?: PhraseBindMode; // in chord-walk mode, how the phrase binds harmony: 'rhythm'
-  // (default, rhythm only) · 'chords+placements' · 'placements' · 'chords'. Sets the dropdown's
-  // initial value; only meaningful with both `phrases` and `chordWalk` (this page only)
+  phraseBinds?: string; // in chord-walk mode, which axes the phrase binds: a '+'-joined subset
+  // of 'chords' · 'placements' · 'melody' (e.g. 'chords+placements+melody'), or 'rhythm' / '' for
+  // none (default, rhythm only). Sets the initial checkbox state; only meaningful with both
+  // `phrases` and `chordWalk` (this page only)
 };
 
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
@@ -111,28 +116,27 @@ function originWalk(origin: number[], curatedPool: CuratedPlacement[], N: number
   }));
 }
 
-// How the rhythm phrase governs the chord walk. 'rhythm' = today's behavior (phrase repeats the
-// rhythm only; chords/placements walk freely). The others additionally pin a full-repeat group's
-// chord and/or bridging placement to the group it repeats (see WalkBinding / deriveWalkBindings).
-export type PhraseBindMode = 'rhythm' | 'chords+placements' | 'placements' | 'chords';
-const PHRASE_BIND_MODES: {id: PhraseBindMode; label: string}[] = [
-  {id: 'rhythm', label: 'Rhythm only'},
-  {id: 'chords+placements', label: 'Chords + placements'},
-  {id: 'placements', label: 'Placements'},
-  {id: 'chords', label: 'Chords'},
+// The three phrase-bind axes, shown as independent checkboxes in chord-walk mode. Binding chords
+// and/or placements constrains the walk (see WalkBinding / deriveWalkBindings); binding melody
+// restates a repeated group's melodic motif (see bakeMelody). None checked = rhythm only (the
+// phrase repeats the rhythm alone, today's default).
+const PHRASE_BIND_AXES: {id: PhraseBindAxis; label: string}[] = [
+  {id: 'chords', label: 'chords'},
+  {id: 'placements', label: 'placements'},
+  {id: 'melody', label: 'melody'},
 ];
 
-// Translate the rhythm phrase (one GroupRepeat per meter group) into per-group walk bindings under
-// the chosen mode. Only FULL repeats (fullSource) bind harmony — a half-repeat has no "first half"
-// of a chord — and only when the mode enables that axis. Returns null when nothing is bound (mode
-// 'rhythm', no phrase, or no full repeats), so callers skip the bound generation entirely.
+// Translate the rhythm phrase (one GroupRepeat per meter group) into per-group walk bindings for
+// the chord/placement axes. Only FULL repeats (fullSource) bind harmony — a half-repeat has no
+// "first half" of a chord — and only when that axis is enabled. Returns null when nothing is bound
+// (neither axis, no phrase, or no full repeats), so callers skip the bound generation entirely.
+// (Melody binding is handled separately in bakeMelody — it needs no walk constraint.)
 function deriveWalkBindings(
   repeats: GroupRepeat[] | null,
-  mode: PhraseBindMode,
+  bindChords: boolean,
+  bindPlacements: boolean,
 ): WalkBinding[] | null {
-  if (mode === 'rhythm' || !repeats) return null;
-  const bindChords = mode === 'chords' || mode === 'chords+placements';
-  const bindPlacements = mode === 'placements' || mode === 'chords+placements';
+  if ((!bindChords && !bindPlacements) || !repeats) return null;
   let any = false;
   const bindings = repeats.map((rep) => {
     const src = rep.fullSource; // half-repeats never bind harmony
@@ -656,10 +660,15 @@ export default function RhythmPatternPlayerClient({
   // selected (reuses PROGRESSION_HEURISTICS). Changing it re-bakes the walk. The curated pool and
   // origin are fixed by the prop, so there is no set dropdown here.
   const [walkHeuristicIdx, setWalkHeuristicIdx] = useState(0);
-  // Chord-walk + phrase: how the rhythm phrase binds harmony (see PhraseBindMode). Changing it
-  // re-derives the walk bindings and re-bakes. `bindingUnsatisfied` is set when a requested binding
-  // can't close a cycle (the walk then relaxes to a free progression) — surfaced as an inline note.
-  const [phraseBinds, setPhraseBinds] = useState<PhraseBindMode>(phraseBindsProp);
+  // Chord-walk + phrase: which axes the rhythm phrase binds (see PHRASE_BIND_AXES) — independent
+  // toggles for chord, placement, and melody. Chord/placement re-derive the walk bindings and
+  // re-bake; melody re-bakes the melody phrase. Initialised from the `phraseBinds` prop.
+  const initialBinds = useMemo(() => parsePhraseBinds(phraseBindsProp), [phraseBindsProp]);
+  const [bindChords, setBindChords] = useState(initialBinds.chords);
+  const [bindPlacements, setBindPlacements] = useState(initialBinds.placements);
+  const [bindMelody, setBindMelody] = useState(initialBinds.melody);
+  // Set when a requested chord/placement binding can't close a cycle (the walk then relaxes to a
+  // free progression) — surfaced as an inline note.
   const [bindingUnsatisfied, setBindingUnsatisfied] = useState(false);
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
@@ -747,8 +756,11 @@ export default function RhythmPatternPlayerClient({
   // Per-group walk bindings derived from the phrase + chosen bind mode — null when nothing binds
   // ('rhythm' mode, no phrase, or no full repeats), so the walk stays free (today's behavior).
   const walkBindings = useMemo(
-    () => (chordWalkOn ? deriveWalkBindings(phraseRepeats, phraseBinds) : null),
-    [chordWalkOn, phraseRepeats, phraseBinds],
+    () =>
+      chordWalkOn
+        ? deriveWalkBindings(phraseRepeats, bindChords, bindPlacements)
+        : null,
+    [chordWalkOn, phraseRepeats, bindChords, bindPlacements],
   );
   // The baked cyclic walk — one step per meter group: the chord to sound (its pitch classes + voiced
   // offsets) and the folded melody pool (the bridging placement, per WALK_MELODY_STRATEGY). Seeded
@@ -831,21 +843,36 @@ export default function RhythmPatternPlayerClient({
   const bakedKeys = useMemo(() => {
     if (!pattern || !melodyOn) return null;
     // Chord-walk mode: each firing event draws from its meter group's bridging pool, so the baked
-    // phrase modulates group-to-group. Falls back to the representative octaveKeys for any group
-    // whose bridging pool is empty (the origin-with-no-melody fallback).
+    // phrase modulates group-to-group. With melody binding on, a repeated group instead restates
+    // the group it repeats's motif note-for-note (see bakeMelody); falls back to the representative
+    // octaveKeys for any group whose bridging pool is empty (the origin-with-no-melody fallback).
     if (chordWalkOn && chordWalkSteps) {
       const rng = mulberry32(seed ^ 0x51ed270b); // salt distinct from the chord-walk seed
-      const starts = groupStartBeats(pattern.meter);
-      return firingEvents(pattern.pulses).map((ev) => {
-        const pool = chordWalkSteps[groupIndexOf(ev.unitBeat, starts)]?.melodyKeys ?? octaveKeys;
-        return pool && pool.length ? pool[Math.floor(rng() * pool.length)] : 0;
-      });
+      return bakeMelody(
+        firingPulseIndices(pattern.pulses),
+        groupPulseRanges(pattern.meter, pattern.subdivisions),
+        chordWalkSteps.map((s) => s.melodyKeys),
+        octaveKeys,
+        phraseRepeats,
+        bindMelody,
+        rng,
+      );
     }
     const rng = mulberry32(seed);
     return firingEvents(pattern.pulses).map(() =>
       isRandomPitch ? rng() * 12 : octaveKeys![Math.floor(rng() * octaveKeys!.length)],
     );
-  }, [pattern, melodyOn, isRandomPitch, octaveKeys, seed, chordWalkOn, chordWalkSteps]);
+  }, [
+    pattern,
+    melodyOn,
+    isRandomPitch,
+    octaveKeys,
+    seed,
+    chordWalkOn,
+    chordWalkSteps,
+    phraseRepeats,
+    bindMelody,
+  ]);
 
   // Mirror the melody config into refs so the look-ahead scheduler (play's pump) reads the
   // current values live, exactly like tempoRef — switching family / loop retunes a running
@@ -934,6 +961,16 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     walkBindingsRef.current = walkBindings;
   }, [walkBindings]);
+  // The parsed phrase and the melody-bind flag, mirrored so the scheduler's per-cycle melody bake
+  // (loop-off parity) honors a mid-play phrase / checkbox change live, like the walk refs above.
+  const phraseRepeatsRef = useRef(phraseRepeats);
+  useEffect(() => {
+    phraseRepeatsRef.current = phraseRepeats;
+  }, [phraseRepeats]);
+  const bindMelodyRef = useRef(bindMelody);
+  useEffect(() => {
+    bindMelodyRef.current = bindMelody;
+  }, [bindMelody]);
   // Guided mode: keep chordState (the voicing source) synced to the selected preset chord,
   // so switching the chord dropdown re-voices the accompaniment. `matches` stays empty —
   // guided mode never uses the superset-match dropdown.
@@ -1233,6 +1270,13 @@ export default function RhythmPatternPlayerClient({
     let cycleSteps = chordWalkOn ? chordWalkStepsRef.current : null;
     let cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
     const walkStarts = chordWalkOn ? groupStartBeats(patternMeter) : null;
+    // Per-group pulse ranges, for the per-cycle melody bake that gives melody binding loop-off
+    // parity: `cycleMelody` is this cycle's bound melody (one key per firing event) when melody
+    // binding is on, else null (each hit re-rolls live). Refreshed at each cycle boundary below.
+    const walkRanges = chordWalkOn
+      ? groupPulseRanges(patternMeter, pattern.subdivisions)
+      : null;
+    let cycleMelody: number[] | null = null;
     // Only firing pulses become onsets, sorted by position within the cycle.
     const events = firingEvents(pulses);
     // Bar index of each onset, aligned with `events`, for live loop-off recolouring.
@@ -1284,6 +1328,21 @@ export default function RhythmPatternPlayerClient({
             cycleSteps = bakeWalkSteps(walk, pitchHz);
           }
           cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
+          // Melody binding (loop-off parity): bake this cycle's melody so a repeated group replays
+          // the group it repeats's motif note-for-note; unbound events draw fresh from their pool.
+          // Loop-melody-on uses the frozen bakedKeys instead (handled in the per-hit draw below).
+          cycleMelody =
+            bindMelodyRef.current && walkRanges && phraseRepeatsRef.current
+              ? bakeMelody(
+                  firingPulseIdx,
+                  walkRanges,
+                  cycleWalkPools ?? [],
+                  octaveKeysRef.current,
+                  phraseRepeatsRef.current,
+                  true,
+                  Math.random,
+                )
+              : null;
         }
         // Chord: re-strike the whole voicing at each meter group start, held for that
         // group's length (in live-tempo seconds) so it tracks tempo changes — a slow
@@ -1349,11 +1408,15 @@ export default function RhythmPatternPlayerClient({
         if (melodyOnRef.current) {
           const baked = bakedKeysRef.current;
           const loopOn = loopMelodyRef.current && baked;
+          // Loop on → the frozen baked phrase. Else, if this cycle's melody is bound, replay it
+          // (so repeated groups restate their motif); otherwise re-roll a fresh pitch per hit.
           const key = loopOn
             ? baked![i % N]
-            : isRandomPitchRef.current
-              ? Math.random() * 12
-              : okeys![Math.floor(Math.random() * okeys!.length)];
+            : cycleMelody
+              ? cycleMelody[i % N]
+              : isRandomPitchRef.current
+                ? Math.random() * 12
+                : okeys![Math.floor(Math.random() * okeys!.length)];
           freq = pitchHz * Math.pow(2, key / 12);
           if (!loopOn) colourKey = key;
         }
@@ -1762,19 +1825,34 @@ export default function RhythmPatternPlayerClient({
               </select>
             </label>
             {phrases && (
-              <label style={labelStyle}>
+              <span style={{...labelStyle, gap: '0.6rem'}}>
                 phrase binds
-                <select
-                  value={phraseBinds}
-                  onChange={(e) => setPhraseBinds(e.target.value as PhraseBindMode)}
-                  aria-label="how the phrase binds the chord walk">
-                  {PHRASE_BIND_MODES.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                {PHRASE_BIND_AXES.map((axis) => {
+                  const checked =
+                    axis.id === 'chords'
+                      ? bindChords
+                      : axis.id === 'placements'
+                        ? bindPlacements
+                        : bindMelody;
+                  const setter =
+                    axis.id === 'chords'
+                      ? setBindChords
+                      : axis.id === 'placements'
+                        ? setBindPlacements
+                        : setBindMelody;
+                  return (
+                    <label key={axis.id} style={labelStyle}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => setter(e.target.checked)}
+                        aria-label={`bind ${axis.id} to the phrase`}
+                      />
+                      {axis.label}
+                    </label>
+                  );
+                })}
+              </span>
             )}
             <span style={labelStyle}>
               playing
@@ -1887,7 +1965,7 @@ export default function RhythmPatternPlayerClient({
         </div>
       )}
 
-      {chordWalkOn && phraseBinds !== 'rhythm' && bindingUnsatisfied && (
+      {chordWalkOn && (bindChords || bindPlacements) && bindingUnsatisfied && (
         <div
           style={{
             color: 'var(--ifm-color-warning-dark)',
