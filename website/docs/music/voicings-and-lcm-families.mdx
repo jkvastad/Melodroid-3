@@ -280,7 +280,16 @@ Press **Generate** to generate a concrete pattern from the current settings, and
 against its position in unit beats, with grid lines for the meter accents (bold), unit
 beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while playing.
 
-<RhythmPatternPlayer meter="4" subdivisions="2" bpm={100} />
+The **phrase** field builds a song-like structure by *repeating* the rhythm of earlier metric
+groups. Write one token per meter group: an uppercase letter is that group's identity, and
+reusing a letter makes that group a full copy of the first group carrying it. So under a four-group
+meter, `ABAC` restates group 1's rhythm in group 3, while groups 2 and 4 stay original. A trailing
+lowercase letter repeats only the *first half* of another group: `A Ba A Ca` (equivalently
+`ABaACa`) keeps groups 2 and 4 opening with group 1's first half before diverging. Repetition needs
+the source and target groups to share a length and subdivision (and an even length for a half
+repeat); leave the field blank for a fresh, independent rhythm in every group.
+
+<RhythmPatternPlayer meter="4 4 4 4" subdivisions="2" bpm={100} phrases phrase="ABAC" />
 
 ### Melody
 A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
@@ -769,11 +778,11 @@ The above example illustrates how we can move between placements via shared chor
 It also illustrates a larger movement structure on a meter level, where we complete a cycle and return to our origin chord.
 
 <RhythmPatternPlayer
-  meter="4 4 4 2 2"
+  meter="4 4 4 4"
   subdivisions="4"
   bpm={104}
   syncopation={0.2}
-  resolution={0.95}
+  resolution={0.95}  
   chordWalk={{
     origin: [0, 4, 7],
     placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
@@ -787,6 +796,22 @@ We can improve upon this by adding in more structure:
 * placement progressions can have patterns themselves:
   * Such patterns can constitute repetition of placements
   * Patterns might also be more stylistic, e.g. narrowing down the available options for a move before a loop (e.g. playing 0 4 7 10 only has 20@0, 15@7 and 24@5 as placement, strongly indicating 24@5)
+
+
+Adding in rhythmic phrasing, where Ba in e.g. ABaACa means that rhythmic group B reuses the first half of rhythmic group A.
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={108}
+  syncopation={0.25}
+  resolution={0.95}
+  phrases
+  phrase="ABaACa"
+  chordWalk={{
+    origin: [0, 4, 7],
+    placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
+  }}
+/>
 
 
 DEFERRED: Look at...

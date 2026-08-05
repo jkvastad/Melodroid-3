@@ -46,6 +46,117 @@ export function parseSubdivisions(text: string, meterLen: number): number[] {
   return nums;
 }
 
+// ---- Phrase repetition ---------------------------------------------------
+
+// A per-group repetition instruction. `fullSource` (if set) is the index of an earlier,
+// structurally identical group whose whole rhythm this group copies; `halfSource` (if set)
+// is the index of an earlier group whose *first half* this group's first half copies (its
+// second half stays freshly generated). Both null ⇒ the group generates fresh (today's
+// behavior). A group carries at most one of the two.
+export type GroupRepeat = {fullSource: number | null; halfSource: number | null};
+
+// Each group's slice into the flat pulse array: its start index and pulse count
+// (count = meter[g] * subdivisions[g]). The flat-array analogue of the group bookkeeping
+// in buildGrid / gridLines.
+export function groupPulseRanges(
+  meter: number[],
+  subdivisions: number[],
+): {start: number; count: number}[] {
+  const ranges: {start: number; count: number}[] = [];
+  let start = 0;
+  meter.forEach((m, g) => {
+    const count = m * subdivisions[g];
+    ranges.push({start, count});
+    start += count;
+  });
+  return ranges;
+}
+
+// Parse a phrase string into one GroupRepeat per meter group. Each token is an uppercase
+// identity letter with an optional trailing lowercase letter: a reused uppercase letter marks
+// a full copy of the first group with that identity; a trailing lowercase `x` marks a first-half
+// copy of group `X`. Whitespace and commas between tokens are ignored, so "ABaACa" and
+// "A Ba A Ca" parse identically. Empty text yields all-null repeats (no repetition). Throws a
+// friendly Error on malformed input, a mismatched token count, a forward/self reference, or a
+// structurally incompatible source, so the client can show an inline hint.
+export function parsePhrase(
+  text: string,
+  meter: number[],
+  subdivisions: number[],
+): GroupRepeat[] {
+  const none = (): GroupRepeat[] =>
+    meter.map(() => ({fullSource: null, halfSource: null}));
+  if (text.trim().length === 0) return none();
+
+  // Scan into tokens: each uppercase starts a token, an optional following lowercase attaches.
+  const tokens: {upper: string; lower: string | null}[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (/\s|,/.test(ch)) continue;
+    if (!/[A-Z]/.test(ch))
+      throw new Error(
+        `"${ch}" is not a group letter — use A–Z with an optional lowercase, e.g. "ABAC".`,
+      );
+    let lower: string | null = null;
+    if (i + 1 < text.length && /[a-z]/.test(text[i + 1])) {
+      lower = text[++i];
+    }
+    tokens.push({upper: ch, lower});
+  }
+
+  if (tokens.length !== meter.length)
+    throw new Error(
+      `Give one group letter per meter group (${meter.length}), got ${tokens.length}.`,
+    );
+
+  // First index carrying each uppercase identity, for resolving copies.
+  const firstOf = new Map<string, number>();
+  tokens.forEach((t, g) => {
+    if (!firstOf.has(t.upper)) firstOf.set(t.upper, g);
+  });
+
+  // Structural identity: same length and same subdivision ⇒ pulse-for-pulse copyable.
+  const compatible = (a: number, b: number): boolean =>
+    meter[a] === meter[b] && subdivisions[a] === subdivisions[b];
+
+  return tokens.map((t, g) => {
+    const isFirst = firstOf.get(t.upper) === g;
+    const fullSource = isFirst ? null : firstOf.get(t.upper)!;
+    let halfSource: number | null = null;
+
+    if (t.lower) {
+      if (fullSource !== null)
+        throw new Error(
+          `Group ${g + 1} (${t.upper}${t.lower}) can't be both a full repeat of "${t.upper}" and a half repeat.`,
+        );
+      const upperOfLower = t.lower.toUpperCase();
+      const src = firstOf.get(upperOfLower);
+      if (src === undefined || src >= g)
+        throw new Error(
+          `Group ${g + 1} (${t.upper}${t.lower}) half-repeats "${upperOfLower}", which must appear in an earlier group.`,
+        );
+      halfSource = src;
+    }
+
+    if (fullSource !== null && !compatible(fullSource, g))
+      throw new Error(
+        `Group ${g + 1} (${t.upper}) can't copy group ${fullSource + 1}: different length or subdivision.`,
+      );
+    if (halfSource !== null) {
+      if (!compatible(halfSource, g))
+        throw new Error(
+          `Group ${g + 1} (${t.upper}${t.lower}) can't half-copy group ${halfSource + 1}: different length or subdivision.`,
+        );
+      if (meter[g] % 2 !== 0)
+        throw new Error(
+          `Group ${g + 1} (${t.upper}${t.lower}) needs an even length to half-repeat, got ${meter[g]}.`,
+        );
+    }
+
+    return {fullSource, halfSource};
+  });
+}
+
 // ---- Pulse model ---------------------------------------------------------
 
 export type Pulse = {
@@ -58,6 +169,7 @@ export type PatternParams = {
   subdivisions: number[]; // one per meter group (parseSubdivisions guarantees this)
   syncopation: number; // [0,1] — deviation from meter
   resolution: number; // [0,1] — fraction of the grid that fires
+  repeats?: GroupRepeat[]; // optional phrase repetition, one per group (parsePhrase output)
 };
 
 // Internal metric-strength tiers (never emitted). Only the ordering and rough
@@ -178,7 +290,7 @@ export function generatePattern(
   params: PatternParams,
   seed: number,
 ): {pulses: Pulse[]; totalBeats: number} {
-  const {meter, subdivisions, syncopation, resolution} = params;
+  const {meter, subdivisions, syncopation, resolution, repeats} = params;
   const grid = buildGrid(meter, subdivisions);
   const totalBeats = meter.reduce((a, b) => a + b, 0);
   const rng = mulberry32(seed);
@@ -211,6 +323,27 @@ export function generatePattern(
 
     return {unitBeat: p.unitBeat, velocity: toVelocity(v)};
   });
+
+  // Phrase repetition: overwrite target groups' velocities by copying from an earlier group,
+  // after the base pass so the seeded RNG stream (and thus every seed) is unchanged. A full
+  // copy replays the whole source group; a half copy replays only its first half, leaving the
+  // second half as freshly generated. Only velocity is copied — each pulse keeps its unitBeat.
+  if (repeats) {
+    const ranges = groupPulseRanges(meter, subdivisions);
+    repeats.forEach((rep, g) => {
+      const {start, count} = ranges[g];
+      if (rep.fullSource !== null) {
+        const src = ranges[rep.fullSource];
+        for (let k = 0; k < count; k++)
+          pulses[start + k].velocity = pulses[src.start + k].velocity;
+      } else if (rep.halfSource !== null) {
+        const src = ranges[rep.halfSource];
+        const half = Math.floor(count / 2);
+        for (let k = 0; k < half; k++)
+          pulses[start + k].velocity = pulses[src.start + k].velocity;
+      }
+    });
+  }
 
   return {pulses, totalBeats};
 }

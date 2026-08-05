@@ -8,7 +8,9 @@ import {
   gridLines,
   mulberry32,
   parseMeter,
+  parsePhrase,
   parseSubdivisions,
+  type GroupRepeat,
   type Pulse,
 } from '@site/src/lib/rhythmPattern';
 import {
@@ -33,6 +35,8 @@ export type RhythmPatternPlayerProps = {
   maxBpm?: number;
   syncopation?: number; // initial [0,1]; default 0
   resolution?: number; // initial [0,1]; default 1
+  phrases?: boolean; // show the phrase-repetition control (opt-in); default false
+  phrase?: string; // initial phrase scheme, e.g. 'ABAC' or 'A Ba A Ca'; default ''
   pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
   melody?: boolean; // show the lcm-family melody controls (this page only); default false
@@ -471,6 +475,8 @@ export default function RhythmPatternPlayerClient({
   maxBpm = 240,
   syncopation: syncProp = 0,
   resolution: resProp = 1,
+  phrases = false,
+  phrase: phraseProp = '',
   pitchHz = 196,
   height = 240,
   melody = false,
@@ -507,8 +513,16 @@ export default function RhythmPatternPlayerClient({
     } catch {
       s = Array<number>(m.length).fill(2);
     }
-    return {m, s};
-  }, [meterProp, subProp]);
+    // Parse the initial phrase against the resolved meter/subdivisions; a malformed default
+    // just starts with no repetition rather than blocking the player.
+    let r: GroupRepeat[] | null;
+    try {
+      r = phraseProp.trim().length === 0 ? null : parsePhrase(phraseProp, m, s);
+    } catch {
+      r = null;
+    }
+    return {m, s, r};
+  }, [meterProp, subProp, phraseProp]);
 
   // Controls: text mirrors the input box; the parsed value is the last *valid* parse.
   const [meterText, setMeterText] = useState(meterProp);
@@ -517,6 +531,12 @@ export default function RhythmPatternPlayerClient({
   const [subText, setSubText] = useState(subProp);
   const [subdivisions, setSubdivisions] = useState<number[]>(initial.s);
   const [subError, setSubError] = useState<string | null>(null);
+  // Phrase repetition (only surfaced when `phrases`): the text mirrors the input box, the
+  // parsed value is the last *valid* parse (null = no repetition), and phraseError holds an
+  // inline validation message.
+  const [phraseText, setPhraseText] = useState(phraseProp);
+  const [phraseRepeats, setPhraseRepeats] = useState<GroupRepeat[] | null>(initial.r);
+  const [phraseError, setPhraseError] = useState<string | null>(null);
   const [syncopation, setSyncopation] = useState(syncProp);
   const [syncText, setSyncText] = useState(() => fmtUnit(syncProp));
   const [resolution, setResolution] = useState(resProp);
@@ -885,6 +905,19 @@ export default function RhythmPatternPlayerClient({
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
+  // Re-parse the current phrase text against a (possibly new) meter/subdivisions — a group-count
+  // or subdivision change can invalidate a phrase. Empty text clears repetition without error.
+  const revalidatePhrase = (m: number[], s: number[]) => {
+    try {
+      setPhraseRepeats(
+        phraseText.trim().length === 0 ? null : parsePhrase(phraseText, m, s),
+      );
+      setPhraseError(null);
+    } catch (e) {
+      setPhraseError((e as Error).message);
+    }
+  };
+
   const onMeterText = (text: string) => {
     setMeterText(text);
     try {
@@ -892,12 +925,16 @@ export default function RhythmPatternPlayerClient({
       setMeter(m);
       setMeterError(null);
       // A new group count can invalidate a per-group subdivision list — re-check it.
+      let s = subdivisions;
       try {
-        setSubdivisions(parseSubdivisions(subText, m.length));
+        s = parseSubdivisions(subText, m.length);
+        setSubdivisions(s);
         setSubError(null);
       } catch (e) {
         setSubError((e as Error).message);
       }
+      // The phrase's validity depends on the meter/subdivisions too — re-check it.
+      revalidatePhrase(m, s);
     } catch (e) {
       setMeterError((e as Error).message);
     }
@@ -906,10 +943,27 @@ export default function RhythmPatternPlayerClient({
   const onSubText = (text: string) => {
     setSubText(text);
     try {
-      setSubdivisions(parseSubdivisions(text, meter.length));
+      const s = parseSubdivisions(text, meter.length);
+      setSubdivisions(s);
       setSubError(null);
+      revalidatePhrase(meter, s);
     } catch (e) {
       setSubError((e as Error).message);
+    }
+  };
+
+  // Phrase entry (phrase mode): parse the scheme against the current meter/subdivisions and make
+  // it the active repetition. Empty clears it (fully-random per group). Malformed / incompatible
+  // input is an error that keeps the last valid scheme.
+  const onPhraseText = (text: string) => {
+    setPhraseText(text);
+    try {
+      setPhraseRepeats(
+        text.trim().length === 0 ? null : parsePhrase(text, meter, subdivisions),
+      );
+      setPhraseError(null);
+    } catch (e) {
+      setPhraseError((e as Error).message);
     }
   };
 
@@ -1250,7 +1304,7 @@ export default function RhythmPatternPlayerClient({
 
   const regenerate = (nextSeed: number) => {
     const p = generatePattern(
-      {meter, subdivisions, syncopation, resolution},
+      {meter, subdivisions, syncopation, resolution, repeats: phraseRepeats ?? undefined},
       nextSeed,
     );
     setPattern({...p, meter, subdivisions});
@@ -1452,6 +1506,19 @@ export default function RhythmPatternPlayerClient({
             aria-label="subdivision per group"
           />
         </label>
+        {phrases && (
+          <label style={labelStyle}>
+            phrase
+            <input
+              type="text"
+              value={phraseText}
+              onChange={(e) => onPhraseText(e.target.value)}
+              placeholder="e.g. ABAC"
+              style={{width: '7rem'}}
+              aria-label="phrase repetition scheme"
+            />
+          </label>
+        )}
         <label style={labelStyle}>
           tempo
           <input
@@ -1704,14 +1771,14 @@ export default function RhythmPatternPlayerClient({
         )}
       </div>
 
-      {(meterError || subError || chordError) && (
+      {(meterError || subError || phraseError || chordError) && (
         <div
           style={{
             color: 'var(--ifm-color-danger)',
             fontSize: '0.85rem',
             marginTop: '0.4rem',
           }}>
-          {meterError ?? subError ?? chordError}
+          {meterError ?? subError ?? phraseError ?? chordError}
         </div>
       )}
 
