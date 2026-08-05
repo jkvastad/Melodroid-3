@@ -24,6 +24,7 @@ import {
   expandPlacements,
   generateChordWalk,
   parsePhraseBinds,
+  placementPatternLabel,
   type CuratedPlacement,
   type PhraseBindAxis,
   type PlacementPattern,
@@ -670,6 +671,22 @@ export default function RhythmPatternPlayerClient({
   // Set when a requested chord/placement binding can't close a cycle (the walk then relaxes to a
   // free progression) — surfaced as an inline note.
   const [bindingUnsatisfied, setBindingUnsatisfied] = useState(false);
+  // Chord-walk: which curated placement patterns are enabled (one boolean per authored pattern,
+  // all on by default). Toggling a box narrows/widens the pool the walk draws from — the curated
+  // pool memo filters on this, so everything downstream (candidates, bake, live re-roll) follows.
+  // `chordWalk` is fixed per mounted instance, so a lazy initializer suffices.
+  const [enabledPlacements, setEnabledPlacements] = useState<boolean[]>(
+    () => (chordWalk?.placements ?? []).map(() => true),
+  );
+  // Toggle one placement, enforcing keep-at-least-one so the pool is never empty (an all-off pool
+  // would degrade the walk to the origin repeated with no melody).
+  const togglePlacement = (i: number) =>
+    setEnabledPlacements((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      if (next.every((b) => !b)) return prev; // never empty the pool
+      return next;
+    });
 
   // Live tempo: bpm drives the UI, tempoRef (seconds per unit beat) is read by the
   // scheduler each poll so a slider/number change retunes a running loop immediately.
@@ -722,11 +739,15 @@ export default function RhythmPatternPlayerClient({
   // --- Chord-walk mode: curated pool → candidate chords → baked cyclic walk ---
   // (declared before octaveKeys because that memo reads the walk's first-group melody pool.)
 
-  // The curated placement pool: every authored pattern expanded to all 12 anchors. Depends only
-  // on the prop, so it is computed once. Null outside chord-walk mode.
+  // The curated placement pool: every *enabled* authored pattern expanded to all 12 anchors. The
+  // per-pattern checkboxes (enabledPlacements) filter which patterns contribute. Null outside
+  // chord-walk mode.
   const curatedPool = useMemo(
-    () => (chordWalkOn ? expandPlacements(chordWalk!.placements) : null),
-    [chordWalkOn, chordWalk],
+    () =>
+      chordWalkOn
+        ? expandPlacements(chordWalk!.placements.filter((_, i) => enabledPlacements[i]))
+        : null,
+    [chordWalkOn, chordWalk, enabledPlacements],
   );
   // The chord vocabulary the walk may visit: heuristic chords (maj/min/dim/aug triads, or +7ths,
   // or any m2-free triad) that are a subset of ≥1 curated placement, deduped across placements.
@@ -1854,6 +1875,25 @@ export default function RhythmPatternPlayerClient({
                 })}
               </span>
             )}
+            <span style={{...labelStyle, gap: '0.6rem'}}>
+              placements
+              {chordWalk!.placements.map((p, i) => {
+                const isLastEnabled =
+                  enabledPlacements[i] && enabledPlacements.filter(Boolean).length === 1;
+                return (
+                  <label key={i} style={labelStyle}>
+                    <input
+                      type="checkbox"
+                      checked={enabledPlacements[i]}
+                      disabled={isLastEnabled}
+                      onChange={() => togglePlacement(i)}
+                      aria-label={`use placement ${placementPatternLabel(p)} in the walk`}
+                    />
+                    {placementPatternLabel(p)}
+                  </label>
+                );
+              })}
+            </span>
             <span style={labelStyle}>
               playing
               <code>{currentChord ? currentChord.join(' ') : '—'}</code>

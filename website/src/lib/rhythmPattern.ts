@@ -48,11 +48,13 @@ export function parseSubdivisions(text: string, meterLen: number): number[] {
 
 // ---- Phrase repetition ---------------------------------------------------
 
-// A per-group repetition instruction. `fullSource` (if set) is the index of an earlier,
-// structurally identical group whose whole rhythm this group copies; `halfSource` (if set)
-// is the index of an earlier group whose *first half* this group's first half copies (its
-// second half stays freshly generated). Both null ⇒ the group generates fresh (today's
-// behavior). A group carries at most one of the two.
+// A per-group repetition instruction. `fullSource` (if set) is the index of an earlier group
+// (sharing this group's subdivision) whose rhythm this group best-fit copies: pulses map by
+// modular wrap, so a shorter target takes the source's opening and a longer target tiles the
+// source, repeating as much as fits. `halfSource` (if set) is the index of an earlier,
+// structurally identical group whose *first half* this group's first half copies (its second
+// half stays freshly generated). Both null ⇒ the group generates fresh (today's behavior). A
+// group carries at most one of the two.
 export type GroupRepeat = {fullSource: number | null; halfSource: number | null};
 
 // Each group's slice into the flat pulse array: its start index and pulse count
@@ -115,9 +117,13 @@ export function parsePhrase(
     if (!firstOf.has(t.upper)) firstOf.set(t.upper, g);
   });
 
-  // Structural identity: same length and same subdivision ⇒ pulse-for-pulse copyable.
+  // Full copy is best-fit: a shared subdivision keeps the modular-wrap tiling beat-aligned, but
+  // the lengths may differ (shorter target truncates to the source's opening, longer target tiles).
+  const sameSubdivision = (a: number, b: number): boolean =>
+    subdivisions[a] === subdivisions[b];
+  // Half copy still needs structural identity — same length and subdivision ⇒ pulse-for-pulse.
   const compatible = (a: number, b: number): boolean =>
-    meter[a] === meter[b] && subdivisions[a] === subdivisions[b];
+    meter[a] === meter[b] && sameSubdivision(a, b);
 
   return tokens.map((t, g) => {
     const isFirst = firstOf.get(t.upper) === g;
@@ -138,9 +144,9 @@ export function parsePhrase(
       halfSource = src;
     }
 
-    if (fullSource !== null && !compatible(fullSource, g))
+    if (fullSource !== null && !sameSubdivision(fullSource, g))
       throw new Error(
-        `Group ${g + 1} (${t.upper}) can't copy group ${fullSource + 1}: different length or subdivision.`,
+        `Group ${g + 1} (${t.upper}) can't copy group ${fullSource + 1}: different subdivision.`,
       );
     if (halfSource !== null) {
       if (!compatible(halfSource, g))
@@ -326,8 +332,11 @@ export function generatePattern(
 
   // Phrase repetition: overwrite target groups' velocities by copying from an earlier group,
   // after the base pass so the seeded RNG stream (and thus every seed) is unchanged. A full
-  // copy replays the whole source group; a half copy replays only its first half, leaving the
-  // second half as freshly generated. Only velocity is copied — each pulse keeps its unitBeat.
+  // copy best-fits the source group by modular wrap — target pulse k reads source pulse
+  // k % src.count, so a shorter target takes the source's opening and a longer target tiles it
+  // (identity when the lengths match). A half copy replays only the source's first half into the
+  // target's first half, leaving the second half freshly generated. Only velocity is copied —
+  // each pulse keeps its unitBeat.
   if (repeats) {
     const ranges = groupPulseRanges(meter, subdivisions);
     repeats.forEach((rep, g) => {
@@ -335,7 +344,7 @@ export function generatePattern(
       if (rep.fullSource !== null) {
         const src = ranges[rep.fullSource];
         for (let k = 0; k < count; k++)
-          pulses[start + k].velocity = pulses[src.start + k].velocity;
+          pulses[start + k].velocity = pulses[src.start + (k % src.count)].velocity;
       } else if (rep.halfSource !== null) {
         const src = ranges[rep.halfSource];
         const half = Math.floor(count / 2);

@@ -285,9 +285,12 @@ groups. Write one token per meter group: an uppercase letter is that group's ide
 reusing a letter makes that group a full copy of the first group carrying it. So under a four-group
 meter, `ABAC` restates group 1's rhythm in group 3, while groups 2 and 4 stay original. A trailing
 lowercase letter repeats only the *first half* of another group: `A Ba A Ca` (equivalently
-`ABaACa`) keeps groups 2 and 4 opening with group 1's first half before diverging. Repetition needs
-the source and target groups to share a length and subdivision (and an even length for a half
-repeat); leave the field blank for a fresh, independent rhythm in every group.
+`ABaACa`) keeps groups 2 and 4 opening with group 1's first half before diverging. A full repeat
+needs only the source and target groups to share a subdivision — the lengths may differ, and the
+rhythm best-fits: a shorter target takes the source's opening (a 2 copying a 4 takes its first
+half), while a longer target tiles the source, repeating as much as fits. A half repeat still needs
+an identical source (same length and subdivision) and an even length. Leave the field blank for a
+fresh, independent rhythm in every group.
 
 <RhythmPatternPlayer meter="4 4 4 4" subdivisions="2" bpm={100} phrases phrase="ABAC" />
 

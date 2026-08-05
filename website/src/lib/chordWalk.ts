@@ -30,6 +30,12 @@ const isSubset = (chord: number[], set: number[]): boolean => {
 // rotates each pattern to all 12 anchors to build the curated pool.
 export type PlacementPattern = {lcm: number} | {label: string; keys: number[]};
 
+// A pattern's display label: its LCM (e.g. "8") or its explicit key-set label (e.g. "15s").
+// Used both when expanding the pool and for the player's per-placement checkboxes, so the two
+// always read identically.
+export const placementPatternLabel = (p: PlacementPattern): string =>
+  'lcm' in p ? String(p.lcm) : p.label;
+
 // One curated placement instance in the expanded pool: its folded key set plus provenance (the
 // source pattern's label and the anchor it was rotated to), for labels and debugging.
 export type CuratedPlacement = {
@@ -48,7 +54,7 @@ export function expandPlacements(patterns: PlacementPattern[]): CuratedPlacement
   const pool: CuratedPlacement[] = [];
   for (const pattern of patterns) {
     const isLcm = 'lcm' in pattern;
-    const patternLabel = isLcm ? String(pattern.lcm) : pattern.label;
+    const patternLabel = placementPatternLabel(pattern);
     const base = isLcm ? null : foldOctave(pattern.keys);
     for (let at = 0; at < 12; at++) {
       const keys = isLcm
@@ -321,7 +327,10 @@ export function bakeMelody(
       else if (rep.halfSource !== null && offset < Math.floor(ranges[g].count / 2))
         src = rep.halfSource;
       if (src !== null) {
-        const se = eventOfPulse.get(ranges[src].start + offset);
+        // Wrap the offset to match the rhythm layer's best-fit copy: a target longer than its
+        // source tiles the source, so the aligned source event lives at offset % source count
+        // (identity for equal lengths and for the first-half region of a half repeat).
+        const se = eventOfPulse.get(ranges[src].start + (offset % ranges[src].count));
         if (se !== undefined) {
           keys[e] = keys[se];
           continue;
