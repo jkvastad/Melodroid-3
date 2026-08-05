@@ -766,17 +766,27 @@ This in turn is part of 24@0, which could motivate a move to 7 11 2.
 Finally this is part of 8@0, so we can move back to 0 4 7.
 
 The above example illustrates how we can move between placements via shared chords, paving the way for defining legal moves in a progression.
-It also illustrates a larger movement structure on a meter level, where we completed a cycle, returning to our origin chord and placement.
+It also illustrates a larger movement structure on a meter level, where we complete a cycle and return to our origin chord.
 
 <RhythmPatternPlayer
-  meter="4 4 4 4"
+  meter="4 4 4 2 2"
   subdivisions="4"
   bpm={104}
+  syncopation={0.2}
+  resolution={0.95}
   chordWalk={{
     origin: [0, 4, 7],
     placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
   }}
 />
+
+Simply looping random compatible chords and placements with random rhythms produces phrases of some haphazard quality.
+We can improve upon this by adding in more structure:
+* rhythmic patterns within meter groups can be repeated across meter groups according to some larger pattern.
+* melody might affect how chords indicate placement, e.g. early/late notes in the rhythmic pattern might be especially important
+* placement progressions can have patterns themselves:
+  * Such patterns can constitute repetition of placements
+  * Patterns might also be more stylistic, e.g. narrowing down the available options for a move before a loop (e.g. playing 0 4 7 10 only has 20@0, 15@7 and 24@5 as placement, strongly indicating 24@5)
 
 
 DEFERRED: Look at...

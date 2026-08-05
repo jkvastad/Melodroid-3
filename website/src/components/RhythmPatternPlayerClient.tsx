@@ -109,11 +109,12 @@ function originWalk(origin: number[], curatedPool: CuratedPlacement[], N: number
 // triads plus the tertian seventh chords); "random-triads" draws any minor-second-free 3-note
 // triad. The set constrains which of these actually appear.
 type ProgressionHeuristic = {
-  id: 'tertian-triads' | 'tertian-chords' | 'random-triads';
+  id: 'tertian-triads' | 'major-minor-triads' | 'tertian-chords' | 'random-triads';
   label: string;
 };
 const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
   {id: 'tertian-triads', label: 'Triads (maj/min/dim/aug)'},
+  {id: 'major-minor-triads', label: 'Major and minor triads'},
   {id: 'tertian-chords', label: 'Tertian (triads + 7ths)'},
   {id: 'random-triads', label: 'Random triads (no m2)'},
 ];
@@ -298,6 +299,22 @@ function tertianChords(set: number[]): number[][] {
 // as tertianChords but 3-note subsets only, so no seventh chords appear.
 function tertianTriads(set: number[]): number[][] {
   return combinations(foldOctave(set), 3).filter(isTertian);
+}
+
+// Major [0,4,7] or minor [0,3,7] triad, checked from every possible root so all rootings of
+// the folded pitch-class set qualify. Excludes diminished/augmented (which isTertian accepts).
+function isMajorOrMinorTriad(notes: number[]): boolean {
+  for (const root of notes) {
+    const offs = notes.map((n) => ((n - root) % 12 + 12) % 12).sort((a, b) => a - b);
+    if ((offs[1] === 4 && offs[2] === 7) || (offs[1] === 3 && offs[2] === 7)) return true;
+  }
+  return false;
+}
+
+// Progression-mode chord pool: only major and minor 3-note triads — a stricter subset of
+// tertianTriads that drops the diminished and augmented qualities.
+function majorMinorTriads(set: number[]): number[][] {
+  return combinations(foldOctave(set), 3).filter(isMajorOrMinorTriad);
 }
 
 // The pulses that actually sound, in the order the scheduler fires them. Factored so the
@@ -626,9 +643,11 @@ export default function RhythmPatternPlayerClient({
     const gen =
       id === 'tertian-triads'
         ? tertianTriads
-        : id === 'tertian-chords'
-          ? tertianChords
-          : m2FreeTriads;
+        : id === 'major-minor-triads'
+          ? majorMinorTriads
+          : id === 'tertian-chords'
+            ? tertianChords
+            : m2FreeTriads;
     const seen = new Set<string>();
     const out: number[][] = [];
     for (const p of curatedPool)
@@ -757,6 +776,8 @@ export default function RhythmPatternPlayerClient({
     switch (id) {
       case 'tertian-triads':
         return tertianTriads(set);
+      case 'major-minor-triads':
+        return majorMinorTriads(set);
       case 'tertian-chords':
         return tertianChords(set);
       case 'random-triads':
