@@ -801,7 +801,7 @@ We can improve upon this by adding in more structure:
   * Patterns might also be more stylistic, e.g. narrowing down the available options for a move before a loop (e.g. playing 0 4 7 10 only has 20@0, 15@7 and 24@5 as placement, strongly indicating 24@5)
 
 
-Adding in phrasing, where Ba in e.g. ABaACa means that group B reuses the first half of group A.
+Adding in phrasing, where e.g. Ba in ABaACa means that group B reuses the first half of group A, along with options for binding melody/chords/placements to groups provides some measure of order.
 <RhythmPatternPlayer
   meter="4 4 4 4"
   subdivisions="4"
@@ -816,6 +816,88 @@ Adding in phrasing, where Ba in e.g. ABaACa means that group B reuses the first 
   }}
 />
 
+##### Perception Based Progression
+As we saw with melodic supersets, the notes played along with a chord produces expectations for which placement is most likely.
+Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false positive, where we play notes signaling a placement which we are not drawing from,
+similar to the problem of lcm 24 preference when playing lcm 15.
+
+In the previous section we looked at progressions based on the intended placements, but perhaps what matters is the perceived placements.
+
+To calculate such perception based progressions we must have a way to decide which context of keys produce a given perception.
+
+One approach is to chart out which perceptions arrise when playing melody to a given chord. 
+Such an approach would benefit from empirical work for statistical extrapolation, as perception is quite subjective, but i will outline a procedure here based on my own perception.
+
+Likely the immediate keys at the start and end of a rhythmic group are of high importance as they interact between expectation and confirmation of placements.
+Another way to view it is that perhaps there are no early/late parts of a rhythmic group.
+Instead, as when producing polyrhythms (see [related research](/docs/related-research/rhythm#perceiving-and-producing-polyrythms)), a group might be an atomic unit which is mapped to a placement and perception.
+Larger rhythmic groups could simply be composed of smaller atomic units.
+
+Starting out with the classic major chord 0 4 7 we can note some archetypical perceptions or flavors:
+
+* Playing 0 works with all other perceptions, but notably following it up with 0 4 7 is quite similar to 8@0,5 or 24@0. This is quite a soft feel so let's call it soft flavor.
+* Playing 1 followed by harm@5 (0 1 4 5 7 8 10) produces a dramatic feeling, similar to playing a dim chord or 7 chord. Let's call this flavor dim.
+  * Notably playing 0 4 7 10 produces dim flavor when following with 8 but a soft flavor when following with 9 (as if playing 24@5 or 8 @10).
+* Playing note 2 produces a soft feel. 
+  * Notably following with 6 produces a clashing tritone with 0, but quickly moving on to 7 softens it to a 24@7 soft feel. Almost like the first impression is "error" followed shortly by a realisation that "oh wait there's an 8@10".
+  * Playing it with 11 produces a very soft 8@0 feel.
+* Playing 3 along with the pentatonic scale 0 2 4 7 9 is blues@0. Adding in 10 also works for producing a blues feel.
+* Playing 4 is similar to playing 0, perhaps some preference for moving to 8@5, a soft feel.
+* Playing 5 is simlar to playing 4, a soft feel.
+* Playing 6 becomes quite dissonant unless followed by 24@7 or 8@7, instead producing a soft feel.
+* Playing 7 is similar to playing 9, a soft feel.
+* Playing 8 produces a feel similar to harm@5, a dim feel.
+  * Notably playing 9 produces a blues feel as if playing blues@7 but with a bit of disconnect between the chord and melody - perhaps some sort of mental audio stream phenomena.
+* Playing 9 produces a feel similar to 24@7 or 8@7, a soft feel.
+* Playing 10 produces a feel similar to blues@7 or blues@10, a blues feel.
+* Playing 11 produces a very soft 8@0 feel. If lcm 24 is soft then this is calm, or very soft.
+
+From this we note that we have soft (possibly very soft or calm), dim and blues. Soft could map to lcm 24, calm to 8 and dim to lcm 15. But what is blues?
+
+With three perceptions and three primes, perhaps we experience the prevalence of the primes in the placements? 
+E.g. a 24 is soft but an 8 is very soft with its many 2s. Dim and minor is tense with its relative large 5. Prime 3 produces a kind of chipper blues.
+
+Playing 0 4 7 is indeed 3@7, but might be preferred by 4@0, effectively hiding the prime 3 flavor. Adding in key 3 possibly shifts it to 15@7, although this would introduce a strange caveat in the lcm 24/15 preference.
+Playing 0 4 7 is also 8@5, where exchanging key 4 for 3 introduces the good fraction 16/9, part of 9@5. Perhaps blues is some sort of 8+9 superposition where the 9 flavor comes through instead of collapsing to 8?
+
+For instance, playing 10 with 0 4 7 (8@0) pulls heavily to 24@5. Similarly, playing 3 with 0 4 7 also pulls heavily to 8@5, 18@5 or 9@5. Perhaps the latter is the commonality - playing 18@5 feels quite similar to 8@4.
+Blues might be the feel of prime 3, and it might be that it cannot be readily played due to competition from powers of 2, but certain superpositions favor it i.e. the blues scale.
+
+There is also a curiosity that when playing an 0 4 7 -> 5 9 0 -> 7 11 2 progression key 3 played with 7 11 2 does not produce the dim feel as when playing kkey 8 with 0 4 7, but instead keeps the blues feel of 3 with 0 4 7.
+
+Another possibility is that blues is a more complex perception, arrising from competing perceptions and rapid modulation between placements.
+
+Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (10@0) we have:
+
+* Playing 0 produces a feel similar to dim at key 9, but a softer dim feel.
+  * This can be followed either by notes from 8@8 or 15s@2 (15@2 collapses to 8@8 feel when playing note 10).
+  * Following with note 6 as if playing blues@8 produces a blues feel.
+* Playing 1 produces a dim feel.
+  * Perhaps a bit surprising as 0 1 3 7 it fits directly into 24@8. The feel is similar to 15@0, which is adjacent to 15@0
+  * If this is a form of preference from 24 to 15 then perhaps the triad 0 3 7 is a strong indicator for prime 5, discarding a perception of 24.
+* Playing 2 produces a soft dim feel.
+  * Following it up with blues or e.g. 8@8 sounds good but following with 1 is dissonant - 15@2 works fine though.
+* Playing 3 produces a softer dim feel.
+* Playing 4 is quite dissonant. 
+  * Perhaps there is simply no good way to map this - either go for 15@7 but the 3 collapses to 24@8 or 24@3, neither of which accepts key 4.
+* Playing 5 is similar to playing 2, producing a dim feel.
+* Playing 6 feels similar to playing blues@8, following up with e.g. key 5 or 11 producing a blues feel.
+* Playing 7 produces a softer dim feel.
+* Playing 8 produces 8@8, a softer dim feel.
+* Playing 9 produces 24@10, a softer dim feel.
+* Playing 10 produces 24@10, a softer dim feel.
+* Playing 11 is similar to playing 2, producing a dim feel.
+
+Notably there is no pure soft feel when playing minor, only blues and dim.
+
+Something similar occurs for dim 0 3 6 and aug 0 4 8 with a notable distinct perception of the aug chord which is neither calm, soft, blues or dim 
+but rather something unique which is shared with the whole tone scale 0 2 4 6 8 10.
+This perception could be described as curious or confused, perhaps fitting as it is a symmetric chord in a symmetric scale.
+
+Charting out perceptions related to chords in this way, we can try to compose using perception based progressions. 
+Each chord archetype would receive a mapping of implied perceptions based on early keys, which would then imply a scale from which to draw melody for a given rhythmic unit (perhaps a meter group).
+Chords could then be progressed according to some system, repeating the process. 
+Since the perceptions seem bound to primes perhaps successive chords need only share a prime in some common placement.
 
 DEFERRED: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0
