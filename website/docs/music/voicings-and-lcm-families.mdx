@@ -852,6 +852,11 @@ Starting out with the classic major chord 0 4 7 we can note some archetypical pe
 * Playing 10 produces a feel similar to blues@7 or blues@10, a blues feel.
 * Playing 11 produces a very soft 8@0 feel. If lcm 24 is soft then this is calm, or very soft.
 
+| key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| perception | soft | dim | soft | blues | soft | soft | soft | soft | dim | soft | blues | soft |
+| placements | any other | harm@5 | 8@0 | bluesExt@0 | any other | 8@5 | 24@7 | any other | 15s@7 | 24@7 | bluesExt@0 | 8@0 |
+
 From this we note that we have soft (possibly very soft or calm), dim and blues. Soft could map to lcm 24, calm to 8 and dim to lcm 15. But what is blues?
 
 With three perceptions and three primes, perhaps we experience the prevalence of the primes in the placements? 
@@ -859,13 +864,27 @@ E.g. a 24 is soft but an 8 is very soft with its many 2s. Dim and minor is tense
 
 Playing 0 4 7 is indeed 3@7, but might be preferred by 4@0, effectively hiding the prime 3 flavor. Adding in key 3 possibly shifts it to 15@7, although this would introduce a strange caveat in the lcm 24/15 preference.
 Playing 0 4 7 is also 8@5, where exchanging key 4 for 3 introduces the good fraction 16/9, part of 9@5. Perhaps blues is some sort of 8+9 superposition where the 9 flavor comes through instead of collapsing to 8?
+Indeed the traditional blues@0 of 0 2 3 4 7 is readily extended with 9 and 10 (bluesExt@0) but playing 5 is a bit jarring. Perhaps it collapses from 9@5 or 18@5 to 8@5.
+Blues might be the perception of two competing bases at the same reference frame, combined with fast modulation of the melody implying non-explicit chord changes.
+E.g. playing 0 4 7 followed by 3 puts the 0 4 7 in some sort of background channel and the perception is as if playing 3 7 10.
 
 For instance, playing 10 with 0 4 7 (8@0) pulls heavily to 24@5. Similarly, playing 3 with 0 4 7 also pulls heavily to 8@5, 18@5 or 9@5. Perhaps the latter is the commonality - playing 18@5 feels quite similar to 8@4.
 Blues might be the feel of prime 3, and it might be that it cannot be readily played due to competition from powers of 2, but certain superpositions favor it i.e. the blues scale.
 
-There is also a curiosity that when playing an 0 4 7 -> 5 9 0 -> 7 11 2 progression key 3 played with 7 11 2 does not produce the dim feel as when playing kkey 8 with 0 4 7, but instead keeps the blues feel of 3 with 0 4 7.
+There is also a curiosity that when playing an 0 4 7 -> 5 9 0 -> 7 11 2 progression key 3 played with 7 11 2 does not produce the dim feel as when playing key 8 with 0 4 7, but instead keeps the blues feel of 3 with 0 4 7.
 
 Another possibility is that blues is a more complex perception, arrising from competing perceptions and rapid modulation between placements.
+Such rapid modulation might account for exotic melodies such as playing 0 4 7 with melody 0 4 5 6 7 0 (3 beats long).
+the 0 4 starts out as 8@0, then moves to 8@5 for the 5, then harm@10 for the 6, then back to 8@0 for 7 0.
+Playing 0 4 7 for 0 4, then 5 9 0 for 5 and 6, then back to 0 4 7 for 7 0 illustrates this point.
+
+
+Such rapid modulation in this case comprises splitting a metric group of 4 beats into 2 sub-beats each, and then each such rhythmic beat group is assigned its own chord and placement.
+Notably the chord might not be voiced explicitly per group e.g. the 0 7 melody lasts for 2 beats but resounding 0 4 7 at each beat seems redundant.
+8@5 and harm@10 are related via the major chord 4@5 a.k.a. 3@0. Meanwhile harm@10 is related to 15@0, adding in the 6 (reason unkown, possibly something to do with dim7 symmetry) and removing the collapsing 8.
+
+
+
 
 Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (10@0) we have:
 
@@ -888,16 +907,29 @@ Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (
 * Playing 10 produces 24@10, a softer dim feel.
 * Playing 11 is similar to playing 2, producing a dim feel.
 
+| key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| perception | dim | dim | dim | dim | null | dim | blues | dim | dim | dim | dim | dim |
+| placements | any other | 15s@0, 24@8 | 8@8 | any other | null | 24@8 | bluesExt@8 | any other | 8@8 | 24@10 | 24@10 | 15s@2 |
+
 Notably there is no pure soft feel when playing minor, only blues and dim.
 
 Something similar occurs for dim 0 3 6 and aug 0 4 8 with a notable distinct perception of the aug chord which is neither calm, soft, blues or dim 
 but rather something unique which is shared with the whole tone scale 0 2 4 6 8 10.
-This perception could be described as curious or confused, perhaps fitting as it is a symmetric chord in a symmetric scale.
+This perception could be described as curious, confused or strange - perhaps fitting as it is a symmetric chord in a symmetric scale.
+
+Perceptions per prime could be:
+* 2 - calm
+* 3 - blues
+* 5 - dim (tense)
+* symmetric (0 2 4 6 8 10, 0 4 8) - strange
 
 Charting out perceptions related to chords in this way, we can try to compose using perception based progressions. 
 Each chord archetype would receive a mapping of implied perceptions based on early keys, which would then imply a scale from which to draw melody for a given rhythmic unit (perhaps a meter group).
 Chords could then be progressed according to some system, repeating the process. 
 Since the perceptions seem bound to primes perhaps successive chords need only share a prime in some common placement.
+
+
 
 DEFERRED: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0
