@@ -874,8 +874,7 @@ Starting out with the classic major chord 0 4 7 we can note some archetypical pe
 
 | key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
-| perception | soft | dim | soft | blues | soft | soft | soft | soft | dim | soft | blues | soft |
-| placements | any | harm@5 | 8@0 | bluesExt@0 | any | 8@5 | 24@7 | any | 15s@7 | 24@7 | bluesExt@0 | 8@0 |
+| placements | any | harm@5 | 8@0 | blues@0 | any | 8@5 | 24@7 | any | 15s@7 | 24@7 | blues@0 | 8@0 |
 
 (The "any" placement indicates that opening with this key is compatible with any of the other keys.)
 
@@ -927,7 +926,6 @@ Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (
 
 | key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
-| perception | dim | dim | dim | dim | null | dim | blues | dim | dim | dim | dim | dim |
 | placements | any | 15s@0, 24@8 | 8@8 | any | null | 24@8 | blues@3 | any| 8@8 | 24@10 | 24@10 | 15s@2, blues@8 |
 
 Notably there is no pure soft feel when playing minor, only blues and dim.
@@ -955,11 +953,11 @@ For minor 0 3 7 this is 24@3,8,10 and 15@2.
 A first iteration of this procedure is playable below. Each rhythmic unit (meter group) starts on a
 random non-null opening key drawn from the current chord's perception table and commits to that
 entry's placement, from which the rest of the unit's melody is drawn — the opening key itself is
-sounded first, so the perception that chose the placement is actually heard. The next unit's chord
+sounded first, so the early key that chose the placement is actually heard. The next unit's chord
 is then any major or minor triad that is a subset of the current chord's stable melodic supersets,
 and the walk wanders on from there (only major and minor have a perception table for now). Press
-Generate to re-seed the opening walk; the readout shows the sounding chord, its perception, and the
-placement the melody is drawn from.
+Generate to re-seed the opening walk; the readout shows the sounding chord and the placement the
+melody is drawn from.
 
 <RhythmPatternPlayer
   meter="4 4 4 4"

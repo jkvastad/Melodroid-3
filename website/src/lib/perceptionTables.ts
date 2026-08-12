@@ -56,12 +56,11 @@ function placementRefLabel(ref: PlacementRef, rootOffset: number): string {
 
 // --- Perception tables ----------------------------------------------------------------------
 
-export type Perception = 'soft' | 'dim' | 'blues';
-
-// One opening-key entry: the perception it evokes and the placement(s) it commits the unit to.
-// `placements: 'any'` (the chord-tone openings) means "compatible with any of the chord's own
-// placements" — resolved to a random one of the table's specific placements.
-export type PerceptionEntry = {perception: Perception; placements: PlacementRef[] | 'any'};
+// One opening-key entry: the placement(s) it commits the unit to. `placements: 'any'` (the
+// chord-tone openings) means "compatible with any of the chord's own placements" — resolved to a
+// random one of the table's specific placements. (The perception it evokes is now implicit in the
+// placement and opening key, no longer an explicit label.)
+export type PerceptionEntry = {placements: PlacementRef[] | 'any'};
 
 // A chord archetype's perception table: its 12-tet chord shape (root-relative), one entry per
 // opening key 0..11 (null = no good mapping), and the stable melodic supersets used to pick the
@@ -78,18 +77,18 @@ const MAJOR: PerceptionTable = {
   label: 'major',
   chord: [0, 4, 7],
   entries: [
-    {perception: 'soft', placements: 'any'}, // 0
-    {perception: 'dim', placements: [{label: 'harm', at: 5}]}, // 1
-    {perception: 'soft', placements: [{lcm: 8, at: 0}]}, // 2
-    {perception: 'blues', placements: [{label: 'bluesExt', at: 0}]}, // 3
-    {perception: 'soft', placements: 'any'}, // 4
-    {perception: 'soft', placements: [{lcm: 8, at: 5}]}, // 5
-    {perception: 'soft', placements: [{lcm: 24, at: 7}]}, // 6
-    {perception: 'soft', placements: 'any'}, // 7
-    {perception: 'dim', placements: [{label: '15s', at: 7}]}, // 8
-    {perception: 'soft', placements: [{lcm: 24, at: 7}]}, // 9
-    {perception: 'blues', placements: [{label: 'bluesExt', at: 0}]}, // 10
-    {perception: 'soft', placements: [{lcm: 8, at: 0}]}, // 11
+    {placements: 'any'}, // 0
+    {placements: [{label: 'harm', at: 5}]}, // 1
+    {placements: [{lcm: 8, at: 0}]}, // 2
+    {placements: [{label: 'bluesExt', at: 0}]}, // 3
+    {placements: 'any'}, // 4
+    {placements: [{lcm: 8, at: 5}]}, // 5
+    {placements: [{lcm: 24, at: 7}]}, // 6
+    {placements: 'any'}, // 7
+    {placements: [{label: '15s', at: 7}]}, // 8
+    {placements: [{lcm: 24, at: 7}]}, // 9
+    {placements: [{label: 'bluesExt', at: 0}]}, // 10
+    {placements: [{lcm: 8, at: 0}]}, // 11
   ],
   stableSupersets: [{lcm: 24, at: 0}, {lcm: 24, at: 5}, {lcm: 24, at: 7}, {label: '15s', at: 7}],
 };
@@ -100,18 +99,18 @@ const MINOR: PerceptionTable = {
   label: 'minor',
   chord: [0, 3, 7],
   entries: [
-    {perception: 'dim', placements: 'any'}, // 0
-    {perception: 'dim', placements: [{label: '15s', at: 0}, {lcm: 24, at: 8}]}, // 1
-    {perception: 'dim', placements: [{lcm: 8, at: 8}]}, // 2
-    {perception: 'dim', placements: 'any'}, // 3
+    {placements: 'any'}, // 0
+    {placements: [{label: '15s', at: 0}, {lcm: 24, at: 8}]}, // 1
+    {placements: [{lcm: 8, at: 8}]}, // 2
+    {placements: 'any'}, // 3
     null, // 4
-    {perception: 'dim', placements: [{lcm: 24, at: 8}]}, // 5
-    {perception: 'blues', placements: [{label: 'blues', at: 3}]}, // 6
-    {perception: 'dim', placements: 'any'}, // 7
-    {perception: 'dim', placements: [{lcm: 8, at: 8}]}, // 8
-    {perception: 'dim', placements: [{lcm: 24, at: 10}]}, // 9
-    {perception: 'dim', placements: [{lcm: 24, at: 10}]}, // 10
-    {perception: 'dim', placements: [{label: '15s', at: 2}, {label: 'blues', at: 8}]}, // 11
+    {placements: [{lcm: 24, at: 8}]}, // 5
+    {placements: [{label: 'blues', at: 3}]}, // 6
+    {placements: 'any'}, // 7
+    {placements: [{lcm: 8, at: 8}]}, // 8
+    {placements: [{lcm: 24, at: 10}]}, // 9
+    {placements: [{lcm: 24, at: 10}]}, // 10
+    {placements: [{label: '15s', at: 2}, {label: 'blues', at: 8}]}, // 11
   ],
   stableSupersets: [{lcm: 24, at: 3}, {lcm: 24, at: 8}, {lcm: 24, at: 10}, {label: '15s', at: 2}],
 };
@@ -165,18 +164,17 @@ function randomStartChord(rng: () => number): number[] {
 // --- The walk -------------------------------------------------------------------------------
 
 // One rhythmic unit of the progression: the chord sounding, its opening key (the pitch class the
-// unit begins on, which selected the placement/perception), the perception evoked, and the chosen
-// placement (label + folded melody keys the rest of the unit draws from).
+// unit begins on, which selected the placement), and the chosen placement (label + folded melody
+// keys the rest of the unit draws from).
 export type PerceptionStep = {
   chord: number[];
   openingKey: number;
-  perception: Perception;
   placement: {label: string; keys: number[]};
 };
 
 // Generate an OPEN perception walk of length N (one step per meter group) from `start`:
 //   1. Identify the current chord's table + root.
-//   2. Pick a random non-null opening key; its entry gives the perception and placement(s)
+//   2. Pick a random non-null opening key; its entry gives the placement(s)
 //      ('any' → a random one of the chord's specific placements).
 //   3. The unit's melody draws from that placement; the opening key is the unit's first note.
 //   4. Pick the next chord: a random major/minor triad that is a subset of one of the current
@@ -217,7 +215,7 @@ export function generatePerceptionWalk(
       keys: resolvePlacementKeys(ref, root),
     };
 
-    steps.push({chord: current, openingKey, perception: opening.e.perception, placement});
+    steps.push({chord: current, openingKey, placement});
 
     // Next chord: a maj/min triad that is a subset of some stable superset of the current chord.
     const supersets = table.stableSupersets.map((s) => resolvePlacementKeys(s, root));

@@ -101,14 +101,13 @@ export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 export type PerceptionWalkSet = {start?: number[]};
 
 // The baked per-group step shape the scheduler consumes, shared by chord-walk and perception-walk.
-// `openingKey`/`perception` are only populated by perception-walk (chord-walk leaves them absent).
+// `openingKey` is only populated by perception-walk (chord-walk leaves it absent).
 type BakedWalkStep = {
   triad: number[];
   offsets: number[] | null;
   melodyKeys: number[] | null;
   placementLabel: string | null;
   openingKey?: number | null;
-  perception?: string | null;
 };
 
 // The melody source per group. Only 'bridging' (draw from the placement containing both this chord
@@ -138,8 +137,8 @@ function bakeWalkSteps(walk: RawWalkStep[], pitchHz: number): BakedWalkStep[] {
 }
 
 // Map a perception walk to the same baked step shape, carrying the opening key (the unit's first
-// note, sounded to justify the perception) and the perception label for the readout. The melody
-// pool is the chosen placement's folded key set.
+// note, sounded so the early key that chose the placement is heard). The melody pool is the chosen
+// placement's folded key set.
 function bakePerceptionSteps(steps: PerceptionStep[], pitchHz: number): BakedWalkStep[] {
   return steps.map((s) => ({
     triad: s.chord,
@@ -147,7 +146,6 @@ function bakePerceptionSteps(steps: PerceptionStep[], pitchHz: number): BakedWal
     melodyKeys: foldOctave(s.placement.keys),
     placementLabel: s.placement.label,
     openingKey: ((s.openingKey % 12) + 12) % 12,
-    perception: s.perception,
   }));
 }
 
@@ -735,9 +733,6 @@ export default function RhythmPatternPlayerClient({
   // e.g. "8 @ 5" / "15s @ 7"), shown in the "placement" readout beside currentChord and updated
   // by the scheduler at each group start (null when stopped / outside chord-walk mode).
   const [currentPlacement, setCurrentPlacement] = useState<string | null>(null);
-  // Perception-walk mode: the perception label evoked by the current group's opening key
-  // (soft / dim / blues), shown beside the chord readout and updated at each group start.
-  const [currentPerception, setCurrentPerception] = useState<string | null>(null);
 
   // Chord mode (only when `chord`): a randomly rolled chord together with the LCM family
   // placements that contain it as a subset, and which of those matches drives the melody. The
@@ -1379,7 +1374,6 @@ export default function RhythmPatternPlayerClient({
     plotRef.current?.redraw(false, false);
     setCurrentChord(null); // clear the progression "playing" readout
     setCurrentPlacement(null); // clear the chord-walk "placement" readout
-    setCurrentPerception(null); // clear the perception-walk readout
     setPlaying(false);
   };
 
@@ -1581,7 +1575,6 @@ export default function RhythmPatternPlayerClient({
         const groupBeats = groupBeatsByStart.get(ev.unitBeat);
         let displayTriad: number[] | null = null;
         let displayPlacement: string | null = null;
-        let displayPerception: string | null = null;
         if (chordSynth && groupBeats !== undefined) {
           let offsets: number[] | null;
           if (progressionOn) {
@@ -1604,7 +1597,6 @@ export default function RhythmPatternPlayerClient({
             offsets = step?.offsets ?? null;
             displayTriad = step?.triad ?? null;
             displayPlacement = step?.placementLabel ?? null;
-            displayPerception = step?.perception ?? null;
           } else {
             offsets = chordVoicingRef.current;
           }
@@ -1669,7 +1661,6 @@ export default function RhythmPatternPlayerClient({
           // "playing" readout (a slow, at-most-per-group state update).
           if (isGroupStart && (progressionOn || walkOn)) setCurrentChord(displayTriad);
           if (isGroupStart && walkOn) setCurrentPlacement(displayPlacement);
-          if (isGroupStart && perceptionWalkOn) setCurrentPerception(displayPerception);
           if (colourKey != null) {
             (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
               pitchFill(colourKey);
@@ -2132,10 +2123,6 @@ export default function RhythmPatternPlayerClient({
             <span style={labelStyle}>
               playing
               <code>{currentChord ? currentChord.join(' ') : '—'}</code>
-            </span>
-            <span style={labelStyle}>
-              perception
-              <code>{currentPerception ?? '—'}</code>
             </span>
             <span style={labelStyle}>
               placement
