@@ -952,6 +952,31 @@ Since 15@4, 11 seem to collapse onto 24@5,0 these are perhaps not usefull when i
 Instead, we could guess that 0 4 7 can progress to any chord which is a subset of stable supersets.
 For minor 0 3 7 this is 24@3,8,10 and 15@2.
 
+A first iteration of this procedure is playable below. Each rhythmic unit (meter group) starts on a
+random non-null opening key drawn from the current chord's perception table and commits to that
+entry's placement, from which the rest of the unit's melody is drawn — the opening key itself is
+sounded first, so the perception that chose the placement is actually heard. The next unit's chord
+is then any major or minor triad that is a subset of the current chord's stable melodic supersets,
+and the walk wanders on from there (only major and minor have a perception table for now). Press
+Generate to re-seed the opening walk; the readout shows the sounding chord, its perception, and the
+placement the melody is drawn from.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{}}
+/>
+
+Fixing the starting chord (here on major 0 4 7) makes the perception mapping easier to follow:
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{start: [0, 4, 7]}}
+/>
+
 
 DEFERRED: Look at...
 * octatonic (diminished) scale 0 1 3 4 6 7 9 10 which goes well with dim7@0
