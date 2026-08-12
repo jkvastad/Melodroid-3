@@ -74,7 +74,10 @@ export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
 // A progression-mode source set: a labelled key set (12-tet pitch classes) the progression
 // engine draws minor-second-free triads from, and from which the melody is drawn. The set
 // dropdown lists these; the first is the default (e.g. the stable 15s@0 vs collapsed 24@1/8).
-export type ProgressionSet = {label: string; keys: number[]};
+// Optional `chord` pins the per-group chord to that single voicing (heuristic-independent,
+// same chord every group) while the melody still draws from the full `keys` — for auditioning
+// a scale's characteristic chord against the random draws.
+export type ProgressionSet = {label: string; keys: number[]; chord?: number[]};
 
 // Chord-walk-mode authored config: the ORIGIN chord (its 12-tet pitch classes) and the curated
 // placement PATTERNS (each an lcm family like `{lcm: 8}` or an explicit key set like the stable-15
@@ -948,7 +951,10 @@ export default function RhythmPatternPlayerClient({
   // cycle). Recomputed on a set / heuristic switch. Null outside progression mode.
   const progressionTriads = useMemo(() => {
     if (!progressionOn) return null;
-    const set = progression![selectedProgIdx].keys;
+    const setEntry = progression![selectedProgIdx];
+    // A pinned set collapses the pool to its one chord — every group plays it, heuristic ignored.
+    if (setEntry.chord && setEntry.chord.length > 0) return [foldOctave(setEntry.chord)];
+    const set = setEntry.keys;
     const id = PROGRESSION_HEURISTICS[selectedHeuristicIdx].id;
     switch (id) {
       case 'tertian-triads':
