@@ -61,17 +61,18 @@ The best voicings for the high lcms are:
 
 Even the best voicings for 15 and 20 sound tense. 
 Perhaps it is a failing of HPT, or perhaps they _should_ sound tense e.g. the "flavour" of lcm 15 might be tense and 20 is a subset via renormalisation (20@5 $\subset$ 15@0).
-Lcm 15 and 20 might for instance be useful scales rather than block chords, or the tension is perhaps useful in and of itself (e.g. uniform chords dim7, aug).
+Lcm 15 and 20 might for instance be useful as scales rather than block chords, or the tension is perhaps useful in and of itself (e.g. uniform chords dim7, aug).
 Other reasons for sounding tense include:
 * Increasingly large clusters of notes become increasingly harder to keep consonant.
 * The largest lcm family recognized by the brain might be the isomorphic lcm 8-12 group. Higher lcms are perhaps parsed as superpositions of lower lcms.
 * Some lcms might be preferred over others, e.g. 15 is close to 24 in the sense that dropping key 9 from 15@0 gives 
 `{0 1 3 5 8 10}` which full-matches 18 at key 3 and 24 at both 1 and 8. 
-Lcm 15 might then be parsed as 24 with bad notes, and perhaps only under certain circumstances such as including not 8 (root for 24@8, 3/2 ratio relative 24@1).
+Lcm 15 might then be parsed as 24 with bad notes, and perhaps only under certain circumstances such as including note 8 (root for 24@8, 3/2 ratio relative 24@1).
 
 ### High LCMs as compositions of low LCMs
 A high lcm family can sometimes be expressed as a composition of lower lcm families.
 Since all families $\leq$ 12 are subsets or isomorphisms of each other it seems prudent to use this largest isomorphic group (lcm 8-12) as the building block.
+There is some merit to lcm 15 as well, since the the good fractions 15/8 and 16/15 are related to length 15.
 This can be explored using the superpositions subcommand:
 
 `melodroid table superpositions --keys 0 2 4 5 7 9 11 --min-block-lcm 8 --max-block-lcm 12`
@@ -93,7 +94,7 @@ These pairs of small lcms have overlapping sets:
 suggesting that perhaps there is no lcm 24 but instead it is better thought of as these superpositions.
 
 #### LCM 20
-For 20@0 = `{0 3 4 5 7 8 10}` we have
+For 20@0 = `{0 3 4 5 7 8 10}` we note that this is isomprphic to 15@7, but expressed in lcm $\leq$ 12 we have
 
 | # | Ref | LCM | Pieces | Union (12-tet) | Extra | Disjoint? |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -165,8 +166,8 @@ Looking at high LCMs as compositions of low lcms we have the following patterns:
 
 From this we see that the structure of 18@0 (adding in the extra key) is identical to 24@5 and 24@10.
 Similarly lcm 15 and 20 share structure with 15@0 being 20@5 expressed as 10@5 + 12@5.
-These pairs of structures are not so different, yet 15 and 20 sound quite more tense than 24/18. 
-Perhaps it is that the total lcm of the composing smaller lcms is much greater for 15/20 (lcm 60) vs. 18/24 with 24 (or 36).
+With 15 and 20 sounding quite more tense than 24/18, perhaps it is that the total lcm of the composing smaller lcms is much greater for 15/20 (lcm 60) vs. 18/24 with 24 (or 36).
+Another possibilty is that 15 is a properly perceived structure, but competes with a preferred alternative (lcm 24), as we will discuss in the upcoming sections.
 
 ### Adjacent key sets and preference
 Assuming the brain does not passively parse incoming sounds but rather looks actively for patterns, we would expect preference for certain patterns.
@@ -387,6 +388,8 @@ This raises several questions about what to expect of placement based perception
 * Do we hear a single placement or several?
   * If several, is our perception an aggregation of possible interpretations? Is it more akin to the cocktail party effect where some parts receive focused? Is it a mix?
   * If only one, how does the brain pick one placement over competing placements? (Especially for isomorphisms)
+* What about perceptions which do not seem to map to placements?
+  * Symmetric chord such as aug and dim7 have a characteristic sound but no one obvious placement due to symmetry - aug also fits with the whole tone scale which has a unique dreamy/confused quality.
 
 The number of possible chords from a placement indicator perspective is similar to the combinatorial necklaces discussed above.
 This time instead of all possible key combinations in a k-tet, we require a chord to be a subset of at least one lcm family.
@@ -525,6 +528,7 @@ Perhaps the flavors of different placements are best investigated using melody. 
     ]},
     {label: 'Major 11 3 6', keys: [3, 6, 11], melodies: [
       {label: '15@6', lcm: 15, at: 6},
+      {label: 'blues@11 (11 1 2 3 6)', keys: [11, 1, 2, 3, 6]},
       {label: 'harm@4 (0 3 4 6 7 9 11)', keys: [0, 3, 4, 6, 7, 9, 11]},
       {label: 'blues@11 (11 1 2 3 6 8)', keys: [11, 1, 2, 3, 6, 8]},
       {label: 'bluesAdd7@11 (11 1 2 3 6 8 10)', keys: [11, 1, 2, 3, 6, 8, 10]},
@@ -540,10 +544,17 @@ Why does note 2 sound bad in a 15@6 context when playing a major chord, but work
 Perhaps the 2 with 4 7 11 gets parsed as 8@7 - this is no problem with 4 7 11, but via preference might invalidate 15@6 in favor of 8@7 or 24@7, causing dissonance.
 
 Playing 2 with 11 3 6 produces a bluesy sound, and indeed the major blues scale on 11 is 11 1 2 3 6 8. 
-The major blues works well with the minor chord as well.
-Note that adding in a flat 7 to the blues works with the major chord, but for the minor chord it is instead a major 7.
+Playing 7 seems to remove the bluesy sound and instead lean into the minor sound of 4 7 11.
+
+For 4 7 11 the bluesy sound seems closer to blues@7, with the m2 cluster on 9 10 11
+Note that adding in a flat 7 to the blues works with the major chord (11 3 6 9 with blues @11), but for the minor chord it is instead a major 7 (4 7 11 3 with blues@11).
+The minor chord seemingly works with both blues@11 and blues@7.
+
 Neither the blues scale nor these extensions of it are direct lcm families. 
 Perhaps it is an effect of preference, or perhaps one of composition, where the scale is actually modulating between multiple smaller lcms scale.
+Another possibility is that of fusion and separation, where fusion refers to multiple tones fusing into one.
+Since the auditory system is capable of separating both multiple conversations and merge tones, 
+it might be that playing complex music e.g. blues scales with accompaniment is a perception arising from interplay of fusing and separating placements.
 
 #### Chords as accompaniment
 In the context of accompaniment, for a given chord we must choose a set(s) of notes from which to draw melody.
@@ -740,7 +751,7 @@ The melody supersets for a minor triad 0 3 7 become:
 | 24@10 | ● | | ● | ● | | ● | | ● | | ● | ● | |
 
 15@7 collapses at 3 which is part of 0 3 7, leaving us with one lcm15 family and three lcm 24, similar to the major chord.
-The structure is howver not identical - the lcm 24 families do follow a 0->5->7 pattern starting at 3, but a major chord at 3 would yield 15@10, not 15@2.
+The structure is however not identical - the lcm 24 families do follow a 0->5->7 pattern starting at 3, but a major chord at 3 would yield 15@10, not 15@2.
 
 <RhythmPatternPlayer
   meter="4 4"
@@ -825,9 +836,9 @@ Adding in phrasing, where e.g. Ba in ABaACa means that group B reuses the first 
   }}
 />
 
-##### Perception Based Progression
+### Perception Based Progression
 As we saw with melodic supersets, the notes played along with a chord produces expectations for which placement is most likely.
-Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false positive, where we play notes signaling a placement which we are not drawing from,
+Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false signal, where we play notes signaling a placement which we are not drawing from,
 similar to the problem of lcm 24 preference when playing lcm 15.
 
 In the previous section we looked at progressions based on the intended placements, but perhaps what matters is the perceived placements.
@@ -850,7 +861,7 @@ Starting out with the classic major chord 0 4 7 we can note some archetypical pe
 * Playing note 2 produces a soft feel. 
   * Notably following with 6 produces a clashing tritone with 0, but quickly moving on to 7 softens it to a 24@7 soft feel. Almost like the first impression is "error" followed shortly by a realisation that "oh wait there's an 8@10".
   * Playing it with 11 produces a very soft 8@0 feel.
-* Playing 3 along with the pentatonic scale 0 2 4 7 9 is blues@0. Adding in 10 also works for producing a blues feel.
+* Playing 3 produces a bluesy feel of blues@0. Notably this is close to the pentatonic scale 0 2 4 7 9 with an added 3. Adding in 10 also works for producing a blues feel.
 * Playing 4 is similar to playing 0, perhaps some preference for moving to 8@5, a soft feel.
 * Playing 5 is simlar to playing 4, a soft feel.
 * Playing 6 becomes quite dissonant unless followed by 24@7 or 8@7, instead producing a soft feel.
@@ -864,7 +875,9 @@ Starting out with the classic major chord 0 4 7 we can note some archetypical pe
 | key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
 | perception | soft | dim | soft | blues | soft | soft | soft | soft | dim | soft | blues | soft |
-| placements | any other | harm@5 | 8@0 | bluesExt@0 | any other | 8@5 | 24@7 | any other | 15s@7 | 24@7 | bluesExt@0 | 8@0 |
+| placements | any | harm@5 | 8@0 | bluesExt@0 | any | 8@5 | 24@7 | any | 15s@7 | 24@7 | bluesExt@0 | 8@0 |
+
+(The "any" placement indicates that opening with this key is compatible with any of the other keys.)
 
 From this we note that we have soft (possibly very soft or calm), dim and blues. Soft could map to lcm 24, calm to 8 and dim to lcm 15. But what is blues?
 
@@ -905,17 +918,17 @@ Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (
 * Playing 4 is quite dissonant. 
   * Perhaps there is simply no good way to map this - either go for 15@7 but the 3 collapses to 24@8 or 24@3, neither of which accepts key 4.
 * Playing 5 is similar to playing 2, producing a dim feel.
-* Playing 6 feels similar to playing blues@8, following up with e.g. key 5 or 11 producing a blues feel.
+* Playing 6 feels similar to playing blues@3 following up with key 5 producing a blues feel.
 * Playing 7 produces a softer dim feel.
 * Playing 8 produces 8@8, a softer dim feel.
 * Playing 9 produces 24@10, a softer dim feel.
 * Playing 10 produces 24@10, a softer dim feel.
-* Playing 11 is similar to playing 2, producing a dim feel.
+* Playing 11 is similar to playing 2, producing a dim feel, or blues@8 if following with 10.
 
 | key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
 | perception | dim | dim | dim | dim | null | dim | blues | dim | dim | dim | dim | dim |
-| placements | any other | 15s@0, 24@8 | 8@8 | any other | null | 24@8 | bluesExt@8 | any other | 8@8 | 24@10 | 24@10 | 15s@2 |
+| placements | any | 15s@0, 24@8 | 8@8 | any | null | 24@8 | blues@3 | any| 8@8 | 24@10 | 24@10 | 15s@2, blues@8 |
 
 Notably there is no pure soft feel when playing minor, only blues and dim.
 
@@ -934,6 +947,10 @@ Each chord archetype would receive a mapping of implied perceptions based on ear
 Chords could then be progressed according to some system, repeating the process. 
 Since the perceptions seem bound to primes perhaps successive chords need only share a prime in some common placement.
 
+Alternatively we can look at the melodic supersets of a chord, e.g. major 0 4 7 has 24@0,5,7 and 15@4,7,11.
+Since 15@4, 11 seem to collapse onto 24@5,0 these are perhaps not usefull when infering progressions. 
+Instead, we could guess that 0 4 7 can progress to any chord which is a subset of stable supersets.
+For minor 0 3 7 this is 24@3,8,10 and 15@2.
 
 
 DEFERRED: Look at...
@@ -941,6 +958,7 @@ DEFERRED: Look at...
 * Harmonic minor scale 0 2 3 6 7 9 10 (harm@7) which goes well with 4@2 (12@8, 15@8) but excludes 5 and 11 which when played creates a major feel.
   * Harmonic minor contains two minor chords, 3 6 10 (10@3) and 7 10 2 (10@7) but only the latter feels like harm@7, the former being either harm@3 or 8@11.
 * Blues scale with minor/major expansions (major/minor 7) when accompanied by major/minor chords.
+  * When playing minor e.g. 0 3 7 it goes well with both
 * lcm 15/24 preference (dropping key 9 from 15@0 produces subsets of 24@1 and 24@8)
 Why do these scales sound better/worse depending on the accompanying chord? Is there an answer within lcm composition and preference (e.g. notes 5 and 11 in harm@7 turning it into 8@3 or 8@7?)
 
