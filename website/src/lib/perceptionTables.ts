@@ -161,6 +161,49 @@ function randomStartChord(rng: () => number): number[] {
   return foldOctave(base.map((k) => k + r));
 }
 
+// The next-chord candidates from a chord (identified as `table` at `root`): every major/minor
+// triad that is a subset of one of the chord's stable melodic supersets. The set of legal moves
+// out of the chord — shared by the open walk and the closed loop.
+function nextChordCandidates(table: PerceptionTable, root: number): number[][] {
+  const supersets = table.stableSupersets.map((s) => resolvePlacementKeys(s, root));
+  return ALL_MAJ_MIN.filter((t) => supersets.some((sk) => isSubset(t, sk)));
+}
+
+// Pick a random non-null opening key for the chord (identified as `table` at `root`) and commit
+// to one of its placements ('any' → a random specific placement of the chord), consuming two
+// draws from `rng`. Returns the built step. Shared by the open walk and the closed loop so both
+// articulate the opening key the same way.
+function buildStep(
+  chord: number[],
+  table: PerceptionTable,
+  root: number,
+  rng: () => number,
+): PerceptionStep {
+  const openings = table.entries
+    .map((e, idx) => ({e, idx}))
+    .filter((x): x is {e: PerceptionEntry; idx: number} => x.e !== null);
+  const opening = openings[Math.floor(rng() * openings.length)];
+  const openingKey = (root + opening.idx) % 12;
+
+  const refs = opening.e.placements === 'any' ? specificPlacements(table) : opening.e.placements;
+  const ref = refs[Math.floor(rng() * refs.length)];
+  return {
+    chord,
+    openingKey,
+    placement: {label: placementRefLabel(ref, root), keys: resolvePlacementKeys(ref, root)},
+  };
+}
+
+// Fisher–Yates shuffle a copy of `arr` using `rng`. Local to keep the perception libs decoupled.
+function shuffle<T>(arr: T[], rng: () => number): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 // --- The walk -------------------------------------------------------------------------------
 
 // One rhythmic unit of the progression: the chord sounding, its opening key (the pitch class the
@@ -199,31 +242,71 @@ export function generatePerceptionWalk(
     }
     const {table, root} = id;
 
-    // Random non-null opening key (index into entries, root-relative).
-    const openings = table.entries
-      .map((e, idx) => ({e, idx}))
-      .filter((x): x is {e: PerceptionEntry; idx: number} => x.e !== null);
-    const opening = openings[Math.floor(rng() * openings.length)];
-    const openingKey = (root + opening.idx) % 12;
-
-    // Commit to one placement from the entry ('any' → a random specific placement of the chord).
-    const refs =
-      opening.e.placements === 'any' ? specificPlacements(table) : opening.e.placements;
-    const ref = refs[Math.floor(rng() * refs.length)];
-    const placement = {
-      label: placementRefLabel(ref, root),
-      keys: resolvePlacementKeys(ref, root),
-    };
-
-    steps.push({chord: current, openingKey, placement});
+    // The unit's opening key + committed placement (opening key sounded first).
+    steps.push(buildStep(current, table, root, rng));
 
     // Next chord: a maj/min triad that is a subset of some stable superset of the current chord.
-    const supersets = table.stableSupersets.map((s) => resolvePlacementKeys(s, root));
-    const nextCandidates = ALL_MAJ_MIN.filter((t) => supersets.some((sk) => isSubset(t, sk)));
+    const nextCandidates = nextChordCandidates(table, root);
     current = nextCandidates.length
       ? nextCandidates[Math.floor(rng() * nextCandidates.length)]
       : current;
   }
 
   return {steps, next: current};
+}
+
+// Max DFS node expansions before giving up on closing a loop (mirrors chordWalk's guard). The
+// perception move graph is small (≤ 24 chords), so a legal cycle is found well within this.
+const MAX_EXPANSIONS = 20000;
+
+// Generate a CLOSED perception loop of length N (one step per meter group) that returns to its
+// origin: groups 0..N-1 sound C_0..C_{N-1} (C_0 = origin) and the last group is chosen so its
+// stable melodic supersets contain the origin, making the wrap C_{N-1} → origin a legal move.
+// Mirrors generateChordWalk's placement-first DFS, but the move graph here is the stable-superset
+// reachability between major/minor triads (opening key + placement do not gate movement, so they
+// are assigned once the chord cycle is fixed). Returns the steps plus the resolved `origin` (a
+// random maj/min triad when `start` is null or not maj/min) so the caller can re-loop around it.
+// All randomness flows through one mulberry32 stream, so a seed reproduces the loop.
+export function generatePerceptionLoop(
+  start: number[] | null,
+  N: number,
+  seed: number,
+): {steps: PerceptionStep[]; origin: number[]} {
+  const rng = mulberry32(seed >>> 0);
+  const startId = start ? identifyChord(foldOctave(start)) : null;
+  const origin = startId ? foldOctave(start!) : randomStartChord(rng);
+  const originKey = origin.join(',');
+
+  const bake = (chords: number[][]): {steps: PerceptionStep[]; origin: number[]} => ({
+    steps: chords.map((c) => {
+      const {table, root} = identifyChord(c)!;
+      return buildStep(c, table, root, rng);
+    }),
+    origin,
+  });
+
+  // N ≤ 1: a single group repeating the origin; the wrap trivially returns to origin.
+  if (N <= 1) return bake([origin]);
+
+  // Randomized DFS with backtracking over the chord move graph. path[0] = origin; for each group i
+  // pick a shuffled next chord reachable from path[i]; on the last group require the origin to be
+  // reachable so the wrap closes. Backtracks until a cycle closes.
+  let expansions = 0;
+  const path: number[][] = [origin];
+
+  const dfs = (i: number): boolean => {
+    if (++expansions > MAX_EXPANSIONS) return false;
+    const {table, root} = identifyChord(path[i])!;
+    const candidates = nextChordCandidates(table, root);
+    if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
+    for (const n of shuffle(candidates, rng)) {
+      path[i + 1] = n;
+      if (dfs(i + 1)) return true;
+    }
+    return false;
+  };
+
+  // Fallback (no closing cycle): repeat the origin in every group.
+  if (!dfs(0)) return bake(Array.from({length: N}, () => origin));
+  return bake(path);
 }
