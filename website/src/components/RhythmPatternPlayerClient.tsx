@@ -1372,8 +1372,8 @@ export default function RhythmPatternPlayerClient({
     playRunRef.current++;
     playheadBeatRef.current = null;
     plotRef.current?.redraw(false, false);
-    setCurrentChord(null); // clear the progression "playing" readout
-    setCurrentPlacement(null); // clear the chord-walk "placement" readout
+    // Keep the last chord/placement readouts on Stop so they can be inspected
+    // while paused (generate() clears them for a fresh pattern; see below).
     setPlaying(false);
   };
 
@@ -1706,6 +1706,10 @@ export default function RhythmPatternPlayerClient({
 
   const generate = () => {
     stop();
+    // A new pattern makes the old readouts misleading, so clear them here
+    // (Stop itself now keeps them for inspection).
+    setCurrentChord(null);
+    setCurrentPlacement(null);
     const nextSeed = (seed + 1) >>> 0;
     setSeed(nextSeed);
     regenerate(nextSeed);
