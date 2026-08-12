@@ -663,17 +663,19 @@ The blues scale blues@5 is 5 7 8 9 0 which is composed of 5@0 + 6@0 or 3@10 + 6@
 adding 5@0 to the 6@0 introduces notes 3, 8 and 10 with 3 and 10 producing a very bluesy sound played with 5 9 0. 
 Key 10 kind of works but perhaps pulls to much to 8@10.
 
-The characteristic blues sound really only comes through with the major chord at 5 (5 9 0), so the "maj 5 pinned" set fixes the chord to just that while the melody keeps roaming the whole scale — pick it for the signature sound, or one of the other sets for random chords drawn from the scale for contrast.
-
 <RhythmPatternPlayer
   meter="4 4 4 4"
-  subdivisions="4"
-  bpm={100}
+  subdivisions="3"
+  bpm={120}
+  syncopation={0.2}
+  resolution={0.95}  
   progression={[
-    {label: 'blues@5 · maj 5 pinned (5 9 0)', keys: [0, 5, 7, 8, 9], chord: [5, 9, 0]},
+    {label: 'blues@5 · major chord only (5 9 0)', keys: [0, 5, 7, 8, 9], chord: [5, 9, 0]},
     {label: 'blues@5 random (5 7 8 9 0)', keys: [0, 5, 7, 8, 9]},    
     {label: '5@0 + 6@0 (0 3 8 10 + 0 5 7 9)', keys: [0, 3, 5, 7, 8, 9, 10]},
+    {label: '5@0 + 6@0 · major chord only (5 9 0)', keys: [0, 3, 5, 7, 8, 9, 10], chord: [5, 9, 0]},
     {label: '5@0 + 12@0 (0 3 8 10 + 0 4 5 7 9)', keys: [0, 3, 4, 5, 7, 8, 9, 10]},
+    {label: '5@0 + 12@0 · major chord only (5 9 0)', keys: [0, 3, 4, 5, 7, 8, 9, 10], chord: [5, 9, 0]},
   ]}
 />
 

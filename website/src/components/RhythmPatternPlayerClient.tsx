@@ -1866,11 +1866,17 @@ export default function RhythmPatternPlayerClient({
                 ))}
               </select>
             </label>
-            <label style={labelStyle}>
+            <label
+              style={{
+                ...labelStyle,
+                // A pinned set ignores the heuristic — dim and disable the control to show it.
+                opacity: progression![selectedProgIdx].chord?.length ? 0.4 : 1,
+              }}>
               progression
               <select
                 value={selectedHeuristicIdx}
                 onChange={(e) => setSelectedHeuristicIdx(Number(e.target.value))}
+                disabled={(progression![selectedProgIdx].chord?.length ?? 0) > 0}
                 aria-label="progression heuristic">
                 {PROGRESSION_HEURISTICS.map((h, i) => (
                   <option key={h.id} value={i}>
