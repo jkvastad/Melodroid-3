@@ -658,18 +658,23 @@ The (half step) octatonic scale oct@0 is 0 1 3 4 6 7 9 10 which is composed of e
 This scale sounds a bit like when playing random but has some merits when the chords drawn are subsets of 0 3 6 9.
 
 ###### Blues Scale
-The blues scale blues@5 is 5 7 8 9 0 2 which is composed of 8@10 + 8@8. 
-Notably the extra keys are 10 and 3 which do sound quite nice along with the major chord 0 5 9.
+The blues scale blues@5 is 5 7 8 9 0 which is composed of 5@0 + 6@0 or 3@10 + 6@0.
+6@0 is part of 8@5 (12@0) - adding in key 4 does soften the blues.
+adding 5@0 to the 6@0 introduces notes 3, 8 and 10 with 3 and 10 producing a very bluesy sound played with 5 9 0. 
+Key 10 kind of works but perhaps pulls to much to 8@10.
+
 
 <RhythmPatternPlayer
   meter="4 4 4 4"
   subdivisions="4"
   bpm={100}
   progression={[
-    {label: 'blues@5 (5 7 8 9 0 2)', keys: [0, 2, 5, 7, 8, 9]},    
-    {label: '8@10 + 8@8 (5 7 8 9 10 0 2 3)', keys: [0, 2, 3, 5, 7, 8, 9, 10]},
+    {label: 'blues@5 (5 7 8 9 0)', keys: [0, 5, 7, 8, 9]},    
+    {label: '5@0 + 6@0 (0 3 8 10 + 0 5 7 9)', keys: [0, 3, 5, 7, 8, 9, 10]},
+    {label: '5@0 + 12@0 (0 3 8 10 + 0 4 5 7 9)', keys: [0, 3, 4, 5, 7, 8, 9, 10]},
   ]}
 />
+
 
 ##### Melodic Supersets
 Several of the scales above which are not lcms scales are compositions of two lcm scales, or is heavily related to a symmetric chord.
@@ -864,7 +869,7 @@ E.g. a 24 is soft but an 8 is very soft with its many 2s. Dim and minor is tense
 
 Playing 0 4 7 is indeed 3@7, but might be preferred by 4@0, effectively hiding the prime 3 flavor. Adding in key 3 possibly shifts it to 15@7, although this would introduce a strange caveat in the lcm 24/15 preference.
 Playing 0 4 7 is also 8@5, where exchanging key 4 for 3 introduces the good fraction 16/9, part of 9@5. Perhaps blues is some sort of 8+9 superposition where the 9 flavor comes through instead of collapsing to 8?
-Indeed the traditional blues@0 of 0 2 3 4 7 is readily extended with 9 and 10 (bluesExt@0) but playing 5 is a bit jarring. Perhaps it collapses from 9@5 or 18@5 to 8@5.
+Indeed the traditional blues@0 of 0 2 3 4 7 is readily extended with 9 and 10 (bluesExt@0), which is just 82€ + 9@5, but playing 5 is a bit jarring. Perhaps it collapses from 9@5 or 18@5 to 8@5.
 Blues might be the perception of two competing bases at the same reference frame, combined with fast modulation of the melody implying non-explicit chord changes.
 E.g. playing 0 4 7 followed by 3 puts the 0 4 7 in some sort of background channel and the perception is as if playing 3 7 10.
 
@@ -878,13 +883,9 @@ Such rapid modulation might account for exotic melodies such as playing 0 4 7 wi
 the 0 4 starts out as 8@0, then moves to 8@5 for the 5, then harm@10 for the 6, then back to 8@0 for 7 0.
 Playing 0 4 7 for 0 4, then 5 9 0 for 5 and 6, then back to 0 4 7 for 7 0 illustrates this point.
 
-
 Such rapid modulation in this case comprises splitting a metric group of 4 beats into 2 sub-beats each, and then each such rhythmic beat group is assigned its own chord and placement.
 Notably the chord might not be voiced explicitly per group e.g. the 0 7 melody lasts for 2 beats but resounding 0 4 7 at each beat seems redundant.
 8@5 and harm@10 are related via the major chord 4@5 a.k.a. 3@0. Meanwhile harm@10 is related to 15@0, adding in the 6 (reason unkown, possibly something to do with dim7 symmetry) and removing the collapsing 8.
-
-
-
 
 Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (10@0) we have:
 
