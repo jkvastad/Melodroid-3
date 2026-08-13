@@ -995,7 +995,8 @@ For minor 0 3 7 this is 24@3,8,10 and 15@2.
   perceptionWalk={{}}
 />
 
-Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor triad destination. This is exactly the move graph the `perceptionWalk` mode walks: a chord may progress to any triad below marked with a superset (— means no stable superset owns it).
+Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor triad destination.
+This is exactly the move graph the `perceptionWalk` mode walks: a chord may progress to any triad below marked with a superset (— means no stable superset owns it).
 
 Major chord 0 4 7 (supersets 24@0,5,7 and 15s@7):
 
@@ -1011,10 +1012,17 @@ Minor chord 0 3 7 (supersets 24@3,8,10 and 15s@2):
 | major | — | 24@8 | — | 24@3,8,10 | — | 24@10 | — | 15s@2 | 24@3,8 | — | 24@3,10 | — |
 | minor | 24@3,8,10 · 15s@2 | — | 24@10 | — | — | 24@3,8 | — | 24@3,10 | — | — | 24@8 | — |
 
-The diagonal cell (major/root 0 for the major table, minor/root 0 for the minor table) is the source chord itself, a legal "stay". Note that taking 15s rather than the raw 15 removes the destinations that relied on collapsing keys — for the major source there is no C→Cm move and no root 3/8 major destination, and for the minor source the root 10 destinations drop out.
+Diminished chord 0 3 6 (supersets 15s@3 and 24@1):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | 24@1 | — | — | — | — | 24@1 | — | 15s@3 · 24@1 | — | — | — |
+| minor | — | 15s@3 | — | 24@1 | — | 24@1 | — | — | — | — | 24@1 | — |
+
+In addition to moving from a chord to other triads in possible supersets, we can also explore moving to adjacent lcms.
+For instance if we play 0 4 7 and note that this is part of 15s@7, then by adjacency this is close to both 24@3 and 24@8.
 
 TODO: update chord progression tables:
-* needs table for dim
 * 0 4 7 can de facto move to 0 3 7 (e.g. 5 9 0 -> 5 8 0 -> 0 4 7). This is likely via adjacency - 0 3 7 is part of 24@8, which is adjacent to 15s@7, which contains 0 4 7.
 * 0 4 7 can de facto move to 1 5 8 via harm@5. Perhaps adjacency and harmonic minor are related, maybe via composition? E.g. 0 3 7 in 8@8 which is part of 24@8
 
