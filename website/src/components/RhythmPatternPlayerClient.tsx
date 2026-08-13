@@ -69,7 +69,7 @@ export type RhythmPatternPlayerProps = {
   perceptionWalk?: PerceptionWalkSet; // perception-walk mode: an OPEN progression where each meter
   // group picks a random opening key from the current chord's perception table, commits to that
   // entry's placement (melody drawn from it, opening key sounded first), and wanders to the next
-  // chord via the current chord's stable melodic supersets. Vocabulary is major/minor only. Takes
+  // chord via the current chord's stable melodic supersets. Vocabulary is major/minor/dim. Takes
   // precedence over `chordWalk` if both are set (this page only)
 };
 
@@ -97,8 +97,8 @@ export type ProgressionSet = {label: string; keys: number[]; chord?: number[]};
 export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 
 // Perception-walk-mode authored config: an optional START chord (its 12-tet pitch classes). When
-// omitted the walk begins on a random major/minor triad (seeded). The chord vocabulary and the
-// perception tables are fixed (major/minor), so there is nothing else to author.
+// omitted the walk begins on a random major/minor/dim triad (seeded). The chord vocabulary and the
+// perception tables are fixed (major/minor/dim), so there is nothing else to author.
 export type PerceptionWalkSet = {start?: number[]};
 
 // The baked per-group step shape the scheduler consumes, shared by chord-walk and perception-walk.

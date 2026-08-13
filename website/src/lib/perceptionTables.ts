@@ -63,9 +63,9 @@ export type PerceptionEntry = {placements: PlacementRef[] | 'any'};
 
 // A chord archetype's perception table: its 12-tet chord shape (root-relative), one entry per
 // opening key 0..11 (null = no good mapping), and the stable melodic supersets used to pick the
-// next chord. Transcribed from the major/minor tables in the doc.
+// next chord. Transcribed from the major/minor/dim tables in the doc.
 export type PerceptionTable = {
-  label: 'major' | 'minor';
+  label: 'major' | 'minor' | 'dim';
   chord: number[];
   entries: (PerceptionEntry | null)[];
   stableSupersets: PlacementRef[];
@@ -114,8 +114,34 @@ const MINOR: PerceptionTable = {
   stableSupersets: [{lcm: 24, at: 3}, {lcm: 24, at: 8}, {lcm: 24, at: 10}, {label: '15s', at: 2}],
 };
 
-// The chord vocabulary that has a hand-authored table — major and minor only, this iteration.
-const TABLES: PerceptionTable[] = [MAJOR, MINOR];
+// Diminished triad table (doc lines 968-971; stable supersets 15s@3 and 24@1 from line 954).
+// Unlike major/minor, dim has no 'any' (chord-tone) openings and no null keys: every opening key
+// maps to a specific placement, and the dim feel dominates (15s@3) except where a softer 24@1 or a
+// harmonic-minor colour takes over. The doc writes "15@3" in the placements row, but the stable
+// melodic superset is 15s@3 (line 954; line 998 warns the lcm-15 superset must be taken in its
+// stable 15s form), so it is encoded as the 15s label here.
+const DIM: PerceptionTable = {
+  label: 'dim',
+  chord: [0, 3, 6],
+  entries: [
+    {placements: [{label: '15s', at: 3}]}, // 0
+    {placements: [{label: '15s', at: 3}]}, // 1
+    {placements: [{label: 'harm', at: 7}]}, // 2
+    {placements: [{label: '15s', at: 3}]}, // 3
+    {placements: [{label: '15s', at: 3}]}, // 4
+    {placements: [{lcm: 24, at: 1}]}, // 5
+    {placements: [{label: '15s', at: 3}]}, // 6
+    {placements: [{label: 'harm', at: 7}]}, // 7
+    {placements: [{lcm: 24, at: 1}]}, // 8
+    {placements: [{label: 'harm', at: 7}, {label: 'harm', at: 1}]}, // 9
+    {placements: [{lcm: 24, at: 1}]}, // 10
+    {placements: [{label: 'harm', at: 4}]}, // 11
+  ],
+  stableSupersets: [{label: '15s', at: 3}, {lcm: 24, at: 1}],
+};
+
+// The chord vocabulary that has a hand-authored table — major, minor and dim.
+const TABLES: PerceptionTable[] = [MAJOR, MINOR, DIM];
 
 // Every specific (non-'any') placement referenced by a table, deduped — the pool an 'any' entry
 // draws a single placement from.
@@ -135,7 +161,7 @@ function specificPlacements(table: PerceptionTable): PlacementRef[] {
 }
 
 // Match a folded triad to its perception table and root offset (the transpose that maps the
-// table's root-0 shape onto this chord). Null when the chord is neither major nor minor.
+// table's root-0 shape onto this chord). Null when the chord is not a tabled quality (major/minor/dim).
 function identifyChord(chord: number[]): {table: PerceptionTable; root: number} | null {
   const folded = foldOctave(chord);
   const id = folded.join(',');
@@ -145,27 +171,30 @@ function identifyChord(chord: number[]): {table: PerceptionTable; root: number} 
   return null;
 }
 
-// All 24 major/minor triads (folded), the next-chord candidate universe.
-const ALL_MAJ_MIN: number[][] = (() => {
+// The triad qualities that have a perception table — the base shapes of the candidate universe.
+const TRIAD_SHAPES: number[][] = [[0, 4, 7], [0, 3, 7], [0, 3, 6]];
+
+// All 36 major/minor/dim triads (folded), the next-chord candidate universe.
+const ALL_TRIADS: number[][] = (() => {
   const out: number[][] = [];
-  for (let r = 0; r < 12; r++) for (const base of [[0, 4, 7], [0, 3, 7]])
+  for (let r = 0; r < 12; r++) for (const base of TRIAD_SHAPES)
     out.push(foldOctave(base.map((k) => k + r)));
   return out;
 })();
 
-// A random major/minor triad, used as the default start (or to recover from a non-maj/min start).
+// A random major/minor/dim triad, used as the default start (or to recover from a non-tabled start).
 function randomStartChord(rng: () => number): number[] {
-  const base = rng() < 0.5 ? [0, 4, 7] : [0, 3, 7];
+  const base = TRIAD_SHAPES[Math.floor(rng() * TRIAD_SHAPES.length)];
   const r = Math.floor(rng() * 12);
   return foldOctave(base.map((k) => k + r));
 }
 
-// The next-chord candidates from a chord (identified as `table` at `root`): every major/minor
+// The next-chord candidates from a chord (identified as `table` at `root`): every major/minor/dim
 // triad that is a subset of one of the chord's stable melodic supersets. The set of legal moves
 // out of the chord — shared by the open walk and the closed loop.
 function nextChordCandidates(table: PerceptionTable, root: number): number[][] {
   const supersets = table.stableSupersets.map((s) => resolvePlacementKeys(s, root));
-  return ALL_MAJ_MIN.filter((t) => supersets.some((sk) => isSubset(t, sk)));
+  return ALL_TRIADS.filter((t) => supersets.some((sk) => isSubset(t, sk)));
 }
 
 // Pick a random non-null opening key for the chord (identified as `table` at `root`) and commit
@@ -219,10 +248,10 @@ export type PerceptionStep = {
 //   2. Pick a random non-null opening key; its entry gives the placement(s)
 //      ('any' → a random one of the chord's specific placements).
 //   3. The unit's melody draws from that placement; the opening key is the unit's first note.
-//   4. Pick the next chord: a random major/minor triad that is a subset of one of the current
+//   4. Pick the next chord: a random major/minor/dim triad that is a subset of one of the current
 //      chord's stable melodic supersets.
 // Returns the steps plus `next` — the chord the following pass continues from (open walk, no
-// closure). `start` null ⇒ a random major/minor triad. All randomness flows through one
+// closure). `start` null ⇒ a random major/minor/dim triad. All randomness flows through one
 // mulberry32 stream, so a seed reproduces the walk (deterministic Generate re-roll).
 export function generatePerceptionWalk(
   start: number[] | null,
@@ -244,7 +273,7 @@ export function generatePerceptionWalk(
     // The unit's opening key + committed placement (opening key sounded first).
     steps.push(buildStep(current, table, root, rng));
 
-    // Next chord: a maj/min triad that is a subset of some stable superset of the current chord.
+    // Next chord: a triad that is a subset of some stable superset of the current chord.
     const nextCandidates = nextChordCandidates(table, root);
     current = nextCandidates.length
       ? nextCandidates[Math.floor(rng() * nextCandidates.length)]
@@ -255,16 +284,16 @@ export function generatePerceptionWalk(
 }
 
 // Max DFS node expansions before giving up on closing a loop (mirrors chordWalk's guard). The
-// perception move graph is small (≤ 24 chords), so a legal cycle is found well within this.
+// perception move graph is small (≤ 36 chords), so a legal cycle is found well within this.
 const MAX_EXPANSIONS = 20000;
 
 // Generate a CLOSED perception loop of length N (one step per meter group) that returns to its
 // origin: groups 0..N-1 sound C_0..C_{N-1} (C_0 = origin) and the last group is chosen so its
 // stable melodic supersets contain the origin, making the wrap C_{N-1} → origin a legal move.
 // Mirrors generateChordWalk's placement-first DFS, but the move graph here is the stable-superset
-// reachability between major/minor triads (opening key + placement do not gate movement, so they
+// reachability between major/minor/dim triads (opening key + placement do not gate movement, so they
 // are assigned once the chord cycle is fixed). Returns the steps plus the resolved `origin` (a
-// random maj/min triad when `start` is null or not maj/min) so the caller can re-loop around it.
+// random tabled triad when `start` is null or not a tabled quality) so the caller can re-loop around it.
 // All randomness flows through one mulberry32 stream, so a seed reproduces the loop.
 export function generatePerceptionLoop(
   start: number[] | null,
