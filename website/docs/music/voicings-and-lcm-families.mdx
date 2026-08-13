@@ -995,7 +995,7 @@ For minor 0 3 7 this is 24@3,8,10 and 15@2.
   perceptionWalk={{}}
 />
 
-Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor triad destination.
+Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor/dim triad destination.
 This is exactly the move graph the `perceptionWalk` mode walks: a chord may progress to any triad below marked with a superset (— means no stable superset owns it).
 
 Major chord 0 4 7 (supersets 24@0,5,7 and 15s@7):
@@ -1004,6 +1004,7 @@ Major chord 0 4 7 (supersets 24@0,5,7 and 15s@7):
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
 | major | 24@0,5,7 · 15s@7 | — | 24@7 | — | — | 24@0,5 | — | 24@0,7 | — | — | 24@5 | — |
 | minor | — | — | 24@0,5 | — | 24@0,7 | 15s@7 | — | 24@5 | — | 24@0,5,7 | — | 24@7 |
+| dim | — | — | — | — | 24@5 · 15s@7 | — | 24@7 | — | — | — | — | 24@0 |
 
 Minor chord 0 3 7 (supersets 24@3,8,10 and 15s@2):
 
@@ -1011,6 +1012,7 @@ Minor chord 0 3 7 (supersets 24@3,8,10 and 15s@2):
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
 | major | — | 24@8 | — | 24@3,8,10 | — | 24@10 | — | 15s@2 | 24@3,8 | — | 24@3,10 | — |
 | minor | 24@3,8,10 · 15s@2 | — | 24@10 | — | — | 24@3,8 | — | 24@3,10 | — | — | 24@8 | — |
+| dim | — | — | 24@3 | — | — | — | — | 24@8 | — | 24@10 | — | 15s@2 |
 
 Diminished chord 0 3 6 (supersets 15s@3 and 24@1):
 
@@ -1018,13 +1020,36 @@ Diminished chord 0 3 6 (supersets 15s@3 and 24@1):
 | --- |---|---|---|---|---|---|---|---|---|---|----|----|
 | major | — | 24@1 | — | — | — | — | 24@1 | — | 15s@3 · 24@1 | — | — | — |
 | minor | — | 15s@3 | — | 24@1 | — | 24@1 | — | — | — | — | 24@1 | — |
+| dim | 15s@3 · 24@1 | — | — | — | — | — | — | — | — | — | — | — |
 
 In addition to moving from a chord to other triads in possible supersets, we can also explore moving to adjacent lcms.
-For instance if we play 0 4 7 and note that this is part of 15s@7, then by adjacency this is close to both 24@3 and 24@8.
+For instance if we play 0 4 7 and note that this is part of 15s@7, then by adjacency this is close to both 24@3 and 24@8. 
+The adjacency rule is `15@X` → `24@(X+1)` and `24@(X+8)`. Each chord's stable lcm 15 superset therefore reaches two adjacent lcm 24 placements, whose owned triads are tabulated below (listing only the adjacency-derived placements, in addition to the direct supersets above).
 
-TODO: update chord progression tables:
-* 0 4 7 can de facto move to 0 3 7 (e.g. 5 9 0 -> 5 8 0 -> 0 4 7). This is likely via adjacency - 0 3 7 is part of 24@8, which is adjacent to 15s@7, which contains 0 4 7.
-* 0 4 7 can de facto move to 1 5 8 via harm@5. Perhaps adjacency and harmonic minor are related, maybe via composition? E.g. 0 3 7 in 8@8 which is part of 24@8
+Major chord 0 4 7 (adjacency 15s@7 → 24@3,8):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | 24@8 | — | 24@3,8 | — | — | — | — | 24@3,8 | — | 24@3 | — |
+| minor | 24@3,8 | — | — | — | — | 24@3,8 | — | 24@3 | — | — | 24@8 | — |
+| dim | — | — | 24@3 | — | — | — | — | 24@8 | — | — | — | — |
+
+Minor chord 0 3 7 (adjacency 15s@2 → 24@3,10):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | — | — | 24@3,10 | — | 24@10 | — | — | 24@3 | — | 24@3,10 | — |
+| minor | 24@3,10 | — | 24@10 | — | — | 24@3 | — | 24@3,10 | — | — | — | — |
+| dim | — | — | 24@3 | — | — | — | — | — | — | 24@10 | — | — |
+
+Diminished chord 0 3 6 (adjacency 15s@3 → 24@4,11):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | — | — | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 |
+| minor | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 | — | — | — |
+| dim | — | — | — | 24@4 | — | — | — | — | — | — | 24@11 | — |
+
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
 2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).
