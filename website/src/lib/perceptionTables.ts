@@ -24,12 +24,11 @@ const isSubset = (chord: number[], set: number[]): boolean => {
 
 // The non-LCM scales the perception tables reference, as folded base key sets at anchor 0.
 // Transcribed from the doc: `15s` (stable-15 subset) and `blues` are the explicit sets used in the
-// chordWalk example; `bluesExt` extends `blues` with key 10; `harm` is the harmonic minor scale
-// (verified: harm rotated to anchor 5 = 0 1 4 5 7 8 10, the `harm@5` cited in the doc).
+// chordWalk example; `harm` is the harmonic minor scale (verified: harm rotated to anchor 5 =
+// 0 1 4 5 7 8 10, the `harm@5` cited in the doc).
 const LABEL_KEYS: Record<string, number[]> = {
   '15s': [0, 1, 3, 5, 9, 10],
   blues: [0, 2, 3, 4, 7, 9],
-  bluesExt: [0, 2, 3, 4, 7, 9, 10],
   harm: [0, 2, 3, 5, 7, 8, 11],
 };
 
@@ -80,14 +79,14 @@ const MAJOR: PerceptionTable = {
     {placements: 'any'}, // 0
     {placements: [{label: 'harm', at: 5}]}, // 1
     {placements: [{lcm: 8, at: 0}]}, // 2
-    {placements: [{label: 'bluesExt', at: 0}]}, // 3
+    {placements: [{label: 'blues', at: 0}]}, // 3
     {placements: 'any'}, // 4
     {placements: [{lcm: 8, at: 5}]}, // 5
     {placements: [{lcm: 24, at: 7}]}, // 6
     {placements: 'any'}, // 7
     {placements: [{label: '15s', at: 7}]}, // 8
     {placements: [{lcm: 24, at: 7}]}, // 9
-    {placements: [{label: 'bluesExt', at: 0}]}, // 10
+    {placements: [{label: 'blues', at: 0}]}, // 10
     {placements: [{lcm: 8, at: 0}]}, // 11
   ],
   stableSupersets: [{lcm: 24, at: 0}, {lcm: 24, at: 5}, {lcm: 24, at: 7}, {label: '15s', at: 7}],
