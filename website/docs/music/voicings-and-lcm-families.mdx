@@ -992,7 +992,7 @@ For minor 0 3 7 this is 24@3,8,10 and 15@2.
   meter="4 4 4 4"
   subdivisions="4"
   bpm={100}
-  perceptionWalk={{}}
+  perceptionWalk={{start: [0, 4, 7], strategy: 'supersets'}}
 />
 
 Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor/dim triad destination.
@@ -1049,6 +1049,22 @@ Diminished chord 0 3 6 (adjacency 15s@3 → 24@4,11):
 | major | — | — | — | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 |
 | minor | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 | — | — | — |
 | dim | — | — | — | 24@4 | — | — | — | — | — | — | 24@11 | — |
+
+We can now hear all three chord-target strategies side by side. Only the rule for choosing the *next* chord changes — opening-key selection, placement/melody drawing, and everything else stay identical, so the strategies are directly comparable. All three are pinned to the same start chord `0 4 7`. The first player above walks by the **direct** stable supersets; the two below walk by the **adjacency**-derived 24 placements only, and by **both** (the union).
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{start: [0, 4, 7], strategy: 'adjacency'}}
+/>
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{start: [0, 4, 7], strategy: 'both'}}
+/>
 
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,

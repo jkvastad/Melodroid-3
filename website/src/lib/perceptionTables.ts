@@ -143,6 +143,27 @@ const DIM: PerceptionTable = {
 // The chord vocabulary that has a hand-authored table — major, minor and dim.
 const TABLES: PerceptionTable[] = [MAJOR, MINOR, DIM];
 
+// Which superset list to move by when choosing the next chord:
+//   'supersets' — the direct stable melodic supersets (existing behaviour).
+//   'adjacency' — only the adjacency-derived lcm-24 placements (adjacencySupersets).
+//   'both'      — the union of the two.
+export type WalkStrategy = 'supersets' | 'adjacency' | 'both';
+
+// Derive a table's adjacency supersets from its own 15s stable supersets via the documented rule:
+// 15s@X reaches the adjacent lcm-24 placements 24@(X+1) and 24@(X+8) (doc line 1027). Single source
+// of truth — no hand-typed numbers. (Verified: MAJOR 15s@7→24@8,24@3; MINOR 15s@2→24@3,24@10;
+// DIM 15s@3→24@4,24@11 — matching the doc adjacency tables.)
+function adjacencySupersets(table: PerceptionTable): PlacementRef[] {
+  return table.stableSupersets
+    .filter(
+      (s): s is {label: PlacementLabel; at: number} => 'label' in s && s.label === '15s',
+    )
+    .flatMap((s) => [
+      {lcm: 24, at: (s.at + 1) % 12},
+      {lcm: 24, at: (s.at + 8) % 12},
+    ]);
+}
+
 // Every specific (non-'any') placement referenced by a table, deduped — the pool an 'any' entry
 // draws a single placement from.
 function specificPlacements(table: PerceptionTable): PlacementRef[] {
@@ -192,8 +213,18 @@ function randomStartChord(rng: () => number): number[] {
 // The next-chord candidates from a chord (identified as `table` at `root`): every major/minor/dim
 // triad that is a subset of one of the chord's stable melodic supersets. The set of legal moves
 // out of the chord — shared by the open walk and the closed loop.
-function nextChordCandidates(table: PerceptionTable, root: number): number[][] {
-  const supersets = table.stableSupersets.map((s) => resolvePlacementKeys(s, root));
+function nextChordCandidates(
+  table: PerceptionTable,
+  root: number,
+  strategy: WalkStrategy = 'supersets',
+): number[][] {
+  const refs =
+    strategy === 'supersets'
+      ? table.stableSupersets
+      : strategy === 'adjacency'
+        ? adjacencySupersets(table)
+        : [...table.stableSupersets, ...adjacencySupersets(table)];
+  const supersets = refs.map((s) => resolvePlacementKeys(s, root));
   return ALL_TRIADS.filter((t) => supersets.some((sk) => isSubset(t, sk)));
 }
 
@@ -257,6 +288,7 @@ export function generatePerceptionWalk(
   start: number[] | null,
   N: number,
   seed: number,
+  strategy: WalkStrategy = 'supersets',
 ): {steps: PerceptionStep[]; next: number[]} {
   const rng = mulberry32(seed >>> 0);
   let current = start ? foldOctave(start) : randomStartChord(rng);
@@ -274,7 +306,7 @@ export function generatePerceptionWalk(
     steps.push(buildStep(current, table, root, rng));
 
     // Next chord: a triad that is a subset of some stable superset of the current chord.
-    const nextCandidates = nextChordCandidates(table, root);
+    const nextCandidates = nextChordCandidates(table, root, strategy);
     current = nextCandidates.length
       ? nextCandidates[Math.floor(rng() * nextCandidates.length)]
       : current;
@@ -299,6 +331,7 @@ export function generatePerceptionLoop(
   start: number[] | null,
   N: number,
   seed: number,
+  strategy: WalkStrategy = 'supersets',
 ): {steps: PerceptionStep[]; origin: number[]} {
   const rng = mulberry32(seed >>> 0);
   const startId = start ? identifyChord(foldOctave(start)) : null;
@@ -325,7 +358,7 @@ export function generatePerceptionLoop(
   const dfs = (i: number): boolean => {
     if (++expansions > MAX_EXPANSIONS) return false;
     const {table, root} = identifyChord(path[i])!;
-    const candidates = nextChordCandidates(table, root);
+    const candidates = nextChordCandidates(table, root, strategy);
     if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
     for (const n of shuffle(candidates, rng)) {
       path[i + 1] = n;

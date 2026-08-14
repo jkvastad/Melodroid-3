@@ -35,6 +35,7 @@ import {
   generatePerceptionLoop,
   generatePerceptionWalk,
   type PerceptionStep,
+  type WalkStrategy,
 } from '@site/src/lib/perceptionTables';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
 import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
@@ -98,8 +99,10 @@ export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 
 // Perception-walk-mode authored config: an optional START chord (its 12-tet pitch classes). When
 // omitted the walk begins on a random major/minor/dim triad (seeded). The chord vocabulary and the
-// perception tables are fixed (major/minor/dim), so there is nothing else to author.
-export type PerceptionWalkSet = {start?: number[]};
+// perception tables are fixed (major/minor/dim), so there is nothing else to author. `strategy`
+// selects the chord-target rule (direct stable supersets, adjacency-derived 24 placements, or the
+// union); default 'supersets' keeps the existing behaviour.
+export type PerceptionWalkSet = {start?: number[]; strategy?: WalkStrategy};
 
 // The baked per-group step shape the scheduler consumes, shared by chord-walk and perception-walk.
 // `openingKey` is only populated by perception-walk (chord-walk leaves it absent).
@@ -923,6 +926,7 @@ export default function RhythmPatternPlayerClient({
   // from the carry chord) unless loop melody is on (freezing this cycle). Null outside
   // perception-walk. `perceptionWalkSteps` is the unified baked-step form the octaveKeys /
   // bakedKeys / scheduler paths share with chord-walk.
+  const walkStrategy: WalkStrategy = perceptionWalk?.strategy ?? 'supersets';
   const perceptionWalkRaw = useMemo(() => {
     if (!perceptionWalkOn || !pattern) return null;
     const N = pattern.meter.length;
@@ -930,9 +934,10 @@ export default function RhythmPatternPlayerClient({
       perceptionWalk!.start ?? null,
       N,
       seed ^ 0x2545f491,
+      walkStrategy,
     );
     return {steps: bakePerceptionSteps(steps, pitchHz), origin};
-  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz]);
+  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy]);
   const perceptionWalkSteps = perceptionWalkRaw?.steps ?? null;
   // The active walk's baked steps, whichever mode is on (mutually exclusive). Downstream melody /
   // scheduler code reads this rather than either mode's memo directly.
@@ -1109,10 +1114,12 @@ export default function RhythmPatternPlayerClient({
   // origin. Re-baked on Generate / pitch change.
   const perceptionWalkStepsRef = useRef(perceptionWalkSteps);
   const perceptionOriginRef = useRef<number[] | null>(perceptionWalkRaw?.origin ?? null);
+  const walkStrategyRef = useRef(walkStrategy);
   useEffect(() => {
     perceptionWalkStepsRef.current = perceptionWalkSteps;
     perceptionOriginRef.current = perceptionWalkRaw?.origin ?? null;
-  }, [perceptionWalkSteps, perceptionWalkRaw]);
+    walkStrategyRef.current = walkStrategy;
+  }, [perceptionWalkSteps, perceptionWalkRaw, walkStrategy]);
   // The curated placement pool and heuristic chord vocabulary, mirrored into refs so a running loop's
   // per-cycle regeneration (in play's pump) picks up a mid-play heuristic / set switch live, exactly
   // like chordWalkStepsRef. generateChordWalk reads both when re-rolling a fresh cycle.
@@ -1513,6 +1520,7 @@ export default function RhythmPatternPlayerClient({
                 carryChord,
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
+                walkStrategyRef.current,
               );
               carryChord = next;
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
@@ -1521,6 +1529,7 @@ export default function RhythmPatternPlayerClient({
                 perceptionOriginRef.current,
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
+                walkStrategyRef.current,
               );
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
             }
