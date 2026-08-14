@@ -253,13 +253,20 @@ function buildStep(
   };
 }
 
-// A per-group phrase-binding constraint (from the rhythm phrase, translated to the walk). Same
-// shape as chordWalk's WalkBinding, kept local to avoid coupling the two walk libs — the client's
-// WalkBinding[] passes structurally. When a meter group full-repeats an earlier one the phrase can
-// force this group to reuse that group's chord (`chordSource`) and/or its opening key + placement
-// (`placementSource`); each is the index of an *earlier* group (< this one) or null. Group 0 (the
-// origin) never carries a binding.
-export type PerceptionBinding = {chordSource: number | null; placementSource: number | null};
+// A per-group phrase-binding constraint (from the rhythm phrase, translated to the walk). A
+// superset of chordWalk's WalkBinding: it adds `splitSecondHalf` for perception mode's sub-phrase
+// split. When a meter group full-repeats an earlier one the phrase can force this group to reuse
+// that group's chord (`chordSource`) and/or its opening key + placement (`placementSource`); each is
+// the index of an *earlier* group (< this one) or null. `splitSecondHalf` marks a half-repeat (`Ba`)
+// group whose SECOND half becomes its own perception sub-unit: the walk rolls a new chord (a legal
+// move out of the group's first-half chord) that the following group then continues from, and
+// buildSteps rolls a fresh opening key + placement for it (attached as PerceptionStep.second). Group
+// 0 (the origin) never carries a binding and is never split.
+export type PerceptionBinding = {
+  chordSource: number | null;
+  placementSource: number | null;
+  splitSecondHalf: boolean;
+};
 
 // Chord equality on folded/sorted pitch-class arrays (ALL_TRIADS / origin are always folded).
 const sameChord = (a: number[], b: number[]): boolean => a.join(',') === b.join(',');
@@ -286,8 +293,12 @@ function bindStep(
 // step it copies). A group with `placementSource` set reuses that earlier step's opening key +
 // placement when legal (bindStep); otherwise it draws a fresh opening + placement (buildStep). The
 // chord axis is already resolved in the caller's chord cycle — this only honors the placement axis.
+// A split (`Ba`) group additionally gets a `second` sub-step: the second-half chord from
+// `secondChords[g]` gets its own fresh opening key + placement (always drawn, never bound). The RNG
+// draw order is main-then-second per group, matching the DFS's chord order.
 function buildSteps(
   chords: number[][],
+  secondChords: (number[] | null)[],
   bindings: PerceptionBinding[] | undefined,
   rng: () => number,
 ): PerceptionStep[] {
@@ -296,7 +307,13 @@ function buildSteps(
     const {table, root} = identifyChord(c)!;
     const src = bindings?.[g]?.placementSource ?? null;
     const bound = src !== null && src < g ? bindStep(c, table, root, steps[src]) : null;
-    steps.push(bound ?? buildStep(c, table, root, rng));
+    const step: PerceptionStep = bound ?? buildStep(c, table, root, rng);
+    const sc = secondChords[g];
+    if (sc) {
+      const id = identifyChord(sc)!;
+      step.second = buildStep(sc, id.table, id.root, rng);
+    }
+    steps.push(step);
   });
   return steps;
 }
@@ -315,12 +332,15 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 
 // One rhythmic unit of the progression: the chord sounding, its opening key (the pitch class the
 // unit begins on, which selected the placement), and the chosen placement (label + folded melody
-// keys the rest of the unit draws from).
-export type PerceptionStep = {
+// keys the rest of the unit draws from). A half-repeat (`Ba`) group additionally carries `second` —
+// the second-half sub-unit's own chord + opening key + placement — so its B part sounds a new chord
+// struck mid-group and draws melody from a new placement (see PerceptionBinding.splitSecondHalf).
+export type PerceptionSubStep = {
   chord: number[];
   openingKey: number;
   placement: {label: string; keys: number[]};
 };
+export type PerceptionStep = PerceptionSubStep & {second?: PerceptionSubStep};
 
 // Max DFS node expansions before giving up on closing a loop / walk (mirrors chordWalk's guard).
 // The perception move graph is small (≤ 36 chords), so a legal cycle is found well within this.
@@ -350,50 +370,81 @@ export function generatePerceptionWalk(
   bindings?: PerceptionBinding[],
 ): {steps: PerceptionStep[]; next: number[]; unsatisfied: boolean} {
   // One DFS attempt at a whole walk, seeded fresh so bound/unbound attempts are independent and
-  // deterministic. Returns the chord path (length N+1, path[N] = carry) or null on exhaustion.
-  const attempt = (b: PerceptionBinding[] | undefined): {path: number[][]; rng: () => number} | null => {
+  // deterministic. Returns the per-group first-half chords (`path`, length N), the parallel
+  // second-half chords (`secondChords`, non-null only for split groups), the carry chord `next`
+  // (the last group's ending chord), and the rng to continue baking from — or null on exhaustion. A
+  // split group ends on its second-half chord, so the *next* group moves out of `endChord(i) =
+  // secondChords[i] ?? path[i]`. When no group is split the second-half branch consumes no rng, so
+  // the stream (and every existing seed's walk) is byte-for-byte unchanged.
+  const attempt = (
+    b: PerceptionBinding[] | undefined,
+  ): {path: number[][]; secondChords: (number[] | null)[]; next: number[]; rng: () => number} | null => {
     const rng = mulberry32(seed >>> 0);
     const raw = start ? foldOctave(start) : randomStartChord(rng);
     const startChord = identifyChord(raw) ? raw : randomStartChord(rng);
     const path: number[][] = [startChord];
+    const secondChords: (number[] | null)[] = new Array(N).fill(null);
     let expansions = 0;
+    // Stay put when a chord has no stable-superset destinations (preserves the "hold current"
+    // behavior instead of dead-ending).
+    const movesFrom = (chord: number[]): number[][] => {
+      const {table, root} = identifyChord(chord)!;
+      const cands = nextChordCandidates(table, root, strategy);
+      return cands.length ? cands : [chord];
+    };
     const dfs = (i: number): boolean => {
-      if (i === N) return true; // groups 0..N-1 assigned; path[N] is the carry
       if (++expansions > MAX_EXPANSIONS) return false;
-      const {table, root} = identifyChord(path[i])!;
-      const candidates = nextChordCandidates(table, root, strategy);
-      // Stay put when a chord has no stable-superset destinations (preserves the original loop's
-      // "hold current" behavior instead of dead-ending).
-      const base = candidates.length ? candidates : [path[i]];
-      // The carry (i + 1 === N) never carries a pin; groups 1..N-1 may.
-      const chordPin = i + 1 < N ? (b?.[i + 1]?.chordSource ?? null) : null;
-      const nexts =
-        chordPin !== null
-          ? base.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
-          : shuffle(base, rng);
-      for (const n of nexts) {
-        path[i + 1] = n;
-        if (dfs(i + 1)) return true;
+      // Roll the second-half chord first for a split group (a legal move out of path[i]); the next
+      // group then continues from it. proceed() advances to group i+1 (or finishes at i === N-1).
+      const proceed = (): boolean => {
+        if (i === N - 1) return true; // last group assigned; carry = endChord(N-1)
+        const from = secondChords[i] ?? path[i];
+        const base = movesFrom(from);
+        const chordPin = b?.[i + 1]?.chordSource ?? null; // group i+1 ∈ 1..N-1
+        const nexts =
+          chordPin !== null
+            ? base.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
+            : shuffle(base, rng);
+        for (const n of nexts) {
+          path[i + 1] = n;
+          if (dfs(i + 1)) return true;
+        }
+        return false;
+      };
+      if (!b?.[i]?.splitSecondHalf) {
+        secondChords[i] = null;
+        return proceed();
       }
+      for (const s of shuffle(movesFrom(path[i]), rng)) {
+        secondChords[i] = s;
+        if (proceed()) return true;
+      }
+      secondChords[i] = null;
       return false;
     };
-    return dfs(0) ? {path, rng} : null;
+    if (!dfs(0)) return null;
+    return {path, secondChords, next: secondChords[N - 1] ?? path[N - 1], rng};
   };
 
   if (bindings) {
     const bound = attempt(bindings);
     if (bound)
-      return {steps: buildSteps(bound.path.slice(0, N), bindings, bound.rng), next: bound.path[N], unsatisfied: false};
+      return {steps: buildSteps(bound.path, bound.secondChords, bindings, bound.rng), next: bound.next, unsatisfied: false};
   }
   const free = attempt(undefined);
   if (free)
-    return {steps: buildSteps(free.path.slice(0, N), undefined, free.rng), next: free.path[N], unsatisfied: bindings != null};
+    return {steps: buildSteps(free.path, free.secondChords, undefined, free.rng), next: free.next, unsatisfied: bindings != null};
   // Defensive: no walk at all (should not happen with stay-put) — repeat the resolved start.
   const rng = mulberry32(seed >>> 0);
   const raw = start ? foldOctave(start) : randomStartChord(rng);
   const startChord = identifyChord(raw) ? raw : randomStartChord(rng);
   return {
-    steps: buildSteps(Array.from({length: N}, () => startChord), undefined, rng),
+    steps: buildSteps(
+      Array.from({length: N}, () => startChord),
+      new Array(N).fill(null),
+      undefined,
+      rng,
+    ),
     next: startChord,
     unsatisfied: bindings != null,
   };
@@ -427,53 +478,82 @@ export function generatePerceptionLoop(
     return startId ? foldOctave(start!) : randomStartChord(rng);
   };
 
-  // One DFS attempt at a closing cycle, seeded fresh. Returns the chord path (length N, path[0] =
-  // origin) and the rng to continue baking from, or null on exhaustion. `b` toggles the chord pins.
+  // One DFS attempt at a closing cycle, seeded fresh. Returns the per-group first-half chords
+  // (`path`, length N, path[0] = origin), the parallel second-half chords (`secondChords`, non-null
+  // only for split groups), and the rng to continue baking from, or null on exhaustion. `b` toggles
+  // the chord pins and the sub-phrase split. A split group ends on its second-half chord, so the
+  // next group moves out of `endChord(i) = secondChords[i] ?? path[i]`, and the loop closes when
+  // `endChord(N-1)` reaches the origin. With no split the second-half branch consumes no rng, so an
+  // unsplit loop's stream (and every existing seed) is unchanged.
   const attempt = (
     b: PerceptionBinding[] | undefined,
-  ): {origin: number[]; path: number[][]; rng: () => number} | null => {
+  ): {origin: number[]; path: number[][]; secondChords: (number[] | null)[]; rng: () => number} | null => {
     const rng = mulberry32(seed >>> 0);
     const origin = resolveOrigin(rng);
     const originKey = origin.join(',');
+    const secondChords: (number[] | null)[] = new Array(N).fill(null);
 
-    if (N <= 1) return {origin, path: [origin], rng};
+    if (N <= 1) return {origin, path: [origin], secondChords, rng};
 
     let expansions = 0;
     const path: number[][] = [origin];
+    const movesFrom = (chord: number[]): number[][] => {
+      const {table, root} = identifyChord(chord)!;
+      const cands = nextChordCandidates(table, root, strategy);
+      return cands.length ? cands : [chord];
+    };
     const dfs = (i: number): boolean => {
       if (++expansions > MAX_EXPANSIONS) return false;
-      const {table, root} = identifyChord(path[i])!;
-      const candidates = nextChordCandidates(table, root, strategy);
-      if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
-      // Chord pin: force group i+1 to the pinned earlier group's chord when it is a legal move,
-      // else this branch has no next and backtracks. Group i+1 ≥ 1, so path[chordSource] is set.
-      const chordPin = b?.[i + 1]?.chordSource ?? null;
-      const nexts =
-        chordPin !== null
-          ? candidates.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
-          : shuffle(candidates, rng);
-      for (const n of nexts) {
-        path[i + 1] = n;
-        if (dfs(i + 1)) return true;
+      const proceed = (): boolean => {
+        const from = secondChords[i] ?? path[i];
+        const {table, root} = identifyChord(from)!;
+        const candidates = nextChordCandidates(table, root, strategy);
+        if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
+        // Chord pin: force group i+1 to the pinned earlier group's chord when it is a legal move,
+        // else this branch has no next and backtracks. Group i+1 ≥ 1, so path[chordSource] is set.
+        const chordPin = b?.[i + 1]?.chordSource ?? null;
+        const nexts =
+          chordPin !== null
+            ? candidates.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
+            : shuffle(candidates, rng);
+        for (const n of nexts) {
+          path[i + 1] = n;
+          if (dfs(i + 1)) return true;
+        }
+        return false;
+      };
+      if (!b?.[i]?.splitSecondHalf) {
+        secondChords[i] = null;
+        return proceed();
       }
+      for (const s of shuffle(movesFrom(path[i]), rng)) {
+        secondChords[i] = s;
+        if (proceed()) return true;
+      }
+      secondChords[i] = null;
       return false;
     };
-    return dfs(0) ? {origin, path, rng} : null;
+    return dfs(0) ? {origin, path, secondChords, rng} : null;
   };
 
   if (bindings) {
     const bound = attempt(bindings);
     if (bound)
-      return {steps: buildSteps(bound.path, bindings, bound.rng), origin: bound.origin, unsatisfied: false};
+      return {steps: buildSteps(bound.path, bound.secondChords, bindings, bound.rng), origin: bound.origin, unsatisfied: false};
   }
   const free = attempt(undefined);
   if (free)
-    return {steps: buildSteps(free.path, undefined, free.rng), origin: free.origin, unsatisfied: bindings != null};
+    return {steps: buildSteps(free.path, free.secondChords, undefined, free.rng), origin: free.origin, unsatisfied: bindings != null};
   // No closing cycle at all: repeat the origin in every group (unbound).
   const rng = mulberry32(seed >>> 0);
   const origin = resolveOrigin(rng);
   return {
-    steps: buildSteps(Array.from({length: N}, () => origin), undefined, rng),
+    steps: buildSteps(
+      Array.from({length: N}, () => origin),
+      new Array(N).fill(null),
+      undefined,
+      rng,
+    ),
     origin,
     unsatisfied: bindings != null,
   };

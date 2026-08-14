@@ -34,7 +34,9 @@ import {
 import {
   generatePerceptionLoop,
   generatePerceptionWalk,
+  type PerceptionBinding,
   type PerceptionStep,
+  type PerceptionSubStep,
   type WalkStrategy,
 } from '@site/src/lib/perceptionTables';
 import {enumerateAll, type Voicing} from '@site/src/lib/voicings';
@@ -105,14 +107,17 @@ export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 export type PerceptionWalkSet = {start?: number[]; strategy?: WalkStrategy};
 
 // The baked per-group step shape the scheduler consumes, shared by chord-walk and perception-walk.
-// `openingKey` is only populated by perception-walk (chord-walk leaves it absent).
-type BakedWalkStep = {
+// `openingKey` is only populated by perception-walk (chord-walk leaves it absent). `second` is set
+// only for a perception-walk split (`Ba`) group: the second-half sub-unit's own voicing, melody
+// pool, placement label, and opening key, struck at the group's mid-point (see bakePerceptionSteps).
+type BakedSubStep = {
   triad: number[];
   offsets: number[] | null;
   melodyKeys: number[] | null;
   placementLabel: string | null;
   openingKey?: number | null;
 };
+type BakedWalkStep = BakedSubStep & {second?: BakedSubStep};
 
 // The melody source per group. Only 'bridging' (draw from the placement containing both this chord
 // and the next) is implemented; the constant documents the seam for a future 'any-current' strategy
@@ -142,14 +147,21 @@ function bakeWalkSteps(walk: RawWalkStep[], pitchHz: number): BakedWalkStep[] {
 
 // Map a perception walk to the same baked step shape, carrying the opening key (the unit's first
 // note, sounded so the early key that chose the placement is heard). The melody pool is the chosen
-// placement's folded key set.
-function bakePerceptionSteps(steps: PerceptionStep[], pitchHz: number): BakedWalkStep[] {
-  return steps.map((s) => ({
+// placement's folded key set. A split (`Ba`) group's second sub-unit bakes to `second` the same way,
+// so the scheduler can strike its chord and draw its melody across the group's second half.
+function bakePerceptionSubStep(s: PerceptionSubStep, pitchHz: number): BakedSubStep {
+  return {
     triad: s.chord,
     offsets: chordOffsets(s.chord, pitchHz),
     melodyKeys: foldOctave(s.placement.keys),
     placementLabel: s.placement.label,
     openingKey: ((s.openingKey % 12) + 12) % 12,
+  };
+}
+function bakePerceptionSteps(steps: PerceptionStep[], pitchHz: number): BakedWalkStep[] {
+  return steps.map((s) => ({
+    ...bakePerceptionSubStep(s, pitchHz),
+    ...(s.second ? {second: bakePerceptionSubStep(s.second, pitchHz)} : {}),
   }));
 }
 
@@ -190,6 +202,35 @@ function deriveWalkBindings(
     const placementSource = bindPlacements ? src : null;
     if (chordSource !== null || placementSource !== null) any = true;
     return {chordSource, placementSource};
+  });
+  return any ? bindings : null;
+}
+
+// Perception-walk analogue of deriveWalkBindings, adding the sub-phrase split. Chord/placement pins
+// still ride on FULL repeats and the enabled axes; additionally every half-repeat (`Ba`) group is
+// marked `splitSecondHalf` so its second half becomes its own perception sub-unit (a new chord +
+// placement the following group continues from) — regardless of the bind checkboxes. Returns a
+// non-null array whenever anything binds OR any group splits, so a phrase of only `Ba` groups with
+// no axis checked still triggers the split; null when there is nothing to do (no phrase, or a phrase
+// with no repeats and no half-repeats).
+//
+// Known limitation: a FULL repeat of a half-repeat group (e.g. `ABaB`) pins only via the source's
+// first-half chord (chordSource → path[src]); the source group's second-half (B-part) chord is not
+// reproduced. An accepted edge case.
+function derivePerceptionBindings(
+  repeats: GroupRepeat[] | null,
+  bindChords: boolean,
+  bindPlacements: boolean,
+): PerceptionBinding[] | null {
+  if (!repeats) return null;
+  let any = false;
+  const bindings = repeats.map((rep) => {
+    const src = rep.fullSource; // half-repeats never bind harmony
+    const chordSource = bindChords ? src : null;
+    const placementSource = bindPlacements ? src : null;
+    const splitSecondHalf = rep.halfSource !== null;
+    if (chordSource !== null || placementSource !== null || splitSecondHalf) any = true;
+    return {chordSource, placementSource, splitSecondHalf};
   });
   return any ? bindings : null;
 }
@@ -505,6 +546,11 @@ const firingPulseIndices = (pulses: Pulse[]): number[] => {
 // note already IS the source group's opening key. Overriding it with this group's own opening key
 // would clobber the faithful copy, so the override is SKIPPED for such groups: the restated motif
 // carries its (source) perception opening along with it.
+//
+// For a split (`Ba`) group, the FIRST event of its SECOND half is additionally forced to the second
+// sub-step's opening key (`steps[g].second.openingKey`), so the B part articulates the new
+// perception that chose its placement. That override always applies — the second half is never a
+// copy — so it is independent of `bindMelody`.
 function applyOpeningKeys(
   keys: number[],
   firingPulseIdx: number[],
@@ -519,16 +565,26 @@ function applyOpeningKeys(
       if (pi >= ranges[g].start && pi < ranges[g].start + ranges[g].count) return g;
     return ranges.length - 1;
   };
-  const seen = new Set<number>();
+  const seenFirst = new Set<number>();
+  const seenSecond = new Set<number>();
   firingPulseIdx.forEach((pi, e) => {
     const g = groupOf(pi);
-    if (seen.has(g)) return;
-    seen.add(g);
-    // Melody-bound repeat: leave the copied opening (source group's key) untouched.
-    const rep = repeats?.[g];
-    if (bindMelody && rep && (rep.fullSource !== null || rep.halfSource !== null)) return;
-    const ok = steps[g]?.openingKey;
-    if (ok != null) out[e] = ((ok % 12) + 12) % 12;
+    const half = Math.floor(ranges[g].count / 2);
+    if (pi - ranges[g].start < half) {
+      // First half: this group's own opening key (unless a melody-bound repeat keeps the copy).
+      if (seenFirst.has(g)) return;
+      seenFirst.add(g);
+      const rep = repeats?.[g];
+      if (bindMelody && rep && (rep.fullSource !== null || rep.halfSource !== null)) return;
+      const ok = steps[g]?.openingKey;
+      if (ok != null) out[e] = ((ok % 12) + 12) % 12;
+    } else {
+      // Second half: a split group's B-part opening key (no-op when the group has no second unit).
+      if (seenSecond.has(g)) return;
+      seenSecond.add(g);
+      const ok = steps[g]?.second?.openingKey;
+      if (ok != null) out[e] = ((ok % 12) + 12) % 12;
+    }
   });
   return out;
 }
@@ -901,14 +957,22 @@ export default function RhythmPatternPlayerClient({
       }
     return out;
   }, [chordWalkOn, curatedPool, walkHeuristicIdx]);
-  // Per-group walk bindings derived from the phrase + chosen bind mode — null when nothing binds
-  // ('rhythm' mode, no phrase, or no full repeats), so the walk stays free (today's behavior).
+  // Per-group chord-walk bindings derived from the phrase + chosen bind mode — null when nothing
+  // binds ('rhythm' mode, no phrase, or no full repeats), so the walk stays free (today's behavior).
   const walkBindings = useMemo(
     () =>
-      chordWalkOn || perceptionWalkOn
-        ? deriveWalkBindings(phraseRepeats, bindChords, bindPlacements)
+      chordWalkOn ? deriveWalkBindings(phraseRepeats, bindChords, bindPlacements) : null,
+    [chordWalkOn, phraseRepeats, bindChords, bindPlacements],
+  );
+  // Perception-walk bindings: the same chord/placement pins plus the sub-phrase split flag, so a
+  // `Ba` group's second half rolls its own chord + placement. Non-null whenever anything binds OR
+  // any group is a half-repeat (see derivePerceptionBindings).
+  const perceptionBindings = useMemo(
+    () =>
+      perceptionWalkOn
+        ? derivePerceptionBindings(phraseRepeats, bindChords, bindPlacements)
         : null,
-    [chordWalkOn, perceptionWalkOn, phraseRepeats, bindChords, bindPlacements],
+    [perceptionWalkOn, phraseRepeats, bindChords, bindPlacements],
   );
   // The baked cyclic walk — one step per meter group: the chord to sound (its pitch classes + voiced
   // offsets) and the folded melody pool (the bridging placement, per WALK_MELODY_STRATEGY). Seeded
@@ -951,10 +1015,10 @@ export default function RhythmPatternPlayerClient({
       N,
       seed ^ 0x2545f491,
       walkStrategy,
-      walkBindings ?? undefined,
+      perceptionBindings ?? undefined,
     );
     return {steps: bakePerceptionSteps(steps, pitchHz), origin, unsatisfied};
-  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy, walkBindings]);
+  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy, perceptionBindings]);
   const perceptionWalkSteps = perceptionWalkRaw?.steps ?? null;
   // The active walk's baked steps, whichever mode is on (mutually exclusive). Downstream melody /
   // scheduler code reads this rather than either mode's memo directly.
@@ -1036,6 +1100,8 @@ export default function RhythmPatternPlayerClient({
         phraseRepeats,
         bindMelody,
         rng,
+        // Perception split groups draw their second half from the B-part placement pool.
+        perceptionWalkOn ? walkSteps.map((s) => s.second?.melodyKeys ?? null) : undefined,
       );
       // Perception-walk: force each group's first note to its opening key (the note that chose the
       // placement); chord-walk has no opening key so its baked phrase is used as-is.
@@ -1162,6 +1228,12 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     walkBindingsRef.current = walkBindings;
   }, [walkBindings]);
+  // Perception-walk bindings (chord/placement pins + sub-phrase split), mirrored so the scheduler's
+  // per-cycle re-roll keeps the `Ba` split live across a mid-play phrase / checkbox change.
+  const perceptionBindingsRef = useRef(perceptionBindings);
+  useEffect(() => {
+    perceptionBindingsRef.current = perceptionBindings;
+  }, [perceptionBindings]);
   // The parsed phrase and the melody-bind flag, mirrored so the scheduler's per-cycle melody bake
   // (loop-off parity) honors a mid-play phrase / checkbox change live, like the walk refs above.
   const phraseRepeatsRef = useRef(phraseRepeats);
@@ -1458,10 +1530,16 @@ export default function RhythmPatternPlayerClient({
     // group's baked triad voicing.
     const groupBeatsByStart = new Map<number, number>();
     const groupIdxByStart = new Map<number, number>();
+    // Perception-walk sub-phrase split: the mid-group beat of each even-length group → its index, so
+    // a split (`Ba`) group can strike its second-half chord there. The half-boundary beat
+    // (start + m/2) is strictly inside the group (m/2 < m) so it never collides with any group start;
+    // it only actually strikes when the current cycle's step for that group has a `second` sub-unit.
+    const groupHalfByBeat = new Map<number, number>();
     let groupAcc = 0;
     patternMeter.forEach((m, gi) => {
       groupBeatsByStart.set(groupAcc, m);
       groupIdxByStart.set(groupAcc, gi);
+      if (m % 2 === 0) groupHalfByBeat.set(groupAcc + m / 2, gi);
       groupAcc += m;
     });
     // Chord-walk mode: the walk re-rolls per loop (unless loop melody is on), so keep it cycle-local
@@ -1480,6 +1558,10 @@ export default function RhythmPatternPlayerClient({
         ? chordWalkStepsRef.current
         : null;
     let cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
+    // Per-group second-half (B-part) melody pool for perception split (`Ba`) groups; null for
+    // non-split groups and outside perception mode. Refreshed alongside cycleWalkPools each pass.
+    let cycleSecondPools =
+      perceptionWalkOn && cycleSteps ? cycleSteps.map((s) => s.second?.melodyKeys ?? null) : null;
     // Free-roam carry: the chord the *next* loop pass starts from. Both walks seed it at the origin
     // and only advance it in free-roam (the default closed loop always returns to the origin, so the
     // carry stays put); see the re-roll block below.
@@ -1497,12 +1579,21 @@ export default function RhythmPatternPlayerClient({
     // Bar index of each onset, aligned with `events`, for live loop-off recolouring.
     const firingPulseIdx = firingPulseIndices(pulses);
     // Perception-walk: the firing-event ordinal that opens each meter group (its earliest onset),
-    // so the scheduler can force that note to the group's opening key. Empty in other modes.
+    // so the scheduler can force that note to the group's opening key. `groupSecondHalfFirstEvent`
+    // is the earliest onset in a group's SECOND half (for an even-length group), where a split
+    // (`Ba`) group's B-part opening key is forced. Empty in other modes.
     const groupFirstEvent = new Map<number, number>();
+    const groupSecondHalfFirstEvent = new Map<number, number>();
     if (perceptionWalkOn && walkStarts)
       events.forEach((ev, e) => {
         const gi = groupIndexOf(ev.unitBeat, walkStarts);
         if (!groupFirstEvent.has(gi)) groupFirstEvent.set(gi, e);
+        if (
+          patternMeter[gi] % 2 === 0 &&
+          ev.unitBeat >= walkStarts[gi] + patternMeter[gi] / 2 &&
+          !groupSecondHalfFirstEvent.has(gi)
+        )
+          groupSecondHalfFirstEvent.set(gi, e);
       });
     const N = events.length;
     if (N === 0) return;
@@ -1546,7 +1637,7 @@ export default function RhythmPatternPlayerClient({
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
                 walkStrategyRef.current,
-                walkBindingsRef.current ?? undefined,
+                perceptionBindingsRef.current ?? undefined,
               );
               setBindingUnsatisfied(unsatisfied);
               carryChord = next;
@@ -1557,7 +1648,7 @@ export default function RhythmPatternPlayerClient({
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
                 walkStrategyRef.current,
-                walkBindingsRef.current ?? undefined,
+                perceptionBindingsRef.current ?? undefined,
               );
               setBindingUnsatisfied(unsatisfied);
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
@@ -1611,6 +1702,11 @@ export default function RhythmPatternPlayerClient({
             }
           }
           cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
+          // The second-half melody pool per group (perception split groups), aligned with cycleSteps.
+          cycleSecondPools =
+            perceptionWalkOn && cycleSteps
+              ? cycleSteps.map((s) => s.second?.melodyKeys ?? null)
+              : null;
           // Melody binding (loop-off parity): bake this cycle's melody so a repeated group replays
           // the group it repeats's motif note-for-note; unbound events draw fresh from their pool.
           // Loop-melody-on uses the frozen bakedKeys instead (handled in the per-hit draw below).
@@ -1624,6 +1720,7 @@ export default function RhythmPatternPlayerClient({
                   phraseRepeatsRef.current,
                   true,
                   Math.random,
+                  cycleSecondPools ?? undefined,
                 )
               : null;
           // Perception-walk: open each group on its opening key in the bound melody too (the
@@ -1644,41 +1741,65 @@ export default function RhythmPatternPlayerClient({
         // lowest-penalty voicing, rooted an octave below the melody. In progression mode each
         // group gets a triad: the baked one (loop chords on) or a fresh random draw from the
         // set's minor-second-free pool (loop off); otherwise it is the single static chord
-        // (chordVoicingRef). displayTriad feeds the "playing" readout via the Draw callback.
+        // (chordVoicingRef). A perception split (`Ba`) group strikes twice: its first-half chord at
+        // the group start (held for half the group) and its second-half (B-part) chord at the
+        // mid-point. displayTriad feeds the "playing" readout via the Draw callback.
         const groupBeats = groupBeatsByStart.get(ev.unitBeat);
+        const halfGi = groupHalfByBeat.get(ev.unitBeat);
         let displayTriad: number[] | null = null;
         let displayPlacement: string | null = null;
-        if (chordSynth && groupBeats !== undefined) {
-          let offsets: number[] | null;
-          if (progressionOn) {
+        // True when this onset carries a chord re-strike (a group start, or a split group's
+        // mid-point) — gates the "playing" readout update in the Draw callback below.
+        let chordOnset = false;
+        if (chordSynth) {
+          let offsets: number[] | null = null;
+          let holdBeats = 0;
+          if (groupBeats !== undefined) {
+            chordOnset = true;
             const gi = groupIdxByStart.get(ev.unitBeat)!;
-            const pool = progressionTriadsRef.current;
-            const groupChord =
-              loopChordsRef.current || !pool || pool.length === 0
-                ? (progressionChordsRef.current?.[gi] ?? null)
-                : (() => {
-                    const triad = pool[Math.floor(Math.random() * pool.length)];
-                    return {triad, offsets: chordOffsets(triad, pitchHz)};
-                  })();
-            offsets = groupChord?.offsets ?? null;
-            displayTriad = groupChord?.triad ?? null;
-          } else if (walkOn) {
-            // Use this group's step from the current cycle's walk (chord-walk re-rolls a closed
-            // cycle per loop; perception-walk wanders open — both re-baked at the pass boundary).
-            const gi = groupIdxByStart.get(ev.unitBeat)!;
-            const step = cycleSteps?.[gi] ?? null;
-            offsets = step?.offsets ?? null;
-            displayTriad = step?.triad ?? null;
-            displayPlacement = step?.placementLabel ?? null;
-          } else {
-            offsets = chordVoicingRef.current;
+            if (progressionOn) {
+              const pool = progressionTriadsRef.current;
+              const groupChord =
+                loopChordsRef.current || !pool || pool.length === 0
+                  ? (progressionChordsRef.current?.[gi] ?? null)
+                  : (() => {
+                      const triad = pool[Math.floor(Math.random() * pool.length)];
+                      return {triad, offsets: chordOffsets(triad, pitchHz)};
+                    })();
+              offsets = groupChord?.offsets ?? null;
+              displayTriad = groupChord?.triad ?? null;
+              holdBeats = groupBeats;
+            } else if (walkOn) {
+              // Use this group's step from the current cycle's walk (chord-walk re-rolls a closed
+              // cycle per loop; perception-walk wanders open — both re-baked at the pass boundary).
+              const step = cycleSteps?.[gi] ?? null;
+              offsets = step?.offsets ?? null;
+              displayTriad = step?.triad ?? null;
+              displayPlacement = step?.placementLabel ?? null;
+              // A split group's first-half chord holds only to the mid-point, where the second strikes.
+              holdBeats = step?.second ? groupBeats / 2 : groupBeats;
+            } else {
+              offsets = chordVoicingRef.current;
+              holdBeats = groupBeats;
+            }
+          } else if (halfGi !== undefined && walkOn) {
+            // Perception split group's mid-point: strike the second-half (B-part) chord for the rest
+            // of the group. No-op for an even group that isn't actually split (no `second`).
+            const second = cycleSteps?.[halfGi]?.second ?? null;
+            if (second) {
+              chordOnset = true;
+              offsets = second.offsets;
+              displayTriad = second.triad;
+              displayPlacement = second.placementLabel;
+              holdBeats = patternMeter[halfGi] / 2;
+            }
           }
-          if (offsets && offsets.length > 0) {
+          if (offsets && offsets.length > 0 && holdBeats > 0) {
             const freqs = offsets.map((off) => pitchHz * Math.pow(2, off / 12));
-            // Hold for most of the group but stop short of the next group start, leaving a
+            // Hold for most of the segment but stop short of the next onset, leaving a
             // brief gap (like the melody's short blips) so each re-strike articulates
             // instead of butting up against the next and sounding continuous.
-            chordSynth.triggerAttackRelease(freqs, groupBeats * sec * 0.95, at);
+            chordSynth.triggerAttackRelease(freqs, holdBeats * sec * 0.95, at);
           }
         }
         const vel = ev.velocity / 127;
@@ -1692,7 +1813,14 @@ export default function RhythmPatternPlayerClient({
         // to the global pool for a group whose bridging pool is empty.
         let okeys = octaveKeysRef.current;
         if (cycleWalkPools && walkStarts) {
-          const gp = cycleWalkPools[groupIndexOf(ev.unitBeat, walkStarts)];
+          const gi = groupIndexOf(ev.unitBeat, walkStarts);
+          // A perception split group's second half draws from its B-part pool; otherwise the group pool.
+          const inSecondHalf =
+            perceptionWalkOn &&
+            patternMeter[gi] % 2 === 0 &&
+            ev.unitBeat >= walkStarts[gi] + patternMeter[gi] / 2;
+          const gp =
+            (inSecondHalf && cycleSecondPools ? cycleSecondPools[gi] : null) ?? cycleWalkPools[gi];
           if (gp && gp.length) okeys = gp;
         }
         let freq = pitchHz;
@@ -1714,10 +1842,16 @@ export default function RhythmPatternPlayerClient({
           // Perception-walk: if this event opens its meter group, sound the group's opening key
           // (the note that selected the placement/perception) instead of a drawn pitch. Overrides
           // every path — baked, bound, and live — so the perception is always articulated first.
+          // A split (`Ba`) group's second half likewise opens on its B-part opening key.
           if (perceptionWalkOn && cycleSteps && walkStarts) {
             const gi = groupIndexOf(ev.unitBeat, walkStarts);
-            const ok = cycleSteps[gi]?.openingKey;
-            if (groupFirstEvent.get(gi) === i % N && ok != null) key = ((ok % 12) + 12) % 12;
+            if (groupFirstEvent.get(gi) === i % N) {
+              const ok = cycleSteps[gi]?.openingKey;
+              if (ok != null) key = ((ok % 12) + 12) % 12;
+            } else if (groupSecondHalfFirstEvent.get(gi) === i % N) {
+              const ok = cycleSteps[gi]?.second?.openingKey;
+              if (ok != null) key = ((ok % 12) + 12) % 12;
+            }
           }
           freq = pitchHz * Math.pow(2, key / 12);
           if (!loopOn) colourKey = key;
@@ -1726,14 +1860,13 @@ export default function RhythmPatternPlayerClient({
         // playhead to this bar (all players) and, for loop-off melody, recolour it live.
         const bar = firingPulseIdx[i % N];
         const beat = ev.unitBeat;
-        const isGroupStart = groupBeats !== undefined;
         Tone.getDraw().schedule(() => {
           if (playRunRef.current !== runId || !plotRef.current) return; // stale run / no plot
           playheadBeatRef.current = beat;
-          // At a meter group start in progression mode, surface the sounding triad in the
-          // "playing" readout (a slow, at-most-per-group state update).
-          if (isGroupStart && (progressionOn || walkOn)) setCurrentChord(displayTriad);
-          if (isGroupStart && walkOn) setCurrentPlacement(displayPlacement);
+          // At a chord onset (group start, or a split group's mid-point), surface the sounding triad
+          // in the "playing" readout (a slow, at-most-per-segment state update).
+          if (chordOnset && (progressionOn || walkOn)) setCurrentChord(displayTriad);
+          if (chordOnset && walkOn) setCurrentPlacement(displayPlacement);
           if (colourKey != null) {
             (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
               pitchFill(colourKey);

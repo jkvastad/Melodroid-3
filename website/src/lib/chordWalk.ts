@@ -415,6 +415,12 @@ export function parsePhraseBinds(s: string): Record<PhraseBindAxis, boolean> {
 // index); `ranges` are the per-group pulse ranges (groupPulseRanges); `groupPools[g]` is group
 // g's folded melody pool; `fallbackPool` covers a group with an empty pool; `repeats` is the
 // parsed phrase (one per group). All randomness flows through `rng`.
+//
+// `secondPools` (optional, perception-walk only) supplies a distinct pool for the SECOND half of a
+// split (`Ba`) group: a fresh-draw event whose offset lands in the group's second half draws from
+// `secondPools[g]` (when set) instead of `groupPools[g]`, so the B part's melody follows its own
+// new placement. Bound (copied) events are unaffected — only the second half of a split group is
+// ever both fresh and second-pooled. Omitted ⇒ today's single-pool behavior.
 export function bakeMelody(
   firingPulseIdx: number[],
   ranges: {start: number; count: number}[],
@@ -423,6 +429,7 @@ export function bakeMelody(
   repeats: GroupRepeat[] | null,
   bindMelody: boolean,
   rng: () => number,
+  secondPools?: (number[] | null)[],
 ): number[] {
   // pulse index → firing-event ordinal, so a bound event can find its aligned source event.
   const eventOfPulse = new Map<number, number>();
@@ -460,8 +467,11 @@ export function bakeMelody(
       }
     }
 
-    // Unbound (or defensive fallback): fresh draw from this group's pool.
-    const pool = groupPools[g] ?? fallbackPool;
+    // Unbound (or defensive fallback): fresh draw from this group's pool — the second-half pool
+    // when this event lands in the second half of a split group and one is supplied.
+    const secondPool =
+      secondPools && offset >= Math.floor(ranges[g].count / 2) ? secondPools[g] : null;
+    const pool = secondPool ?? groupPools[g] ?? fallbackPool;
     keys[e] = pool && pool.length ? pool[Math.floor(rng() * pool.length)] : 0;
   }
   return keys;
