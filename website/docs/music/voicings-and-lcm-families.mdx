@@ -992,8 +992,13 @@ For minor 0 3 7 this is 24@3,8,10 and 15@2.
   meter="4 4 4 4"
   subdivisions="4"
   bpm={100}
+  phrases
+  phrase="ABaACa"
   perceptionWalk={{start: [0, 4, 7], strategy: 'supersets'}}
 />
+
+Just as in chord walk, adding a phrase (e.g. `ABaACa`) lets us bind a repeated group's **chords**, **placements**, and/or **melody** back to the group it repeats.
+Binding chords pins the repeated group to the same triad (found by the same move graph), binding placements restates its opening key and placement, and binding melody restates the group's motif note-for-note — opening note included, so the perception opening is carried faithfully along with the duplicated melody rather than being overwritten by the repeat's own opening key.
 
 Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor/dim triad destination.
 This is exactly the move graph the `perceptionWalk` mode walks: a chord may progress to any triad below marked with a superset (— means no stable superset owns it).
@@ -1066,6 +1071,18 @@ We can now hear all three chord-target strategies side by side. Only the rule fo
   perceptionWalk={{start: [0, 4, 7], strategy: 'both'}}
 />
 
+We can combine all this with phrasing as well: 
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={108}
+  syncopation={0.25}
+  resolution={0.95}
+  phrases
+  phrase="ABaACa"
+  perceptionWalk={{strategy: 'both'}}
+/>
 
 [^sethares]: William A. Sethares, *Tuning, Timbre, Spectrum, Scale*,
 2nd ed. (Springer, 2005), [PDF](https://sethares.engr.wisc.edu/paperspdf/ttss.pdf).

@@ -63,10 +63,10 @@ export type RhythmPatternPlayerProps = {
   chordWalk?: ChordWalkSet; // chord-walk mode: a *cyclic* progression — one chord per meter group,
   // adjacent (and wrap) chords linked by a shared curated placement, melody drawn from the bridging
   // placement, returning to the origin chord (this page only)
-  phraseBinds?: string; // in chord-walk mode, which axes the phrase binds: a '+'-joined subset
-  // of 'chords' · 'placements' · 'melody' (e.g. 'chords+placements+melody'), or 'rhythm' / '' for
-  // none (default, rhythm only). Sets the initial checkbox state; only meaningful with both
-  // `phrases` and `chordWalk` (this page only)
+  phraseBinds?: string; // in chord-walk / perception-walk mode, which axes the phrase binds: a
+  // '+'-joined subset of 'chords' · 'placements' · 'melody' (e.g. 'chords+placements+melody'), or
+  // 'rhythm' / '' for none (default, rhythm only). Sets the initial checkbox state; only meaningful
+  // with both `phrases` and one of `chordWalk` / `perceptionWalk` (this page only)
   perceptionWalk?: PerceptionWalkSet; // perception-walk mode: an OPEN progression where each meter
   // group picks a random opening key from the current chord's perception table, commits to that
   // entry's placement (melody drawn from it, opening key sounded first), and wanders to the next
@@ -499,11 +499,19 @@ const firingPulseIndices = (pulses: Pulse[]): number[] => {
 // order); `ranges` the per-group pulse ranges; `steps` the baked walk steps (openingKey per group).
 // Returns a new array. Used for both the baked phrase and the live scheduler draw so all paths open
 // on the perception's key.
+//
+// When melody binding is on, a group that repeats an earlier group (`repeats[g].fullSource` or
+// `halfSource` set) has its opening firing event copied verbatim from that earlier group — its first
+// note already IS the source group's opening key. Overriding it with this group's own opening key
+// would clobber the faithful copy, so the override is SKIPPED for such groups: the restated motif
+// carries its (source) perception opening along with it.
 function applyOpeningKeys(
   keys: number[],
   firingPulseIdx: number[],
   ranges: {start: number; count: number}[],
   steps: BakedWalkStep[],
+  repeats: GroupRepeat[] | null,
+  bindMelody: boolean,
 ): number[] {
   const out = [...keys];
   const groupOf = (pi: number): number => {
@@ -516,6 +524,9 @@ function applyOpeningKeys(
     const g = groupOf(pi);
     if (seen.has(g)) return;
     seen.add(g);
+    // Melody-bound repeat: leave the copied opening (source group's key) untouched.
+    const rep = repeats?.[g];
+    if (bindMelody && rep && (rep.fullSource !== null || rep.halfSource !== null)) return;
     const ok = steps[g]?.openingKey;
     if (ok != null) out[e] = ((ok % 12) + 12) % 12;
   });
@@ -894,10 +905,10 @@ export default function RhythmPatternPlayerClient({
   // ('rhythm' mode, no phrase, or no full repeats), so the walk stays free (today's behavior).
   const walkBindings = useMemo(
     () =>
-      chordWalkOn
+      chordWalkOn || perceptionWalkOn
         ? deriveWalkBindings(phraseRepeats, bindChords, bindPlacements)
         : null,
-    [chordWalkOn, phraseRepeats, bindChords, bindPlacements],
+    [chordWalkOn, perceptionWalkOn, phraseRepeats, bindChords, bindPlacements],
   );
   // The baked cyclic walk — one step per meter group: the chord to sound (its pitch classes + voiced
   // offsets) and the folded melody pool (the bridging placement, per WALK_MELODY_STRATEGY). Seeded
@@ -922,11 +933,6 @@ export default function RhythmPatternPlayerClient({
     return {steps: bakeWalkSteps(walk, pitchHz), unsatisfied};
   }, [chordWalkOn, pattern, curatedPool, walkCandidates, chordWalk, seed, pitchHz, walkBindings]);
   const chordWalkSteps = chordWalkRaw?.steps ?? null;
-  // Reflect the first cycle's binding status into state for the inline note (setState in an effect,
-  // not during render). The scheduler updates it again per re-rolled cycle (loop melody off).
-  useEffect(() => {
-    setBindingUnsatisfied(chordWalkRaw?.unsatisfied ?? false);
-  }, [chordWalkRaw]);
 
   // The baked FIRST perception walk — one step per meter group (chord voicing + opening key +
   // perception + placement melody pool) plus `origin`, the resolved chord the loop closes back to
@@ -940,18 +946,27 @@ export default function RhythmPatternPlayerClient({
   const perceptionWalkRaw = useMemo(() => {
     if (!perceptionWalkOn || !pattern) return null;
     const N = pattern.meter.length;
-    const {steps, origin} = generatePerceptionLoop(
+    const {steps, origin, unsatisfied} = generatePerceptionLoop(
       perceptionWalk!.start ?? null,
       N,
       seed ^ 0x2545f491,
       walkStrategy,
+      walkBindings ?? undefined,
     );
-    return {steps: bakePerceptionSteps(steps, pitchHz), origin};
-  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy]);
+    return {steps: bakePerceptionSteps(steps, pitchHz), origin, unsatisfied};
+  }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy, walkBindings]);
   const perceptionWalkSteps = perceptionWalkRaw?.steps ?? null;
   // The active walk's baked steps, whichever mode is on (mutually exclusive). Downstream melody /
   // scheduler code reads this rather than either mode's memo directly.
   const walkSteps: BakedWalkStep[] | null = chordWalkSteps ?? perceptionWalkSteps;
+  // Reflect the active walk's first-cycle binding status into state for the inline note (setState in
+  // an effect, not during render). Modes are mutually exclusive, so the inactive mode's raw is null.
+  // The scheduler updates it again per re-rolled cycle (loop melody off).
+  useEffect(() => {
+    setBindingUnsatisfied(
+      (chordWalkRaw ?? perceptionWalkRaw)?.unsatisfied ?? false,
+    );
+  }, [chordWalkRaw, perceptionWalkRaw]);
 
   // The pitch pool folded to one octave, or null for fixed pitch / random pitch. In chord
   // mode it is the selected match's LCM family placement (a superset of the chord); in
@@ -1025,7 +1040,7 @@ export default function RhythmPatternPlayerClient({
       // Perception-walk: force each group's first note to its opening key (the note that chose the
       // placement); chord-walk has no opening key so its baked phrase is used as-is.
       return perceptionWalkOn
-        ? applyOpeningKeys(baked, firingPulseIdx, ranges, walkSteps)
+        ? applyOpeningKeys(baked, firingPulseIdx, ranges, walkSteps, phraseRepeats, bindMelody)
         : baked;
     }
     const rng = mulberry32(seed);
@@ -1526,21 +1541,25 @@ export default function RhythmPatternPlayerClient({
             if (i === 0 || loopMelodyRef.current) {
               cycleSteps = perceptionWalkStepsRef.current;
             } else if (roam) {
-              const {steps, next} = generatePerceptionWalk(
+              const {steps, next, unsatisfied} = generatePerceptionWalk(
                 carryChord,
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
                 walkStrategyRef.current,
+                walkBindingsRef.current ?? undefined,
               );
+              setBindingUnsatisfied(unsatisfied);
               carryChord = next;
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
             } else {
-              const {steps} = generatePerceptionLoop(
+              const {steps, unsatisfied} = generatePerceptionLoop(
                 perceptionOriginRef.current,
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
                 walkStrategyRef.current,
+                walkBindingsRef.current ?? undefined,
               );
+              setBindingUnsatisfied(unsatisfied);
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
               // Loop-back returns to the origin CHORD; also restore its ORIGINAL placement + opening
               // key (group 0 of the seeded first cycle). Legal because the perception move graph is
@@ -1610,7 +1629,14 @@ export default function RhythmPatternPlayerClient({
           // Perception-walk: open each group on its opening key in the bound melody too (the
           // live loop-off path applies the same override at the draw site below).
           if (perceptionWalkOn && cycleMelody && walkRanges && cycleSteps)
-            cycleMelody = applyOpeningKeys(cycleMelody, firingPulseIdx, walkRanges, cycleSteps);
+            cycleMelody = applyOpeningKeys(
+              cycleMelody,
+              firingPulseIdx,
+              walkRanges,
+              cycleSteps,
+              phraseRepeatsRef.current,
+              bindMelodyRef.current,
+            );
         }
         // Chord: re-strike the whole voicing at each meter group start, held for that
         // group's length (in live-tempo seconds) so it tracks tempo changes — a slow
@@ -1852,6 +1878,40 @@ export default function RhythmPatternPlayerClient({
     alignItems: 'center',
     gap: '0.4rem',
   } as const;
+
+  // The "phrase binds" checkbox row (chords · placements · melody) — shared by chord-walk and
+  // perception-walk, shown only when `phrases` is on. Each axis toggles independently; see
+  // deriveWalkBindings (chords/placements) and bakeMelody (melody).
+  const phraseBindsControl = phrases ? (
+    <span style={{...labelStyle, gap: '0.6rem'}}>
+      phrase binds
+      {PHRASE_BIND_AXES.map((axis) => {
+        const checked =
+          axis.id === 'chords'
+            ? bindChords
+            : axis.id === 'placements'
+              ? bindPlacements
+              : bindMelody;
+        const setter =
+          axis.id === 'chords'
+            ? setBindChords
+            : axis.id === 'placements'
+              ? setBindPlacements
+              : setBindMelody;
+        return (
+          <label key={axis.id} style={labelStyle}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => setter(e.target.checked)}
+              aria-label={`bind ${axis.id} to the phrase`}
+            />
+            {axis.label}
+          </label>
+        );
+      })}
+    </span>
+  ) : null;
 
   return (
     <div style={{margin: '1rem 0'}}>
@@ -2110,36 +2170,7 @@ export default function RhythmPatternPlayerClient({
                 ))}
               </select>
             </label>
-            {phrases && (
-              <span style={{...labelStyle, gap: '0.6rem'}}>
-                phrase binds
-                {PHRASE_BIND_AXES.map((axis) => {
-                  const checked =
-                    axis.id === 'chords'
-                      ? bindChords
-                      : axis.id === 'placements'
-                        ? bindPlacements
-                        : bindMelody;
-                  const setter =
-                    axis.id === 'chords'
-                      ? setBindChords
-                      : axis.id === 'placements'
-                        ? setBindPlacements
-                        : setBindMelody;
-                  return (
-                    <label key={axis.id} style={labelStyle}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => setter(e.target.checked)}
-                        aria-label={`bind ${axis.id} to the phrase`}
-                      />
-                      {axis.label}
-                    </label>
-                  );
-                })}
-              </span>
-            )}
+            {phraseBindsControl}
             <span style={{...labelStyle, gap: '0.6rem'}}>
               placements
               {chordWalk!.placements.map((p, i) => {
@@ -2171,6 +2202,7 @@ export default function RhythmPatternPlayerClient({
         )}
         {perceptionWalkOn && (
           <>
+            {phraseBindsControl}
             <span style={labelStyle}>
               playing
               <code>{currentChord ? currentChord.join(' ') : '—'}</code>
@@ -2294,7 +2326,7 @@ export default function RhythmPatternPlayerClient({
         </div>
       )}
 
-      {chordWalkOn && (bindChords || bindPlacements) && bindingUnsatisfied && (
+      {(chordWalkOn || perceptionWalkOn) && (bindChords || bindPlacements) && bindingUnsatisfied && (
         <div
           style={{
             color: 'var(--ifm-color-warning-dark)',

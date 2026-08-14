@@ -253,6 +253,54 @@ function buildStep(
   };
 }
 
+// A per-group phrase-binding constraint (from the rhythm phrase, translated to the walk). Same
+// shape as chordWalk's WalkBinding, kept local to avoid coupling the two walk libs — the client's
+// WalkBinding[] passes structurally. When a meter group full-repeats an earlier one the phrase can
+// force this group to reuse that group's chord (`chordSource`) and/or its opening key + placement
+// (`placementSource`); each is the index of an *earlier* group (< this one) or null. Group 0 (the
+// origin) never carries a binding.
+export type PerceptionBinding = {chordSource: number | null; placementSource: number | null};
+
+// Chord equality on folded/sorted pitch-class arrays (ALL_TRIADS / origin are always folded).
+const sameChord = (a: number[], b: number[]): boolean => a.join(',') === b.join(',');
+
+// A placement-bound step: reuse `source`'s opening key + placement for `chord`, but only when the
+// source's opening key is a legal (non-null) perception opening for this chord's table/root — the
+// relative index (openingKey − root) must map to a non-null entry. Null when it does not (the
+// caller then falls back to a fresh buildStep). When chords are bound to the same source the
+// root/table match makes this trivially valid and the placement resolves identically; when only
+// placements are bound (a different chord) this is a best-effort restatement that stays within the
+// perception rules (a legal opening for the new chord) or declines.
+function bindStep(
+  chord: number[],
+  table: PerceptionTable,
+  root: number,
+  source: PerceptionStep,
+): PerceptionStep | null {
+  const rel = (((source.openingKey - root) % 12) + 12) % 12;
+  if (!table.entries[rel]) return null; // not a legal opening for this chord
+  return {chord, openingKey: source.openingKey, placement: source.placement};
+}
+
+// Build one PerceptionStep per chord, sequentially (so a placement-bound group can read the earlier
+// step it copies). A group with `placementSource` set reuses that earlier step's opening key +
+// placement when legal (bindStep); otherwise it draws a fresh opening + placement (buildStep). The
+// chord axis is already resolved in the caller's chord cycle — this only honors the placement axis.
+function buildSteps(
+  chords: number[][],
+  bindings: PerceptionBinding[] | undefined,
+  rng: () => number,
+): PerceptionStep[] {
+  const steps: PerceptionStep[] = [];
+  chords.forEach((c, g) => {
+    const {table, root} = identifyChord(c)!;
+    const src = bindings?.[g]?.placementSource ?? null;
+    const bound = src !== null && src < g ? bindStep(c, table, root, steps[src]) : null;
+    steps.push(bound ?? buildStep(c, table, root, rng));
+  });
+  return steps;
+}
+
 // Fisher–Yates shuffle a copy of `arr` using `rng`. Local to keep the perception libs decoupled.
 function shuffle<T>(arr: T[], rng: () => number): T[] {
   const out = [...arr];
@@ -274,6 +322,10 @@ export type PerceptionStep = {
   placement: {label: string; keys: number[]};
 };
 
+// Max DFS node expansions before giving up on closing a loop / walk (mirrors chordWalk's guard).
+// The perception move graph is small (≤ 36 chords), so a legal cycle is found well within this.
+const MAX_EXPANSIONS = 20000;
+
 // Generate an OPEN perception walk of length N (one step per meter group) from `start`:
 //   1. Identify the current chord's table + root.
 //   2. Pick a random non-null opening key; its entry gives the placement(s)
@@ -284,40 +336,68 @@ export type PerceptionStep = {
 // Returns the steps plus `next` — the chord the following pass continues from (open walk, no
 // closure). `start` null ⇒ a random major/minor/dim triad. All randomness flows through one
 // mulberry32 stream, so a seed reproduces the walk (deterministic Generate re-roll).
+//
+// `bindings` (optional, one per group) lets the rhythm phrase pin a group's chord/placement to an
+// earlier group's (see PerceptionBinding), mirroring chordWalk's open walk: the chord axis is
+// enforced by a backtracking DFS over the move graph, the placement axis by buildSteps. Group 0
+// never binds and the carry chord C_N carries no pin. A returned `unsatisfied` true means a chord
+// pin could not be honored and the walk relaxed to unbound.
 export function generatePerceptionWalk(
   start: number[] | null,
   N: number,
   seed: number,
   strategy: WalkStrategy = 'supersets',
-): {steps: PerceptionStep[]; next: number[]} {
-  const rng = mulberry32(seed >>> 0);
-  let current = start ? foldOctave(start) : randomStartChord(rng);
-  const steps: PerceptionStep[] = [];
+  bindings?: PerceptionBinding[],
+): {steps: PerceptionStep[]; next: number[]; unsatisfied: boolean} {
+  // One DFS attempt at a whole walk, seeded fresh so bound/unbound attempts are independent and
+  // deterministic. Returns the chord path (length N+1, path[N] = carry) or null on exhaustion.
+  const attempt = (b: PerceptionBinding[] | undefined): {path: number[][]; rng: () => number} | null => {
+    const rng = mulberry32(seed >>> 0);
+    const raw = start ? foldOctave(start) : randomStartChord(rng);
+    const startChord = identifyChord(raw) ? raw : randomStartChord(rng);
+    const path: number[][] = [startChord];
+    let expansions = 0;
+    const dfs = (i: number): boolean => {
+      if (i === N) return true; // groups 0..N-1 assigned; path[N] is the carry
+      if (++expansions > MAX_EXPANSIONS) return false;
+      const {table, root} = identifyChord(path[i])!;
+      const candidates = nextChordCandidates(table, root, strategy);
+      // Stay put when a chord has no stable-superset destinations (preserves the original loop's
+      // "hold current" behavior instead of dead-ending).
+      const base = candidates.length ? candidates : [path[i]];
+      // The carry (i + 1 === N) never carries a pin; groups 1..N-1 may.
+      const chordPin = i + 1 < N ? (b?.[i + 1]?.chordSource ?? null) : null;
+      const nexts =
+        chordPin !== null
+          ? base.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
+          : shuffle(base, rng);
+      for (const n of nexts) {
+        path[i + 1] = n;
+        if (dfs(i + 1)) return true;
+      }
+      return false;
+    };
+    return dfs(0) ? {path, rng} : null;
+  };
 
-  for (let i = 0; i < N; i++) {
-    let id = identifyChord(current);
-    if (!id) {
-      current = randomStartChord(rng);
-      id = identifyChord(current)!;
-    }
-    const {table, root} = id;
-
-    // The unit's opening key + committed placement (opening key sounded first).
-    steps.push(buildStep(current, table, root, rng));
-
-    // Next chord: a triad that is a subset of some stable superset of the current chord.
-    const nextCandidates = nextChordCandidates(table, root, strategy);
-    current = nextCandidates.length
-      ? nextCandidates[Math.floor(rng() * nextCandidates.length)]
-      : current;
+  if (bindings) {
+    const bound = attempt(bindings);
+    if (bound)
+      return {steps: buildSteps(bound.path.slice(0, N), bindings, bound.rng), next: bound.path[N], unsatisfied: false};
   }
-
-  return {steps, next: current};
+  const free = attempt(undefined);
+  if (free)
+    return {steps: buildSteps(free.path.slice(0, N), undefined, free.rng), next: free.path[N], unsatisfied: bindings != null};
+  // Defensive: no walk at all (should not happen with stay-put) — repeat the resolved start.
+  const rng = mulberry32(seed >>> 0);
+  const raw = start ? foldOctave(start) : randomStartChord(rng);
+  const startChord = identifyChord(raw) ? raw : randomStartChord(rng);
+  return {
+    steps: buildSteps(Array.from({length: N}, () => startChord), undefined, rng),
+    next: startChord,
+    unsatisfied: bindings != null,
+  };
 }
-
-// Max DFS node expansions before giving up on closing a loop (mirrors chordWalk's guard). The
-// perception move graph is small (≤ 36 chords), so a legal cycle is found well within this.
-const MAX_EXPANSIONS = 20000;
 
 // Generate a CLOSED perception loop of length N (one step per meter group) that returns to its
 // origin: groups 0..N-1 sound C_0..C_{N-1} (C_0 = origin) and the last group is chosen so its
@@ -327,47 +407,74 @@ const MAX_EXPANSIONS = 20000;
 // are assigned once the chord cycle is fixed). Returns the steps plus the resolved `origin` (a
 // random tabled triad when `start` is null or not a tabled quality) so the caller can re-loop around it.
 // All randomness flows through one mulberry32 stream, so a seed reproduces the loop.
+//
+// `bindings` (optional, one per group) lets the rhythm phrase pin a group's chord/placement to an
+// earlier group's (see PerceptionBinding), mirroring chordWalk's closed walk: the chord axis is
+// enforced during the DFS (a pinned group's chord must be a legal move), the placement axis by
+// buildSteps. If the bound search finds no closing cycle the loop relaxes to an unbound walk and
+// reports `unsatisfied` true — the exhaustive DFS makes that a genuine proof no bound cycle exists.
 export function generatePerceptionLoop(
   start: number[] | null,
   N: number,
   seed: number,
   strategy: WalkStrategy = 'supersets',
-): {steps: PerceptionStep[]; origin: number[]} {
-  const rng = mulberry32(seed >>> 0);
-  const startId = start ? identifyChord(foldOctave(start)) : null;
-  const origin = startId ? foldOctave(start!) : randomStartChord(rng);
-  const originKey = origin.join(',');
-
-  const bake = (chords: number[][]): {steps: PerceptionStep[]; origin: number[]} => ({
-    steps: chords.map((c) => {
-      const {table, root} = identifyChord(c)!;
-      return buildStep(c, table, root, rng);
-    }),
-    origin,
-  });
-
-  // N ≤ 1: a single group repeating the origin; the wrap trivially returns to origin.
-  if (N <= 1) return bake([origin]);
-
-  // Randomized DFS with backtracking over the chord move graph. path[0] = origin; for each group i
-  // pick a shuffled next chord reachable from path[i]; on the last group require the origin to be
-  // reachable so the wrap closes. Backtracks until a cycle closes.
-  let expansions = 0;
-  const path: number[][] = [origin];
-
-  const dfs = (i: number): boolean => {
-    if (++expansions > MAX_EXPANSIONS) return false;
-    const {table, root} = identifyChord(path[i])!;
-    const candidates = nextChordCandidates(table, root, strategy);
-    if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
-    for (const n of shuffle(candidates, rng)) {
-      path[i + 1] = n;
-      if (dfs(i + 1)) return true;
-    }
-    return false;
+  bindings?: PerceptionBinding[],
+): {steps: PerceptionStep[]; origin: number[]; unsatisfied: boolean} {
+  // The resolved origin, computed the same way in every attempt (fresh rng from the same seed) so
+  // bound/unbound attempts agree on it.
+  const resolveOrigin = (rng: () => number): number[] => {
+    const startId = start ? identifyChord(foldOctave(start)) : null;
+    return startId ? foldOctave(start!) : randomStartChord(rng);
   };
 
-  // Fallback (no closing cycle): repeat the origin in every group.
-  if (!dfs(0)) return bake(Array.from({length: N}, () => origin));
-  return bake(path);
+  // One DFS attempt at a closing cycle, seeded fresh. Returns the chord path (length N, path[0] =
+  // origin) and the rng to continue baking from, or null on exhaustion. `b` toggles the chord pins.
+  const attempt = (
+    b: PerceptionBinding[] | undefined,
+  ): {origin: number[]; path: number[][]; rng: () => number} | null => {
+    const rng = mulberry32(seed >>> 0);
+    const origin = resolveOrigin(rng);
+    const originKey = origin.join(',');
+
+    if (N <= 1) return {origin, path: [origin], rng};
+
+    let expansions = 0;
+    const path: number[][] = [origin];
+    const dfs = (i: number): boolean => {
+      if (++expansions > MAX_EXPANSIONS) return false;
+      const {table, root} = identifyChord(path[i])!;
+      const candidates = nextChordCandidates(table, root, strategy);
+      if (i === N - 1) return candidates.some((c) => c.join(',') === originKey); // wrap closes?
+      // Chord pin: force group i+1 to the pinned earlier group's chord when it is a legal move,
+      // else this branch has no next and backtracks. Group i+1 ≥ 1, so path[chordSource] is set.
+      const chordPin = b?.[i + 1]?.chordSource ?? null;
+      const nexts =
+        chordPin !== null
+          ? candidates.some((c) => sameChord(c, path[chordPin])) ? [path[chordPin]] : []
+          : shuffle(candidates, rng);
+      for (const n of nexts) {
+        path[i + 1] = n;
+        if (dfs(i + 1)) return true;
+      }
+      return false;
+    };
+    return dfs(0) ? {origin, path, rng} : null;
+  };
+
+  if (bindings) {
+    const bound = attempt(bindings);
+    if (bound)
+      return {steps: buildSteps(bound.path, bindings, bound.rng), origin: bound.origin, unsatisfied: false};
+  }
+  const free = attempt(undefined);
+  if (free)
+    return {steps: buildSteps(free.path, undefined, free.rng), origin: free.origin, unsatisfied: bindings != null};
+  // No closing cycle at all: repeat the origin in every group (unbound).
+  const rng = mulberry32(seed >>> 0);
+  const origin = resolveOrigin(rng);
+  return {
+    steps: buildSteps(Array.from({length: N}, () => origin), undefined, rng),
+    origin,
+    unsatisfied: bindings != null,
+  };
 }
