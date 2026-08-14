@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="b6e12949-08d9-4979-8095-3f95dce5e7b3" name="Johan@DESKTOP-U2V7MDD 2026-08-14 15:27:03" runUser="DESKTOP-U2V7MDD\Johan" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-08-14T15:27:03.7977070+02:00" queuing="2026-08-14T15:27:03.7977074+02:00" start="2026-08-14T15:27:02.3727375+02:00" finish="2026-08-14T15:27:03.8422566+02:00" />
+  <TestSettings name="default" id="7d55aae7-af34-4263-bff4-f741e61ff10e">
+    <Deployment runDeploymentRoot="Johan_DESKTOP-U2V7MDD_2026-08-14_15_27_03" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="ab89fc43-56b0-4869-bcb1-54c876a549a8" testId="11fda15d-8b6c-a999-4346-f20799622900" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Both_is_the_union_of_supersets_only_and_adjacency_only" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0347318" startTime="2026-08-14T15:27:03.7704820+02:00" endTime="2026-08-14T15:27:03.7704823+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab89fc43-56b0-4869-bcb1-54c876a549a8" />
+    <UnitTestResult executionId="b22b83fe-a143-407c-95ec-4e9d69ed5ea4" testId="e178e1b1-136d-c637-12ee-76d0a0115d5b" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 4, 8])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000433" startTime="2026-08-14T15:27:03.7712264+02:00" endTime="2026-08-14T15:27:03.7712265+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b22b83fe-a143-407c-95ec-4e9d69ed5ea4" />
+    <UnitTestResult executionId="bed4be4a-aa5f-409f-ab1a-63597a9e9ed3" testId="74f129dd-26fc-4db4-3183-29e356d81230" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 4, 7], quality: Major, root: 0)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000083" startTime="2026-08-14T15:27:03.6719222+02:00" endTime="2026-08-14T15:27:03.6719222+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bed4be4a-aa5f-409f-ab1a-63597a9e9ed3" />
+    <UnitTestResult executionId="70cf6e4b-f710-4651-87de-915948637e71" testId="0f23199c-ada9-5485-75e1-0cf049ca7200" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [2, 6, 9], quality: Major, root: 2)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000124" startTime="2026-08-14T15:27:03.6716838+02:00" endTime="2026-08-14T15:27:03.6716839+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70cf6e4b-f710-4651-87de-915948637e71" />
+    <UnitTestResult executionId="fcafac6c-fdba-4e36-9aaf-11400938cfc4" testId="f6f04bb5-8cd8-0f3d-bea6-4cccb66328eb" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 4])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0001566" startTime="2026-08-14T15:27:03.7711694+02:00" endTime="2026-08-14T15:27:03.7711695+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fcafac6c-fdba-4e36-9aaf-11400938cfc4" />
+    <UnitTestResult executionId="02d65569-88dc-488f-9d2c-e3262e801238" testId="219a1872-2eb3-ad0c-5ab0-856bb79c610d" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [4, 7, 11], quality: Minor, root: 4)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000217" startTime="2026-08-14T15:27:03.6717645+02:00" endTime="2026-08-14T15:27:03.6717646+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02d65569-88dc-488f-9d2c-e3262e801238" />
+    <UnitTestResult executionId="e75cb6bf-5c62-4230-a3f1-7b739075054e" testId="8af00dec-935c-a43b-339a-82ad62a59ee7" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 1, 2])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0004190" startTime="2026-08-14T15:27:03.7709695+02:00" endTime="2026-08-14T15:27:03.7709696+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e75cb6bf-5c62-4230-a3f1-7b739075054e" />
+    <UnitTestResult executionId="215a8ddc-8280-4ae8-941b-88e85487f774" testId="0036c794-d77f-d3f8-2954-bcb4fff6a703" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Diminished, expected: [&quot;24@4&quot;, &quot;24@11&quot;])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0014740" startTime="2026-08-14T15:27:03.7272501+02:00" endTime="2026-08-14T15:27:03.7272505+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="215a8ddc-8280-4ae8-941b-88e85487f774" />
+    <UnitTestResult executionId="a1a90a00-ae4c-49b1-9f46-50da0451ddd9" testId="caaa7a21-88af-0e8c-467c-c3b667a6abc3" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Every_returned_target_carries_a_bridge_under_an_included_rule" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0079355" startTime="2026-08-14T15:27:03.7627881+02:00" endTime="2026-08-14T15:27:03.7627882+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a1a90a00-ae4c-49b1-9f46-50da0451ddd9" />
+    <UnitTestResult executionId="863073f0-ee8a-4323-a8b5-bd9569952593" testId="e0563b20-ff58-75dc-93a0-fd5faad15fe7" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Minor, expected: [&quot;24@3&quot;, &quot;24@10&quot;])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0003063" startTime="2026-08-14T15:27:03.7625495+02:00" endTime="2026-08-14T15:27:03.7625496+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="863073f0-ee8a-4323-a8b5-bd9569952593" />
+    <UnitTestResult executionId="37cf8f7e-fc1f-4e8d-8728-01dd91df8503" testId="0954391d-8e3f-8101-0808-f49cf16862fd" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [7, 4, 0], quality: Major, root: 0)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0003570" startTime="2026-08-14T15:27:03.6711392+02:00" endTime="2026-08-14T15:27:03.6711393+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="37cf8f7e-fc1f-4e8d-8728-01dd91df8503" />
+    <UnitTestResult executionId="c2fc89d7-f6c7-4f8d-b8d4-5760efc1dbb6" testId="4645ee18-d424-eb30-dad3-be537a530865" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.A_chord_can_progress_to_itself_via_its_own_supersets" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0032230" startTime="2026-08-14T15:27:03.7745371+02:00" endTime="2026-08-14T15:27:03.7745374+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c2fc89d7-f6c7-4f8d-b8d4-5760efc1dbb6" />
+    <UnitTestResult executionId="a927a75c-d879-4c6e-8ee3-75b1486dfa8e" testId="9c951674-9c5d-1df4-d797-5b8c7c9d2405" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Major, expected: [&quot;24@8&quot;, &quot;24@3&quot;])" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0575451" startTime="2026-08-14T15:27:03.7257095+02:00" endTime="2026-08-14T15:27:03.7257097+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a927a75c-d879-4c6e-8ee3-75b1486dfa8e" />
+    <UnitTestResult executionId="63245dcb-d724-4f02-a50b-99d788a6af93" testId="af113adb-b7fd-a21d-dfa1-f2c082b86766" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 3, 6], quality: Diminished, root: 0)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000302" startTime="2026-08-14T15:27:03.6718503+02:00" endTime="2026-08-14T15:27:03.6718504+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="63245dcb-d724-4f02-a50b-99d788a6af93" />
+    <UnitTestResult executionId="4d3f33c1-8c6b-46ae-b3f0-081c9e866399" testId="1953e966-4a94-2d0f-472e-c13e74941a4d" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 3, 7], quality: Minor, root: 0)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.1610354" startTime="2026-08-14T15:27:03.6680700+02:00" endTime="2026-08-14T15:27:03.6680929+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4d3f33c1-8c6b-46ae-b3f0-081c9e866399" />
+    <UnitTestResult executionId="aeb8742c-6d7c-4b5e-a932-99897628e349" testId="144d001f-761e-5427-8bd3-1ec58f4cff6f" testName="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [11, 2, 5], quality: Diminished, root: 11)" computerName="DESKTOP-U2V7MDD" duration="00:00:00.0000694" startTime="2026-08-14T15:27:03.6715901+02:00" endTime="2026-08-14T15:27:03.6715902+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aeb8742c-6d7c-4b5e-a932-99897628e349" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Diminished, expected: [&quot;24@4&quot;, &quot;24@11&quot;])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="0036c794-d77f-d3f8-2954-bcb4fff6a703">
+      <Execution id="215a8ddc-8280-4ae8-941b-88e85487f774" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Adjacency_bridges_match_the_documented_derivation" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [4, 7, 11], quality: Minor, root: 4)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="219a1872-2eb3-ad0c-5ab0-856bb79c610d">
+      <Execution id="02d65569-88dc-488f-9d2c-e3262e801238" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [2, 6, 9], quality: Major, root: 2)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="0f23199c-ada9-5485-75e1-0cf049ca7200">
+      <Execution id="70cf6e4b-f710-4651-87de-915948637e71" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 3, 7], quality: Minor, root: 0)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="1953e966-4a94-2d0f-472e-c13e74941a4d">
+      <Execution id="4d3f33c1-8c6b-46ae-b3f0-081c9e866399" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Both_is_the_union_of_supersets_only_and_adjacency_only" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="11fda15d-8b6c-a999-4346-f20799622900">
+      <Execution id="ab89fc43-56b0-4869-bcb1-54c876a549a8" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Both_is_the_union_of_supersets_only_and_adjacency_only" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Every_returned_target_carries_a_bridge_under_an_included_rule" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="caaa7a21-88af-0e8c-467c-c3b667a6abc3">
+      <Execution id="a1a90a00-ae4c-49b1-9f46-50da0451ddd9" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Every_returned_target_carries_a_bridge_under_an_included_rule" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [11, 2, 5], quality: Diminished, root: 11)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="144d001f-761e-5427-8bd3-1ec58f4cff6f">
+      <Execution id="aeb8742c-6d7c-4b5e-a932-99897628e349" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 1, 2])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="8af00dec-935c-a43b-339a-82ad62a59ee7">
+      <Execution id="e75cb6bf-5c62-4230-a3f1-7b739075054e" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_returns_null_for_non_tabled_sets" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.A_chord_can_progress_to_itself_via_its_own_supersets" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="4645ee18-d424-eb30-dad3-be537a530865">
+      <Execution id="c2fc89d7-f6c7-4f8d-b8d4-5760efc1dbb6" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="A_chord_can_progress_to_itself_via_its_own_supersets" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Major, expected: [&quot;24@8&quot;, &quot;24@3&quot;])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="9c951674-9c5d-1df4-d797-5b8c7c9d2405">
+      <Execution id="a927a75c-d879-4c6e-8ee3-75b1486dfa8e" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Adjacency_bridges_match_the_documented_derivation" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 4])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="f6f04bb5-8cd8-0f3d-bea6-4cccb66328eb">
+      <Execution id="fcafac6c-fdba-4e36-9aaf-11400938cfc4" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_returns_null_for_non_tabled_sets" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_returns_null_for_non_tabled_sets(keys: [0, 4, 8])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="e178e1b1-136d-c637-12ee-76d0a0115d5b">
+      <Execution id="b22b83fe-a143-407c-95ec-4e9d69ed5ea4" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_returns_null_for_non_tabled_sets" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 3, 6], quality: Diminished, root: 0)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="af113adb-b7fd-a21d-dfa1-f2c082b86766">
+      <Execution id="63245dcb-d724-4f02-a50b-99d788a6af93" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [7, 4, 0], quality: Major, root: 0)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="0954391d-8e3f-8101-0808-f49cf16862fd">
+      <Execution id="37cf8f7e-fc1f-4e8d-8728-01dd91df8503" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Adjacency_bridges_match_the_documented_derivation(quality: Minor, expected: [&quot;24@3&quot;, &quot;24@10&quot;])" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="e0563b20-ff58-75dc-93a0-fd5faad15fe7">
+      <Execution id="863073f0-ee8a-4323-a8b5-bd9569952593" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Adjacency_bridges_match_the_documented_derivation" />
+    </UnitTest>
+    <UnitTest name="Melodroid_3.Tests.Music.ChordProgressionsTests.Identify_matches_quality_and_root(keys: [0, 4, 7], quality: Major, root: 0)" storage="d:\code\melodroid 3\melodroid.tests\bin\debug\net9.0\melodroid.tests.dll" id="74f129dd-26fc-4db4-3183-29e356d81230">
+      <Execution id="bed4be4a-aa5f-409f-ab1a-63597a9e9ed3" />
+      <TestMethod codeBase="D:\Code\Melodroid 3\Melodroid.Tests\bin\Debug\net9.0\Melodroid.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Melodroid_3.Tests.Music.ChordProgressionsTests" name="Identify_matches_quality_and_root" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="11fda15d-8b6c-a999-4346-f20799622900" executionId="ab89fc43-56b0-4869-bcb1-54c876a549a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e178e1b1-136d-c637-12ee-76d0a0115d5b" executionId="b22b83fe-a143-407c-95ec-4e9d69ed5ea4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="74f129dd-26fc-4db4-3183-29e356d81230" executionId="bed4be4a-aa5f-409f-ab1a-63597a9e9ed3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0f23199c-ada9-5485-75e1-0cf049ca7200" executionId="70cf6e4b-f710-4651-87de-915948637e71" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f6f04bb5-8cd8-0f3d-bea6-4cccb66328eb" executionId="fcafac6c-fdba-4e36-9aaf-11400938cfc4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="219a1872-2eb3-ad0c-5ab0-856bb79c610d" executionId="02d65569-88dc-488f-9d2c-e3262e801238" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8af00dec-935c-a43b-339a-82ad62a59ee7" executionId="e75cb6bf-5c62-4230-a3f1-7b739075054e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0036c794-d77f-d3f8-2954-bcb4fff6a703" executionId="215a8ddc-8280-4ae8-941b-88e85487f774" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="caaa7a21-88af-0e8c-467c-c3b667a6abc3" executionId="a1a90a00-ae4c-49b1-9f46-50da0451ddd9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e0563b20-ff58-75dc-93a0-fd5faad15fe7" executionId="863073f0-ee8a-4323-a8b5-bd9569952593" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0954391d-8e3f-8101-0808-f49cf16862fd" executionId="37cf8f7e-fc1f-4e8d-8728-01dd91df8503" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4645ee18-d424-eb30-dad3-be537a530865" executionId="c2fc89d7-f6c7-4f8d-b8d4-5760efc1dbb6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9c951674-9c5d-1df4-d797-5b8c7c9d2405" executionId="a927a75c-d879-4c6e-8ee3-75b1486dfa8e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="af113adb-b7fd-a21d-dfa1-f2c082b86766" executionId="63245dcb-d724-4f02-a50b-99d788a6af93" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1953e966-4a94-2d0f-472e-c13e74941a4d" executionId="4d3f33c1-8c6b-46ae-b3f0-081c9e866399" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="144d001f-761e-5427-8bd3-1ec58f4cff6f" executionId="aeb8742c-6d7c-4b5e-a932-99897628e349" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="16" executed="16" passed="16" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.12)&#xD;
+[xUnit.net 00:00:00.46]   Discovering: Melodroid.Tests&#xD;
+[xUnit.net 00:00:00.58]   Discovered:  Melodroid.Tests&#xD;
+[xUnit.net 00:00:00.58]   Starting:    Melodroid.Tests&#xD;
+[xUnit.net 00:00:00.91]   Finished:    Melodroid.Tests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

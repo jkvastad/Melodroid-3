@@ -651,6 +651,81 @@ class Program
             return 0;
         });
 
+        var progressionChordKeysOption = new Option<int[]>("--chord-keys")
+        {
+            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Must form a major, minor or diminished triad. Duplicates are folded.",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var progressionSupersetsOption = new Option<bool>("--supersets")
+        {
+            Description = "Only show progressions reached by the chord's stable melodic supersets. Combine with neither flag to show both rules.",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionAdjacencyOption = new Option<bool>("--adjacency")
+        {
+            Description = "Only show progressions reached by the adjacency rule (lcm-24 placements adjacent to the 15s superset). Combine with neither flag to show both rules.",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionCommand = new Command(
+            "progression",
+            "For a major/minor/dim triad, list every chord it may progress to under the perception walk. By default shows moves reached by either the stable melodic supersets or the adjacency rule; --supersets / --adjacency restrict to one. 12-tet only.");
+        progressionCommand.Add(maxSizeOption);
+        progressionCommand.Add(maxPrimeOption);
+        progressionCommand.Add(maxLcmOption);
+        progressionCommand.Add(progressionChordKeysOption);
+        progressionCommand.Add(progressionSupersetsOption);
+        progressionCommand.Add(progressionAdjacencyOption);
+        progressionCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var chordKeys = parse.GetValue(progressionChordKeysOption) ?? Array.Empty<int>();
+            var supersetsFlag = parse.GetValue(progressionSupersetsOption);
+            var adjacencyFlag = parse.GetValue(progressionAdjacencyOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 24) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 24 (progression needs the lcm-24 family).[/]"); return 1; }
+            if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
+            foreach (var key in chordKeys)
+            {
+                if (key < 0 || key >= 12)
+                {
+                    AnsiConsole.MarkupLine($"[red]--chord-keys value {key} is outside [[0, 11]].[/]");
+                    return 1;
+                }
+            }
+
+            var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
+            var identity = ChordProgressions.Identify(dedupChord);
+            if (identity is null)
+            {
+                AnsiConsole.MarkupLine("[red]--chord-keys must be a major, minor or diminished triad.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var lcm24Family = families.FirstOrDefault(f => f.Lcm == 24);
+            if (lcm24Family.Fractions is null || lcm24Family.Fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[red]No lcm-24 family for the current --max-size / --max-prime (progression needs it).[/]");
+                return 1;
+            }
+
+            var includeSupersets = supersetsFlag || !adjacencyFlag;
+            var includeAdjacency = adjacencyFlag || !supersetsFlag;
+            var (quality, root) = identity.Value;
+            var targets = ChordProgressions.Compute(quality, root, includeSupersets, includeAdjacency, lcm24Family);
+            ProgressionTableRenderer.Render(dedupChord, quality, root, includeSupersets, includeAdjacency, targets);
+            return 0;
+        });
+
         var voicingsLcmOption = new Option<int?>("--lcm")
         {
             Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of. Mutually exclusive with --keys.",
@@ -984,6 +1059,7 @@ class Program
         tableCommand.Add(keySupersetsCommand);
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
+        tableCommand.Add(progressionCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
         tableCommand.Add(chordsCommand);
