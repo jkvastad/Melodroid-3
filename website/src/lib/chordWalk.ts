@@ -173,6 +173,12 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 // pins during search, so a returned null under active bindings is a genuine proof — via exhaustive
 // backtracking — that no cycle satisfies them; the caller then relaxes to an unbound walk. Omitting
 // `bindings` (or passing all-null) reproduces the free walk exactly.
+// `originPlacementIdx` (optional, a pool index) pins the ORIGIN group's bridging placement P_0 to a
+// specific pool entry — the loop-back "return to the original placement" feature. When set and valid
+// (origin sits in it), group 0 draws C_1 from that placement instead of a free pick, so the loop
+// re-approaches its origin through the same placement each pass while the rest of the walk is free.
+// Invalid/absent ⇒ today's free choice. Group 0 is never phrase-bound, so this never conflicts with
+// `bindings` (whose placementSource pins to an earlier group, impossible for group 0).
 export function generateChordWalk(
   origin: number[],
   candidateChords: number[][],
@@ -180,6 +186,7 @@ export function generateChordWalk(
   N: number,
   seed: number,
   bindings?: WalkBinding[],
+  originPlacementIdx?: number,
 ): WalkStep[] | null {
   const originKeys = foldOctave(origin);
 
@@ -189,12 +196,17 @@ export function generateChordWalk(
 
   const rng = mulberry32(seed);
   const originPlacements = new Set(nodes[originIdx].placementIdxs);
+  // The origin-placement pin, honored only when the origin actually sits in it.
+  const originPin =
+    originPlacementIdx !== undefined && originPlacements.has(originPlacementIdx)
+      ? originPlacementIdx
+      : null;
 
   // N = 1: a single group repeating the origin. Any placement containing origin is the melody
-  // source; the wrap trivially returns to origin.
+  // source (the pinned one when set); the wrap trivially returns to origin.
   if (N <= 1) {
     const choices = shuffle([...nodes[originIdx].placementIdxs], rng);
-    return [{chord: originKeys, bridgingPlacement: pool[choices[0]]}];
+    return [{chord: originKeys, bridgingPlacement: pool[originPin ?? choices[0]]}];
   }
 
   // Placement-first randomized DFS with backtracking. For each group i (current chord path[i]),
@@ -221,7 +233,11 @@ export function generateChordWalk(
     // branch fails, forcing a backtrack.
     const placementPin = bindings?.[i]?.placementSource ?? null;
     const candidatePlacements =
-      placementPin !== null
+      // Origin group with an active pin: force P_0 to the pinned placement (already validated to
+      // contain origin; `last` here only when N === 1, handled by the early return above).
+      i === 0 && originPin !== null
+        ? [originPin]
+        : placementPin !== null
         ? (() => {
             const pinned = chosenPlacements[placementPin];
             const ok =

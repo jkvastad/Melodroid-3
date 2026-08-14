@@ -199,6 +199,10 @@ function deriveWalkBindings(
 // null under active bindings is that proof). Returns the walk plus `unsatisfied` — true iff a
 // binding was requested but could not close a cycle. Never returns null: falls back to originWalk
 // when even the free walk fails.
+// `originPlacementIdx` (optional, a pool index) pins the origin group's bridging placement so the
+// loop re-approaches its origin through the *same* placement each pass ("return to the original
+// placement" on loop-back). Tried first (with bindings, then bound-free); if the pinned search
+// cannot close a cycle it falls back to an unpinned walk so playback never stalls.
 function generateWalkRelaxed(
   origin: number[],
   candidates: number[][],
@@ -206,11 +210,17 @@ function generateWalkRelaxed(
   N: number,
   seed: number,
   bindings: WalkBinding[] | null,
+  originPlacementIdx?: number,
 ): {walk: RawWalkStep[]; unsatisfied: boolean} {
   if (bindings) {
-    const bound = generateChordWalk(origin, candidates, pool, N, seed, bindings);
+    const bound = generateChordWalk(origin, candidates, pool, N, seed, bindings, originPlacementIdx);
     if (bound) return {walk: bound, unsatisfied: false};
   }
+  const pinnedFree =
+    originPlacementIdx !== undefined
+      ? generateChordWalk(origin, candidates, pool, N, seed, undefined, originPlacementIdx)
+      : null;
+  if (pinnedFree) return {walk: pinnedFree, unsatisfied: bindings != null};
   const free = generateChordWalk(origin, candidates, pool, N, seed) ?? originWalk(origin, pool, N);
   return {walk: free, unsatisfied: bindings != null};
 }
@@ -1532,6 +1542,11 @@ export default function RhythmPatternPlayerClient({
                 walkStrategyRef.current,
               );
               cycleSteps = bakePerceptionSteps(steps, pitchHz);
+              // Loop-back returns to the origin CHORD; also restore its ORIGINAL placement + opening
+              // key (group 0 of the seeded first cycle). Legal because the perception move graph is
+              // chord-driven — the origin's placement gates nothing, so this cannot alter closure.
+              const origin0 = perceptionWalkStepsRef.current?.[0];
+              if (origin0 && cycleSteps?.length) cycleSteps[0] = origin0;
             }
           } else {
             const roam = freeRoamRef.current && !loopMelodyRef.current;
@@ -1556,6 +1571,13 @@ export default function RhythmPatternPlayerClient({
             } else if (i === 0 || loopMelodyRef.current || !havePool) {
               cycleSteps = chordWalkStepsRef.current;
             } else {
+              // Loop-back: pin the origin group's bridging placement to the seeded first cycle's, so
+              // the loop re-approaches its origin through the same placement each pass. Located by
+              // label in the live pool (unique per pool); -1 ⇒ not in the current pool, so no pin.
+              const originLabel = chordWalkStepsRef.current?.[0]?.placementLabel ?? null;
+              const originPlacementIdx = originLabel
+                ? curatedPoolRef.current!.findIndex((p) => p.label === originLabel)
+                : -1;
               const {walk, unsatisfied} = generateWalkRelaxed(
                 originKeys,
                 walkCandidatesRef.current!,
@@ -1563,6 +1585,7 @@ export default function RhythmPatternPlayerClient({
                 walkMeterLen,
                 (Math.random() * 2 ** 32) >>> 0,
                 walkBindingsRef.current,
+                originPlacementIdx >= 0 ? originPlacementIdx : undefined,
               );
               setBindingUnsatisfied(unsatisfied);
               cycleSteps = bakeWalkSteps(walk, pitchHz);
