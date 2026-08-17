@@ -7,8 +7,6 @@ public static class ProgressionTableRenderer
 {
     public static void Render(
         IReadOnlyCollection<int> chordKeys,
-        TriadQuality quality,
-        int root,
         bool includeSupersets,
         bool includeAdjacency,
         IReadOnlyList<ProgressionTarget> targets,
@@ -44,7 +42,7 @@ public static class ProgressionTableRenderer
         var ruleLabel = includeSupersets && includeAdjacency ? "both" : includeSupersets ? "supersets" : "adjacency";
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         table.Caption(
-            $"progression: chord={chordStr} {QualityName(quality)}@{root} · rule: {ruleLabel} · " +
+            $"progression: chord={chordStr} · rule: {ruleLabel} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet");
         console.Write(table);
     }

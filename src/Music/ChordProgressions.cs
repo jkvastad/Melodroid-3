@@ -1,15 +1,13 @@
 namespace Melodroid_3.Music;
 
-// Perception-based chord progression logic: which major/minor/dim triads a given triad may
-// progress to. Ported from the website's perception walk (website/src/lib/perceptionTables.ts)
-// and documented in website/docs/music/voicings-and-lcm-families.mdx ("Perception Based
-// Progression"). Unlike the placement math this is *authored* data (subjective perception), so
-// there is no oracle — the per-quality stable-superset lists and the 15s key set are transcribed
-// from the doc and must be kept consistent with perceptionTables.ts.
-//
-// Only the `stableSupersets` lists plus the adjacency derivation matter for progression; the
-// opening-key `entries` in the TS tables only pick a melody and are not ported here. This command
-// is inherently 12-tet — the tables and the 15s set are defined mod 12.
+// Perception-based chord progression logic: which major/minor/dim triads a given chord (any set of
+// 12-tet keys) may progress to. The stable melodic supersets of the source chord are *derived* from
+// the placement math — exactly the rows of
+//   chord-melody --drop-renormalized-subsets --drop-collapsed --stable-15
+// (see Placements.FindMaximalContaining / DropCollapsed / StableFifteen). Adjacency then follows
+// from any stable lcm-15 row. This mirrors the "Perception Based Progression" derivation in
+// website/docs/music/voicings-and-lcm-families.mdx. The command is inherently 12-tet — the 15s
+// stabilisation and the adjacency rule are defined mod 12.
 
 public enum TriadQuality { Major, Minor, Diminished }
 
@@ -26,42 +24,10 @@ public static class ChordProgressions
 {
     private const int Ktet = 12;
 
-    // A superset reference in a perception table, relative to the chord root. Only the lcm-24
-    // family and the named 15s set appear across the three tables' stableSupersets.
-    private enum RefKind { Lcm24, Fifteens }
-    private readonly record struct SupersetRef(RefKind Kind, int At);
-
-    // Root-relative triad shapes (folded pitch classes).
+    // Root-relative triad shapes (folded pitch classes) — the next-chord candidate universe.
     private static readonly IReadOnlyList<int> MajorShape = new[] { 0, 4, 7 };
     private static readonly IReadOnlyList<int> MinorShape = new[] { 0, 3, 7 };
     private static readonly IReadOnlyList<int> DimShape = new[] { 0, 3, 6 };
-
-    // The 15s (stable-15 subset) base key set at anchor 0 — the only named label any
-    // stableSupersets list references (blues/harm are used only by the melody entries).
-    private static readonly int[] FifteensBase = { 0, 1, 3, 5, 9, 10 };
-
-    // Per-quality stable melodic supersets, root-relative (perceptionTables.ts:92,114,140).
-    private static readonly IReadOnlyList<SupersetRef> MajorSupersets = new[]
-    {
-        new SupersetRef(RefKind.Lcm24, 0),
-        new SupersetRef(RefKind.Lcm24, 5),
-        new SupersetRef(RefKind.Lcm24, 7),
-        new SupersetRef(RefKind.Fifteens, 7),
-    };
-
-    private static readonly IReadOnlyList<SupersetRef> MinorSupersets = new[]
-    {
-        new SupersetRef(RefKind.Lcm24, 3),
-        new SupersetRef(RefKind.Lcm24, 8),
-        new SupersetRef(RefKind.Lcm24, 10),
-        new SupersetRef(RefKind.Fifteens, 2),
-    };
-
-    private static readonly IReadOnlyList<SupersetRef> DimSupersets = new[]
-    {
-        new SupersetRef(RefKind.Fifteens, 3),
-        new SupersetRef(RefKind.Lcm24, 1),
-    };
 
     private static IReadOnlyList<int> Shape(TriadQuality quality) => quality switch
     {
@@ -70,62 +36,17 @@ public static class ChordProgressions
         _ => DimShape,
     };
 
-    private static IReadOnlyList<SupersetRef> StableSupersets(TriadQuality quality) => quality switch
-    {
-        TriadQuality.Major => MajorSupersets,
-        TriadQuality.Minor => MinorSupersets,
-        _ => DimSupersets,
-    };
-
     private static int Fold(int key) => ((key % Ktet) + Ktet) % Ktet;
 
     private static IReadOnlyList<int> FoldSet(IEnumerable<int> keys) =>
         keys.Select(Fold).Distinct().OrderBy(k => k).ToList();
 
-    // Adjacency rule (perceptionTables.ts:156-165): each 15s@X in the stable supersets yields the
-    // adjacent lcm-24 placements 24@(X+1) and 24@(X+8) (mod 12).
-    private static IReadOnlyList<SupersetRef> AdjacencySupersets(TriadQuality quality) =>
-        StableSupersets(quality)
-            .Where(s => s.Kind == RefKind.Fifteens)
-            .SelectMany(s => new[]
-            {
-                new SupersetRef(RefKind.Lcm24, Fold(s.At + 1)),
-                new SupersetRef(RefKind.Lcm24, Fold(s.At + 8)),
-            })
-            .ToList();
-
-    // Resolve a root-relative ref to absolute folded k-tet keys. Lcm refs reuse Placements.Compute
-    // (the placement math); the 15s ref rotates its base set. Matches TS resolvePlacementKeys.
-    private static IReadOnlyList<int> Resolve(SupersetRef reference, int root, LcmFamily lcm24Family)
-    {
-        var at = Fold(reference.At + root);
-        return reference.Kind == RefKind.Lcm24
-            ? FoldSet(Placements.Compute(lcm24Family, at, Ktet).Keys)
-            : FoldSet(FifteensBase.Select(k => k + at));
-    }
-
-    private static string Label(SupersetRef reference, int root)
-    {
-        var at = Fold(reference.At + root);
-        return reference.Kind == RefKind.Lcm24 ? $"24@{at}" : $"15s@{at}";
-    }
-
-    // Match a folded key set to (quality, root); null when it is not a major/minor/dim triad.
-    public static (TriadQuality Quality, int Root)? Identify(IReadOnlyCollection<int> keys)
-    {
-        var target = FoldSet(keys);
-        var id = string.Join(",", target);
-        foreach (var quality in new[] { TriadQuality.Major, TriadQuality.Minor, TriadQuality.Diminished })
-        {
-            var shape = Shape(quality);
-            for (var root = 0; root < Ktet; root++)
-            {
-                var folded = FoldSet(shape.Select(k => k + root));
-                if (string.Join(",", folded) == id) return (quality, root);
-            }
-        }
-        return null;
-    }
+    // Row label matching ChordMelodyTableRenderer: a stabilized lcm-15 placement (its collapsing
+    // key dropped by StableFifteen) reads as "15s@At"; every other placement as "{Lcm}@{At}".
+    private static string PlacementLabel(Placement placement) =>
+        Placements.CollapsingKey(placement, Ktet) is int ck && !placement.Keys.Contains(ck)
+            ? $"15s@{placement.At}"
+            : $"{placement.Lcm}@{placement.At}";
 
     // The 36 major/minor/dim triads (absolute, folded) — the next-chord candidate universe.
     private static IEnumerable<(IReadOnlyList<int> Keys, TriadQuality Quality, int Root)> AllTriads()
@@ -138,23 +59,40 @@ public static class ChordProgressions
         }
     }
 
-    // Every next-chord target for the chord (quality at root): each triad that is a subset of a
-    // resolved superset under an included rule. Both bridge lists are populated; a target is
-    // included when at least one included rule reaches it. Sorted by root, then quality.
+    // Every next-chord target for the given chord keys: each major/minor/dim triad that is a subset
+    // of one of the chord's stable melodic supersets (the superset rule) or of an adjacency-derived
+    // lcm-24 placement (the adjacency rule). Both bridge lists are populated; a target is included
+    // when at least one included rule reaches it. Sorted by root, then quality.
     public static IReadOnlyList<ProgressionTarget> Compute(
-        TriadQuality quality, int root,
+        IReadOnlyCollection<int> chordKeys,
         bool includeSupersets, bool includeAdjacency,
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<FamilyRelation> relations,
         LcmFamily lcm24Family)
     {
-        var supersetRefs = includeSupersets ? StableSupersets(quality) : Array.Empty<SupersetRef>();
-        var adjacencyRefs = includeAdjacency ? AdjacencySupersets(quality) : Array.Empty<SupersetRef>();
+        // Stable melodic supersets = maximal placements containing the chord, with collapsed lcm-15
+        // rows dropped and the rest reduced to stable 15s form. Mirrors the chord-melody flags
+        // --drop-renormalized-subsets --drop-collapsed --stable-15.
+        var stable = Placements.FindMaximalContaining(chordKeys, families, relations, Ktet, dropRenormalizedSubsets: true);
+        stable = Placements.DropCollapsed(stable, chordKeys, Ktet);
+        stable = Placements.StableFifteen(stable, Ktet);
 
-        var supersets = supersetRefs
-            .Select(r => (Keys: new HashSet<int>(Resolve(r, root, lcm24Family)), Label: Label(r, root)))
-            .ToList();
-        var adjacency = adjacencyRefs
-            .Select(r => (Keys: new HashSet<int>(Resolve(r, root, lcm24Family)), Label: Label(r, root)))
-            .ToList();
+        var supersets = includeSupersets
+            ? stable
+                .Select(p => (Keys: new HashSet<int>(FoldSet(p.Keys)), Label: PlacementLabel(p)))
+                .ToList()
+            : new List<(HashSet<int> Keys, string Label)>();
+
+        // Adjacency rule: each surviving stable lcm-15 row 15s@At reaches the adjacent lcm-24
+        // placements 24@(At+1) and 24@(At+8) (mod 12).
+        var adjacency = includeAdjacency
+            ? stable
+                .Where(p => p.Lcm == 15)
+                .SelectMany(p => new[] { Fold(p.At + 1), Fold(p.At + 8) })
+                .Distinct()
+                .Select(at => (Keys: new HashSet<int>(FoldSet(Placements.Compute(lcm24Family, at, Ktet).Keys)), Label: $"24@{at}"))
+                .ToList()
+            : new List<(HashSet<int> Keys, string Label)>();
 
         var targets = new List<ProgressionTarget>();
         foreach (var (keys, cQuality, cRoot) in AllTriads())

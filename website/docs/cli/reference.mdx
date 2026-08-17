@@ -228,9 +228,9 @@ melodroid table progression --chord-keys 0 4 7 \
   [--supersets] [--adjacency] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-For a major/minor/dim `--chord-keys` triad (12-tet only), lists every chord it may progress to
-under the **perception walk**. Each row is a reachable next chord with its quality, root, the
-reaching **Rule**, and the bridging placements (**Via**). A chord is reachable when it is a
+For **any** set of `--chord-keys` (12-tet only), lists every major/minor/dim triad it may progress
+to under the **perception walk**. Each row is a reachable next chord with its quality, root, the
+reaching **Rule**, and the bridging placements (**Via**). A triad is reachable when it is a
 subset of one of the current chord's stable melodic supersets (the *superset* rule) or of an
 adjacency-derived lcm-24 placement (the *adjacency* rule: each `15s@X` superset yields `24@(X+1)`
 and `24@(X+8)`).
@@ -239,10 +239,10 @@ By default both rules are shown (Rule = `superset` / `adjacency` / `both`). `--s
 restricts to the superset rule, `--adjacency` to the adjacency rule; giving neither is the same as
 both. `--max-lcm` must be ≥ 24 (the rules reference the lcm-24 family).
 
-The perception-table data (the per-quality stable-superset lists and the `15s` key set) is
-authored, not derived — it is transcribed from `website/src/lib/perceptionTables.ts` and the
-"Perception Based Progression" section of the voicings doc, and the two copies must be kept
-consistent.
+The stable melodic supersets are **derived**, not authored: they are exactly the rows of
+`chord-melody --drop-renormalized-subsets --drop-collapsed --stable-15` for the same keys, with the
+adjacency rule applied to any surviving stable lcm-15 row. (The website's `perceptionWalk` player
+still uses the triad-only tables in `website/src/lib/perceptionTables.ts`.)
 
 ## Graphs
 

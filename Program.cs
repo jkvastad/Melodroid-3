@@ -671,7 +671,7 @@ class Program
 
         var progressionChordKeysOption = new Option<int[]>("--chord-keys")
         {
-            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Must form a major, minor or diminished triad. Duplicates are folded.",
+            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
             Required = true,
             AllowMultipleArgumentsPerToken = true,
         };
@@ -690,7 +690,7 @@ class Program
 
         var progressionCommand = new Command(
             "progression",
-            "For a major/minor/dim triad, list every chord it may progress to under the perception walk. By default shows moves reached by either the stable melodic supersets or the adjacency rule; --supersets / --adjacency restrict to one. 12-tet only.");
+            "For any set of 12-tet keys, list every major/minor/dim triad it may progress to under the perception walk. By default shows moves reached by either the stable melodic supersets or the adjacency rule; --supersets / --adjacency restrict to one. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
@@ -720,15 +720,9 @@ class Program
             }
 
             var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
-            var identity = ChordProgressions.Identify(dedupChord);
-            if (identity is null)
-            {
-                AnsiConsole.MarkupLine("[red]--chord-keys must be a major, minor or diminished triad.[/]");
-                return 1;
-            }
-
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
+            var relations = FamilyRelations.Compute(families);
             var lcm24Family = families.FirstOrDefault(f => f.Lcm == 24);
             if (lcm24Family.Fractions is null || lcm24Family.Fractions.Count == 0)
             {
@@ -738,9 +732,8 @@ class Program
 
             var includeSupersets = supersetsFlag || !adjacencyFlag;
             var includeAdjacency = adjacencyFlag || !supersetsFlag;
-            var (quality, root) = identity.Value;
-            var targets = ChordProgressions.Compute(quality, root, includeSupersets, includeAdjacency, lcm24Family);
-            ProgressionTableRenderer.Render(dedupChord, quality, root, includeSupersets, includeAdjacency, targets);
+            var targets = ChordProgressions.Compute(dedupChord, includeSupersets, includeAdjacency, families, relations, lcm24Family);
+            ProgressionTableRenderer.Render(dedupChord, includeSupersets, includeAdjacency, targets);
             return 0;
         });
 
