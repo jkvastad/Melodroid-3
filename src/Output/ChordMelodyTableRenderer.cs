@@ -28,7 +28,7 @@ public static class ChordMelodyTableRenderer
         {
             var keySet = new HashSet<int>(placement.Keys);
             var cells = new string[ktet + 1];
-            cells[0] = $"{placement.Lcm}@{placement.At}";
+            cells[0] = Label(placement, ktet);
             for (var k = 0; k < ktet; k++)
             {
                 if (!keySet.Contains(k))
@@ -48,4 +48,11 @@ public static class ChordMelodyTableRenderer
         table.Caption($"chord-melody: chord={chordStr} · maximal LCMs: {maxStr} · {placements.Count} placement{(placements.Count == 1 ? "" : "s")} · {ktet}-tet");
         console.Write(table);
     }
+
+    // Row label: a stabilized lcm-15 placement (its collapsing key dropped by StableFifteen) reads
+    // as "15s@At"; every other placement as "{Lcm}@{At}".
+    private static string Label(Placement placement, int ktet) =>
+        Placements.CollapsingKey(placement, ktet) is int ck && !placement.Keys.Contains(ck)
+            ? $"15s@{placement.At}"
+            : $"{placement.Lcm}@{placement.At}";
 }

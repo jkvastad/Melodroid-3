@@ -615,6 +615,12 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
+        var chordMelodyStable15Option = new Option<bool>("--stable-15")
+        {
+            Description = "Show each lcm-15 placement in its stable form 15s@At: drop the collapsing key (At+8) mod 12 and label the row 15s. 12-tet only; no effect on other families or ktets. Combine with --drop-collapsed to first remove rows that collapsed onto a chord key.",
+            DefaultValueFactory = _ => false,
+        };
+
         var chordMelodyCommand = new Command(
             "chord-melody",
             "Matrix view: rows are maximal-LCM placements containing the given chord; columns are the k-tet keys; cells mark whether each key is in the placement. Reading column K shows which placements survive playing key K as melody.");
@@ -624,6 +630,7 @@ class Program
         chordMelodyCommand.Add(chordMelodyChordKeysOption);
         chordMelodyCommand.Add(chordMelodyDropRenormalizedOption);
         chordMelodyCommand.Add(chordMelodyDropCollapsedOption);
+        chordMelodyCommand.Add(chordMelodyStable15Option);
         chordMelodyCommand.Add(ktetOption);
         chordMelodyCommand.SetAction(parse =>
         {
@@ -633,6 +640,7 @@ class Program
             var chordKeys = parse.GetValue(chordMelodyChordKeysOption) ?? Array.Empty<int>();
             var dropRenormalizedSubsets = parse.GetValue(chordMelodyDropRenormalizedOption);
             var dropCollapsed = parse.GetValue(chordMelodyDropCollapsedOption);
+            var stable15 = parse.GetValue(chordMelodyStable15Option);
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -656,6 +664,7 @@ class Program
             var maximalLcms = Placements.MaximalLcms(families, relations, dropRenormalizedSubsets);
             var placements = Placements.FindMaximalContaining(dedupChord, families, relations, k, dropRenormalizedSubsets);
             if (dropCollapsed) placements = Placements.DropCollapsed(placements, dedupChord, k);
+            if (stable15) placements = Placements.StableFifteen(placements, k);
             ChordMelodyTableRenderer.Render(dedupChord, maximalLcms, k, placements);
             return 0;
         });

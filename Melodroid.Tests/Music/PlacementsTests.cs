@@ -251,6 +251,39 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void StableFifteen_drops_only_the_collapsing_key_of_lcm15_rows()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+        var chord = new[] { 0, 3, 6 };
+
+        var placements = Placements.FindMaximalContaining(chord, families, relations, ktet: 12);
+        var stable = Placements.StableFifteen(placements, ktet: 12);
+
+        // 15@3's collapsing key is (3+8) mod 12 = 11: the full 0 1 3 4 6 8 11 becomes the stable
+        // 0 1 3 4 6 8. The chord keys 0 3 6 stay put.
+        var fifteen = stable.Single(p => p.Lcm == 15);
+        fifteen.At.Should().Be(3);
+        fifteen.Keys.Should().BeEquivalentTo(new[] { 0, 1, 3, 4, 6, 8 });
+        fifteen.Keys.Should().NotContain(11);
+
+        // Non-lcm-15 placements are untouched (same key sets as before).
+        foreach (var p in placements.Where(p => p.Lcm != 15))
+            stable.Single(s => s.Lcm == p.Lcm && s.At == p.At).Keys.Should().Equal(p.Keys);
+    }
+
+    [Fact]
+    public void StableFifteen_leaves_non_12tet_placements_untouched()
+    {
+        // CollapsingKey is null off the 12-tet lcm-15 case, so nothing is dropped.
+        var placements = new List<Placement> { new(15, 7, new[] { 0, 3, 7 }) };
+
+        Placements.StableFifteen(placements, ktet: 19)[0].Keys.Should().Equal(0, 3, 7);
+    }
+
+    [Fact]
     public void FindMaximalContaining_full_C_major_scale_returns_only_24_at_0()
     {
         var families = LcmFamilies.Compute(

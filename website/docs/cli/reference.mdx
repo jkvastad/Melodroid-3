@@ -151,7 +151,7 @@ length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` ca
 
 ```bash
 melodroid table chord-melody --chord-keys 0 4 7 \
-  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--drop-renormalized-subsets] [--drop-collapsed]
+  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--drop-renormalized-subsets] [--drop-collapsed] [--stable-15]
 ```
 
 Matrix of maximal-LCM placements containing the chord vs each key. *Maximal* means a family
@@ -165,6 +165,11 @@ dominated, filtering those rows out (the stricter pre-collapse view).
 `--drop-collapsed` drops each lcm-15 placement `15@x` whose collapsing key `(x+8) mod 12` is one
 of the chord keys — under lcm-24 preference it has collapsed onto the adjacent `24@(x+1)`/`24@(x+8)`
 and is redundant. 12-tet only; no effect on other families or ktets.
+
+`--stable-15` instead keeps each lcm-15 row but shows it in its **stable form** `15s@x`: the
+collapsing key `(x+8) mod 12` is dropped from the row and the label becomes `15s` (e.g. `15@3`'s
+full `0 1 3 4 6 8 11` becomes `15s@3` = `0 1 3 4 6 8`). 12-tet only. Combine with `--drop-collapsed`
+to first remove the rows that collapsed onto a chord key, then stabilise the survivors.
 
 ### `chords`
 

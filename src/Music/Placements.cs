@@ -185,6 +185,27 @@ public static class Placements
             .ToList();
     }
 
+    // Reduce each lcm-15 placement to its stable form (15s@At) by dropping its collapsing key
+    // (At+8) mod 12 — the key whose lcm-24 preference collapses 15@At onto an adjacent lcm-24. The
+    // remaining keys are exactly the stable 15s subset (e.g. 15@0 → 0 1 3 5 8 9 10 becomes
+    // 0 1 3 5 9 10). Other placements pass through untouched. 12-tet / lcm-15 only (CollapsingKey is
+    // null otherwise). A stabilized row is recognisable by the absence of its collapsing key, which
+    // a full 15@At placement always contains.
+    public static IReadOnlyList<Placement> StableFifteen(
+        IReadOnlyList<Placement> placements,
+        int ktet)
+    {
+        var result = new List<Placement>(placements.Count);
+        foreach (var p in placements)
+        {
+            if (CollapsingKey(p, ktet) is int ck)
+                result.Add(p with { Keys = p.Keys.Where(key => key != ck).ToList() });
+            else
+                result.Add(p);
+        }
+        return result;
+    }
+
     public static IReadOnlyList<Placement> FindMaximalContaining(
         IReadOnlyCollection<int> chordKeys,
         IReadOnlyList<LcmFamily> families,
