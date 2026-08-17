@@ -205,6 +205,51 @@ public class PlacementsTests
             });
     }
 
+    [Theory]
+    [InlineData(15, 7, 12, 3)]
+    [InlineData(15, 11, 12, 7)]
+    [InlineData(15, 4, 12, 0)]
+    public void CollapsingKey_lcm15_in_12tet_is_at_plus_8(int lcm, int at, int ktet, int expected)
+    {
+        var placement = new Placement(lcm, at, new[] { 0 });
+
+        Placements.CollapsingKey(placement, ktet).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(24, 0, 12)] // non-15 family
+    [InlineData(15, 7, 19)] // non-12 ktet
+    public void CollapsingKey_returns_null_off_the_12tet_lcm15_case(int lcm, int at, int ktet)
+    {
+        var placement = new Placement(lcm, at, new[] { 0 });
+
+        Placements.CollapsingKey(placement, ktet).Should().BeNull();
+    }
+
+    [Fact]
+    public void DropCollapsed_major_triad_keeps_15at7_and_all_24()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+        var relations = FamilyRelations.Compute(families);
+        var chord = new[] { 0, 4, 7 };
+
+        var placements = Placements.FindMaximalContaining(
+            chord, families, relations, ktet: 12, dropRenormalizedSubsets: true);
+        var kept = Placements.DropCollapsed(placements, chord, ktet: 12);
+
+        // 15@4 (collapses on 0) and 15@11 (collapses on 7) are dropped; 15@7 (collapses on 3,
+        // not in the chord) survives alongside every lcm-24 row.
+        kept
+            .Select(p => (p.Lcm, p.At))
+            .Should().Equal(new[]
+            {
+                (15, 7),
+                (24, 0), (24, 5), (24, 7),
+            });
+    }
+
     [Fact]
     public void FindMaximalContaining_full_C_major_scale_returns_only_24_at_0()
     {

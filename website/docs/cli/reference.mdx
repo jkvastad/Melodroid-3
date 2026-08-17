@@ -151,7 +151,7 @@ length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` ca
 
 ```bash
 melodroid table chord-melody --chord-keys 0 4 7 \
-  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--drop-renormalized-subsets]
+  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--drop-renormalized-subsets] [--drop-collapsed]
 ```
 
 Matrix of maximal-LCM placements containing the chord vs each key. *Maximal* means a family
@@ -161,6 +161,10 @@ another, whose placements coincide) are collapsed to the lowest-LCM representati
 
 `--drop-renormalized-subsets` also treats a renormalized subset of a larger allowed family as
 dominated, filtering those rows out (the stricter pre-collapse view).
+
+`--drop-collapsed` drops each lcm-15 placement `15@x` whose collapsing key `(x+8) mod 12` is one
+of the chord keys — under lcm-24 preference it has collapsed onto the adjacent `24@(x+1)`/`24@(x+8)`
+and is redundant. 12-tet only; no effect on other families or ktets.
 
 ### `chords`
 

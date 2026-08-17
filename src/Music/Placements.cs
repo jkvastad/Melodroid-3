@@ -166,6 +166,25 @@ public static class Placements
             .ToList();
     }
 
+    // The collapsing key of an lcm-15 placement: playing key (At+8) mod 12 reinterprets 15@At as the
+    // adjacent lcm-24 placements 24@(At+1)/24@(At+8) ("lcm 24 preference"). 12-tet / lcm-15 only,
+    // matching the adjacency rule in ChordProgressions. Null for any other family or ktet.
+    public static int? CollapsingKey(Placement placement, int ktet) =>
+        ktet == 12 && placement.Lcm == 15 ? (placement.At + 8) % 12 : null;
+
+    // Drop lcm-15 placements whose collapsing key is one of the chord keys (they have collapsed onto
+    // an lcm-24 under lcm-24 preference). Other placements pass through untouched.
+    public static IReadOnlyList<Placement> DropCollapsed(
+        IReadOnlyList<Placement> placements,
+        IReadOnlyCollection<int> chordKeys,
+        int ktet)
+    {
+        var chord = new HashSet<int>(chordKeys);
+        return placements
+            .Where(p => CollapsingKey(p, ktet) is not int ck || !chord.Contains(ck))
+            .ToList();
+    }
+
     public static IReadOnlyList<Placement> FindMaximalContaining(
         IReadOnlyCollection<int> chordKeys,
         IReadOnlyList<LcmFamily> families,
