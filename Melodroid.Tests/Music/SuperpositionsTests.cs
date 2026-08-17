@@ -302,4 +302,82 @@ public class SuperpositionsTests
         anyRows.Should().NotBeEmpty();
         anyRows.Should().OnlyContain(s => s.CombinedLcm == null);
     }
+
+    private static (IReadOnlyList<Superposition> Rows, IReadOnlyList<Superposition> Filtered) EnumerateAndFilter(
+        int[] target, IReadOnlyCollection<int> references, bool collapseAliases)
+    {
+        var (rows, _) = Superpositions.Enumerate(
+            target, DefaultFamilies(), ktet: 12, minBlockLcm: 2, maxBlockLcm: 24, maxResults: 200, uniqueReference: true);
+        return (rows, Superpositions.ApplyFilters(rows, references, collapseAliases));
+    }
+
+    [Fact]
+    public void Collapse_folds_isomorphic_aliases_of_the_same_result_to_one_lowest_lcm_row()
+    {
+        // blues@0 {0,2,3,4,7} at reference 0 with LCM-40 result {0,2,3,4,7,8,10,11} is reachable
+        // as 5@0+8@0, 8@0+10@0 and 8@0+20@0 — all the same keyboard union. Collapse keeps exactly
+        // one, the lowest-LCM representative 5@0+8@0.
+        var (rows, filtered) = EnumerateAndFilter(new[] { 0, 2, 3, 4, 7 }, references: new[] { 0 }, collapseAliases: true);
+
+        var ref0Lcm40 = rows.Where(s =>
+            s.Reference == 0 && s.Pieces.Count == 2 &&
+            new SortedSet<int>(s.Pieces.SelectMany(p => KeysOf(p.Lcm, p.At, ktet: 12)))
+                .SetEquals(new[] { 0, 2, 3, 4, 7, 8, 10, 11 })).ToList();
+
+        // Enumeration offers several aliases...
+        ref0Lcm40.Count.Should().BeGreaterThan(1);
+        // ...but after collapse exactly one survives, and it is 5@0 + 8@0.
+        var survivors = filtered.Where(s =>
+            s.Reference == 0 && s.Pieces.Count == 2 &&
+            new SortedSet<int>(s.Pieces.SelectMany(p => KeysOf(p.Lcm, p.At, ktet: 12)))
+                .SetEquals(new[] { 0, 2, 3, 4, 7, 8, 10, 11 })).ToList();
+        survivors.Should().ContainSingle();
+        survivors[0].Pieces.Select(p => (p.Lcm, p.At)).Should()
+            .BeEquivalentTo(new[] { (5, 0), (8, 0) });
+    }
+
+    [Fact]
+    public void Reference_filter_keeps_only_rows_anchored_on_the_requested_keys()
+    {
+        var (_, filtered) = EnumerateAndFilter(new[] { 0, 2, 3, 4, 7 }, references: new[] { 0, 7 }, collapseAliases: false);
+
+        filtered.Should().NotBeEmpty();
+        filtered.Should().OnlyContain(s => s.Reference == 0 || s.Reference == 7);
+    }
+
+    [Fact]
+    public void Reference_filter_does_not_merge_decompositions_of_different_piece_counts()
+    {
+        // At reference 0 both the 2-piece 5@0+24@0 and the 3-piece 3@0+5@0+8@0 cover the same
+        // union for harm@0; collapse must keep the 2-piece one rather than fold it into the 3-piece.
+        var (_, filtered) = EnumerateAndFilter(new[] { 0, 2, 3, 5, 7, 8, 11 }, references: new[] { 0 }, collapseAliases: true);
+
+        filtered.Should().Contain(s =>
+            s.Reference == 0 && s.Pieces.Count == 2 &&
+            s.Pieces.Any(p => p.Lcm == 5 && p.At == 0) &&
+            s.Pieces.Any(p => p.Lcm == 24 && p.At == 0));
+    }
+
+    [Fact]
+    public void Collapse_and_reference_filter_surface_harm_dominant_fit_without_its_aliases()
+    {
+        // harm@0 {0,2,3,5,7,8,11}: the tightest two-piece fit is 4@7 + 15@7 (reference 7), whose
+        // 12@7/20@7 aliases must be gone after collapse.
+        var (_, filtered) = EnumerateAndFilter(new[] { 0, 2, 3, 5, 7, 8, 11 }, references: new[] { 0, 7, 2 }, collapseAliases: true);
+
+        filtered.Should().Contain(s =>
+            s.Reference == 7 && s.Pieces.Count == 2 &&
+            s.Pieces.Any(p => p.Lcm == 4 && p.At == 7) &&
+            s.Pieces.Any(p => p.Lcm == 15 && p.At == 7));
+        filtered.Should().NotContain(s =>
+            s.Pieces.Any(p => (p.Lcm == 12 || p.Lcm == 20) && p.At == 7) &&
+            s.Pieces.Any(p => p.Lcm == 15 && p.At == 7));
+    }
+
+    [Fact]
+    public void Empty_reference_and_no_collapse_is_the_identity_filter()
+    {
+        var (rows, filtered) = EnumerateAndFilter(new[] { 0, 2, 4, 5, 7, 9, 11 }, references: Array.Empty<int>(), collapseAliases: false);
+        filtered.Should().Equal(rows);
+    }
 }

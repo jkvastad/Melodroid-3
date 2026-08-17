@@ -110,6 +110,7 @@ Lists every placement whose keys contain the requested set, tightest fits first.
 ```bash
 melodroid table superpositions --keys 0 2 4 5 7 9 11 \
   [--min-block-lcm 2] [--max-block-lcm 24] [--max-results 200] [--any-reference] \
+  [--collapse-aliases] [--reference 0 7] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -118,6 +119,8 @@ Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of L
 By default only **unique-reference** decompositions are listed: every piece shares one reference key (anchor), shown in the `Ref` column. The reference of a placement `L@a` is its anchor `a` — the key where the family's fundamental (`1/1`) sits — so a unique-reference cover roots the whole sound on a single fundamental. Isomorphic families are handled as aliases: the same keyboard key-set reachable by different families at shifted anchors (e.g. `4@0` and `3@7`, or `8@0` and `12@7`) lets a piece join whichever reference its partners share. With `--min-block-lcm 8 --max-block-lcm 12` this exposes the major scale as `8@0 + 12@0` (rooted on key 0, no extras) — the shared-reference alias of the cross-anchor `8@0 + 8@5`. Because the pieces share a fundamental, the whole superposition's wave pattern length is the `lcm` of their family LCMs, shown in the `LCM` column: for `8@0 + 12@0` that is `lcm(8, 12) = 24` — the very pattern of the single-piece `24@0` cover.
 
 Pass `--any-reference` to drop the shared-reference requirement and list every minimal cover (pieces may sit at different anchors, the `Ref` column is omitted); that is where mixed-reference identities such as the major scale `= 8@0 + 8@5` and the natural minor `= 8@1 + 8@6` appear.
+
+Two flags cut the listing down to the interesting rows. `--collapse-aliases` folds together decompositions that produce the identical union at the same reference **with the same piece count** — the isomorphic/renormalisation aliases such as `5@0 + 8@0` = `8@0 + 10@0` = `8@0 + 20@0`, or `4@7 + 15@7` = `12@7 + 15@7` = `20@7 + 15@7` — keeping one lowest-LCM representative per group (piece count is part of the grouping, so a genuinely different cover with more, smaller pieces is never mistaken for an alias). `--reference 0 7 …` restricts the listing to unique-reference decompositions anchored on the given key(s) (octave-normalized like `--keys`); it is incompatible with `--any-reference`, which has no single anchor to filter on. Together they answer "what are the distinct ways to build this key set rooted on its tonic or dominant?" — e.g. `--keys 0 2 3 5 7 8 11 --collapse-aliases --reference 0 7 2` reduces the harmonic minor scale's 55 raw rows to its handful of tonic/dominant two-piece fits.
 
 ### `voicings`
 

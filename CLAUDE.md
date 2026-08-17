@@ -74,7 +74,7 @@ table key-sweep         bin --keys / --ratios stepping through a k-tet tuning's 
 table placement         map an LCM family's fractions onto k-tet keys at a chosen anchor
 table family-overlap    sweep one family's placements against a reference family
 table key-supersets     placements whose keys are a superset of given --keys (--compare splits vs a second key set: common / only-A / only-B)
-table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors)
+table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors; --collapse-aliases folds same-count isomorphic aliases to a lowest-LCM representative; --reference restricts to given anchor keys)
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table subsets           key-sweep every size-≥2 subset of a key set (--lcm@--at or --keys), listing the LCM families those subsets full-match
 table chord-melody      matrix of maximal-LCM placements containing a chord vs each key (maximal = not a literal subset of another allowed family; renormalized subsets kept as own rows unless --drop-renormalized-subsets, but isomorphic families always collapse to the lowest-LCM representative; --drop-collapsed removes lcm-15 rows whose collapsing key (At+8) mod 12 is a chord key, 12-tet only; --stable-15 instead keeps each lcm-15 row but shows it in stable form 15s@At, dropping the collapsing key)

@@ -90,10 +90,47 @@ The overlap is
 
 ### Non-lcm key sets
 Some non-lcm key sets are of interest due to their traditional popularity.
+Notably these compositions can require 3 or more lcm parts if the lcm is locked to range 8-12, but allowing 2-24 yields compositions of two parts.
+
+Using lcm 2–24 in the superpositions command floods it with rows, most of them either isomorphic aliases of the same keyboard result (e.g. `5@0 + 8@0` = `8@0 + 10@0` = `8@0 + 20@0`) or anchored on musically arbitrary keys.
+We cut this down with two options: 
+`--collapse-aliases` folds each group of same-reference, same-piece-count aliases into its lowest-lcm representative, 
+and `--reference` restricts the listing to anchors of interest — e.g. the tonic (0), the dominant (7), and any adjacent scale root.
 
 #### Harmonic minor scale
 The harmonic minor scale placed at 0 (harm@0, 0 2 3 5 7 8 11) is quite close to 15@2, exchanging 10 for 8, which introduces dim7 (2 5 8 11).
 Notably key 10 for 15@2 is a collapsing key which triggers preference, which will be discussed later on.
+
+Filtering to the tonic, dominant and the adjacent `15@2` root:
+
+`melodroid table superpositions --keys 0 2 3 5 7 8 11 --collapse-aliases --reference 0 7 2`
+
+| Pieces | Ref | LCM | Extra |
+| :--- | ---: | ---: | :--- |
+| 4@7 + 15@7 | 7 | 60 | 4 10 |
+| 5@0 + 24@0 | 0 | 120 | 4 9 10 |
+| 8@0 + 15@0 | 0 | 120 | 1 4 9 10 |
+| 8@7 + 15@7 | 7 | 120 | 4 6 9 10 |
+
+The tightest two-piece fit is `4@7 + 15@7` — anchored not on the tonic but on the **dominant** (key 7), with the lowest lcm (60) and only two extras (4, 10).
+The best tonic-rooted reading, `5@0 + 24@0`, costs one more extra (4, 9, 10) but roots the sound on the consonant lcm 24.
+No two-piece composition anchors on 2: harmonic minor's closeness to `15@2` is a near-identity (a single swapped key), not a superposition, so its actual decompositions prefer the dominant instead.
+
+#### Blues
+The blues scale at 0 is blues@0, 0 2 3 4 7
+
+`melodroid table superpositions --keys 0 2 3 4 7 --collapse-aliases --reference 0 7 2`
+
+| Pieces | Ref | LCM | Extra |
+| :--- | ---: | ---: | :--- |
+| 5@7 + 6@7 | 7 | 30 | 5 10 |
+| 2@7 + 15@7 | 7 | 30 | 5 8 10 |
+| 5@0 + 8@0 | 0 | 40 | 8 10 11 |
+| 9@2 + 15@2 | 2 | 45 | 5 10 11 |
+| 5@7 + 12@7 | 7 | 60 | 5 10 11 |
+
+Blues repeats the harmonic-minor pattern: its tightest fit `5@7 + 6@7` is again anchored on the **dominant** (lcm 30, two extras 5, 10), ahead of the tonic-rooted `5@0 + 8@0`.
+It also has a clean `9@2 + 15@2` anchored on 2, echoing harmonic minor's `15@2` relation — both scales lean on that same family, one by near-identity and the other by superposition.
 
 
 ### Concluding remarks

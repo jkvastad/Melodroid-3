@@ -553,6 +553,15 @@ class Program
         {
             Description = "Allow pieces to sit at different reference keys (anchors). Off by default, which keeps only decompositions whose pieces share one reference key.",
         };
+        var superpositionsCollapseAliasesOption = new Option<bool>("--collapse-aliases")
+        {
+            Description = "Collapse decompositions that yield the identical union at the same reference to a single lowest-LCM representative, folding away isomorphic/renormalisation aliases (e.g. 5@0+8@0 = 8@0+10@0 = 8@0+20@0). Off by default.",
+        };
+        var superpositionsReferenceOption = new Option<int[]>("--reference")
+        {
+            Description = "Restrict to unique-reference decompositions anchored on the given key(s), space-separated. Any integer is accepted and octave-normalized into [0, ktet-1]. Incompatible with --any-reference. Empty (default) keeps all references.",
+            AllowMultipleArgumentsPerToken = true,
+        };
 
         var superpositionsCommand = new Command(
             "superpositions",
@@ -565,6 +574,8 @@ class Program
         superpositionsCommand.Add(superpositionsMaxBlockLcmOption);
         superpositionsCommand.Add(superpositionsMaxResultsOption);
         superpositionsCommand.Add(superpositionsAnyReferenceOption);
+        superpositionsCommand.Add(superpositionsCollapseAliasesOption);
+        superpositionsCommand.Add(superpositionsReferenceOption);
         superpositionsCommand.Add(ktetOption);
         superpositionsCommand.SetAction(parse =>
         {
@@ -576,6 +587,8 @@ class Program
             var maxBlockLcm = parse.GetValue(superpositionsMaxBlockLcmOption) ?? maxLcm;
             var maxResults = parse.GetValue(superpositionsMaxResultsOption);
             var anyReference = parse.GetValue(superpositionsAnyReferenceOption);
+            var collapseAliases = parse.GetValue(superpositionsCollapseAliasesOption);
+            var referenceKeys = parse.GetValue(superpositionsReferenceOption) ?? Array.Empty<int>();
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -586,12 +599,15 @@ class Program
             if (minBlockLcm < 2) { AnsiConsole.MarkupLine("[red]--min-block-lcm must be ≥ 2.[/]"); return 1; }
             if (maxBlockLcm < minBlockLcm) { AnsiConsole.MarkupLine("[red]--max-block-lcm must be ≥ --min-block-lcm.[/]"); return 1; }
             if (maxResults < 1) { AnsiConsole.MarkupLine("[red]--max-results must be ≥ 1.[/]"); return 1; }
+            if (anyReference && referenceKeys.Length > 0) { AnsiConsole.MarkupLine("[red]--reference cannot be combined with --any-reference (any-reference rows share no single anchor).[/]"); return 1; }
 
             // Octave-normalize keys into [0, k) so callers can pass any integer (e.g. 14 → 2, -1 → k-1).
             var dedupKeys = keys.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
+            var dedupReferences = referenceKeys.Select(key => ((key % k) + k) % k).Distinct().ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var (rows, truncated) = Superpositions.Enumerate(dedupKeys, families, k, minBlockLcm, maxBlockLcm, maxResults, uniqueReference: !anyReference);
+            rows = Superpositions.ApplyFilters(rows, dedupReferences, collapseAliases);
             SuperpositionsTableRenderer.Render(dedupKeys, k, minBlockLcm, maxBlockLcm, rows, truncated, uniqueReference: !anyReference);
             return 0;
         });

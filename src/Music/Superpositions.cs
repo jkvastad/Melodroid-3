@@ -117,6 +117,74 @@ public static class Superpositions
     }
 
     /// <summary>
+    /// Post-filter enumerated decompositions for display. When <paramref name="references"/> is
+    /// non-empty, keep only rows anchored on one of those reference keys (unique-reference rows;
+    /// any-reference rows have a null <c>Reference</c> and are dropped). When
+    /// <paramref name="collapseAliases"/> is true, group the survivors by
+    /// <c>(Reference, piece count, union of all piece keys)</c> and keep a single representative per
+    /// group — the one minimizing (max piece LCM, then total piece LCM, then the piece string). This
+    /// folds away isomorphic/renormalisation aliases that produce the identical keyboard result at
+    /// the same reference with the same number of pieces (e.g. <c>5@0+8@0</c> = <c>8@0+10@0</c> =
+    /// <c>8@0+20@0</c>). Piece count is part of the key so a genuinely different decomposition with
+    /// more (but smaller) pieces is never mistaken for an alias. The relative order of the kept rows
+    /// (as produced by <see cref="Enumerate"/>) is preserved.
+    /// </summary>
+    public static IReadOnlyList<Superposition> ApplyFilters(
+        IReadOnlyList<Superposition> rows,
+        IReadOnlyCollection<int> references,
+        bool collapseAliases)
+    {
+        IEnumerable<Superposition> filtered = rows;
+
+        if (references.Count > 0)
+        {
+            var refSet = new HashSet<int>(references);
+            filtered = filtered.Where(r => r.Reference is int anchor && refSet.Contains(anchor));
+        }
+
+        if (!collapseAliases)
+            return filtered.ToList();
+
+        static string UnionKey(Superposition s) =>
+            string.Join(",", new SortedSet<int>(s.Pieces.SelectMany(p => p.Keys)));
+
+        var kept = new List<Superposition>();
+        var chosenPerGroup = new Dictionary<string, int>(); // group key -> index into kept
+
+        foreach (var row in filtered)
+        {
+            var groupKey = $"{row.Reference?.ToString() ?? "*"}|{row.Pieces.Count}|{UnionKey(row)}";
+            if (!chosenPerGroup.TryGetValue(groupKey, out var index))
+            {
+                chosenPerGroup[groupKey] = kept.Count;
+                kept.Add(row);
+                continue;
+            }
+
+            if (IsBetterRepresentative(row, kept[index]))
+                kept[index] = row; // keep this row's earlier slot to preserve Enumerate ordering
+        }
+
+        return kept;
+    }
+
+    // Prefer the lower-LCM alias: smallest max piece LCM, then smallest total, then piece string.
+    private static bool IsBetterRepresentative(Superposition candidate, Superposition current)
+    {
+        var candMax = candidate.Pieces.Max(p => p.Lcm);
+        var curMax = current.Pieces.Max(p => p.Lcm);
+        if (candMax != curMax) return candMax < curMax;
+
+        var candSum = candidate.Pieces.Sum(p => p.Lcm);
+        var curSum = current.Pieces.Sum(p => p.Lcm);
+        if (candSum != curSum) return candSum < curSum;
+
+        var candStr = string.Join(" + ", candidate.Pieces.Select(p => $"{p.Lcm}@{p.At}"));
+        var curStr = string.Join(" + ", current.Pieces.Select(p => $"{p.Lcm}@{p.At}"));
+        return string.CompareOrdinal(candStr, curStr) < 0;
+    }
+
+    /// <summary>
     /// Build the deduped candidate pieces for one search. When <paramref name="anchor"/> is set,
     /// only placements at that anchor are considered (and dedup keeps the smallest-LCM family that
     /// reaches a given key-set there — this is what surfaces an alias such as 12@7 when LCM 8 can't
