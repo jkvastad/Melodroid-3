@@ -139,16 +139,32 @@ Notably the blues scale is adjacent to 15@2 and 24@3,10 - but also 8@0, and remo
 The subset adjacent to 24@10 could perhaps be the reason for the blues note:
 playing key 3 in an 0 4 7 context with its strong 8@5 placement perhaps pullls it toward 24@10.
 
-### Concluding remarks
+### Concluding Remarks
 There seems to be a phenomena where there is a large difference of perception between something like a major vs. minor (or even dim) feel when a 15@x placement includes or excludes note x+8.
 As we saw in the example for 15@0, key 8 is the root for 8@8 but also for 12@8 (8@1).
 Including it in lcm 15 perhaps collapses the perception of the odd pattern to an even lcm 8 or 24.
 
+#### On Blues
 When playing a major chord 0 4 7 the blues note 3 could perhaps work via a pull to 24@10.
 Blues@0 is adjacent to 15@2 which collapses on key 10, indeed the major chord 7 11 2 playing blues using key 10 works well together with 0 4 7 using key 3.
+There is also a similar bluesy feel of playing a 7 chord e.g. 0 4 7 10 where the 10 fits well with the 24@10 pull feel idea.
 
+Practically this could mean that one should perhaps think of the blues scale as modulating between 8@5,3,10 - the three isomorphic groups constituting 24@10.
+
+#### On Harmonic Minor
+For harmonic minor harm@0 this could be the ambiguity between 15@2 and 24@3, while for blues@0 it is between 24@10 and 8@0.
+Further, 24@0 is 8@0 composed with 8@5 - a pattern which can be repeated the other way, saying 8@7 composes with 8@0, producing the circle of fifths.
+
+Practically this could mean that playing harm@0 is perhaps best thought of as modulating between 8@3,8,10 - the three isomorphic groups constituting 24@3.
+Of note is taking care playing key 10 explicitly as this causes lcm 15 collapse, janking perception from 15 to 8.
+
+#### On composition and perception
 Perhaps the larger lcms are not only perceived as themselves, but can be perceived as their consituents. 
 Certain musical feels are perhaps an exploitation of this ambiguity, e.g. the swinging motion of blues is due to a pull from one perceived placement to another due to ambigous interpretations.
+
+In this way, perhaps adjacency is an instructive way of looking at the ambiguity of harmonic structures,
+allowing us to modulate between consituent parts,
+respecting some seemingly arbitrary preferences of the musical brain.
 
 ## High LCMs as compositions of low LCMs
 A high lcm family can sometimes be expressed as a composition of lower lcm families.
@@ -172,7 +188,9 @@ These pairs of small lcms have overlapping sets:
 
 8@0 = `{0 2 4 7 11}`, 8@5 = `{5 7 9 0 4 }` $\rightarrow$ 8@0 $\cap$ 8@5 = `{0 4 7}`
 
-suggesting that perhaps there is no lcm 24 but instead it is better thought of as these superpositions.
+Perhaps there is no lcm 24 but instead it is better thought of as these superpositions.
+If so, then each 8@x has a neighbour at x+5 (8@0 is in turn 4@0 + 4@7), producing the circle of fifths.
+
 
 ### LCM 20
 For 20@0 = `{0 3 4 5 7 8 10}` we note that this is isomprphic to 15@7, but expressed in lcm $\leq$ 12 we have
@@ -231,47 +249,6 @@ The overlap is
 
 `{0 5}` is a bare fifth (2@5), again the smallest good fraction — as with lcm 20's `{0 7}` the two pieces barely overlap, perhaps why a full voicing of 15 also sounds tense.
 
-### Non-lcm key sets
-Some non-lcm key sets are of interest due to their traditional popularity.
-Notably these compositions can require 3 or more lcm parts if the lcm is locked to range 8-12, but allowing 2-24 yields compositions of two parts.
-Using `--collapse-aliases` we can remove superflous entries.
-
-#### Harmonic minor scale
-The harmonic minor scale placed at 0 (harm@0, 0 2 3 5 7 8 11) is quite close to 15@2, exchanging 10 for 8, which introduces dim7 (2 5 8 11).
-Notably key 10 for 15@2 is a collapsing key which triggers preference (TODO: discuss preference first?).
-
-Filtering to the tonic, dominant and the adjacent `15@2` root:
-
-`melodroid table superpositions --keys 0 2 3 5 7 8 11 --collapse-aliases --reference 0 7 2`
-
-| Pieces | Ref | LCM | Extra |
-| :--- | ---: | ---: | :--- |
-| 4@7 + 15@7 | 7 | 60 | 4 10 |
-| 5@0 + 24@0 | 0 | 120 | 4 9 10 |
-| 8@0 + 15@0 | 0 | 120 | 1 4 9 10 |
-| 8@7 + 15@7 | 7 | 120 | 4 6 9 10 |
-
-The tightest two-piece fit is `4@7 + 15@7` — anchored not on the tonic but on the **dominant** (key 7), with the lowest lcm (60) and only two extras (4, 10).
-The best tonic-rooted reading, `5@0 + 24@0`, costs one more extra (4, 9, 10) but roots the sound on the consonant lcm 24.
-No two-piece composition anchors on 2: harmonic minor's closeness to `15@2` is a near-identity (a single swapped key), not a superposition, so its actual decompositions prefer the dominant instead.
-
-#### Blues
-The blues scale at 0 is blues@0, 0 2 3 4 7
-
-`melodroid table superpositions --keys 0 2 3 4 7 --collapse-aliases --reference 0 7 2`
-
-| Pieces | Ref | LCM | Extra |
-| :--- | ---: | ---: | :--- |
-| 5@7 + 6@7 | 7 | 30 | 5 10 |
-| 2@7 + 15@7 | 7 | 30 | 5 8 10 |
-| 5@0 + 8@0 | 0 | 40 | 8 10 11 |
-| 9@2 + 15@2 | 2 | 45 | 5 10 11 |
-| 5@7 + 12@7 | 7 | 60 | 5 10 11 |
-
-Blues repeats the harmonic-minor pattern: its tightest fit `5@7 + 6@7` is again anchored on the **dominant** (lcm 30, two extras 5, 10), ahead of the tonic-rooted `5@0 + 8@0`.
-It also has a clean `9@2 + 15@2` anchored on 2, echoing harmonic minor's `15@2` relation — both scales lean on that same family, one by near-identity and the other by superposition.
-
-
 ### Concluding remarks
 Looking at high LCMs as compositions of low lcms we have the following patterns:
 
@@ -290,4 +267,3 @@ From this we see that the structure of 18@0 (adding in the extra key) is identic
 Similarly lcm 15 and 20 share structure with 15@0 being 20@5 expressed as 10@5 + 12@5.
 With 15 and 20 sounding quite more tense than 24/18, perhaps it is that the total lcm of the composing smaller lcms is much greater for 15/20 (lcm 60) vs. 18/24 with 24 (or 36).
 Another possibilty is that 15 is a properly perceived structure, but competes with a preferred alternative (lcm 24), as we will discuss in the upcoming sections.
-
