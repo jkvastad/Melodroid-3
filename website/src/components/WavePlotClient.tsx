@@ -7,6 +7,7 @@ import {
   lcmFamily,
   sampleSine,
 } from '@site/src/lib/lcmFamilies';
+import VoicingPlayer from './VoicingPlayer';
 
 export type WavePlotProps = {
   lcm: number;
@@ -18,6 +19,8 @@ export type WavePlotProps = {
   differenceOnly?: boolean;
   height?: number; // px, default 360
   title?: string; // override for the auto-generated "LCM family L=…" heading
+  playable?: boolean; // show a Tone.js play button for the shown constituents
+  label?: string; // override for the play button caption
 };
 
 type VLine = {x: number; color: string};
@@ -60,6 +63,12 @@ type PlotModel = {
   yMax: number;
   vlines: VLine[];
   title: string;
+  // Constituent series rendered in this mode, mapped to their uPlot series
+  // index (parallel to `data`/`series`) so legend toggles can drive playback.
+  constituents: {seriesIndex: number; ratio: number}[];
+  // Every family member's ratio — the fallback play set when no constituent
+  // series are individually rendered (e.g. mode 'sum').
+  familyRatios: number[];
   error?: string;
 };
 
@@ -80,6 +89,8 @@ function buildModel(
     yMax: 1,
     vlines: [],
     title: titleOverride ?? `LCM family L=${lcmValue}`,
+    constituents: [],
+    familyRatios: [],
   };
 
   const family = lcmFamily(lcmValue, maxSize, maxPrime);
@@ -108,6 +119,8 @@ function buildModel(
   const data: (number[] | Float64Array)[] = [xs];
   const series: uPlot.Series[] = [{label: 't'}];
   const vlines: VLine[] = [];
+  const constituents: {seriesIndex: number; ratio: number}[] = [];
+  const familyRatios = family.map(fractionValue);
 
   const showConstituents = mode === 'all' || mode === 'constituents';
   const showSum =
@@ -121,6 +134,7 @@ function buildModel(
         stroke: constituentColor(i, n),
         width: 1.5,
       });
+      constituents.push({seriesIndex: data.length - 1, ratio: fractionValue(f)});
     });
   }
 
@@ -181,7 +195,16 @@ function buildModel(
   const base = titleOverride ?? `LCM family L=${lcmValue} (${n} fractions)`;
   const title = `${base}${modeSuffix}${subSuffix}`;
 
-  return {data, series, yMin: -(n + 1), yMax: n + 1, vlines, title};
+  return {
+    data,
+    series,
+    yMin: -(n + 1),
+    yMax: n + 1,
+    vlines,
+    title,
+    constituents,
+    familyRatios,
+  };
 }
 
 export default function WavePlotClient({
@@ -194,6 +217,8 @@ export default function WavePlotClient({
   differenceOnly = false,
   height = 360,
   title,
+  playable = false,
+  label,
 }: WavePlotProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
@@ -203,6 +228,9 @@ export default function WavePlotClient({
     initialMode,
   );
   const [spp, setSpp] = useState(initialSpp);
+  // Ratios the play button sounds — kept in sync with the constituents currently
+  // shown in the plot (legend clicks toggle series visibility via setSeries).
+  const [playRatios, setPlayRatios] = useState<number[]>([]);
 
   const model = useMemo(
     () =>
@@ -225,6 +253,17 @@ export default function WavePlotClient({
   // data without re-running (and tearing down the plot) on every spp change.
   const modelRef = useRef(model);
   modelRef.current = model;
+
+  // Reset the play set whenever the model changes (mode / lcm / etc.): every
+  // constituent starts visible, so the button plays them all. Falls back to the
+  // full family when no constituent series are rendered (e.g. mode 'sum').
+  useEffect(() => {
+    setPlayRatios(
+      model.constituents.length
+        ? model.constituents.map((c) => c.ratio)
+        : model.familyRatios,
+    );
+  }, [model]);
 
   // The plot's structure (series set, title, y-bounds, size) depends on these,
   // but not on spp. Re-creating uPlot only when this key changes lets a pure
@@ -257,6 +296,20 @@ export default function WavePlotClient({
       series: model.series,
       cursor: {drag: {x: true, y: false}},
       plugins: [vLinesPlugin(() => vlinesRef.current)],
+      hooks: {
+        // Legend clicks toggle a series' visibility and fire this hook; mirror
+        // the shown constituents into the play set so Play sounds what's drawn.
+        setSeries: [
+          (u) => {
+            const cons = modelRef.current.constituents;
+            setPlayRatios(
+              cons
+                .filter((c) => u.series[c.seriesIndex]?.show !== false)
+                .map((c) => c.ratio),
+            );
+          },
+        ],
+      },
     };
 
     const u = new uPlot(opts, model.data as uPlot.AlignedData, containerRef.current);
@@ -345,6 +398,12 @@ export default function WavePlotClient({
             onChange={(e) => setSpp(Number(e.target.value))}
           />
         </label>
+        {playable && (
+          <VoicingPlayer
+            fractions={playRatios}
+            label={label ?? '▶ Play shown constituents'}
+          />
+        )}
       </div>
     </div>
   );

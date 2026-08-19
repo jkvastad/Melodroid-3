@@ -2,13 +2,13 @@
 sidebar_position: 1
 ---
 
-import Player from '@site/src/components/Player';
 import WavePlot from '@site/src/components/WavePlot';
 
 # Melodroid
 
-A program for music research from first principles. 
-Melodroid explores some physically motivated patterns of sound in relation to the biology and behavior of human hearing in hopes of providing a framework for composing melody and harmony.
+A program and website for music research.
+
+Melodroid explores patterns of sound in relation to the biology and behavior of human hearing in hopes of providing a framework for composing melody and harmony from first principles.
 
 Melodroid is mainly a CLI program producing various plots and printouts for study. This companion website works as docs, explaining the theory and providing some try-it-yourself experiments via browser synths.
 
@@ -16,10 +16,11 @@ Melodroid is mainly a CLI program producing various plots and printouts for stud
 What is melody and harmony? Intuitively we may say it is a singer and a band, or perhaps the first violin and the orchestra, or the soprano and the choir.
 
 But what is going on behind the scenes? Why do some melodies sound better than others? Why do some sequences of chords sound better than others? 
-We obviously like some sort of structured sound, but what is this structure? In the [related research chapter](/docs/category/related-research) I collect some notable research with interactive reproductions of experiments where possible. 
+We obviously like structured sound, but what is this structure? In the [related research chapter](/docs/category/related-research) I collect some notable research with interactive reproductions of experiments where possible. 
 
-Melodroid will specifically look at what I call Harmonic Pattern Theory (HPT), so named because of the inspiration from pattern matching of certain frequency sets. 
-In HPT the idea is to say that the brain with its trillions of synapses has a lot of potential complexity as to the why of things, but perhaps we are more fortunate in the physical world. 
+Melodroid will specifically look at what I call Harmonic Pattern Theory (HPT), a theory of harmony as a result of patterns in frequency sets. 
+
+In HPT the idea is that the brain with its trillions of synapses has a lot of potential complexity in deciding a final perception, so perhaps the physical world offers less complexity.
 By looking at the patterns which the brain has access to today and through its evolution, we can perhaps gain some fundamental insight into the structure of music.
 
 ## Harmonic Pattern Theory
@@ -28,9 +29,7 @@ We study musical harmony inspired by **pattern recognition of simultaneous waves
 chord can be expressed as fractions $\{1,\ 5/4,\ 3/2\}$. The pattern for this set of frequencies
 loops every four iterations of the base wavelength, extending over four periods of time.
 
-<WavePlot lcm={4} title="Major Chord" />
-
-<Player fractions={[1, 1.25, 1.5]} label="▶ Play the major chord {1, 5/4, 3/2}" />
+<WavePlot lcm={4} title="Major Chord" playable label="▶ Play the shown constituents" />
 
 As can be seen, this creates a pattern of waves over time. The **wave pattern length** (WPL) is the least common multiple (LCM) of the set's denominators —
 for a chord $\{p_1/q_1,\ \ldots,\ p_n/q_n\}$ the WPL is:
