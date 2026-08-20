@@ -5,17 +5,18 @@ description: Creating a tuning system from first principles.
 
 # A Good Keyboard
 
-Choosing the ratios for an instrument creates a **tuning system**. Because this is about
+Choosing the ratios playable by an instrument creates a **tuning system**. Because this is about
 well-defined frequencies, for familiarity we frame it as constructing a keyboard.
 
 A desired key property is **modulation**: playing the same frequency ratios from different keys should produce the same harmonies. 
-In HPT, harmony is about full matches so formally a keyboard should express every possible full match from every key. 
+In HPT, harmony is about full matches, so formally we want a keyboard which can express every possible full match from every key. 
 
 An arbitrary keyboard with good fractions available from one key will generally not have them available from another arbitrary key.
 An **equal-tempered** tuning solves this by having a constant ratio between adjacent keys, making every key equivalent.
 Equal temperament produces a tuning system of the form $f_0 \cdot r^{n/k}$.
+
 Since tonal fusion is most strongly influenced by octaves and octave equivalence is at least possible, $r=2$ seems like a reasonable choice. 
-Moreover our good fractions come in octave-complement pairs.
+Moreover our good fractions come in octave-complement pairs, a further point for $r=2$.
 
 The above produces a keyboard whose frequencies have the
 form $f_0 \cdot 2^{n/k}$, where $f_0$ is an arbitrary reference (e.g. standard pitch
@@ -52,7 +53,8 @@ $$
 c_k = \frac{\lvert 2^{n/k} - g_k^* \rvert}{g_k^*},
 $$
 
-This is the multiplicative distance caused by the limiting fraction $g_k^*$.
+This is the multiplicative distance caused by the limiting fraction $g_k^*$. 
+We can calculate $c_k$ for some keyboard sizes with the following command:
 
 ```bash
 melodroid table ktet-cutoffs
@@ -63,7 +65,7 @@ green rows), `--max-size` (default 24), `--max-prime` (default 5). See the
 [CLI reference](../cli/reference.mdx#ktet-cutoffs) for the full command surface.
 
 The command lists, for each $k$, the cutoff $c_k$, the limiting fraction $g_k$, and the nearest $k$-TET key
-(index $n$ and ratio $2^{n/k}$). Green rows mark where $c_k$ strictly improves over every smaller
+(index $n$ and ratio $2^{n/k}$). Below showing rows which strictly improve over every smaller
 $k$. For the standard good fractions (max size 24, max prime 5) the results of interest are:
 
 | $k$ | $c_k$ | $c_k$ % | Limiting fraction | Nearest $n$ | $2^{n/k}$ |
@@ -74,13 +76,14 @@ $k$. For the standard good fractions (max size 24, max prime 5) the results of i
 | 31 | 0.006458 | 0.6458 % | 10/9 | 5 | 1.118287 |
 | 34 | 0.004547 | 0.4547 % | 9/8 | 6 | 1.130116 |
 
-Since the JND is almost $1\%$, $k = 11$ gives about $3\times$ JND but $k = 12$ suddenly drops to only one
-JND. It only improves slightly (~20% smaller) at $k = 19$, then again at $31$ and $34$ — around
+Since the JND is almost $1\%$, $k = 11$ gives about $3\times$JND with $c_k = 2.9332%$ but $k = 12$ suddenly drops to about one multiple of JND.
+It only improves slightly (~20% smaller) at $k = 19$, then again at $31$ and $34$ — around
 the threshold for unique good-fraction bin radii. So $k = 12$, with about $63\%$ of the keys of
 $k = 19$, is a strong compromise. Perhaps a consequence of choosing $\mathrm{WPL}=24$ to acquire good fractions for expressing the major scale, 
 we have in any case recovered a modern popular tuning system from first principles of biology and physics.
 
 ### Full expression
+With modulation solved, let's look at full expression.
 
 Any key set with a full match must be able to play a key that bins to its reference point. Since
 the modulation solution already lets every key act as a reference for every good fraction, 
