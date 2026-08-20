@@ -15,13 +15,13 @@ tuning of choice, so we make a deep dive with these assumptions.
 
 In a 12 TET tuning the reference point of an LCM family full match maps to a key. We write a full match
 of LCM $a$ with reference on key $b$ as $a@b$ (e.g. $24@0$) and call it a **placement** of the
-LCM on key $b$.
+LCM at key $b$.
 
 Counting pitch C as key 0 lets us borrow familiar terms: $24@0$ is the C major scale, $4@7$ is
 the G major chord.
 
-Sometimes we must be explicit about the shape of a chord. We call this a **Voicing**, e.g. "$24@0$ voiced as
-`{7 11 2 5 9 0 4}`" — the G13 chord. This can help alleviate some dissonance from adjacent keys (e.g. `{0,1}` vs. `{0,13}`) or make the chord more playable by hand.
+Sometimes we must be explicit about the shape of a chord. We call this a **Voicing**, e.g. "$24@0$ voiced as `{7 11 2 5 9 0 4}`" is the G13 chord. 
+This can help alleviate some dissonance from adjacent keys (e.g. `{0,1}` vs. `{0,13}`) or make the chord more playable by hand.
 
 <Player keys={[0, 1]} label="▶ Close semitone {0, 1}" />
 <Player keys={[0, 13]} gain={0.8} label="▶ Spread minor ninth {0, 13}" />
@@ -34,7 +34,7 @@ Running
 melodroid table placement --lcm 4 --at 0 --ktet 12
 ```
 
-prints `4@0` (keys `0 4 7`, the C major triad). `--at 7` gives `4@7` (keys `7 11 2`, G major).
+prints `4@0` (keys `0 4 7`, the C major triad). Option `--at 7` gives `4@7` (keys `7 11 2`, G major).
 Pass multiple LCMs — `--lcm 3 5 15 --at 0` — to render one row per LCM at the same anchor, handy
 for comparing isomorphic placements.
 
@@ -45,11 +45,10 @@ Sometimes we wonder if LCM families overlap. Running
 melodroid table family-overlap --lcm-sweep 4 --lcm-ref 24 --ktet 12
 ```
 
-sweeps the major-triad shape (LCM 4) against the C major scale (`24@0` = `{0 2 4 5 7 9 11}`). At
+compares the major-triad shape (LCM 4) against the C major scale (`24@0` = `{0 2 4 5 7 9 11}`). At
 key 0 the overlap is `0 4 7` (the triad sits inside the scale); at key 5 the F major triad
 `5 9 0` overlaps as `0 5 9`. Rows where the placement sits wholly inside the reference are
-highlighted green — the keys from which the swept shape can be played without leaving the
-reference's pitch set.
+highlighted green.
 
 ## General Overlap
 More generally we want to check an arbitrary number of keys against possible overlaps with lcm families. Running
@@ -60,7 +59,16 @@ melodroid table key-supersets --keys 0 4 7 --ktet 12
 
 lists every placement whose keys contain the C major triad. The `Extra` column lists the keys a
 placement adds beyond the requested set (empty = exact fit); rows sort by (extra count, LCM,
-key). For `{0, 4, 7}` the tightest fits are the isomorphic `(LCM 3, Key 7)` and `(LCM 4, Key 0)`,
-then `(LCM 8, Key 0)` with `Extra = 2 11`, `(LCM 12, Key 0)` with `Extra = 5 9`, and
-`(LCM 24, Key 0)` with `Extra = 2 5 9 11`. Use `table placement --lcm L --at K` to look up the
-fractions backing any row.
+key). A few highlights from `{0, 4, 7}`:
+
+| LCM | Key | Keys (12-tet)    | Extra      |
+| --: | --: | :--------------- | :--------- |
+|   3 |   7 | 7 0 4            |            |
+|   4 |   0 | 0 4 7            |            |
+|   8 |   0 | 0 2 4 7 11       | 2 11       |
+|  12 |   0 | 0 4 5 7 9        | 5 9        |
+|  15 |   7 | 7 8 10 0 3 4 5   | 8 10 3 5   |
+|  24 |   0 | 0 2 4 5 7 9 11   | 2 5 9 11   |
+
+The isomorphic `3@7` and `4@0` fit exactly; each larger family that contains the triad pads it
+out with more keys, up to the full C major scale at `24@0`.
