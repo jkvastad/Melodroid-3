@@ -8,14 +8,13 @@ import SequencePlayer from '@site/src/components/SequencePlayer';
 
 # Melody, Rhythm and Chords
 
-## LCM melodies
 To play melodies we will need to move from playing block chords in static time into dynamic time. 
 This produces structures of beats implicit in the change of notes (see [Rhythm chapter](/docs/related-research/rhythm) for related research and basic concepts).
 
-### Rhythmic Patterns
+## Rhythmic Patterns
 Rhythmic patterns can be constructed by:
 
-* Selecting a meter consisting of a series of integers e.g. `{4}` or `{7,2,3}`. These number signify the heavy accents on beats in the reccuring pattern.
+* Selecting a meter consisting of a series of integers e.g. `{4}` or `{7,2,3}`. These numbers signify the heavy accents on beats in the reccuring pattern.
 * Selecting a tempo (beats per minute, bpm) by choosing the rate of the (possibly implicit) unit beat. 
 Since meters come in integer ratios there is always a unit beat e.g. `{4}={4,1}`.
 * Selecting a grid resolution or fastest pulse by choosing the largest division of the unit beat. 
@@ -41,7 +40,7 @@ Press **Generate** to generate a concrete pattern from the current settings, and
 against its position in unit beats, with grid lines for the meter accents (bold), unit
 beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while playing.
 
-The **phrase** field builds a song-like structure by *repeating* the rhythm of earlier metric
+The **phrase** field builds a song-like structure by repeating the rhythm of earlier metric
 groups. Write one token per meter group: an uppercase letter is that group's identity, and
 reusing a letter makes that group a full copy of the first group carrying it. So under a four-group
 meter, `ABAC` restates group 1's rhythm in group 3, while groups 2 and 4 stay original. A trailing
@@ -55,7 +54,7 @@ fresh, independent rhythm in every group.
 
 <RhythmPatternPlayer meter="4 4 4 4" subdivisions="2" bpm={100} phrases phrase="ABAC" />
 
-### Melody
+## Melody
 A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
 
 The player below adds an lcm dropdown listing the LCM families from the table at the top of the page. 
@@ -82,22 +81,23 @@ Notably the default tones used here are sines and do not sound wrong in and of t
 Playing piano notes instead produces much the same sensatinos as sines, notably the truly random pitches sound even more pronounced with a metalic quality.
 
 Where does the chaotic sound come from? There are at least two flavors - random/tense and harmonious/soft. 
-Perhaps it comes from context - the listener expects certain pitches from preceding notes (or even having heard/recognizing a melody beforehand).
+Perhaps it comes from context - the listener can expect certain pitches from preceding notes (or even having heard/recognizing a melody beforehand), or from pattern matching of wavepackets.
 A common context in music is chords - a set of notes played statically along with the melody.
 
-### Chords
+## Chords
 Let's now look at chords. In their most general form chords are two or more simultaneous notes.
 In the 12 tet system there are $2^{12} = 4096$ possible key combinations per octave, including the empty set.
-In particular we are interested in unique chords under octave renormalization e.g. 0 4 7, 0 3 8 and 0 5 9 are the same.
+In particular we are interested in unique chords under octave renormalization where e.g. 0 4 7, 0 3 8 and 0 5 9 are the same.
 
-Counting a chord and all its transpositions once collapses the 4096 combinations to just 352 unique chords (the [binary necklaces](https://en.wikipedia.org/wiki/Necklace_(combinatorics)) of length 12), or 280 across the 2–7 note range we care about.
+Counting a chord and all its transpositions once collapses the 4096 combinations to just 352 unique chords (the [binary necklaces](https://en.wikipedia.org/wiki/Necklace_(combinatorics)) of length 12),
+ or 280 across a more pragmatic 2–7 note range.
 These can be enumerated with the `chords` subcommand:
 
 ```bash
 melodroid table chords --min-notes 2 --max-notes 7
 ```
 
-We note that most of these chords do not sound particularly good with a minor second or tritone. 
+We note that most of these chords do not sound particularly good, containing a minor second or tritone. 
 Removing minor seconds produces 29 chords.
 Removing tritones produces 61 chords.
 Removing both produces 16 chords.
@@ -129,10 +129,10 @@ Such an effect hints that it matters not just what we hear, but what we recently
 How recent is recent? Perhaps it is simply what we expect to hear, heavily influenced by what we just heard, but also by other expectations such as familiar melodies and songs.
 This calls to mind the McGurk effect, an effect where context affects perception (see e.g. [this BBC clip](https://www.youtube.com/watch?v=2k8fHR9jKVM) illustrating how "Ba" turns into "Fa" when seeing lips produce "Fa", even though the audio is still "Ba").
 
-There are also chord with tritones which sound good. These are primarily dim (0 3 6) and chords containing it e.g. dim7 (0 3 6 9) and seven chords (e.g. 0 4 7 10).
+There are also chords with tritones which sound good. These are primarily dim (0 3 6) and chords containing it e.g. dim7 (0 3 6 9) and seven chords (e.g. 0 4 7 10).
 Perhaps the characteristic dramatic sound stems from the symmetric dim7 chord.
 
-#### Chords as placement indicators
+### Chords as placement indicators
 Another way to look at chords from HPT is as indicators for lcm family placements. 
 The idea is that the brain tries to match sound to a root and lcm family, and that this heavily influences our perception of harmony.
 
@@ -163,7 +163,7 @@ With the default `--max-lcm 24` there are 102 chords across 2–7 notes.
 Notably only the tritone `0 6` has no low-LCM placement — it is only a subset of the lcm 15/20/24 families. 
 Restricting to the isomorphic ≤12 group therefore drops it and collapses the set from 102 to 20 chords.
 
-##### Placement indicators
+#### Placement indicators
 Looking at a select number of chords as placement indicators we can get a feel for how they might produce perception.
 
 For instance, the major chord 0 4 7 which is the placement 4@0 is also a subset of 8@0. The latter contains 4 7 11, a minor chord also with 10@4 but also 8@0. 
@@ -316,7 +316,7 @@ Another possibility is that of fusion and separation, where fusion refers to mul
 Since the auditory system is capable of separating both multiple conversations and merge tones, 
 it might be that playing complex music e.g. blues scales with accompaniment is a perception arising from interplay of fusing and separating placements.
 
-#### Chords as accompaniment
+### Chords as accompaniment
 In the context of accompaniment, for a given chord we must choose a set(s) of notes from which to draw melody.
 
 This presents us with two questions - how do we choose chords and how do we choose the corresponding melody set?
@@ -353,7 +353,7 @@ Some key notes:
 * we can roll quite dissonant chords e.g. 1 2 3.
 * lcm placements are displayed with redundance (isomorphisms are not collapsed)
 
-##### Scales and lcms
+#### Scales and lcms
 As we noted in the discussion on high lcms as compositions of lower lcms, and in the section on placement indicators,
 some high lcm scales sound harsh/random (15, 20), while some scales with no placement sound fine (harmonic minor, blues scale).
 
@@ -370,7 +370,7 @@ Let's now look at some non lcm scales which sound good, and some lcm scales whic
 * Is the scale good despite not being lcm because it is composed of multiple lower order lcms, and playing melody in it rapidly modulates between these compatible lcms?
 * If neither of the above, is there some special circumstance such as symmetric chords?
 
-###### LCM 15
+##### LCM 15
 We noted earlier that 15@0 is adjacent to 24@1 and 24@8 via removal of key 9. 
 We also noted that 24@0 is a composition of 8@0 + 12@0 or 9@7 + 12@7, or alternatively in lowest lcm form via isomorphism, simply 8@0 + 8@5.
 
@@ -396,7 +396,7 @@ Notably when aug chords such as 1 5 9 12 are drawn a shift in mood is also appar
 A possibility is that certain chords function as placement indicators with preference and if randomly drawn they induce a certain flavor.
 Along these lines there might be a flavor for randomness or symmetry.
 
-###### Harmonic Minor
+##### Harmonic Minor
 The harmonic minor scale placed at 0 (harm@0, 0 2 3 5 7 8 11) is quite close to 15@2, exchanging 10 for 8, which introduces dim7 (2 5 8 11).
 Comparing with 15@0 we have harm@10 with 10 0 1 3 5 6 9, exchanging 8 for 6 which introduces dim7 (0 3 6 9).
 
@@ -413,7 +413,7 @@ Comparing with 15@0 we have harm@10 with 10 0 1 3 5 6 9, exchanging 8 for 6 whic
 harm@10 and 15s@0 sound quite similar. Perhaps harm@10 is essentially 15s@0 - but how come we can add in key 6? 
 Perhaps it is always possible to extend into symmetric chords.
 
-###### Octatonic Scale
+##### Octatonic Scale
 The (half step) octatonic scale oct@0 is 0 1 3 4 6 7 9 10 which is composed of e.g. 8@2 + 15@2.
 
 <RhythmPatternPlayer
@@ -428,7 +428,7 @@ The (half step) octatonic scale oct@0 is 0 1 3 4 6 7 9 10 which is composed of e
 
 This scale sounds a bit like when playing random but has some merits when the chords drawn are subsets of 0 3 6 9.
 
-###### Blues Scale
+##### Blues Scale
 The blues scale blues@5 is 5 7 8 9 0 which is composed of 5@0 + 6@0 or 3@10 + 6@0.
 6@0 is part of 8@5 (12@0) - adding in key 4 does soften the blues.
 adding 5@0 to the 6@0 introduces notes 3, 8 and 10 with 3 and 10 producing a very bluesy sound played with 5 9 0. 
@@ -451,14 +451,14 @@ Key 10 kind of works but perhaps pulls to much to 8@10.
 />
 
 
-### Melodic Supersets
+## Melodic Supersets
 Several of the scales above which are not lcms scales are compositions of two lcm scales, or is heavily related to a symmetric chord.
 This provides a possibility that scales are perhaps best thought of as melodic sets of sets, where a chord provides some sort of context and the melody modulates between possible interpretations of the context.
 
 Earlier we looked at placement indicators, as well as lcm preference in the context of lcm 15.
 Perhaps there is also a preference for how chords are interpreted, producing the well known character/flavor of e.g. major/minor/dim chords.
 
-##### Major Triad
+#### Major Triad
 The major triad 0 4 7 has several supersets which can be viewed via the key-supersets command.
 For melody purposes we might wonder which supersets will survive adding in an extra key. This can be viewed via the chord-melody command, e.g. running 
 
@@ -498,7 +498,7 @@ The same goes for 15@4, which collapses on 0, also part of 0 4 7.
   ]}
 />
 
-##### Minor Triad
+#### Minor Triad
 
 The melody supersets for a minor triad 0 3 7 become:
 
@@ -528,7 +528,7 @@ The structure is however not identical - the lcm 24 families do follow a 0->5->7
   ]}
 />
 
-##### Dim chord
+#### Dim chord
 The dim chord 0 3 6 produces
 
 | Placement | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
@@ -549,7 +549,7 @@ The dim chord 0 3 6 produces
   ]}
 />
 
-##### Chord Progressions
+#### Chord Progressions
 Having looked at how melodic supersets can be used to draw melody, we now turn to selecting a progression of chords.
 
 Since HPT is all about lcms, we expect that progressions are driven by relationships between placements.
@@ -596,7 +596,7 @@ Adding in phrasing, where e.g. Ba in ABaACa means that group B reuses the first 
   }}
 />
 
-### Perception Based Progression
+## Perception Based Progression
 As we saw with melodic supersets, the notes played along with a chord produces expectations for which placement is most likely.
 Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false signal, where we play notes signaling a placement which we are not drawing from,
 similar to the problem of lcm 24 preference when playing lcm 15.
