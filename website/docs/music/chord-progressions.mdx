@@ -1,0 +1,286 @@
+---
+sidebar_position: 5
+description: Moving between chords via shared placements, and perception-based progression walks.
+---
+
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
+
+# Chord Progressions
+Having looked at how melodic supersets can be used to draw melody, we now turn to selecting a progression of chords.
+
+Since HPT is all about lcms, we expect that progressions are driven by relationships between placements.
+For instance the major triad 0 4 7 (4@0) is part of 8@5, which could motivate a move to 5 9 0.
+This in turn is part of 24@0, which could motivate a move to 7 11 2.
+Finally this is part of 8@0, so we can move back to 0 4 7.
+
+The above example illustrates how we can move between placements via shared chords, paving the way for defining legal moves in a progression.
+It also illustrates a larger movement structure on a meter level, where we complete a cycle and return to our origin chord.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={104}
+  syncopation={0.2}
+  resolution={0.95}  
+  chordWalk={{
+    origin: [0, 4, 7],
+    placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}],
+  }}
+/>
+
+Simply looping random compatible chords and placements with random rhythms produces phrases of some haphazard quality.
+We can improve upon this by adding in more structure:
+* rhythmic patterns within meter groups can be repeated across meter groups according to some larger pattern.
+* melody might affect how chords indicate placement, e.g. early/late notes in the rhythmic pattern might be especially important
+* placement progressions can have patterns themselves:
+  * Such patterns can constitute repetition of placements
+  * Patterns might also be more stylistic, e.g. narrowing down the available options for a move before a loop (e.g. playing 0 4 7 10 only has 20@0, 15@7 and 24@5 as placement, strongly indicating 24@5)
+
+
+Adding in phrasing, where e.g. Ba in ABaACa means that group B reuses the first half of group A, along with options for binding melody/chords/placements to groups provides some measure of order.
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={108}
+  syncopation={0.25}
+  resolution={0.95}
+  phrases
+  phrase="ABaACa"
+  chordWalk={{
+    origin: [0, 4, 7],
+    placements: [{lcm: 8}, {lcm: 24}, {label: '15s', keys: [0, 1, 3, 5, 9, 10]}, {label: 'blues', keys: [0,2,3,4,7,9]}],
+  }}
+/>
+
+## Perception Based Progression
+As we saw with melodic supersets, the notes played along with a chord produces expectations for which placement is most likely.
+Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false signal, where we play notes signaling a placement which we are not drawing from,
+similar to the problem of lcm 24 preference when playing lcm 15.
+
+In the previous section we looked at progressions based on the intended placements, but perhaps what matters is the perceived placements.
+
+To calculate such perception based progressions we must have a way to decide which context of keys produce a given perception.
+
+One approach is to chart out which perceptions arise when playing melody to a given chord. 
+Such an approach would benefit from empirical work for statistical extrapolation, as perception is quite subjective, but i will outline a procedure here based on my own perception.
+
+Likely the immediate keys at the start and end of a rhythmic group are of high importance as they interact between expectation and confirmation of placements.
+Another way to view it is that perhaps there are no early/late parts of a rhythmic group.
+Instead, as when producing polyrhythms (see [related research](/docs/related-research/rhythm#perceiving-and-producing-polyrythms)), a group might be an atomic unit which is mapped to a placement and perception.
+Larger rhythmic groups could simply be composed of smaller atomic units.
+
+Starting out with the classic major chord 0 4 7 we can note some archetypical perceptions or flavors:
+
+* Playing 0 works with all other perceptions, but notably following it up with 0 4 7 is quite similar to 8@0,5 or 24@0. This is quite a soft feel so let's call it soft flavor.
+* Playing 1 followed by harm@5 (0 1 4 5 7 8 10) produces a dramatic feeling, similar to playing a dim chord or 7 chord. Let's call this flavor dim.
+  * Notably playing 0 4 7 10 produces dim flavor when following with 8 but a soft flavor when following with 9 (as if playing 24@5 or 8 @10).
+* Playing note 2 produces a soft feel. 
+  * Notably following with 6 produces a clashing tritone with 0, but quickly moving on to 7 softens it to a 24@7 soft feel. Almost like the first impression is "error" followed shortly by a realisation that "oh wait there's an 8@10".
+  * Playing it with 11 produces a very soft 8@0 feel.
+* Playing 3 produces a bluesy feel of blues@0. Notably this is close to the pentatonic scale 0 2 4 7 9 with an added 3. Adding in 10 also works for producing a blues feel.
+* Playing 4 is similar to playing 0, perhaps some preference for moving to 8@5, a soft feel.
+* Playing 5 is simlar to playing 4, a soft feel.
+* Playing 6 becomes quite dissonant unless followed by 24@7 or 8@7, instead producing a soft feel.
+* Playing 7 is similar to playing 9, a soft feel.
+* Playing 8 produces a feel similar to harm@5, a dim feel.
+  * Notably playing 9 produces a blues feel as if playing blues@7 but with a bit of disconnect between the chord and melody - perhaps some sort of mental audio stream phenomena.
+* Playing 9 produces a feel similar to 24@7 or 8@7, a soft feel.
+* Playing 10 produces a feel similar to blues@7 or blues@10, a blues feel.
+* Playing 11 produces a very soft 8@0 feel. If lcm 24 is soft then this is calm, or very soft.
+
+| key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| feel | soft | dim | soft | blues | soft | soft | soft | soft | dim | soft | blues | soft |
+| placements | any | harm@5 | 8@0 | blues@0 | any | 8@5 | 24@7 | any | 15s@7 | 24@7 | blues@0 | 8@0 |
+
+(The "any" placement indicates that opening with this key is compatible with any of the other keys.)
+
+From this we note that we have soft (possibly very soft or calm), dim and blues. Soft could map to lcm 24, calm to 8 and dim to lcm 15. But what is blues?
+
+With three perceptions and three primes, perhaps we experience the prevalence of the primes in the placements? 
+E.g. a 24 is soft but an 8 is very soft with its many 2s. Dim and minor is tense with its relative large 5. Prime 3 produces a kind of chipper blues.
+
+Playing 0 4 7 is indeed 3@7, but might be preferred by 4@0, effectively hiding the prime 3 flavor. Adding in key 3 possibly shifts it to 15@7, although this would introduce a strange caveat in the lcm 24/15 preference.
+Playing 0 4 7 is also 8@5, where exchanging key 4 for 3 introduces the good fraction 16/9, part of 9@5. Perhaps blues is some sort of 8+9 superposition where the 9 flavor comes through instead of collapsing to 8?
+Indeed the traditional blues@0 of 0 2 3 4 7 is readily extended with 9 and 10 (bluesExt@0), which is just 82€ + 9@5, but playing 5 is a bit jarring. Perhaps it collapses from 9@5 or 18@5 to 8@5.
+Blues might be the perception of two competing bases at the same reference frame, combined with fast modulation of the melody implying non-explicit chord changes.
+E.g. playing 0 4 7 followed by 3 puts the 0 4 7 in some sort of background channel and the perception is as if playing 3 7 10.
+
+For instance, playing 10 with 0 4 7 (8@0) pulls heavily to 24@5. Similarly, playing 3 with 0 4 7 also pulls heavily to 8@5, 18@5 or 9@5. Perhaps the latter is the commonality - playing 18@5 feels quite similar to 8@4.
+Blues might be the feel of prime 3, and it might be that it cannot be readily played due to competition from powers of 2, but certain superpositions favor it i.e. the blues scale.
+
+There is also a curiosity that when playing an 0 4 7 -> 5 9 0 -> 7 11 2 progression key 3 played with 7 11 2 does not produce the dim feel as when playing key 8 with 0 4 7, but instead keeps the blues feel of 3 with 0 4 7.
+
+Another possibility is that blues is a more complex perception, arrising from competing perceptions and rapid modulation between placements.
+Such rapid modulation might account for exotic melodies such as playing 0 4 7 with melody 0 4 5 6 7 0 (3 beats long).
+the 0 4 starts out as 8@0, then moves to 8@5 for the 5, then harm@10 for the 6, then back to 8@0 for 7 0.
+Playing 0 4 7 for 0 4, then 5 9 0 for 5 and 6, then back to 0 4 7 for 7 0 illustrates this point.
+
+Such rapid modulation in this case comprises splitting a metric group of 4 beats into 2 sub-beats each, and then each such rhythmic beat group is assigned its own chord and placement.
+Notably the chord might not be voiced explicitly per group e.g. the 0 7 melody lasts for 2 beats but resounding 0 4 7 at each beat seems redundant.
+8@5 and harm@10 are related via the major chord 4@5 a.k.a. 3@0. Meanwhile harm@10 is related to 15@0, adding in the 6 (reason unkown, possibly something to do with dim7 symmetry) and removing the collapsing 8.
+
+Perhaps looking at more chords will provide insight. For the minor chord 0 3 7 (10@0) we have:
+
+* Playing 0 produces a feel similar to dim at key 9, but a softer dim feel.
+  * This can be followed either by notes from 8@8 or 15s@2 (15@2 collapses to 8@8 feel when playing note 10).
+  * Following with note 6 as if playing blues@8 produces a blues feel.
+* Playing 1 produces a dim feel.
+  * Perhaps a bit surprising as 0 1 3 7 it fits directly into 24@8. The feel is similar to 15@0, which is adjacent to 15@0
+  * If this is a form of preference from 24 to 15 then perhaps the triad 0 3 7 is a strong indicator for prime 5, discarding a perception of 24.
+* Playing 2 produces a soft dim feel.
+  * Following it up with blues or e.g. 8@8 sounds good but following with 1 is dissonant - 15@2 works fine though.
+* Playing 3 produces a softer dim feel.
+* Playing 4 is quite dissonant. 
+  * Perhaps there is simply no good way to map this - either go for 15@7 but the 3 collapses to 24@8 or 24@3, neither of which accepts key 4.
+* Playing 5 is similar to playing 2, producing a dim feel.
+* Playing 6 feels similar to playing blues@3 following up with key 5 producing a blues feel.
+* Playing 7 produces a softer dim feel.
+* Playing 8 produces 8@8, a softer dim feel.
+* Playing 9 produces 24@10, a softer dim feel.
+* Playing 10 produces 24@10, a softer dim feel.
+* Playing 11 is similar to playing 2, producing a dim feel, or blues@8 if following with 10.
+
+| key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| feel | dim | dim | dim | dim | dissonant | dim | blues | dim | dim | dim | dim | dim |
+| placements | any | 15s@0, 24@8 | 8@8 | any | null | 24@8 | blues@3 | any| 8@8 | 24@10 | 24@10 | 15s@2, blues@8 |
+
+Notably there is no pure soft feel when playing minor, only blues and dim.
+
+Something similar occurs for dim 0 3 6 and aug 0 4 8 with a notable distinct perception of the aug chord which is neither calm, soft, blues or dim 
+but rather something unique which is shared with the whole tone scale 0 2 4 6 8 10.
+This perception could be described as curious, confused or strange - perhaps fitting as it is a symmetric chord in a symmetric scale.
+
+We can also look at the dim chord 0 3 6 with its melodic supersets of 15s@3 and 24@1:
+* Playing 0 produces a dim feel, perhaps 15@3
+* Playing 1 produces a dim feel, perhaps 15@3
+* Playing 2 produces a dim feel, perhaps harm@7
+* Playing 3 produces a dim feel, perhaps 15@3
+* Playing 4 produces a dim feel, perhaps 15@3
+* Playing 5 produces a dim feel (but with some softer nuance of 24@1)
+* Playing 6 produces a dim feel, perhaps 15@3
+* Playing 7 produces a dim feel, perhaps harm@7
+* Playing 8 produces a dim feel (but with some softer nuance of 24@1)
+* Playing 9 produces a dim feel, perhaps harm@7 or harm@1
+* Playing 10 produces a soft feel, perhaps 24@1 (12@8)
+* Playing 11 produces a dim feel, perhaps harm@4
+
+| key | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| feel | dim | dim | dim | dim | dim | dim | dim | dim | dim | dim | soft | dim |
+| placements | 15@3 | 15@3 | harm@7 | 15@3 | 15@3 | 24@1 | 15@3 | harm@7 | 24@1 | harm@7, harm@1 | 24@1 | harm@4 |
+
+Unlike major and minor, every key over dim keeps a dim feel except key 10, which softens to 24@1. The soft nuance of 24@1 also colours keys 5 and 8 without displacing the dominant 15@3 dim feel.
+
+Perceptions per prime could be:
+* 2 - calm
+* 3 - blues
+* 5 - dim (tense)
+* symmetric (0 2 4 6 8 10, 0 4 8) - strange
+
+Charting out perceptions related to chords in this way, we can try to compose using perception based progressions. 
+Each chord archetype would receive a mapping of implied perceptions based on early keys, which would then imply a scale from which to draw melody for a given rhythmic unit (perhaps a meter group).
+Chords could then be progressed according to some system, repeating the process. 
+Since the perceptions seem bound to primes perhaps successive chords need only share a prime in some common placement.
+
+Alternatively we can look at the melodic supersets of a chord, e.g. major 0 4 7 has 24@0,5,7 and 15@4,7,11.
+Since 15@4, 11 seem to collapse onto 24@5,0 these are perhaps not usefull when infering progressions. 
+Instead, we could guess that 0 4 7 can progress to any chord which is a subset of stable supersets.
+For minor 0 3 7 this is 24@3,8,10 and 15@2.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  phrases
+  phrase="ABaACa"
+  perceptionWalk={{start: [0, 4, 7], strategy: 'supersets'}}
+/>
+
+A sub-phrase like the `Ba` in `ABaACa` is treated as **two perception moments** in a perception walk: the group opens by restating the first half of `A`, then its **B part rolls its own new chord and placement** for the second half rather than continuing `A`. That second chord is struck at the group's mid-point (a legal move out of the first-half chord), its melody is drawn from the new placement and opens on a new opening key, and the following group continues the walk from this second-half chord.
+
+Using the stable supersets (the lcm 15 superset must be taken in its stable form 15s, since e.g. 15@7 collapses to 24@1,8 once key 3 is used) we can tabulate which stable superset owns each major/minor/dim triad destination.
+This is exactly the move graph the `perceptionWalk` mode walks: a chord may progress to any triad below marked with a superset (— means no stable superset owns it).
+
+Major chord 0 4 7 (supersets 24@0,5,7 and 15s@7):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | 24@0,5,7 · 15s@7 | — | 24@7 | — | — | 24@0,5 | — | 24@0,7 | — | — | 24@5 | — |
+| minor | — | — | 24@0,5 | — | 24@0,7 | 15s@7 | — | 24@5 | — | 24@0,5,7 | — | 24@7 |
+| dim | — | — | — | — | 24@5 · 15s@7 | — | 24@7 | — | — | — | — | 24@0 |
+
+Minor chord 0 3 7 (supersets 24@3,8,10 and 15s@2):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | 24@8 | — | 24@3,8,10 | — | 24@10 | — | 15s@2 | 24@3,8 | — | 24@3,10 | — |
+| minor | 24@3,8,10 · 15s@2 | — | 24@10 | — | — | 24@3,8 | — | 24@3,10 | — | — | 24@8 | — |
+| dim | — | — | 24@3 | — | — | — | — | 24@8 | — | 24@10 | — | 15s@2 |
+
+Diminished chord 0 3 6 (supersets 15s@3 and 24@1):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | 24@1 | — | — | — | — | 24@1 | — | 15s@3 · 24@1 | — | — | — |
+| minor | — | 15s@3 | — | 24@1 | — | 24@1 | — | — | — | — | 24@1 | — |
+| dim | 15s@3 · 24@1 | — | — | — | — | — | — | — | — | — | — | — |
+
+In addition to moving from a chord to other triads in possible supersets, we can also explore moving to adjacent lcms.
+For instance if we play 0 4 7 and note that this is part of 15s@7, then by adjacency this is close to both 24@3 and 24@8. 
+The adjacency rule is `15@X` → `24@(X+1)` and `24@(X+8)`. Each chord's stable lcm 15 superset therefore reaches two adjacent lcm 24 placements, whose owned triads are tabulated below (listing only the adjacency-derived placements, in addition to the direct supersets above).
+
+Major chord 0 4 7 (adjacency 15s@7 → 24@3,8):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | 24@8 | — | 24@3,8 | — | — | — | — | 24@3,8 | — | 24@3 | — |
+| minor | 24@3,8 | — | — | — | — | 24@3,8 | — | 24@3 | — | — | 24@8 | — |
+| dim | — | — | 24@3 | — | — | — | — | 24@8 | — | — | — | — |
+
+Minor chord 0 3 7 (adjacency 15s@2 → 24@3,10):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | — | — | 24@3,10 | — | 24@10 | — | — | 24@3 | — | 24@3,10 | — |
+| minor | 24@3,10 | — | 24@10 | — | — | 24@3 | — | 24@3,10 | — | — | — | — |
+| dim | — | — | 24@3 | — | — | — | — | — | — | 24@10 | — | — |
+
+Diminished chord 0 3 6 (adjacency 15s@3 → 24@4,11):
+
+| dest \ root | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- |---|---|---|---|---|---|---|---|---|---|----|----|
+| major | — | — | — | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 |
+| minor | — | 24@4,11 | — | 24@11 | — | — | 24@4 | — | 24@4,11 | — | — | — |
+| dim | — | — | — | 24@4 | — | — | — | — | — | — | 24@11 | — |
+
+We can now hear all three chord-target strategies side by side. Only the rule for choosing the *next* chord changes — opening-key selection, placement/melody drawing, and everything else stay identical, so the strategies are directly comparable. All three are pinned to the same start chord `0 4 7`. The first player above walks by the **direct** stable supersets; the two below walk by the **adjacency**-derived 24 placements only, and by **both** (the union).
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{start: [0, 4, 7], strategy: 'adjacency'}}
+/>
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  perceptionWalk={{start: [0, 4, 7], strategy: 'both'}}
+/>
+
+We can combine all this with phrasing as well: 
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={108}
+  syncopation={0.25}
+  resolution={0.95}
+  phrases
+  phrase="ABaACa"
+  phraseBinds="placements+melody"
+  perceptionWalk={{strategy: 'both'}}
+/>
