@@ -1,6 +1,11 @@
 # Docs
 * Note that there is a high severity vulnerability in serialize-javascript <=7.0.4 which is a false alarm because the only input which could be rce is on build side. Just wait for docusaurus to patch it out. Do not npm audit fix --force, which would attempt a breaking major upgrade.
 
+* Add section on key sweeps of common chords e.g. major/minor/dim/aug and how their placements can be used with adjacency for progressions and scales such as 8, 24, blues and harm.
+** Add chord progression table
+* Add section on reverse movement e.g. if 0 4 7 played as 15@7 is adjacent to 24@8 then 0 4 7 with placements of 24@7 and 24@0 is also adjacent to 15@11 and 15@6,
+ allowing e.g. progression 0 4 7(24@0) -> 4 8 11(15@11) and 0 4 7(24@7) -> 11 3 6(15@6)
+
 ## Intro (intro.mdx)
 
 ## Theory
