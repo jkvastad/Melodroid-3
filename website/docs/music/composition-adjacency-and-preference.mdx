@@ -295,3 +295,31 @@ With 15 and 20 sounding quite more tense than 24/18, perhaps it is that the tota
 Another possibilty is that 15 is a properly perceived structure, but competes with a preferred alternative (lcm 24).
 
 [In the next section](/docs/music/melody-rhythm-and-chords) we will look at melody and rhythm and how it interacts with preference, adjacency and composition.
+
+## Interactions
+TODO: perhaps best move interactions to melody,rhythm and chords or chord progressions.
+
+Having looked at lcm isomorphism, composition and preference, let's see what happens when we put it all together.
+
+Some compositions of note are 24@0, consisting of 8@0 and 12@0 (8@5), and 8@0 consisting of 4@0 and 3@0(4@7). 
+
+Since 4@0 is the major chord lets start by looking at the full matches when key sweeping. Using the command
+
+`table key-sweep --ktet 12 --keys 0 4 7`
+
+we get the notable full matches 
+* 4@0
+* 9@2
+* 5@4
+* 8@5
+* 3@7
+* 10@9
+* 15@11
+
+Remember that 8@0 is isomorphic with 9@2, 10@4 and 12@7. 
+Now note the subsets constituting two isomorphic lcm 8 families: 8@0 (4@0, 9@2, 5@4, 3@7) and 8@5 (8@5, 3@7, 10@9, 4@0). 
+From this 
+
+These families compose into 24@0, which has adjacent placement 15@11, also present as a full match of 4@0.
+
+Since these relationsips are cyclic, they also imply a reverse pattern: 
