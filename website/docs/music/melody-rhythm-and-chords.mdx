@@ -43,7 +43,7 @@ beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while pl
 <RhythmPatternPlayer meter="4 4 4 4" subdivisions="2" bpm={100}/>
 
 ## Melody
-A naive approach to lcm melody is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
+A naive approach to melody in HPT is to randomly select pitch values from an lcm family to decorate a rhythmic pattern.
 
 The player below adds an lcm dropdown listing the LCM families from the table at the top of the page. 
 Pulses are pitched with a note drawn at random from the selected family's notes, folded into a single octave.
@@ -137,7 +137,7 @@ This raises several questions about what to expect of placement based perception
   * If several, is our perception an aggregation of possible interpretations? Is it more akin to the cocktail party effect where some parts receive focused? Is it a mix?
   * If only one, how does the brain pick one placement over competing placements? (Especially for isomorphisms)
 * What about perceptions which do not seem to map to placements?
-  * Symmetric chord such as aug and dim7 have a characteristic sound but no one obvious placement due to symmetry - aug also fits with the whole tone scale which has a unique dreamy/confused quality.
+  * Symmetric chords such as aug and dim7 have a characteristic sound but no one obvious placement due to symmetry - aug also fits with the whole tone scale which has a unique dreamy/confused quality.
 
 The number of possible chords from a placement indicator perspective is similar to the combinatorial necklaces discussed above.
 This time instead of all possible key combinations in a k-tet, we require a chord to be a subset of at least one lcm family.
@@ -149,9 +149,10 @@ melodroid table chords --lcm-only --max-lcm 24
 
 With the default `--max-lcm 24` there are 102 chords across 2–7 notes. 
 Notably only the tritone `0 6` has no low-LCM placement — it is only a subset of the lcm 15/20/24 families. 
-Restricting to the isomorphic ≤12 group therefore drops it and collapses the set from 102 to 20 chords.
+Restricting to the isomorphic ≤12 group therefore drops it and collapses the set from 102 to 20 chords. 
+There are perhaps not an overwhelming number of patterns for the brain to look out for.
 
-#### Placement indicators
+#### Placement indicators in detail
 Looking at a select number of chords as placement indicators we can get a feel for how they might produce perception.
 
 For instance, the major chord 0 4 7 which is the placement 4@0 is also a subset of 8@0 and 10@4. The latter contains 4 7 11, a minor chord of 10@4. 
@@ -194,8 +195,10 @@ both are subsets of 8@0, so we can frame each one with the same 0 4 7 11 14 cont
   ]}
 />
 
-Unlike the minor second, these dyads do not seem to change flavor depending on context.
+Unlike the minor second, these dyads do not seem to change flavor depending on context. 
+A possibility is that the minor second on its own is discarded as noise, causing a dissonant perception, but can be perceived as part of a placement with proper context.
 
+#### Perception and placement indicators
 If placements are tied to certain perceptions, then we can expect certain chords to have certain flavors or colors. 
 As we saw with the major chord 0 4 7 and minor chord 4 7 11 they both have a placement at 8@0 and 10@4 but major and minor chords are considered to have a very different flavor.
 
@@ -254,7 +257,7 @@ versus completing 0 4 with 9 and 7 to make a minor chord then a major chord:
 
 Creating a minor chord provides perhaps some melancholy while the major chord is more neutral and in line with the plain dyads, with perhaps the 4 7 closer to the minor and the 0 4 close to the major.
 
-Comparing these perceptions with the placements of 0 4 and 4 7 we see that their best placements are shared with 3@7 and 4@0.
+Comparing these perceptions with the placements of 0 4 and 4 7 we see that their best placements are shared: both have 3@7 and 4@0.
 Notably the roots of these placements are not sounded in both dyads.
 
 Comparing with the placements of the major chord 0 4 7 and the minor chord 4 7 11 we see that they share at least 8@0, 9@2, 10@4 and 12@7, with 0 4 7 uniquely having 3@7 and 4@0 while 4 7 11 has 15@6.
