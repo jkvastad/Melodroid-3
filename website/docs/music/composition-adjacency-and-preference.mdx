@@ -163,6 +163,8 @@ There seems to be a phenomena where there is a large difference of perception be
 As we saw in the example for 15@0, key 8 is the root for 8@8 but also for 12@8 (8@1).
 Including it in lcm 15 perhaps collapses the perception of the odd pattern to lcm 8 or 24.
 
+The key sets for 24 and 15 are quite similar, with 15@k being adjacent to 24@k+1,k+8 and conversely 24@k being adjacent to 15@k+4,k+11 by only dropping one key from each set.
+
 #### On Blues
 When playing a major chord 0 4 7 the blues note 3 could perhaps work via a pull to 24@10.
 Blues@0 is adjacent to 15@2 which collapses on key 10, indeed the major chord 7 11 2 playing blues using key 10 works well together with 0 4 7 using key 3.
@@ -296,12 +298,13 @@ Another possibilty is that 15 is a properly perceived structure, but competes wi
 Having looked at lcm isomorphism, composition, adjacency and preference, let's see what happens when we put it all together.
 The top level lcms are 24 and 15, so let's look at those placements in detail.
 
+*** Major Chord
 We see that 24@0 consists of 8@0 and 12@0 (8@5), and that 8@0 consists of 4@0 and 3@2(4@7).
 This implies 24@0 contains 4@0,5,7. Conversely, playing 4@0 implies either of 24@0,5,7 or 8@0,5.
 In general the rule is that 4@k is a subset of 24@k,k+5,k+7, the "circle of fifths" in HPT.
 
 For lcm 15 we observe that 4@0 $\leftrightarrow$ 3@7, which is a subset of 15@7, giving access to 24@8 via adjacency.
-Further using lcm 24/15 adjacency, playing 4@0 can also imply 15@4,6,9,11 as these are adjacent to 24@0,5,7.
+Further using lcm 24/15 adjacency (meaning 15@k is adjacent to 24@k+1,k+8 and conversely 24@k is adjacent to 15@k+4,k+11), playing 4@0 can also imply 15@4,6,9,11 as these are adjacent to 24@0,5,7.
 In general we have that 4@k is a subset of 15@k+4,k+7,k+11 but can bridge to 15@k+6,k+9 via adjacency.
 
 We can then tabulate each major to major triad progression, noting the overlapping placements (including adjacency in both directions).
@@ -327,3 +330,14 @@ which drops the target into an lcm 15 family adjacent to one of `4@0`'s own lcm 
 
 `4@6` alone has no such bridge — it merely *sounds like* its home placement `24@1`, making the tritone the singular major to major modulation.
 Of note is that 4@6 is a subset of 24@1 which is in the circle of fifths for 24@8, an adjacent set for `4@0` = `3@7` $\subseteq$ `15@7` adjacent to 24@8.
+
+*** Minor Chord
+The minor chord is not a proper lcm as the major chord is. 
+The set `min@k` = `{k, k+3, k+7}` is perhaps best thought of as a subset to 15@k+2,k+7, 10@k, 8@k+8 or 24@k+3. 
+The root placement of `10@k` suggest that perhaps the minor chord should be treated as an isomorphism of 8@k+8,
+making it a naturally larger lcm family than the major triads even though both being three key triad chords.
+
+This implies the lcm 24 placements containing `min@k` are 24@k+3,k+8.
+The lcm 15 placements containing `min@k` are 15@k+2,k+7.
+
+Applying adjacency rules we find that `min@k` is adjacent to 15@k+7,k+10,k,k+5 via 24@k+3,k+8 and adjacent to 24@k+3,k+8,k+10,k+3.
