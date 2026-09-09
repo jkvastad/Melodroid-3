@@ -311,7 +311,7 @@ We can then tabulate each major to major triad progression, noting the overlappi
 Some cases require the isomorphism `4@k` $\leftrightarrow$ `3@(k+7)`, which places it inside an lcm 15 family (recall `3@0` = `{0 5 9}`, so `3@(k+7)` = `{k, k+4, k+7}` = `4@k`).
 Combined with 15/24 adjacency this bridges families whose keys do not directly overlap.
 
-* `4@0 -> 4@0`: supersets `24@0,5,7` (also `15s@7`)
+* `4@0 -> 4@0`: supersets `24@0,5,7` (also `15@7`)
 * `4@0 -> 4@1`: adjacency `15@7 -> 24@8`
 * `4@0 -> 4@2`: shared superset `24@7`
 * `4@0 -> 4@3`: adjacency `15@7 -> 24@3,8`
@@ -360,3 +360,50 @@ We can then tabulate each minor to minor triad progression, mirroring the major 
 From a minor chord we can then reach only the minors at `{0, ±2, ±5}`: the relative fifths `min@5,7` as shared lcm 24 supersets and the whole-step neighbours `min@2,10` through 15/24 adjacency.
 The seven remaining minors (`min@1,3,4,6,8,9,11`) have no bridge — pursuing the lcm 8 isomorphism recovers none of them, because lcm 8 sits only inside lcm 24 whereas the major chord's lcm 3 partner sat inside lcm 15.
 This is the structural reason the minor triad modulates far less freely than the major: where a major chord reached every target but the tritone, the minor reaches only its fifths and whole-step neighbours.
+
+### Major to Minor Chord
+Having tabulated the same-quality progressions we can ask which minors a major chord may progress to.
+Here the machinery is leaner than the major to major case: the target minor needs no `4` $\leftrightarrow$ `3` isomorphism to reach an lcm 15 family, since `min@k` already sits genuinely inside 24@k+3,k+8,k+10 and 15@k+2,k+7.
+A progression `4@0 -> min@k` then exists exactly when one of the target's containing placements is accessible from the source, whose reachable placements are 24@0,5,7 directly, `15@7`, and 24@3,8 via `15@7` adjacency.
+
+* `4@0 -> min@0`: adjacency `24@3,8` (the parallel minor)
+* `4@0 -> min@1`: no bridge
+* `4@0 -> min@2`: shared superset `24@0,5`
+* `4@0 -> min@3`: no bridge
+* `4@0 -> min@4`: shared superset `24@0,7`
+* `4@0 -> min@5`: shared superset `15@7`, also adjacency `24@3,8`
+* `4@0 -> min@6`: no bridge
+* `4@0 -> min@7`: shared superset `24@5`, also adjacency `24@3`
+* `4@0 -> min@8`: no bridge
+* `4@0 -> min@9`: shared superset `24@0,5,7` (the relative minor)
+* `4@0 -> min@10`: adjacency `24@8`
+* `4@0 -> min@11`: shared superset `24@7`
+
+From a major chord we can then reach eight of the twelve minors: `min@0,2,4,5,7,9,10,11`.
+Read as roots, these are precisely the source's own major-scale keys (24@0 = `{0 2 4 5 7 9 11}`) plus `min@10`, the ♭7-rooted minor recovered only through 15/24 adjacency via `24@8`.
+The relative minor `min@9` and the whole-step and third-related minors fall out as direct lcm 24 supersets, while the parallel minor `min@0` arrives through adjacency.
+
+This puts the major to minor modulation between its neighbours in freedom — eight targets against the major to major eleven and the minor to minor five.
+
+### Minor to Major Chord
+The last of the four cases takes a minor source to a major target.
+Being a minor source it carries the same lean machinery as the minor to minor case — reachable placements 24@3,8,10 and 15@2,7, with adjacency yielding only 15@0 (via 24@8) and 15@9 (via 24@10) but no *new* lcm 24 placement, since 15@2,7 fold back onto the supersets already held.
+What is new is the target: a major `4@k` sits in 24@k,k+5,k+7 and, through the isomorphism `4@k` = `3@(k+7)`, inside 15@k+7 — so the `4` $\leftrightarrow$ `3` bridge is back in play, just as it was for major to major.
+A progression `min@0 -> 4@k` then exists when one of the target's containing placements is accessible from the source.
+
+* `min@0 -> 4@0`: shared superset `15@7` (the parallel major)
+* `min@0 -> 4@1`: shared superset `24@8`
+* `min@0 -> 4@2`: isomorphism `4@2` = `3@9` $\subseteq$ `15@9`, adjacent to source superset `24@10`
+* `min@0 -> 4@3`: shared supersets `24@3,8,10`
+* `min@0 -> 4@4`: no bridge
+* `min@0 -> 4@5`: shared superset `24@10`, also isomorphism `4@5` = `3@0` $\subseteq$ `15@0` adjacent to `24@8`
+* `min@0 -> 4@6`: no bridge (the tritone-rooted major)
+* `min@0 -> 4@7`: shared superset `15@2` (isomorphism `4@7` = `3@2` $\subseteq$ `15@2`)
+* `min@0 -> 4@8`: shared supersets `24@3,8`
+* `min@0 -> 4@9`: no bridge
+* `min@0 -> 4@10`: shared supersets `24@3,10`
+* `min@0 -> 4@11`: no bridge
+
+From a minor chord we can then reach eight of the twelve majors: `4@0,1,2,3,5,7,8,10`.
+Notably the parallel major `4@0` *is* reachable, through the shared `15@7` superset — mirroring the major to minor case, where the parallel minor was reached through `24@3,8` adjacency.
+The four unreachable majors `4@4,6,9,11` have no bridge at all, the tritone-rooted `4@6` among them just as in the major to major table.

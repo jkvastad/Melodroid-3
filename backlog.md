@@ -5,6 +5,8 @@
 ** Add chord progression table
 * Add section on reverse movement e.g. if 0 4 7 played as 15@7 is adjacent to 24@8 then 0 4 7 with placements of 24@7 and 24@0 is also adjacent to 15@11 and 15@6,
  allowing e.g. progression 0 4 7(24@0) -> 4 8 11(15@11) and 0 4 7(24@7) -> 11 3 6(15@6)
+* table progression command is not congruent with progressions rules from section "composition, adjacency and preference", since it uses stable lcm 15 rules. 
+    Probably missmatch due to perception based progressions vs. strict rules based progressions.
 
 ## Intro (intro.mdx)
 
