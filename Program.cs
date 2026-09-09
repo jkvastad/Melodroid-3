@@ -692,35 +692,27 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
-        var progressionSupersetsOption = new Option<bool>("--supersets")
+        var progressionStableOption = new Option<bool>("--stable")
         {
-            Description = "Only show progressions reached by the chord's stable melodic supersets. Combine with neither flag to show both rules.",
-            DefaultValueFactory = _ => false,
-        };
-
-        var progressionAdjacencyOption = new Option<bool>("--adjacency")
-        {
-            Description = "Only show progressions reached by the adjacency rule (lcm-24 placements adjacent to the 15s superset). Combine with neither flag to show both rules.",
+            Description = "Use the narrower stable-superset walk (one-directional 15s@X ⇒ 24@(X+1),(X+8) adjacency) instead of the default strict isomorphism/composition/adjacency walk.",
             DefaultValueFactory = _ => false,
         };
 
         var progressionCommand = new Command(
             "progression",
-            "For any set of 12-tet keys, list every major/minor/dim triad it may progress to under the perception walk. By default shows moves reached by either the stable melodic supersets or the adjacency rule; --supersets / --adjacency restrict to one. 12-tet only.");
+            "For any set of 12-tet keys, list every major/minor/dim triad it may progress to under the perception walk. By default follows the strict rules (composition, 4↔3 isomorphism, bidirectional 15↔24 adjacency); --stable uses the narrower stable-superset walk. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
         progressionCommand.Add(progressionChordKeysOption);
-        progressionCommand.Add(progressionSupersetsOption);
-        progressionCommand.Add(progressionAdjacencyOption);
+        progressionCommand.Add(progressionStableOption);
         progressionCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var chordKeys = parse.GetValue(progressionChordKeysOption) ?? Array.Empty<int>();
-            var supersetsFlag = parse.GetValue(progressionSupersetsOption);
-            var adjacencyFlag = parse.GetValue(progressionAdjacencyOption);
+            var stable = parse.GetValue(progressionStableOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -745,11 +737,15 @@ class Program
                 AnsiConsole.MarkupLine("[red]No lcm-24 family for the current --max-size / --max-prime (progression needs it).[/]");
                 return 1;
             }
+            var lcm15Family = families.FirstOrDefault(f => f.Lcm == 15);
+            if (!stable && (lcm15Family.Fractions is null || lcm15Family.Fractions.Count == 0))
+            {
+                AnsiConsole.MarkupLine("[red]No lcm-15 family for the current --max-size / --max-prime (the strict walk needs it; use --stable or raise --max-prime).[/]");
+                return 1;
+            }
 
-            var includeSupersets = supersetsFlag || !adjacencyFlag;
-            var includeAdjacency = adjacencyFlag || !supersetsFlag;
-            var targets = ChordProgressions.Compute(dedupChord, includeSupersets, includeAdjacency, families, relations, lcm24Family);
-            ProgressionTableRenderer.Render(dedupChord, includeSupersets, includeAdjacency, targets);
+            var targets = ChordProgressions.Compute(dedupChord, stable, families, relations, lcm24Family, lcm15Family);
+            ProgressionTableRenderer.Render(dedupChord, stable, targets);
             return 0;
         });
 

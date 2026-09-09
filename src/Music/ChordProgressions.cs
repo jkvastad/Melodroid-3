@@ -1,13 +1,25 @@
 namespace Melodroid_3.Music;
 
 // Perception-based chord progression logic: which major/minor/dim triads a given chord (any set of
-// 12-tet keys) may progress to. The stable melodic supersets of the source chord are *derived* from
-// the placement math — exactly the rows of
+// 12-tet keys) may progress to. The source chord's direct supersets are *derived* from the placement
+// math — exactly the rows of
 //   chord-melody --drop-renormalized-subsets --drop-collapsed --stable-15
 // (see Placements.FindMaximalContaining / DropCollapsed / StableFifteen). Adjacency then follows
-// from any stable lcm-15 row. This mirrors the "Perception Based Progression" derivation in
-// website/docs/music/voicings-and-lcm-families.mdx. The command is inherently 12-tet — the 15s
-// stabilisation and the adjacency rule are defined mod 12.
+// from those.
+//
+// Two walks:
+//   * default (strict): bidirectional 15↔24 adjacency — each direct lcm-15 row reaches the adjacent
+//     lcm-24 placements 24@(At+1),(At+8) and each direct lcm-24 row reaches the adjacent lcm-15
+//     placements 15@(At+4),(At+11). A target is reachable when it is a subset of a direct superset
+//     or of any adjacency placement. This reproduces the four progression tables in
+//     website/docs/music/composition-adjacency-and-preference.mdx (e.g. a major source reaches every
+//     major triad but the tritone): the 4@k ↔ 3@(k+7) isomorphism falls out of the uniform subset
+//     test, since 4@k is a literal subset of the full 15@(k+7) reached via 24→15 adjacency.
+//   * --stable: the narrower one-directional walk — adjacency only from stable lcm-15 rows to their
+//     two adjacent lcm-24 placements.
+//
+// This mirrors the "Perception Based Progression" derivation in website/docs/music. The command is
+// inherently 12-tet — the 15s stabilisation and the adjacency rules are defined mod 12.
 
 public enum TriadQuality { Major, Minor, Diminished }
 
@@ -60,39 +72,56 @@ public static class ChordProgressions
     }
 
     // Every next-chord target for the given chord keys: each major/minor/dim triad that is a subset
-    // of one of the chord's stable melodic supersets (the superset rule) or of an adjacency-derived
-    // lcm-24 placement (the adjacency rule). Both bridge lists are populated; a target is included
-    // when at least one included rule reaches it. Sorted by root, then quality.
+    // of one of the chord's direct supersets (the superset rule) or of an adjacency placement (the
+    // adjacency rule). Both bridge lists are populated; a target is included when at least one rule
+    // reaches it. When `stable` is true the narrower one-directional walk is used (adjacency only
+    // from stable lcm-15 rows to lcm-24); otherwise the default strict bidirectional walk applies.
+    // Sorted by root, then quality.
     public static IReadOnlyList<ProgressionTarget> Compute(
         IReadOnlyCollection<int> chordKeys,
-        bool includeSupersets, bool includeAdjacency,
+        bool stable,
         IReadOnlyList<LcmFamily> families,
         IReadOnlyList<FamilyRelation> relations,
-        LcmFamily lcm24Family)
+        LcmFamily lcm24Family,
+        LcmFamily lcm15Family)
     {
-        // Stable melodic supersets = maximal placements containing the chord, with collapsed lcm-15
-        // rows dropped and the rest reduced to stable 15s form. Mirrors the chord-melody flags
+        // Direct supersets = maximal placements containing the chord, with collapsed lcm-15 rows
+        // dropped and the rest reduced to stable 15s form. Mirrors the chord-melody flags
         // --drop-renormalized-subsets --drop-collapsed --stable-15.
-        var stable = Placements.FindMaximalContaining(chordKeys, families, relations, Ktet, dropRenormalizedSubsets: true);
-        stable = Placements.DropCollapsed(stable, chordKeys, Ktet);
-        stable = Placements.StableFifteen(stable, Ktet);
+        var direct = Placements.FindMaximalContaining(chordKeys, families, relations, Ktet, dropRenormalizedSubsets: true);
+        direct = Placements.DropCollapsed(direct, chordKeys, Ktet);
+        direct = Placements.StableFifteen(direct, Ktet);
 
-        var supersets = includeSupersets
-            ? stable
-                .Select(p => (Keys: new HashSet<int>(FoldSet(p.Keys)), Label: PlacementLabel(p)))
-                .ToList()
-            : new List<(HashSet<int> Keys, string Label)>();
+        var supersets = direct
+            .Select(p => (Keys: new HashSet<int>(FoldSet(p.Keys)), Label: PlacementLabel(p)))
+            .ToList();
 
-        // Adjacency rule: each surviving stable lcm-15 row 15s@At reaches the adjacent lcm-24
-        // placements 24@(At+1) and 24@(At+8) (mod 12).
-        var adjacency = includeAdjacency
-            ? stable
-                .Where(p => p.Lcm == 15)
-                .SelectMany(p => new[] { Fold(p.At + 1), Fold(p.At + 8) })
-                .Distinct()
-                .Select(at => (Keys: new HashSet<int>(FoldSet(Placements.Compute(lcm24Family, at, Ktet).Keys)), Label: $"24@{at}"))
-                .ToList()
-            : new List<(HashSet<int> Keys, string Label)>();
+        // Adjacency placements. Both walks send each direct lcm-15 row 15@At to the adjacent lcm-24
+        // placements 24@(At+1),(At+8). The strict (default) walk is additionally bidirectional: each
+        // direct lcm-24 row 24@At also reaches the adjacent lcm-15 placements 15@(At+4),(At+11). All
+        // are materialised as full family placements (mod 12) and de-duplicated by (lcm, at).
+        var adjacencySeen = new HashSet<(int Lcm, int At)>();
+        var adjacency = new List<(HashSet<int> Keys, string Label)>();
+        void AddAdjacency(LcmFamily family, int at)
+        {
+            at = Fold(at);
+            if (!adjacencySeen.Add((family.Lcm, at))) return;
+            var keys = new HashSet<int>(FoldSet(Placements.Compute(family, at, Ktet).Keys));
+            adjacency.Add((keys, $"{family.Lcm}@{at}"));
+        }
+        foreach (var p in direct.Where(p => p.Lcm == 15))
+        {
+            AddAdjacency(lcm24Family, p.At + 1);
+            AddAdjacency(lcm24Family, p.At + 8);
+        }
+        if (!stable)
+        {
+            foreach (var p in direct.Where(p => p.Lcm == 24))
+            {
+                AddAdjacency(lcm15Family, p.At + 4);
+                AddAdjacency(lcm15Family, p.At + 11);
+            }
+        }
 
         var targets = new List<ProgressionTarget>();
         foreach (var (keys, cQuality, cRoot) in AllTriads())
