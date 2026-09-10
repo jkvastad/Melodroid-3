@@ -263,7 +263,11 @@ melodroid graph lcm-families [--mode full|collapsed] \
 ```
 
 Writes a Mermaid relation graph to `output/graphs/`. `--mode collapsed` groups each isomorphism
-class into a single node.
+class into a single node. In full mode each renormalized-subset edge is labelled with **every**
+exact base at which the smaller family embeds into the larger — e.g. `9 → 24` lists both `4/3` and
+`16/9`. Note these are *exact* good-fraction embeddings; keyboard placements from `table subsets` /
+`table chord-melody` can show extra anchors (e.g. `24@10` for LCM 18) that exist only under k-tet
+tempering and have no exact renormalization base here.
 
 ## Plots
 

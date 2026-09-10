@@ -16,11 +16,15 @@ public readonly record struct FamilyRelation(
 
 public static class FamilyRelations
 {
+    // Each surviving renormalized-subset pair emits one relation per valid base — a family can embed
+    // into a larger one at several renormalizations, and the graph renderer (the only consumer of
+    // Base) shows them all. Placements/ChordProgressions/chord-melody read only Kind/FromLcm, so the
+    // extra records collapse harmlessly for them.
     public static IReadOnlyList<FamilyRelation> Compute(IReadOnlyList<LcmFamily> families)
     {
         var literal = new List<(int From, int To)>();
         var iso = new Dictionary<(int From, int To), Fraction>();
-        var renSubset = new Dictionary<(int From, int To), Fraction>();
+        var renSubset = new Dictionary<(int From, int To), List<Fraction>>();
 
         for (var i = 0; i < families.Count; i++)
         {
@@ -48,10 +52,10 @@ public static class FamilyRelations
 
                 if (a.Fractions.Count < b.Fractions.Count)
                 {
-                    var baseFrac = FindRenSubsetBase(a.Fractions, b.Fractions);
-                    if (baseFrac is not null)
+                    var bases = FindRenSubsetBases(a.Fractions, b.Fractions);
+                    if (bases.Count > 0)
                     {
-                        renSubset[(a.Lcm, b.Lcm)] = baseFrac.Value;
+                        renSubset[(a.Lcm, b.Lcm)] = bases;
                     }
                 }
             }
@@ -72,7 +76,10 @@ public static class FamilyRelations
         }
         foreach (var (from, to) in renSubsetReduced)
         {
-            result.Add(new FamilyRelation(from, to, RelationKind.RenormalizedSubset, renSubset[(from, to)]));
+            foreach (var baseFrac in renSubset[(from, to)])
+            {
+                result.Add(new FamilyRelation(from, to, RelationKind.RenormalizedSubset, baseFrac));
+            }
         }
         return result;
     }
@@ -96,17 +103,19 @@ public static class FamilyRelations
         return null;
     }
 
-    private static Fraction? FindRenSubsetBase(IReadOnlyList<Fraction> a, IReadOnlyList<Fraction> b)
+    // All non-unity bases in a whose renormalization lands inside b, in a's iteration order.
+    private static List<Fraction> FindRenSubsetBases(IReadOnlyList<Fraction> a, IReadOnlyList<Fraction> b)
     {
         var bSet = new HashSet<Fraction>(b);
         var unity = new Fraction(1, 1);
+        var bases = new List<Fraction>();
         foreach (var baseFrac in a)
         {
             if (baseFrac == unity) continue;
             var ren = Renormalization.Renormalize(a, baseFrac);
-            if (ren.All(bSet.Contains)) return baseFrac;
+            if (ren.All(bSet.Contains)) bases.Add(baseFrac);
         }
-        return null;
+        return bases;
     }
 
     private static List<(int From, int To)> HasseReduce(List<(int From, int To)> edges)

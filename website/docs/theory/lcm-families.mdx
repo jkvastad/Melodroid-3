@@ -63,7 +63,8 @@ With the defaults a graph renders all three relation types between all families:
 - **thick double arrow** (`<==>`) — isomorphism: some base $b \in F_A$ makes the renormalisation
   of $F_A$ equal $F_B$ exactly (the edge label gives the base);
 - **dashed arrow** (`-.->`) — renormalised proper subset: some base $b$ makes the renormalisation
-  of $F_A$ a strict subset of $F_B$.
+  of $F_A$ a strict subset of $F_B$. A family can embed into a larger one at more than one exact
+  base, in which case the edge is labelled with every such base.
 
 Edges are Hasse-reduced per relation (transitive edges of the same kind are omitted), and
 isomorphic families are grouped into subgraph clusters.
@@ -133,7 +134,7 @@ flowchart TD
     L8 -. "b=9/8" .-> L18
     L8 -. "b=5/4" .-> L20
     L9 -. "b=10/9" .-> L20
-    L9 -. "b=4/3" .-> L24
+    L9 -. "b=4/3, 16/9" .-> L24
     L10 -. "b=9/5" .-> L18
     L12 -. "b=3/2" .-> L18
     L12 -. "b=5/3" .-> L20
@@ -141,6 +142,13 @@ flowchart TD
     L18 -. "b=4/3" .-> L24
     L20 -. "b=3/2" .-> L15
 ```
+
+These are exact good-fraction embeddings and should not be conflated with keyboard placements which are discussed later on.
+For instance in [Composition, Adjacency and Preference](../music/composition-adjacency-and-preference.mdx) LCM 18 is
+found to sit inside `24@5` *and* `24@10`, yet only `4/3` (the `24@5` anchor) is an exact base here:
+renormalizing LCM 18 by `16/9` yields `27/16`, which is not a good fraction of LCM 24, so the
+`24@10` placement exists only under 12-tet tempering. Such tempered-only anchors show up in
+`table subsets` / `table chord-melody` but never gain an edge in this graph.
 
 Passing `--mode collapsed` produces a more concise form, where each node is one isomorphism class
 (singletons included), and class-to-class edges are deduplicated and Hasse-reduced per kind:

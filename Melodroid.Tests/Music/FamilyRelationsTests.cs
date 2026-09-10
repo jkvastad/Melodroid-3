@@ -142,6 +142,22 @@ public class FamilyRelationsTests
         }
     }
 
+    [Fact]
+    public void Lcm9_embeds_into_Lcm24_via_both_four_thirds_and_sixteen_ninths()
+    {
+        // LCM 9 sits inside LCM 24 at two exact renormalizations; every base gets its own edge.
+        var families = DefaultFamilies();
+
+        var relations = FamilyRelations.Compute(families);
+
+        var bases = relations
+            .Where(r => r.Kind == RelationKind.RenormalizedSubset && r.FromLcm == 9 && r.ToLcm == 24)
+            .Select(r => r.Base)
+            .ToList();
+        bases.Should().BeEquivalentTo(
+            new Fraction?[] { new Fraction(4, 3), new Fraction(16, 9) });
+    }
+
     private static IReadOnlyList<LcmFamily> DefaultFamilies()
     {
         var fractions = GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);

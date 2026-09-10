@@ -62,9 +62,13 @@ public static class LcmFamilyGraphRenderer
         {
             sb.AppendLine($"    L{r.FromLcm} --> L{r.ToLcm}");
         }
-        foreach (var r in relations.Where(r => r.Kind == RelationKind.RenormalizedSubset))
+        var renSubsetByPair = relations
+            .Where(r => r.Kind == RelationKind.RenormalizedSubset)
+            .GroupBy(r => (r.FromLcm, r.ToLcm));
+        foreach (var group in renSubsetByPair)
         {
-            sb.AppendLine($"    L{r.FromLcm} -. \"b={r.Base}\" .-> L{r.ToLcm}");
+            var bases = string.Join(", ", group.Select(r => r.Base!.Value.ToString()));
+            sb.AppendLine($"    L{group.Key.FromLcm} -. \"b={bases}\" .-> L{group.Key.ToLcm}");
         }
 
         sb.AppendLine("```");
