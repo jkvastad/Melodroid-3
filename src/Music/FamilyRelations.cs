@@ -5,14 +5,17 @@ public enum RelationKind
     LiteralSubset,
     Isomorphism,
     RenormalizedSubset,
+    ApproximateRenormalizedSubset,
 }
 
 // Base is the fraction b in the LCM family F_FromLcm with LCM FromLcm used for renormalization: ren(F_FromLcm, b) can equal F_ToLcm (Isomorphism) or be a proper subset of F_ToLcm (RenormalizedSubset). Null for LiteralSubset (no renormalization needed).
+// ApproximateRenormalizedSubset is the clustering-tolerant version of RenormalizedSubset: ren(F_FromLcm, b) lands inside F_ToLcm only after each image is snapped to its nearest good fraction within a bin radius. MaxBinError is the largest such snap distance (in the BinOverlaps c = (hi-lo)/(hi+lo) metric); null for the three exact kinds.
 public readonly record struct FamilyRelation(
     int FromLcm,
     int ToLcm,
     RelationKind Kind,
-    Fraction? Base);
+    Fraction? Base,
+    double? MaxBinError = null);
 
 public static class FamilyRelations
 {
@@ -20,11 +23,19 @@ public static class FamilyRelations
     // into a larger one at several renormalizations, and the graph renderer (the only consumer of
     // Base) shows them all. Placements/ChordProgressions/chord-melody read only Kind/FromLcm, so the
     // extra records collapse harmlessly for them.
-    public static IReadOnlyList<FamilyRelation> Compute(IReadOnlyList<LcmFamily> families)
+    // clusterTolerance > 0 (with goodFractions supplied) additionally emits ApproximateRenormalizedSubset
+    // edges: renormalizations that only embed once each image is snapped to its nearest good fraction
+    // within that bin radius. clusterTolerance == 0 reproduces the exact-only behaviour byte-for-byte.
+    public static IReadOnlyList<FamilyRelation> Compute(
+        IReadOnlyList<LcmFamily> families,
+        IReadOnlyList<Fraction>? goodFractions = null,
+        double clusterTolerance = 0)
     {
         var literal = new List<(int From, int To)>();
         var iso = new Dictionary<(int From, int To), Fraction>();
         var renSubset = new Dictionary<(int From, int To), List<Fraction>>();
+        var approxRenSubset = new Dictionary<(int From, int To), List<(Fraction Base, double MaxError)>>();
+        var clustering = clusterTolerance > 0 && goodFractions is { Count: > 0 };
 
         for (var i = 0; i < families.Count; i++)
         {
@@ -57,12 +68,23 @@ public static class FamilyRelations
                     {
                         renSubset[(a.Lcm, b.Lcm)] = bases;
                     }
+
+                    if (clustering)
+                    {
+                        var approx = FindApproxRenSubsetBases(
+                            a.Fractions, b.Fractions, goodFractions!, clusterTolerance, new HashSet<Fraction>(bases));
+                        if (approx.Count > 0)
+                        {
+                            approxRenSubset[(a.Lcm, b.Lcm)] = approx;
+                        }
+                    }
                 }
             }
         }
 
         var literalReduced = HasseReduce(literal);
         var renSubsetReduced = HasseReduce(new List<(int From, int To)>(renSubset.Keys));
+        var approxReduced = HasseReduce(new List<(int From, int To)>(approxRenSubset.Keys));
         var isoReduced = ReduceIsoEdges(iso);
 
         var result = new List<FamilyRelation>();
@@ -79,6 +101,13 @@ public static class FamilyRelations
             foreach (var baseFrac in renSubset[(from, to)])
             {
                 result.Add(new FamilyRelation(from, to, RelationKind.RenormalizedSubset, baseFrac));
+            }
+        }
+        foreach (var (from, to) in approxReduced)
+        {
+            foreach (var (baseFrac, maxError) in approxRenSubset[(from, to)])
+            {
+                result.Add(new FamilyRelation(from, to, RelationKind.ApproximateRenormalizedSubset, baseFrac, maxError));
             }
         }
         return result;
@@ -116,6 +145,59 @@ public static class FamilyRelations
             if (ren.All(bSet.Contains)) bases.Add(baseFrac);
         }
         return bases;
+    }
+
+    // Bases (excluding those that already embed exactly) whose renormalization lands inside b once each
+    // image is snapped to its nearest good fraction within the bin-radius tolerance. Returns each such
+    // base with the largest snap distance it incurred (the edge's MaxBinError).
+    private static List<(Fraction Base, double MaxError)> FindApproxRenSubsetBases(
+        IReadOnlyList<Fraction> a,
+        IReadOnlyList<Fraction> b,
+        IReadOnlyList<Fraction> goodFractions,
+        double tolerance,
+        HashSet<Fraction> exactBases)
+    {
+        var bSet = new HashSet<Fraction>(b);
+        var unity = new Fraction(1, 1);
+        var result = new List<(Fraction, double)>();
+        foreach (var baseFrac in a)
+        {
+            if (baseFrac == unity || exactBases.Contains(baseFrac)) continue;
+            var ren = Renormalization.Renormalize(a, baseFrac);
+            var snapped = new HashSet<Fraction>();
+            var maxError = 0.0;
+            var ok = true;
+            foreach (var image in ren)
+            {
+                var gf = NearestGoodFraction(image, goodFractions, out var dist);
+                if (dist > tolerance + Epsilon) { ok = false; break; }
+                snapped.Add(gf);
+                if (dist > maxError) maxError = dist;
+            }
+            if (!ok) continue;
+            if (maxError <= Epsilon) continue; // exact renormalization — not a new clustering-only edge
+            if (snapped.All(bSet.Contains)) result.Add((baseFrac, maxError));
+        }
+        return result;
+    }
+
+    private const double Epsilon = 1e-9;
+
+    private static Fraction NearestGoodFraction(Fraction image, IReadOnlyList<Fraction> goodFractions, out double distance)
+    {
+        var best = goodFractions[0];
+        var bestDist = RatioMath.BinDistance(image.Value, best.Value);
+        for (var i = 1; i < goodFractions.Count; i++)
+        {
+            var d = RatioMath.BinDistance(image.Value, goodFractions[i].Value);
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = goodFractions[i];
+            }
+        }
+        distance = bestDist;
+        return best;
     }
 
     private static List<(int From, int To)> HasseReduce(List<(int From, int To)> edges)

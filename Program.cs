@@ -1094,6 +1094,12 @@ class Program
         };
         modeOption.AcceptOnlyFromAmong("full", "collapsed");
 
+        var clusterToleranceOption = new Option<double>("--cluster-tolerance")
+        {
+            Description = "Bin radius c allowed when snapping renormalized images to good fractions. 0 = exact only (default); 1/161 ≈ 0.00621 (the syntonic comma, = HearingConstants.MaxUniqueStandardBinRadius) admits e.g. lcm 18 → 24@10.",
+            DefaultValueFactory = _ => 0.0,
+        };
+
         var graphLcmFamiliesCommand = new Command(
             "lcm-families",
             "Emit a Mermaid graph of subset/isomorphism/renormalized-subset relationships between LCM families.");
@@ -1101,12 +1107,14 @@ class Program
         graphLcmFamiliesCommand.Add(maxPrimeOption);
         graphLcmFamiliesCommand.Add(maxLcmOption);
         graphLcmFamiliesCommand.Add(modeOption);
+        graphLcmFamiliesCommand.Add(clusterToleranceOption);
         graphLcmFamiliesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var mode = parse.GetValue(modeOption) ?? "full";
+            var clusterTolerance = parse.GetValue(clusterToleranceOption);
 
             if (maxSize < 1)
             {
@@ -1123,22 +1131,28 @@ class Program
                 AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]");
                 return 1;
             }
+            if (clusterTolerance < 0)
+            {
+                AnsiConsole.MarkupLine("[red]--cluster-tolerance must be ≥ 0.[/]");
+                return 1;
+            }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var relations = FamilyRelations.Compute(families);
+            var relations = FamilyRelations.Compute(families, fractions, clusterTolerance);
+            var clustered = clusterTolerance > 0;
 
             string markdown;
             string fileName;
             if (mode == "collapsed")
             {
                 markdown = LcmFamilyGraphRenderer.RenderCollapsed(families, relations, maxSize, maxPrime, maxLcm);
-                fileName = "lcm-families-collapsed.md";
+                fileName = clustered ? "lcm-families-collapsed-clustered.md" : "lcm-families-collapsed.md";
             }
             else
             {
                 markdown = LcmFamilyGraphRenderer.Render(families, relations, maxSize, maxPrime, maxLcm);
-                fileName = "lcm-families.md";
+                fileName = clustered ? "lcm-families-clustered.md" : "lcm-families.md";
             }
 
             var outputDir = Path.Combine("output", "graphs");

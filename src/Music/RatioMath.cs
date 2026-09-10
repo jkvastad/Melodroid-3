@@ -9,6 +9,10 @@ public static class RatioMath
         return r;
     }
 
+    // Relative bin distance between two ratios, matching BinOverlaps' c = (hi - lo) / (hi + lo).
+    public static double BinDistance(double x, double y)
+        => Math.Abs(x - y) / (x + y);
+
     // The octave [1, 2) is cyclic — 1.0 and 2.0 identify. For v, g both in [1, 2)
     // pick the representative of v across the wrap that lies closest to g, then
     // return the signed relative offset to g. Sign follows the "v above g" → positive

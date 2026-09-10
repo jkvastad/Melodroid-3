@@ -259,7 +259,7 @@ website's `perceptionWalk` player still uses the triad-only tables in
 
 ```bash
 melodroid graph lcm-families [--mode full|collapsed] \
-  [--max-size 24] [--max-prime 5] [--max-lcm 24]
+  [--max-size 24] [--max-prime 5] [--max-lcm 24] [--cluster-tolerance 0]
 ```
 
 Writes a Mermaid relation graph to `output/graphs/`. `--mode collapsed` groups each isomorphism
@@ -268,6 +268,15 @@ exact base at which the smaller family embeds into the larger — e.g. `9 → 24
 `16/9`. Note these are *exact* good-fraction embeddings; keyboard placements from `table subsets` /
 `table chord-melody` can show extra anchors (e.g. `24@10` for LCM 18) that exist only under k-tet
 tempering and have no exact renormalization base here.
+
+`--cluster-tolerance c` (default `0` = exact only) additionally draws **clustering-tolerant**
+renormalized-subset edges (red dashed, `≈` label): a base whose renormalized images embed into the
+larger family only after each image is snapped to its nearest good fraction within bin radius `c`
+(the `c = (b−a)/(b+a)` metric of [Cluster Ranges](../theory/cluster-ranges)). When `c > 0` the file
+is written as `lcm-families-clustered.md` so it does not overwrite the exact graph. Setting
+`c ≥ 1/161 ≈ 0.00621` (the syntonic comma, = `MaxUniqueStandardBinRadius`) surfaces exactly one such
+edge in the default space: `18 → 24` via `16/9` (the `24@10` placement), where `27/16` clusters onto
+`5/3`. Remarkably, no other family gains a clustering-tolerant edge even at much larger `c`.
 
 ## Plots
 

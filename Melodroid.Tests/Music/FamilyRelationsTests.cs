@@ -158,10 +158,60 @@ public class FamilyRelationsTests
             new Fraction?[] { new Fraction(4, 3), new Fraction(16, 9) });
     }
 
+    [Fact]
+    public void Cluster_tolerance_zero_emits_no_approximate_edges()
+    {
+        var families = DefaultFamilies();
+        var fractions = DefaultGoodFractions();
+
+        var exactOnly = FamilyRelations.Compute(families, fractions, clusterTolerance: 0);
+
+        exactOnly.Should().NotContain(r => r.Kind == RelationKind.ApproximateRenormalizedSubset);
+        // Byte-for-byte identical to the no-arg overload.
+        exactOnly.Should().BeEquivalentTo(FamilyRelations.Compute(families));
+    }
+
+    [Fact]
+    public void Lcm18_approximately_embeds_into_Lcm24_via_sixteen_ninths_at_the_syntonic_comma()
+    {
+        // Renormalizing the whole lcm-18 family by 16/9 lands inside lcm-24 once the single inexact image
+        // 27/16 is clustered onto 5/3 — a miss of exactly the syntonic comma, c = 1/161 in the bin metric.
+        // (Base 9/5 does NOT work: 9/5 isn't in the lcm-18 family, and renormalizing by other members
+        // throws an image outside every good-fraction bin.)
+        var families = DefaultFamilies();
+        var fractions = DefaultGoodFractions();
+        var syntonicComma = 1.0 / 161;
+
+        var relations = FamilyRelations.Compute(families, fractions, syntonicComma);
+
+        var approx = relations
+            .Where(r => r.Kind == RelationKind.ApproximateRenormalizedSubset && r.FromLcm == 18 && r.ToLcm == 24)
+            .ToList();
+        approx.Select(r => r.Base).Should().BeEquivalentTo(new Fraction?[] { new Fraction(16, 9) });
+        approx.Single().MaxBinError!.Value.Should().BeApproximately(syntonicComma, 1e-9);
+    }
+
+    [Fact]
+    public void Approximate_edges_switch_on_at_the_syntonic_comma_threshold()
+    {
+        var families = DefaultFamilies();
+        var fractions = DefaultGoodFractions();
+
+        bool HasLcm18To24(double tolerance) => FamilyRelations
+            .Compute(families, fractions, tolerance)
+            .Any(r => r.Kind == RelationKind.ApproximateRenormalizedSubset && r.FromLcm == 18 && r.ToLcm == 24);
+
+        HasLcm18To24(0.006).Should().BeFalse();  // just below 1/161
+        HasLcm18To24(0.007).Should().BeTrue();   // just above 1/161
+    }
+
     private static IReadOnlyList<LcmFamily> DefaultFamilies()
     {
-        var fractions = GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);
+        var fractions = DefaultGoodFractions();
         return LcmFamilies.Compute(fractions, maxLcm: 24);
     }
+
+    private static IReadOnlyList<Fraction> DefaultGoodFractions()
+        => GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);
 }
 

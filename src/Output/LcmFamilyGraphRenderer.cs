@@ -22,6 +22,7 @@ public static class LcmFamilyGraphRenderer
         sb.AppendLine("- Solid arrow `-->` — literal subset: `F_A ⊆ F_B` as sets.");
         sb.AppendLine("- Thick double-headed arrow `<==>` — isomorphism: a base `b ∈ F_A` makes `ren(F_A, b) = F_B` exactly. Edge label gives the base.");
         sb.AppendLine("- Dashed arrow `-.->` — renormalized (proper) subset: a base `b` makes `ren(F_A, b) ⊂ F_B`. Edge label gives the base.");
+        sb.AppendLine("- Red dashed arrow with `≈` label — clustering-tolerant renormalized subset: `ren(F_A, b)` embeds only once each image is snapped to its nearest good fraction within a bin radius `c`. Label gives the base(s) and the largest snap distance `c`.");
         sb.AppendLine();
         sb.AppendLine("Edges are Hasse-reduced per relation (transitive edges of the same kind are omitted). Isomorphic families are grouped into subgraphs.");
         sb.AppendLine();
@@ -54,13 +55,17 @@ public static class LcmFamilyGraphRenderer
         }
         sb.AppendLine();
 
+        var edgeIndex = 0;
+        var approxEdgeIndices = new List<int>();
         foreach (var r in isoEdges)
         {
             sb.AppendLine($"    L{r.FromLcm} <== \"b={r.Base}\" ==> L{r.ToLcm}");
+            edgeIndex++;
         }
         foreach (var r in relations.Where(r => r.Kind == RelationKind.LiteralSubset))
         {
             sb.AppendLine($"    L{r.FromLcm} --> L{r.ToLcm}");
+            edgeIndex++;
         }
         var renSubsetByPair = relations
             .Where(r => r.Kind == RelationKind.RenormalizedSubset)
@@ -69,6 +74,23 @@ public static class LcmFamilyGraphRenderer
         {
             var bases = string.Join(", ", group.Select(r => r.Base!.Value.ToString()));
             sb.AppendLine($"    L{group.Key.FromLcm} -. \"b={bases}\" .-> L{group.Key.ToLcm}");
+            edgeIndex++;
+        }
+        var approxByPair = relations
+            .Where(r => r.Kind == RelationKind.ApproximateRenormalizedSubset)
+            .GroupBy(r => (r.FromLcm, r.ToLcm));
+        foreach (var group in approxByPair)
+        {
+            var bases = string.Join(", ", group.Select(r => r.Base!.Value.ToString()));
+            var maxError = group.Max(r => r.MaxBinError ?? 0);
+            sb.AppendLine($"    L{group.Key.FromLcm} -. \"≈b={bases} (c≤{FormatError(maxError)})\" .-> L{group.Key.ToLcm}");
+            approxEdgeIndices.Add(edgeIndex);
+            edgeIndex++;
+        }
+
+        if (approxEdgeIndices.Count > 0)
+        {
+            sb.AppendLine($"    linkStyle {string.Join(",", approxEdgeIndices)} stroke:#c0392b,color:#c0392b;");
         }
 
         sb.AppendLine("```");
@@ -95,6 +117,13 @@ public static class LcmFamilyGraphRenderer
         var renSubsetClassEdges = CollapseAndReduce(
             relations.Where(r => r.Kind == RelationKind.RenormalizedSubset).Select(r => (r.FromLcm, r.ToLcm)),
             lcmToClass);
+        var exactClassEdges = new HashSet<(int, int)>(literalClassEdges.Concat(renSubsetClassEdges));
+        var approxClassEdges = CollapseAndReduce(
+                relations.Where(r => r.Kind == RelationKind.ApproximateRenormalizedSubset).Select(r => (r.FromLcm, r.ToLcm)),
+                lcmToClass)
+            // A red edge that coincides with an exact class edge adds nothing once base labels are dropped.
+            .Where(e => !exactClassEdges.Contains(e))
+            .ToList();
 
         var sb = new StringBuilder();
         sb.AppendLine("# LCM Family Relationships — Collapsed by Isomorphism Class");
@@ -107,6 +136,7 @@ public static class LcmFamilyGraphRenderer
         sb.AppendLine();
         sb.AppendLine("- Solid arrow `-->` — literal subset: some family in class A is a literal subset of some family in class B.");
         sb.AppendLine("- Dashed arrow `-.->` — renormalized subset: some family in class A renormalizes into a proper subset of some family in class B.");
+        sb.AppendLine("- Red dashed arrow `-.->` — clustering-tolerant renormalized subset: the embedding holds only after each renormalized image is snapped to its nearest good fraction within a bin radius `c`.");
         sb.AppendLine();
         sb.AppendLine("Class-to-class edges are deduplicated and Hasse-reduced per kind (transitive edges of the same kind are omitted).");
         sb.AppendLine();
@@ -127,9 +157,22 @@ public static class LcmFamilyGraphRenderer
         {
             sb.AppendLine($"    C{from} --> C{to}");
         }
+        var edgeIndex = literalClassEdges.Count;
         foreach (var (from, to) in renSubsetClassEdges.OrderBy(e => e.From).ThenBy(e => e.To))
         {
             sb.AppendLine($"    C{from} -.-> C{to}");
+            edgeIndex++;
+        }
+        var approxIndices = new List<int>();
+        foreach (var (from, to) in approxClassEdges.OrderBy(e => e.From).ThenBy(e => e.To))
+        {
+            sb.AppendLine($"    C{from} -.-> C{to}");
+            approxIndices.Add(edgeIndex);
+            edgeIndex++;
+        }
+        if (approxIndices.Count > 0)
+        {
+            sb.AppendLine($"    linkStyle {string.Join(",", approxIndices)} stroke:#c0392b,color:#c0392b;");
         }
 
         sb.AppendLine("```");
@@ -195,6 +238,8 @@ public static class LcmFamilyGraphRenderer
         }
         return false;
     }
+
+    private static string FormatError(double error) => error.ToString("0.####");
 
     private static string NodeDef(LcmFamily family)
     {

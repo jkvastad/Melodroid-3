@@ -1,10 +1,25 @@
 ﻿using AwesomeAssertions;
+using Melodroid_3.Music;
 using Melodroid_3.Output;
 
 namespace Melodroid_3.Tests.Output;
 
 public class LcmFamilyGraphRendererTests
 {
+    [Fact]
+    public void Render_marks_clustering_tolerant_edges_distinctly()
+    {
+        var fractions = GoodFractions.Enumerate(maxSize: 24, maxPrime: 5);
+        var families = LcmFamilies.Compute(fractions, maxLcm: 24);
+        var relations = FamilyRelations.Compute(families, fractions, clusterTolerance: 1.0 / 161);
+
+        var markdown = LcmFamilyGraphRenderer.Render(families, relations, 24, 5, 24);
+
+        markdown.Should().Contain("≈b=");        // approximate edge label
+        markdown.Should().Contain("linkStyle");   // distinct red styling applied
+    }
+
+
     [Fact]
     public void Singleton_lcm_to_singleton_lcm_yields_one_class_edge()
     {
