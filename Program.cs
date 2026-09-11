@@ -422,6 +422,11 @@ class Program
             Required = true,
         };
 
+        var renormApproximateOption = new Option<bool>("--approximate")
+        {
+            Description = "Snap non-good renormalized fractions to the nearest good fraction and report the exact bin radius (and %) each renormalization needs to become all-good.",
+        };
+
         var renormalizationsCommand = new Command(
             "renormalizations",
             "Renormalize one LCM family onto each of its member fractions, showing the resulting (isomorphic) fraction sets.");
@@ -429,12 +434,14 @@ class Program
         renormalizationsCommand.Add(maxPrimeOption);
         renormalizationsCommand.Add(maxLcmOption);
         renormalizationsCommand.Add(renormLcmOption);
+        renormalizationsCommand.Add(renormApproximateOption);
         renormalizationsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var lcm = parse.GetValue(renormLcmOption);
+            var approximate = parse.GetValue(renormApproximateOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -448,6 +455,16 @@ class Program
             {
                 AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
                 return 1;
+            }
+
+            if (approximate)
+            {
+                var approxRows = family.Fractions
+                    .Select(b => (b, RenormalizationApproximation.Snap(
+                        Renormalization.Renormalize(family.Fractions, b), fractions)))
+                    .ToList();
+                RenormalizationTableRenderer.RenderApproximate(family, approxRows);
+                return 0;
             }
 
             var rows = family.Fractions

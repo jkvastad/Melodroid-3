@@ -89,6 +89,25 @@ public class BinOverlapsTests
         overlaps[^1].Radius.Should().Be(ExpectedRadius(fractions[^1], new Fraction(2, 1)));
     }
 
+    [Fact]
+    public void ExactBinDistance_is_order_independent_and_reduced()
+    {
+        var a = new Fraction(128, 81);
+        var b = new Fraction(8, 5);
+        // |128*5 - 8*81| / (128*5 + 8*81) = |640 - 648| / 1288 = 8/1288 = 1/161.
+        var expected = new Fraction(1, 161);
+
+        BinOverlaps.ExactBinDistance(a, b).Should().Be(expected);
+        BinOverlaps.ExactBinDistance(b, a).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ExactBinDistance_of_a_fraction_with_itself_is_zero()
+    {
+        BinOverlaps.ExactBinDistance(new Fraction(5, 4), new Fraction(5, 4))
+            .Should().Be(new Fraction(0, 1));
+    }
+
     private static Fraction ExpectedRadius(Fraction a, Fraction b)
     {
         var num = b.Numerator * a.Denominator - a.Numerator * b.Denominator;

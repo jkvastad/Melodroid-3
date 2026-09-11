@@ -13,20 +13,21 @@ public static class BinOverlaps
         {
             var a = fractions[i];
             var b = fractions[i + 1];
-            result.Add(new BinOverlap(a, b, OverlapRadius(a, b)));
+            result.Add(new BinOverlap(a, b, ExactBinDistance(a, b)));
         }
 
         var last = fractions[^1];
         var two = new Fraction(2, 1);
-        result.Add(new BinOverlap(last, two, OverlapRadius(last, two)));
+        result.Add(new BinOverlap(last, two, ExactBinDistance(last, two)));
 
         return result;
     }
 
-    // c = (b - a) / (b + a), expressed exactly as a reduced fraction.
-    private static Fraction OverlapRadius(Fraction a, Fraction b)
+    // c = |b - a| / (b + a), the relative bin distance between two fractions,
+    // expressed exactly as a reduced fraction. Order-independent.
+    public static Fraction ExactBinDistance(Fraction a, Fraction b)
     {
-        var num = b.Numerator * a.Denominator - a.Numerator * b.Denominator;
+        var num = Math.Abs(b.Numerator * a.Denominator - a.Numerator * b.Denominator);
         var den = b.Numerator * a.Denominator + a.Numerator * b.Denominator;
         var g = IntegerMath.Gcd(num, den);
         return new Fraction(num / g, den / g);

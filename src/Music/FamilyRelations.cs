@@ -169,7 +169,7 @@ public static class FamilyRelations
             var ok = true;
             foreach (var image in ren)
             {
-                var gf = NearestGoodFraction(image, goodFractions, out var dist);
+                var gf = RenormalizationApproximation.NearestGoodFraction(image, goodFractions, out var dist);
                 if (dist > tolerance + Epsilon) { ok = false; break; }
                 snapped.Add(gf);
                 if (dist > maxError) maxError = dist;
@@ -182,23 +182,6 @@ public static class FamilyRelations
     }
 
     private const double Epsilon = 1e-9;
-
-    private static Fraction NearestGoodFraction(Fraction image, IReadOnlyList<Fraction> goodFractions, out double distance)
-    {
-        var best = goodFractions[0];
-        var bestDist = RatioMath.BinDistance(image.Value, best.Value);
-        for (var i = 1; i < goodFractions.Count; i++)
-        {
-            var d = RatioMath.BinDistance(image.Value, goodFractions[i].Value);
-            if (d < bestDist)
-            {
-                bestDist = d;
-                best = goodFractions[i];
-            }
-        }
-        distance = bestDist;
-        return best;
-    }
 
     private static List<(int From, int To)> HasseReduce(List<(int From, int To)> edges)
     {
