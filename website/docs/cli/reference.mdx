@@ -87,6 +87,15 @@ melodroid table placement --lcm 4 [4 ...] --at 0 \
 
 Prints the keys and fractions for one or more LCM placements at a shared anchor.
 
+### `renormalizations`
+
+```bash
+melodroid table renormalizations --lcm 24 \
+  [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure.
+
 ### `family-overlap`
 
 ```bash

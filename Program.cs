@@ -416,6 +416,47 @@ class Program
             return 0;
         });
 
+        var renormLcmOption = new Option<int>("--lcm")
+        {
+            Description = "LCM (wave pattern length) of the family to renormalize onto each of its members.",
+            Required = true,
+        };
+
+        var renormalizationsCommand = new Command(
+            "renormalizations",
+            "Renormalize one LCM family onto each of its member fractions, showing the resulting (isomorphic) fraction sets.");
+        renormalizationsCommand.Add(maxSizeOption);
+        renormalizationsCommand.Add(maxPrimeOption);
+        renormalizationsCommand.Add(maxLcmOption);
+        renormalizationsCommand.Add(renormLcmOption);
+        renormalizationsCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var lcm = parse.GetValue(renormLcmOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var family = families.FirstOrDefault(f => f.Lcm == lcm);
+            if (family.Fractions is null || family.Fractions.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[red]No LCM family exists at L={lcm} under --max-size {maxSize} / --max-prime {maxPrime} / --max-lcm {maxLcm}.[/]");
+                return 1;
+            }
+
+            var rows = family.Fractions
+                .Select(b => (b, Renormalization.Renormalize(family.Fractions, b)))
+                .ToList();
+            RenormalizationTableRenderer.Render(family, rows);
+            return 0;
+        });
+
         var lcmSweepOption = new Option<int>("--lcm-sweep")
         {
             Description = "LCM of family A — swept across all k placements (at = 0..ktet-1).",
@@ -1078,6 +1119,7 @@ class Program
         tableCommand.Add(ktetCutoffsCommand);
         tableCommand.Add(keySweepCommand);
         tableCommand.Add(placementCommand);
+        tableCommand.Add(renormalizationsCommand);
         tableCommand.Add(familyOverlapCommand);
         tableCommand.Add(keySupersetsCommand);
         tableCommand.Add(superpositionsCommand);
