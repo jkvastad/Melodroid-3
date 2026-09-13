@@ -13,6 +13,15 @@ public static class RatioMath
     public static double BinDistance(double x, double y)
         => Math.Abs(x - y) / (x + y);
 
+    // Wave pattern length of a fraction set = LCM of its denominators, in units of the
+    // reference period. Empty set → 1 (a single reference period).
+    public static int WavePatternLength(IEnumerable<Fraction> fractions)
+    {
+        var lcm = 1;
+        foreach (var f in fractions) lcm = IntegerMath.Lcm(lcm, f.Denominator);
+        return lcm;
+    }
+
     // The octave [1, 2) is cyclic — 1.0 and 2.0 identify. For v, g both in [1, 2)
     // pick the representative of v across the wrap that lies closest to g, then
     // return the signed relative offset to g. Sign follows the "v above g" → positive

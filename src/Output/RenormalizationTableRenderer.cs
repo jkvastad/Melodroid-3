@@ -16,12 +16,14 @@ public static class RenormalizationTableRenderer
         var table = new Table()
             .AddColumn(new TableColumn("Base").RightAligned())
             .AddColumn(new TableColumn("Count").RightAligned())
-            .AddColumn(new TableColumn("Fractions").LeftAligned());
+            .AddColumn(new TableColumn("Fractions").LeftAligned())
+            .AddColumn(new TableColumn("LCM").RightAligned());
 
         foreach (var (baseFrac, fractions) in rows)
         {
             var joined = string.Join(", ", fractions.Select(f => f.ToString()));
-            table.AddRow(baseFrac.ToString(), fractions.Count.ToString(), joined);
+            var lcm = RatioMath.WavePatternLength(fractions);
+            table.AddRow(baseFrac.ToString(), fractions.Count.ToString(), joined, lcm.ToString());
         }
 
         table.Caption($"lcm-{family.Lcm} · {family.Fractions.Count} members");
@@ -42,7 +44,9 @@ public static class RenormalizationTableRenderer
             .AddColumn(new TableColumn("Base").RightAligned())
             .AddColumn(new TableColumn("Count").RightAligned())
             .AddColumn(new TableColumn("Fractions").LeftAligned())
+            .AddColumn(new TableColumn("LCM").RightAligned())
             .AddColumn(new TableColumn("→ good").LeftAligned())
+            .AddColumn(new TableColumn("LCM ✓").RightAligned())
             .AddColumn(new TableColumn("c").RightAligned())
             .AddColumn(new TableColumn("c %").RightAligned());
 
@@ -68,7 +72,13 @@ public static class RenormalizationTableRenderer
                 ? string.Empty
                 : required.Value.ToString("P3", CultureInfo.InvariantCulture);
 
-            table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, good, cExact, cPct);
+            var exactLcm = RatioMath.WavePatternLength(snapped.Select(s => s.Image)).ToString();
+            // The snapped set's WPL; equals exactLcm on clean rows, so shown only when snapping changed something.
+            var snappedLcm = isClean
+                ? "—"
+                : RatioMath.WavePatternLength(snapped.Select(s => s.Nearest)).ToString();
+
+            table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct);
         }
 
         var worstText = worst.Numerator == 0

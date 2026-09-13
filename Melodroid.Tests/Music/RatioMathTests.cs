@@ -44,6 +44,20 @@ public class RatioMathTests
     }
 
     [Fact]
+    public void WavePatternLength_is_lcm_of_denominators()
+    {
+        // Major triad {1, 5/4, 3/2} â†’ LCM(1, 4, 2) = 4.
+        var triad = new[] { new Fraction(1, 1), new Fraction(5, 4), new Fraction(3, 2) };
+        RatioMath.WavePatternLength(triad).Should().Be(4);
+    }
+
+    [Fact]
+    public void WavePatternLength_empty_set_is_one()
+    {
+        RatioMath.WavePatternLength(Array.Empty<Fraction>()).Should().Be(1);
+    }
+
+    [Fact]
     public void CircularSignedRelative_zero_when_v_equals_g()
     {
         RatioMath.CircularSignedRelative(1.5, 1.5).Should().Be(0.0);

@@ -94,7 +94,7 @@ melodroid table renormalizations --lcm 24 \
   [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate] [--per-snap-c]
 ```
 
-Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure.
+Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure. The `LCM` column gives the wave pattern length (LCM of denominators) of each renormalized set — for non-unison bases this often exceeds the family's own LCM as images fall off the good-fraction grid. In `--approximate` mode an additional `LCM ✓` column reports the wave pattern length after snapping to nearest-good fractions (shown as `—` on rows that were already all-good).
 
 Renormalization preserves prime smoothness but not size, so some bases produce fractions that
 exceed `--max-size` and are therefore *not* good fractions (e.g. `16/9 ÷ 9/8 = 128/81`).
