@@ -52,15 +52,14 @@ which their JND bins first touch. Each row is $(\text{Lower}, \text{Upper}, c, c
 $c = (\text{Upper} - \text{Lower}) / (\text{Upper} + \text{Lower})$. The $c$ column is the
 *exact* reduced fraction (e.g. $1/161$ for the tightest gap $10/9 \to 9/8$); $c\,\%$ is the same
 value as a percentage. The final row handles the octave wrap by pairing the largest good
-fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows. The caption surfaces the
-minimum $c$ — the largest JND a listener could have before *any* adjacent bins overlap.
+fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows.
 
 The minimum unique bin radius for LCM 24 is thus $1/161 \approx 0.621\%$, within human JND.
 
 This smallest ratio between any two good fractions happens to be the **syntonic comma** $81/80$.
 It appears twice above, at $10/9 \to 9/8$ and $16/9 \to 9/5$, where setting $b/a = 81/80$ in $c = (b-a)/(b+a)$ gives $c = 1/161$ exactly with $161 = 80 + 81$.
 
-One could conjecture that perhaps it is no coincidence that human JND is one the order of the syntonic comma, 
+One could conjecture that perhaps it is no coincidence that human JND is on the order of the syntonic comma, 
 but rather evolution might have molded itself around a necessity of number theory as a pragmatic method to renormalize and parse sets of frequencies.
 
 Revisiting the lcm families we can inspect clustered renormalisations using the command
@@ -74,7 +73,59 @@ bin radius it requires.
 See the [CLI reference](../cli/reference.mdx#renormalizations).
 
 Notably all lcm families of size 12 or smaller are perfect renormalisations. 
-Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%).
+Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%). The four non-trivial families are shown in full below.
+
+### Clustered Renormalisations
+
+Each row renormalises the family onto one base fraction. Bolded entries in the **Fractions** column are
+images that fall outside the good fractions; **→ good** snaps each to its nearest good fraction, and
+$c$ / $c\,\%$ report the largest snap the row required.
+
+#### lcm-15 — worst required radius $1/49$ (2.041 %)
+
+| Base  | Fractions | → good | c | c % |
+| ----: | :-- | :-- | ----: | ------: |
+|   1/1 | 1/1, 16/15, 6/5, 4/3, 8/5, 5/3, 9/5 | 1/1, 16/15, 6/5, 4/3, 8/5, 5/3, 9/5 | — | |
+| 16/15 | 1/1, 9/8, 5/4, 3/2, **25/16**, **27/16**, 15/8 | 1/1, 9/8, 5/4, 3/2, 8/5, 5/3, 15/8 | 3/253 | 1.186 % |
+|   6/5 | 1/1, 10/9, 4/3, **25/18**, 3/2, 5/3, 16/9 | 1/1, 10/9, 4/3, 4/3, 3/2, 5/3, 16/9 | 1/49 | 2.041 % |
+|   4/3 | 1/1, 6/5, 5/4, **27/20**, 3/2, 8/5, 9/5 | 1/1, 6/5, 5/4, 4/3, 3/2, 8/5, 9/5 | 1/161 | 0.621 % |
+|   8/5 | 1/1, **25/24**, 9/8, 5/4, 4/3, 3/2, 5/3 | 1/1, 16/15, 9/8, 5/4, 4/3, 3/2, 5/3 | 3/253 | 1.186 % |
+|   5/3 | 1/1, **27/25**, 6/5, **32/25**, **36/25**, 8/5, **48/25** | 1/1, 16/15, 6/5, 5/4, 3/2, 8/5, 15/8 | 1/49 | 2.041 % |
+|   9/5 | 1/1, 10/9, **32/27**, 4/3, **40/27**, 16/9, **50/27** | 1/1, 10/9, 6/5, 4/3, 3/2, 16/9, 15/8 | 1/161 | 0.621 % |
+
+#### lcm-18 — worst required radius $1/161$ (0.621 %)
+
+| Base | Fractions | → good | c | c % |
+| ---: | :-- | :-- | ----: | ------: |
+|  1/1 | 1/1, 10/9, 4/3, 3/2, 5/3, 16/9 | 1/1, 10/9, 4/3, 3/2, 5/3, 16/9 | — | |
+| 10/9 | 1/1, 6/5, **27/20**, 3/2, 8/5, 9/5 | 1/1, 6/5, 4/3, 3/2, 8/5, 9/5 | 1/161 | 0.621 % |
+|  4/3 | 1/1, 9/8, 5/4, 4/3, 3/2, 5/3 | 1/1, 9/8, 5/4, 4/3, 3/2, 5/3 | — | |
+|  3/2 | 1/1, 10/9, **32/27**, 4/3, **40/27**, 16/9 | 1/1, 10/9, 6/5, 4/3, 3/2, 16/9 | 1/161 | 0.621 % |
+|  5/3 | 1/1, 16/15, 6/5, 4/3, 8/5, 9/5 | 1/1, 16/15, 6/5, 4/3, 8/5, 9/5 | — | |
+| 16/9 | 1/1, 9/8, 5/4, 3/2, **27/16**, 15/8 | 1/1, 9/8, 5/4, 3/2, 5/3, 15/8 | 1/161 | 0.621 % |
+
+#### lcm-20 — worst required radius $1/49$ (2.041 %)
+
+| Base | Fractions | → good | c | c % |
+| ---: | :-- | :-- | ----: | ------: |
+|  1/1 | 1/1, 6/5, 5/4, 3/2, 8/5, 9/5 | 1/1, 6/5, 5/4, 3/2, 8/5, 9/5 | — | |
+|  6/5 | 1/1, **25/24**, 5/4, 4/3, 3/2, 5/3 | 1/1, 16/15, 5/4, 4/3, 3/2, 5/3 | 3/253 | 1.186 % |
+|  5/4 | 1/1, 6/5, **32/25**, **36/25**, 8/5, **48/25** | 1/1, 6/5, 5/4, 3/2, 8/5, 15/8 | 1/49 | 2.041 % |
+|  3/2 | 1/1, 16/15, 6/5, 4/3, 8/5, 5/3 | 1/1, 16/15, 6/5, 4/3, 8/5, 5/3 | — | |
+|  8/5 | 1/1, 9/8, 5/4, 3/2, **25/16**, 15/8 | 1/1, 9/8, 5/4, 3/2, 8/5, 15/8 | 3/253 | 1.186 % |
+|  9/5 | 1/1, 10/9, 4/3, **25/18**, 5/3, 16/9 | 1/1, 10/9, 4/3, 4/3, 5/3, 16/9 | 1/49 | 2.041 % |
+
+#### lcm-24 — worst required radius $7/263$ (2.662 %)
+
+| Base | Fractions | → good | c | c % |
+| ---: | :-- | :-- | ----: | ------: |
+|  1/1 | 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8 | 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8 | — | |
+|  9/8 | 1/1, 10/9, **32/27**, 4/3, **40/27**, 5/3, 16/9 | 1/1, 10/9, 6/5, 4/3, 3/2, 5/3, 16/9 | 1/161 | 0.621 % |
+|  5/4 | 1/1, 16/15, 6/5, 4/3, 3/2, 8/5, 9/5 | 1/1, 16/15, 6/5, 4/3, 3/2, 8/5, 9/5 | — | |
+|  4/3 | 1/1, 9/8, 5/4, **45/32**, 3/2, **27/16**, 15/8 | 1/1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8 | 7/263 | 2.662 % |
+|  3/2 | 1/1, 10/9, 5/4, 4/3, 3/2, 5/3, 16/9 | 1/1, 10/9, 5/4, 4/3, 3/2, 5/3, 16/9 | — | |
+|  5/3 | 1/1, 9/8, 6/5, **27/20**, 3/2, 8/5, 9/5 | 1/1, 9/8, 6/5, 4/3, 3/2, 8/5, 9/5 | 1/161 | 0.621 % |
+| 15/8 | 1/1, 16/15, 6/5, 4/3, **64/45**, 8/5, 16/9 | 1/1, 16/15, 6/5, 4/3, 3/2, 8/5, 16/9 | 7/263 | 2.662 % |
 
 ## Full Match and Octave Sweep
 
