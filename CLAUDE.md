@@ -72,7 +72,7 @@ table octave-sweep      bin --ratios against good fractions over a swept referen
 table ktet-cutoffs      worst-case covering radius c_k per k-tet keyboard
 table key-sweep         bin --keys / --ratios stepping through a k-tet tuning's keys
 table placement         map an LCM family's fractions onto k-tet keys at a chosen anchor
-table renormalizations  renormalize one LCM family (--lcm) onto each of its members, showing the resulting (isomorphic) fraction sets (--approximate snaps non-good images to the nearest good fraction and reports the smallest bin radius, exact + %, that makes each renormalization all-good)
+table renormalizations  renormalize one LCM family (--lcm) onto each of its members, showing the resulting (isomorphic) fraction sets (--approximate snaps non-good images to the nearest good fraction and reports the smallest bin radius, exact + %, that makes each renormalization all-good; --per-snap-c additionally annotates each snapped good value with the exact radius that individual snap required)
 table family-overlap    sweep one family's placements against a reference family
 table key-supersets     placements whose keys are a superset of given --keys (--compare splits vs a second key set: common / only-A / only-B)
 table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors; --collapse-aliases folds same-count isomorphic aliases to a lowest-LCM representative; --reference restricts to given anchor keys)

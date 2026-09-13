@@ -33,7 +33,8 @@ public static class RenormalizationTableRenderer
     public static void RenderApproximate(
         LcmFamily family,
         IReadOnlyList<(Fraction Base, IReadOnlyList<SnappedImage> Snapped)> rows,
-        IAnsiConsole? console = null)
+        IAnsiConsole? console = null,
+        bool perSnapC = false)
     {
         console ??= AnsiConsole.Console;
 
@@ -51,7 +52,12 @@ public static class RenormalizationTableRenderer
             // Non-good images are highlighted; good ones render plainly.
             var fractions = string.Join(", ", snapped.Select(s =>
                 s.AlreadyGood ? s.Image.ToString() : $"[red]{s.Image}[/]"));
-            var good = string.Join(", ", snapped.Select(s => s.Nearest.ToString()));
+            // When requested, each actually-snapped (non-good) target carries the exact
+            // bin radius that snap required, as fraction + %.
+            var good = string.Join(", ", snapped.Select(s =>
+                perSnapC && !s.AlreadyGood
+                    ? $"{s.Nearest} ({s.Radius}, {s.Radius.Value.ToString("P3", CultureInfo.InvariantCulture)})"
+                    : s.Nearest.ToString()));
 
             var required = RenormalizationApproximation.RequiredRadius(snapped);
             var isClean = required.Numerator == 0;

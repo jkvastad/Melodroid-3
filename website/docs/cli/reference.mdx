@@ -91,7 +91,7 @@ Prints the keys and fractions for one or more LCM placements at a shared anchor.
 
 ```bash
 melodroid table renormalizations --lcm 24 \
-  [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate]
+  [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate] [--per-snap-c]
 ```
 
 Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure.
@@ -105,6 +105,9 @@ the smallest bin radius that makes the whole renormalization good — the larges
 as an exact reduced fraction and a percentage to compare against the ~0.5–1 % pitch JND. Rows that
 are already all-good show `—`. For lcm 18, base `16/9` renormalizes into the lcm-24 major scale at
 `c = 1/161 ≈ 0.621 %` — exactly the syntonic comma the cluster-ranges page highlights.
+`--per-snap-c` (companion to `--approximate`) additionally annotates each snapped `→ good` value
+with the exact bin radius that individual snap required, as `fraction, %` in parentheses (e.g.
+`5/3 (1/161, 0.621 %)`); already-good values are left plain.
 
 ### `family-overlap`
 

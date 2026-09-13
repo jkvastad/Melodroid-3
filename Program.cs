@@ -427,6 +427,11 @@ class Program
             Description = "Snap non-good renormalized fractions to the nearest good fraction and report the exact bin radius (and %) each renormalization needs to become all-good.",
         };
 
+        var renormPerSnapCOption = new Option<bool>("--per-snap-c")
+        {
+            Description = "With --approximate, annotate each snapped good-column value with the exact bin radius (and %) that snap required.",
+        };
+
         var renormalizationsCommand = new Command(
             "renormalizations",
             "Renormalize one LCM family onto each of its member fractions, showing the resulting (isomorphic) fraction sets.");
@@ -435,6 +440,7 @@ class Program
         renormalizationsCommand.Add(maxLcmOption);
         renormalizationsCommand.Add(renormLcmOption);
         renormalizationsCommand.Add(renormApproximateOption);
+        renormalizationsCommand.Add(renormPerSnapCOption);
         renormalizationsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -442,11 +448,13 @@ class Program
             var maxLcm = parse.GetValue(maxLcmOption);
             var lcm = parse.GetValue(renormLcmOption);
             var approximate = parse.GetValue(renormApproximateOption);
+            var perSnapC = parse.GetValue(renormPerSnapCOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
+            if (perSnapC && !approximate) { AnsiConsole.MarkupLine("[red]--per-snap-c requires --approximate.[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
@@ -463,7 +471,7 @@ class Program
                     .Select(b => (b, RenormalizationApproximation.Snap(
                         Renormalization.Renormalize(family.Fractions, b), fractions)))
                     .ToList();
-                RenormalizationTableRenderer.RenderApproximate(family, approxRows);
+                RenormalizationTableRenderer.RenderApproximate(family, approxRows, perSnapC: perSnapC);
                 return 0;
             }
 
