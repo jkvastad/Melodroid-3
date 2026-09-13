@@ -146,9 +146,8 @@ flowchart TD
 These are exact good-fraction embeddings and should not be conflated with keyboard placements which are discussed later on.
 For instance in [Composition, Adjacency and Preference](../music/composition-adjacency-and-preference.mdx) LCM 18 is
 found to sit inside `24@5` *and* `24@10`, yet only `4/3` (the `24@5` anchor) is an exact base here:
-renormalizing LCM 18 by `16/9` yields `27/16`, which is not a good fraction of LCM 24, so the
-`24@10` placement exists only under 12-tet tempering. Such tempered-only anchors show up in
-`table subsets` / `table chord-melody` but never gain an edge in this graph.
+renormalizing LCM 18 by `16/9` yields `27/16`, which is not a good fraction of LCM 24, but with clustering (see next chapter) the
+`24@10` placement exists under (at least) 12-tet tempering.
 
 Passing `--mode collapsed` produces a more concise form, where each node is one isomorphism class
 (singletons included), and class-to-class edges are deduplicated and Hasse-reduced per kind:
