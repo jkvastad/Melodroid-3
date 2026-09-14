@@ -36,7 +36,8 @@ public static class RenormalizationTableRenderer
         LcmFamily family,
         IReadOnlyList<(Fraction Base, IReadOnlyList<SnappedImage> Snapped)> rows,
         IAnsiConsole? console = null,
-        bool perSnapC = false)
+        bool perSnapC = false,
+        IReadOnlyList<IReadOnlyList<SnapFrontierPoint>>? frontiers = null)
     {
         console ??= AnsiConsole.Console;
 
@@ -49,10 +50,12 @@ public static class RenormalizationTableRenderer
             .AddColumn(new TableColumn("LCM ✓").RightAligned())
             .AddColumn(new TableColumn("c").RightAligned())
             .AddColumn(new TableColumn("c %").RightAligned());
+        if (frontiers is not null) table.AddColumn(new TableColumn("LCM↔c options").LeftAligned());
 
         var worst = new Fraction(0, 1);
-        foreach (var (baseFrac, snapped) in rows)
+        for (var i = 0; i < rows.Count; i++)
         {
+            var (baseFrac, snapped) = rows[i];
             // Non-good images are highlighted; good ones render plainly.
             var fractions = string.Join(", ", snapped.Select(s =>
                 s.AlreadyGood ? s.Image.ToString() : $"[red]{s.Image}[/]"));
@@ -78,7 +81,23 @@ public static class RenormalizationTableRenderer
                 ? "—"
                 : RatioMath.WavePatternLength(snapped.Select(s => s.Nearest)).ToString();
 
-            table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct);
+            if (frontiers is null)
+            {
+                table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct);
+            }
+            else
+            {
+                // Lowest-LCM (most-compressed) option first and bolded; radii fall as LCM rises.
+                var points = frontiers[i];
+                var frontierCell = points.Count == 0
+                    ? "—"
+                    : string.Join("\n", points.Select((p, idx) =>
+                    {
+                        var text = $"{p.Lcm} → {p.WorstRadius.Value.ToString("P2", CultureInfo.InvariantCulture)}";
+                        return idx == 0 ? $"[bold]{text}[/]" : text;
+                    }));
+                table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct, frontierCell);
+            }
         }
 
         var worstText = worst.Numerator == 0

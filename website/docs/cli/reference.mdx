@@ -91,7 +91,8 @@ Prints the keys and fractions for one or more LCM placements at a shared anchor.
 
 ```bash
 melodroid table renormalizations --lcm 24 \
-  [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate] [--per-snap-c]
+  [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate] [--per-snap-c] \
+  [--lcm-tradeoff] [--max-c 0.05]
 ```
 
 Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure. The `LCM` column gives the wave pattern length (LCM of denominators) of each renormalized set — for non-unison bases this often exceeds the family's own LCM as images fall off the good-fraction grid. In `--approximate` mode an additional `LCM ✓` column reports the wave pattern length after snapping to nearest-good fractions (shown as `—` on rows that were already all-good).
@@ -108,6 +109,19 @@ are already all-good show `—`. For lcm 18, base `16/9` renormalizes into the l
 `--per-snap-c` (companion to `--approximate`) additionally annotates each snapped `→ good` value
 with the exact bin radius that individual snap required, as `fraction, %` in parentheses (e.g.
 `5/3 (1/161, 0.621 %)`); already-good values are left plain.
+
+`--lcm-tradeoff` (companion to `--approximate`) adds an `LCM↔c options` column exposing the tension
+between snap accuracy and wave pattern length. Nearest-good snapping lets each image chase its own
+closest good fraction, so denominators diverge and the LCM can balloon far past 24. Instead, for
+each candidate LCM cap `L` in `1..--max-lcm`, every image is snapped to the nearest good fraction
+whose denominator divides `L` — deliberately accepting a worse per-fraction snap so the chosen
+denominators share more factors and hold the overall LCM low. Each row lists the resulting Pareto
+frontier, one `LCM → c %` breakpoint per line (lowest LCM bolded): smaller LCM costs a larger
+radius. `--max-c` (default `0.05`, i.e. 5 % — intentionally above the ~0.5–1 % JND to leave the
+frontier room) caps how large a bin radius a snap may cost; caps no assignment can satisfy within it
+are omitted, and a row with no feasible option shows `—`. For lcm 24 renormalized onto `5/3`,
+nearest-good snapping balloons to an lcm-120 set at only `0.621 %`, but the frontier shows the same
+renormalization can be held to lcm ≤ 24 for about `2 %` — the price of a recognizable pattern.
 
 ### `family-overlap`
 

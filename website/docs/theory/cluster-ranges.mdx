@@ -76,12 +76,20 @@ Notably all lcm families of size 12 or smaller are perfect renormalisations.
 Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%). The four non-trivial families are shown in full below.
 
 ### Clustered Renormalisations
-TODO: discuss lcm of each renormalisation, with closest approximation and also if there is a worse approximation which does produce a reasonable lcm.
-
-
 Each row renormalises the family onto one base fraction. Bolded entries in the **Fractions** column are
 images that fall outside the good fractions; **→ good** snaps each to its nearest good fraction (the
 snapped values are **bolded**), and $c$ / $c\,\%$ report the largest snap the row required.
+
+While producing sets of good fractions, the resulting sets can produce quite large lcms.
+One could argue that choosing slightly worse approximations might produce a beneficial total lcm.
+We can investigate this with the `--lcm-tradeoff` option
+
+```bash
+melodroid table renormalizations --lcm 18 --approximate --lcm-tradeoff
+```
+
+This lists possible acceptable lcms and what the bin radii cost is.
+It turns out that in all cases this requires quite large bin radii, at least 2%.
 
 #### lcm-15 — worst required radius $1/49$ (2.041 %)
 

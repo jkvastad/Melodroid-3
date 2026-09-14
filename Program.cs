@@ -432,6 +432,17 @@ class Program
             Description = "With --approximate, annotate each snapped good-column value with the exact bin radius (and %) that snap required.",
         };
 
+        var renormLcmTradeoffOption = new Option<bool>("--lcm-tradeoff")
+        {
+            Description = "With --approximate, add a per-row LCM↔radius frontier: for each achievable wave-pattern length ≤ --max-lcm, the smallest bin radius (within --max-c) needed to snap the renormalization down to it. Accepting a worse per-fraction snap can hold the overall LCM lower.",
+        };
+
+        var renormMaxCOption = new Option<double>("--max-c")
+        {
+            Description = "With --lcm-tradeoff, the maximum bin radius c (0..1) a candidate snap may cost; caps no assignment can satisfy within it are omitted. Default 0.05 (5 %), intentionally above the ~0.5–1 % JND to leave the frontier room.",
+            DefaultValueFactory = _ => 0.05,
+        };
+
         var renormalizationsCommand = new Command(
             "renormalizations",
             "Renormalize one LCM family onto each of its member fractions, showing the resulting (isomorphic) fraction sets.");
@@ -441,6 +452,8 @@ class Program
         renormalizationsCommand.Add(renormLcmOption);
         renormalizationsCommand.Add(renormApproximateOption);
         renormalizationsCommand.Add(renormPerSnapCOption);
+        renormalizationsCommand.Add(renormLcmTradeoffOption);
+        renormalizationsCommand.Add(renormMaxCOption);
         renormalizationsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -449,12 +462,16 @@ class Program
             var lcm = parse.GetValue(renormLcmOption);
             var approximate = parse.GetValue(renormApproximateOption);
             var perSnapC = parse.GetValue(renormPerSnapCOption);
+            var lcmTradeoff = parse.GetValue(renormLcmTradeoffOption);
+            var maxC = parse.GetValue(renormMaxCOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (lcm < 1) { AnsiConsole.MarkupLine("[red]--lcm must be ≥ 1.[/]"); return 1; }
             if (perSnapC && !approximate) { AnsiConsole.MarkupLine("[red]--per-snap-c requires --approximate.[/]"); return 1; }
+            if (lcmTradeoff && !approximate) { AnsiConsole.MarkupLine("[red]--lcm-tradeoff requires --approximate.[/]"); return 1; }
+            if (lcmTradeoff && maxC <= 0) { AnsiConsole.MarkupLine("[red]--max-c must be > 0.[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
@@ -471,7 +488,13 @@ class Program
                     .Select(b => (b, RenormalizationApproximation.Snap(
                         Renormalization.Renormalize(family.Fractions, b), fractions)))
                     .ToList();
-                RenormalizationTableRenderer.RenderApproximate(family, approxRows, perSnapC: perSnapC);
+                IReadOnlyList<IReadOnlyList<SnapFrontierPoint>>? frontiers = lcmTradeoff
+                    ? family.Fractions
+                        .Select(b => RenormalizationApproximation.SnapFrontier(
+                            Renormalization.Renormalize(family.Fractions, b), fractions, maxLcm, maxC))
+                        .ToList()
+                    : null;
+                RenormalizationTableRenderer.RenderApproximate(family, approxRows, perSnapC: perSnapC, frontiers: frontiers);
                 return 0;
             }
 
