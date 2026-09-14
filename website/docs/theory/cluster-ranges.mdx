@@ -105,6 +105,8 @@ It turns out that in all cases this requires quite large bin radii, at least 2%.
 |   5/3 | 1/1, **27/25**, 6/5, **32/25**, **36/25**, 8/5, **48/25** | 25 | 1/1, **16/15**, 6/5, **5/4**, **3/2**, 8/5, **15/8** | 120 | 1/49 | 2.041 % |
 |   9/5 | 1/1, 10/9, **32/27**, 4/3, **40/27**, 16/9, **50/27** | 27 | 1/1, 10/9, **6/5**, 4/3, **3/2**, 16/9, **15/8** | 360 | 1/161 | 0.621 % |
 
+Here we see that the only renormalization producing a reasonable LCM is that of 6/5, but requires a somewhat large bin radius of 2%, about twice of JND.
+
 #### lcm-18 — worst required radius $1/161$ (0.621 %)
 
 | Base | Fractions | LCM | → good | LCM ✓ | c | c % |
@@ -115,6 +117,12 @@ It turns out that in all cases this requires quite large bin radii, at least 2%.
 |  3/2 | 1/1, 10/9, **32/27**, 4/3, **40/27**, 16/9 | 27 | 1/1, 10/9, **6/5**, 4/3, **3/2**, 16/9 | 90 | 1/161 | 0.621 % |
 |  5/3 | 1/1, 16/15, 6/5, 4/3, 8/5, 9/5 | 15 | 1/1, 16/15, 6/5, 4/3, 8/5, 9/5 | — | — | |
 | 16/9 | 1/1, 9/8, 5/4, 3/2, **27/16**, 15/8 | 16 | 1/1, 9/8, 5/4, 3/2, **5/3**, 15/8 | 24 | 1/161 | 0.621 % |
+
+Apart from the renormalisations of 4/3 and 5/3 which produce acceptable lcm sets, there is also 16/9 which produces lcm 24 with a bin radius within JND.
+Thic could mean that lcm 18 is not only ambiguous with lcm 15 and 24, but there are several possible root placements for lcm 24.
+
+Using the terminology of placements in 12-tet we can write this as 18@0 having supersets of 24@5 (4/3) and 24@10(16/9),
+from which we see a circle of fifths relationship.
 
 #### lcm-20 — worst required radius $1/49$ (2.041 %)
 
@@ -127,6 +135,8 @@ It turns out that in all cases this requires quite large bin radii, at least 2%.
 |  8/5 | 1/1, 9/8, 5/4, 3/2, **25/16**, 15/8 | 16 | 1/1, 9/8, 5/4, 3/2, **8/5**, 15/8 | 40 | 3/253 | 1.186 % |
 |  9/5 | 1/1, 10/9, 4/3, **25/18**, 5/3, 16/9 | 18 | 1/1, 10/9, 4/3, **4/3**, 5/3, 16/9 | 9 | 1/49 | 2.041 % |
 
+Similarly to lcm 15, of which lcm 20 is a subset, the only renormalisation which stands to improve its lcm from clustering requires a large bin radius of some 2%.
+
 #### lcm-24 — worst required radius $7/263$ (2.662 %)
 
 | Base | Fractions | LCM | → good | LCM ✓ | c | c % |
@@ -138,6 +148,8 @@ It turns out that in all cases this requires quite large bin radii, at least 2%.
 |  3/2 | 1/1, 10/9, 5/4, 4/3, 3/2, 5/3, 16/9 | 36 | 1/1, 10/9, 5/4, 4/3, 3/2, 5/3, 16/9 | — | — | |
 |  5/3 | 1/1, 9/8, 6/5, **27/20**, 3/2, 8/5, 9/5 | 40 | 1/1, 9/8, 6/5, **4/3**, 3/2, 8/5, 9/5 | 120 | 1/161 | 0.621 % |
 | 15/8 | 1/1, 16/15, 6/5, 4/3, **64/45**, 8/5, 16/9 | 45 | 1/1, 16/15, 6/5, 4/3, **3/2**, 8/5, 16/9 | 90 | 7/263 | 2.662 % |
+
+Lcm 24 cannot improve its lcm by clustering fractions, and its perfect renormalisations produce quite large lcms.
 
 ## Full Match and Octave Sweep
 
