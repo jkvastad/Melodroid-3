@@ -17,8 +17,9 @@ public static class Subsets
     /// collecting the references at which the subset full-matches an LCM family. A subset
     /// full-matches when all its keys (as ratios 2^(i/k)) bin to good fractions; the match is
     /// strict when every key bins uniquely, otherwise ambiguous (kept only when not strictOnly).
-    /// Matches are grouped contiguously per subset, in subset order (size, then keys), and
-    /// <paramref name="maxResults"/> caps the number of distinct subsets (rows) returned.
+    /// Matches are grouped contiguously per subset, in subset order (size descending, then
+    /// keys ascending), and <paramref name="maxResults"/> caps the number of distinct subsets
+    /// (rows) returned.
     /// </summary>
     public static (IReadOnlyList<SubsetMatch> Matches, bool Truncated) Enumerate(
         IReadOnlyList<int> baseKeys,
@@ -32,7 +33,7 @@ public static class Subsets
         var m = baseKeys.Count;
         if (m < 2 || goodFractions.Count == 0 || k < 1) return (matches, false);
 
-        // All size-≥2 subsets (bitmask power set), sorted by size then keys lexicographically.
+        // All size-≥2 subsets (bitmask power set), sorted by size descending then keys ascending.
         var subsets = new List<List<int>>();
         for (var mask = 1; mask < (1 << m); mask++)
         {
@@ -80,7 +81,9 @@ public static class Subsets
 
     private static int CompareKeys(List<int> a, List<int> b)
     {
-        var bySize = a.Count.CompareTo(b.Count);
+        // Largest subsets first, so both the printout and --max-results truncation
+        // favour the (usually more interesting) larger sets.
+        var bySize = b.Count.CompareTo(a.Count);
         if (bySize != 0) return bySize;
 
         for (var i = 0; i < a.Count; i++)
