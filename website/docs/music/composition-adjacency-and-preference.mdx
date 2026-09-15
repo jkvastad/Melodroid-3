@@ -33,15 +33,18 @@ together with the full set look like this (smaller subsets cropped):
 | 2 4 5 7 9 11 | 24? | | 90? | | 30? | | 120? | 36? | | 90? | | |
 | 0 2 4 5 7 9 11 | 24? | | 90? | | 30? | | | 36? | | 90? | | |
 
-TODO: relate adjacency to renormalisations, is there any connection?
-
 Notably dropping key 11 produces 15@4 and dropping key 5 produces 15@11. 
 
-Dropping key 11 produces 18@7 with its accompanying renormalisations 24@0, 15@4 and 24@5. 
-This is in line with the clustered renormalisations we saw previously, where renormalising lcm 18 onto base fraction 16/9 (10 semitones) required a syntonic comma bin radius.
-Since 12 tet uses slightly larger bin radii it is expected that this approximation show up here.
+Dropping key 11 also produces 18@7 with its accompanying renormalisations 24@0, 15@4 and 24@5. 
+This is in line with the clustered renormalisations we saw previously, where renormalising lcm 18 onto base fraction 16/9 (10 semitones) required a syntonic comma bin radius (~0.6%).
+Since 12 tet uses slightly larger bin radii (~1%) it is expected that this approximation show up here.
 
-Later on we will see how key 8 in 15@0 seems to collapse lcm 15 into lcm 24@1,8 - a structure which is hinted at here.
+Expressed in placements the renormalisations of lcm 18 are 18@k, 24@k+5, 15@k+9, 24@k+10.
+Looking at 24@0 from the perspective of 18@7 we would expect 15@4(7+9 mod 12), 24@5 and 24@0, which we do see.
+
+There is another lcm 18 match found by removing key 5, which produces 18@2, also with the accompanying pattern of lcm 24 and 15 due to the renormalisations.
+
+Later on we will see how key k+8 in 15@k seems to collapse lcm 15 into lcm 24@k+1,k+8 - a structure which is hinted at here.
 
 ### LCM 20
 The lcm 20 subsets produced by dropping a single key from `20@0` = `{0 3 4 7 8 10}`
@@ -83,13 +86,18 @@ together with the full set look like this (smaller subsets cropped):
 | 2 5 7 9 10 | 18? | | 30 | | | 24? | 120 | 40? | | 15? | 24 | |
 | 0 2 5 7 9 10 | 18? | | 30? | | | 24? | | 90? | | 15? | 24? | |
 
-As can be seen from the full matches for the full set, 18@0 is a subset of 24@5,10 and 15@9. 
+As can be seen from the full matches for the full set, 18@0 is a subset of 24@5,10 and 15@9.
+
 This was partly seen already in the graphs of the theory section, as lcm 18 can be perfectly renormalised into 24@5 via 4/3 and 15@9 via 5/3.
 The 24@10 subset however is not exact as renormalising lcm 18 by 9/5 produces a factor of 27/20, while doing it by 16/9 produces 27/16, both with numerators on the larger side.
 
 Interestingly $\frac{27}{20}/\frac{5}{3} = 81/80$ and $\frac{27}{16}/\frac{4}{3} = 81/80$, the syntonic comma.
 
-This is the same interval that sets the tightest perceptual bin in [Cluster Ranges](../theory/cluster-ranges): the minimum bin radius $c = 1/161$ is exactly the syntonic comma expressed through $c = \frac{b-a}{b+a}$ (with $b/a = 81/80$, so $161 = 80 + 81$). So the interval by which lcm 18 misses a clean renormalisation into 24@10 is precisely the smallest gap the ear must resolve between two good fractions.
+This is the same interval that sets the tightest perceptual bin in [Cluster Ranges](../theory/cluster-ranges): 
+the minimum bin radius $c = 1/161$ is exactly the syntonic comma expressed through $c = \frac{b-a}{b+a}$ (with $b/a = 81/80$, so $161 = 80 + 81$). 
+So the interval by which lcm 18 misses a clean renormalisation into 24@10 is precisely the smallest gap the ear must resolve between two good fractions.
+
+Further of interest is that removing key 7 from 18@0 produces 8@10, also seen when renormalising lcm 8 to base 9/8.
 
 ### LCM 15
 The lcm 15 subsets produced by dropping a single key from `15@0` together with the full set look like this (smaller subsets cropped):
