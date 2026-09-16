@@ -143,11 +143,12 @@ flowchart TD
     L20 -. "b=3/2" .-> L15
 ```
 
-These are exact good-fraction embeddings and should not be conflated with keyboard placements which are discussed later on.
-For instance in [Composition, Adjacency and Preference](../music/composition-adjacency-and-preference.mdx) LCM 18 is
+These are exact good-fraction subsets and should not be conflated with keyboard placements which are discussed later on.
+
+(For instance in [Composition, Adjacency and Preference](../music/composition-adjacency-and-preference.mdx) LCM 18 is
 found to sit inside `24@5` *and* `24@10`, yet only `4/3` (the `24@5` anchor) is an exact base here:
 renormalizing LCM 18 by `16/9` yields `27/16`, which is not a good fraction of LCM 24, but with clustering (see next chapter) the
-`24@10` placement exists under (at least) 12-tet tempering.
+`24@10` placement exists under 12-tet tempering.)
 
 Passing `--mode collapsed` produces a more concise form, where each node is one isomorphism class
 (singletons included), and class-to-class edges are deduplicated and Hasse-reduced per kind:
@@ -186,7 +187,7 @@ flowchart TD
     C7 -.-> C9
     C8 -.-> C6
 ```
-From this we see that all LCM families of max WPD 24 and max prime 5 pool into either the odd-length LCM 15 or even length LCM 24. 
+From this we see that all LCM families of max WPD 24 and max prime 5 pool into either the odd-length LCM 15 or even length LCM 24, with LCM 18 sitting between them.
 
 Looking at the full structure it is tempting to guess that the size for a good fraction is 16, but the maximum lcm family size might be 12, exploiting the isomorphic nature of octave renormalized fractions.
 Running 
