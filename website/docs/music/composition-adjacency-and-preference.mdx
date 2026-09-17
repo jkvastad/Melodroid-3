@@ -248,9 +248,13 @@ appears once at its first growth step, and both branches converge on the shared 
 an lcm-18 or lcm-20 hexachord.
 
 The same structure as a graph makes the convergence explicit: where the text tree
-must repeat the shared tops, the DAG shares them as single nodes. Each edge is
+must repeat the shared tops, the DAG shares them as single nodes. Solid edges are
 labelled with the key added at that growth step, and the two clustered lcm-18 nodes
-(the `*` above) are drawn in red.
+(the `*` above) are drawn in red. The three blue dashed edges are *multi-key,
+cross-branch* embeddings the single-key tree cannot show: a fifth-up (branch `2@0`)
+set sits inside a fifth-down (branch `2@5`) set by adding the pair `{5 9}` — the
+same skeleton reinterpreted a fifth down. This is how, for instance, `5@4` = `{0 2 4 7}`
+reaches `15@4` via `18@7` (`5@4 → 18@7 → 15@4`).
 
 ```mermaid
 flowchart TD
@@ -294,8 +298,13 @@ flowchart TD
     H18B -->|+1| S15_4
     H20B -->|+2| S15_4
 
+    P0 -. "+5 9" .-> QB
+    TA -. "+5 9" .-> FB
+    QA -. "+5 9" .-> H18B
+
     style H18A stroke:#c0392b,stroke-width:2px,color:#c0392b
     style H18B stroke:#c0392b,stroke-width:2px,color:#c0392b
+    linkStyle 20,21,22 stroke:#1f6feb,color:#1f6feb
 ```
 
 Since all families $\leq$ 12 are subsets or isomorphisms of each other it seems prudent to use this largest isomorphic group (lcm 8-12) as the building block.
