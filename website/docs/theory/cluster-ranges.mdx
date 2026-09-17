@@ -62,6 +62,7 @@ It appears twice above, at $10/9 \to 9/8$ and $16/9 \to 9/5$, where setting $b/a
 One could conjecture that perhaps it is no coincidence that human JND is on the order of the syntonic comma, 
 but rather evolution might have molded itself around a necessity of number theory as a pragmatic method to renormalize and parse sets of frequencies.
 
+### Clustered Renormalisations
 Revisiting the lcm families we can inspect clustered renormalisations using the command
 
 ```bash
@@ -73,10 +74,10 @@ bin radius it requires.
 See the [CLI reference](../cli/reference.mdx#renormalizations).
 
 Notably all lcm families of size 12 or smaller are perfect renormalisations. 
-Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%). The four non-trivial families are shown in full below.
+Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%).
+These four families are tabulated and discussed below.
 
-### Clustered Renormalisations
-Each row renormalises the family onto one base fraction. Bolded entries in the **Fractions** column are
+Each row renormalises a family onto one base fraction. Bolded entries in the **Fractions** column are
 images that fall outside the good fractions, and **LCM** is the wave pattern length of that (pre-snap)
 set. **→ good** snaps each image to its nearest good fraction (the snapped values are **bolded**),
 **LCM ✓** is the wave pattern length of the snapped set (`—` when nothing changed), and $c$ / $c\,\%$
@@ -91,9 +92,9 @@ melodroid table renormalizations --lcm 18 --approximate --lcm-tradeoff
 ```
 
 This lists possible acceptable lcms and what the bin radii cost is.
-It turns out that in all cases this requires quite large bin radii, at least 2%.
+It turns out that in all cases this requires quite large bin radii, at least 2%, with one exception - lcm 18 can renormalize to lcm 24 via 16/9 with a syntonic comma clustering.
 
-#### lcm-15 — worst required radius $1/49$ (2.041 %)
+#### LCM 15
 
 | Base  | Fractions | LCM | → good | LCM ✓ | c | c % |
 | ----: | :-- | --: | :-- | --: | ----: | ------: |
@@ -107,7 +108,7 @@ It turns out that in all cases this requires quite large bin radii, at least 2%.
 
 Here we see that the only renormalization producing a reasonable LCM is that of 6/5, but requires a somewhat large bin radius of 2%, about twice of JND.
 
-#### lcm-18 — worst required radius $1/161$ (0.621 %)
+#### LCM 18
 
 | Base | Fractions | LCM | → good | LCM ✓ | c | c % |
 | ---: | :-- | --: | :-- | --: | ----: | ------: |
@@ -124,7 +125,7 @@ Thic could mean that lcm 18 is not only ambiguous with lcm 15 and 24, but there 
 Using the terminology of placements in 12-tet we can write this as 18@0 having supersets of 24@5 (4/3) and 24@10(16/9),
 from which we see a circle of fifths relationship.
 
-#### lcm-20 — worst required radius $1/49$ (2.041 %)
+#### LCM 20
 
 | Base | Fractions | LCM | → good | LCM ✓ | c | c % |
 | ---: | :-- | --: | :-- | --: | ----: | ------: |
@@ -137,7 +138,7 @@ from which we see a circle of fifths relationship.
 
 Similarly to lcm 15, of which lcm 20 is a subset, the only renormalisation which stands to improve its lcm from clustering requires a large bin radius of some 2%.
 
-#### lcm-24 — worst required radius $7/263$ (2.662 %)
+#### LCM 24
 
 | Base | Fractions | LCM | → good | LCM ✓ | c | c % |
 | ---: | :-- | --: | :-- | --: | ----: | ------: |

@@ -33,18 +33,12 @@ together with the full set look like this (smaller subsets cropped):
 | 2 4 5 7 9 11 | 24? | | 90? | | 30? | | 120? | 36? | | 90? | | |
 | 0 2 4 5 7 9 11 | 24? | | 90? | | 30? | | | 36? | | 90? | | |
 
-Notably dropping key 11 produces 15@4 and dropping key 5 produces 15@11. 
+Dropping key 11 produces 18@7 with its accompanying renormalisations 24@0, 15@4 and 24@5. 
 
-Dropping key 11 also produces 18@7 with its accompanying renormalisations 24@0, 15@4 and 24@5. 
-This is in line with the clustered renormalisations we saw previously, where renormalising lcm 18 onto base fraction 16/9 (10 semitones) required a syntonic comma bin radius (~0.6%).
-Since 12 tet uses slightly larger bin radii (~1%) it is expected that this approximation show up here.
+Similarly dropping key 5 produces 18@2 with its accompanying renormalisations 24@0, 15@11 and 24@7. 
 
-Expressed in placements the renormalisations of lcm 18 are 18@k, 24@k+5, 15@k+9, 24@k+10.
-Looking at 24@0 from the perspective of 18@7 we would expect 15@4(7+9 mod 12), 24@5 and 24@0, which we do see.
-
-There is another lcm 18 match found by removing key 5, which produces 18@2, also with the accompanying pattern of lcm 24 and 15 due to the renormalisations.
-
-Later on we will see how key k+8 in 15@k seems to collapse lcm 15 into lcm 24@k+1,k+8 - a structure which is hinted at here.
+This is expected from the clustered renormalisations we saw previously, where renormalising lcm 18 onto base fraction 16/9 (10 semitones) required a syntonic comma bin radius (~0.6%).
+Since 12 tet uses slightly larger bin radii (~1%) it is expected that both lcm 18 subsets show up here.
 
 ### LCM 20
 The lcm 20 subsets produced by dropping a single key from `20@0` = `{0 3 4 7 8 10}`
@@ -60,17 +54,13 @@ together with the full set look like this (smaller subsets cropped):
 | 3 4 7 8 10 | 20? | | | 60 | | 120? | 120? | 15 | 40? | | | 120 |
 | 0 3 4 7 8 10 | 20? | | | 60 | | 120? | | 15 | 40? | | | 120 |
 
-Notably dropping key 4 produces 8@8, so perhaps lcm 20 is perceived as 8@8 with a bad key 4.
-This is similar to 24@8 being close to 15@7 by dropping key 3.
+Since 20@0 is a subset of 15@7 we always find it when dropping a key.
+
+Dropping key 4 however produces 8@8. 
+In some contexts perhaps lcm 20 could be perceived as 8@8 with a bad key 4.
 
 Of further interest is the symmetric aug chord 0 4 8 present in 20@0. 
-Any implications based on structures in 20@0 could then perhaps be true for 20@4 and 20@8 as well.
-Such implications could for instance entail that aug@0 (0 4 8) goes well with not only 8@8 but also 8@4,0.
-
-It might then be important for perception that if going for the 20@0 feel to not play key 3 in melody, and likewsie if going for 8@8 not playing key 4.
-Indeed 20@x might be construed as playing aug@x and adding in the major second and major seventh (x+2,x+11) characteristic of 8@x+8.
-
-In a simiar vein, playing key 3 in an 0 4 8 aug implies 8@4 and 20@8, and key 11 implies 8@0 and 20@4.
+Any implications based on structures in 20@0 could then be functionally true for 20@4 and 20@8 as well.
 
 ### LCM 18
 The lcm 18 subsets produced by dropping a single key from `18@0` = `{0 2 5 7 9 10}`
@@ -86,18 +76,15 @@ together with the full set look like this (smaller subsets cropped):
 | 2 5 7 9 10 | 18? | | 30 | | | 24? | 120 | 40? | | 15? | 24 | |
 | 0 2 5 7 9 10 | 18? | | 30? | | | 24? | | 90? | | 15? | 24? | |
 
-As can be seen from the full matches for the full set, 18@0 is a subset of 24@5,10 and 15@9.
+We saw earlier from the clustered renormalisations that 18@k is a subset of 24@k+5,k+10 and 15@k+9.
+Indeed we see those full matches here.
 
-This was partly seen already in the graphs of the theory section, as lcm 18 can be perfectly renormalised into 24@5 via 4/3 and 15@9 via 5/3.
-The 24@10 subset however is not exact as renormalising lcm 18 by 9/5 produces a factor of 27/20, while doing it by 16/9 produces 27/16, both with numerators on the larger side.
+Dropping key 7 produces 8@10. 
+This implies adding key 9 to 8@0 creates 18@2.
 
-Interestingly $\frac{27}{20}/\frac{5}{3} = 81/80$ and $\frac{27}{16}/\frac{4}{3} = 81/80$, the syntonic comma.
-
-This is the same interval that sets the tightest perceptual bin in [Cluster Ranges](../theory/cluster-ranges): 
-the minimum bin radius $c = 1/161$ is exactly the syntonic comma expressed through $c = \frac{b-a}{b+a}$ (with $b/a = 81/80$, so $161 = 80 + 81$). 
-So the interval by which lcm 18 misses a clean renormalisation into 24@10 is precisely the smallest gap the ear must resolve between two good fractions.
-
-Further of interest is that removing key 7 from 18@0 produces 8@10, also seen when renormalising lcm 8 to base 9/8.
+Dropping key 9 produces a subset of 18@5. 
+Adding in key 3 completes 18@5.
+Interestingly key 3 can be used as a minor seventh in an F major chord, which is considered to pull heavily to A# Major - 4@10, part of 8@10 and 18@5.
 
 ### LCM 15
 The lcm 15 subsets produced by dropping a single key from `15@0` together with the full set look like this (smaller subsets cropped):
@@ -113,10 +100,9 @@ The lcm 15 subsets produced by dropping a single key from `15@0` together with t
 | 1 3 5 8 9 10 | 15? | 120? | | | | 60? | 120? | | 90? | | 120? | |
 | 0 1 3 5 8 9 10 | 15? | 120? | | | | 60? | | | 120? | | 120? | |
 
-Dropping key 10 gives `{0 1 3 5 8 9}` which full-matches `20` at key 5.
+Dropping key 10 we see the subset 20@5.
 
-Dropping key 9 gives `{0 1 3 5 8 10}` (row 2) which full-matches `18` at key 3 and `24` at both 1 and 8, all of which are traditionally considered consonant (18@3 is a subset of 24@1,8).
-24@1 is in turn composed of 8@1 + 12@1 (8@8) so perhaps 15@0 is easily perceived as 8@1,8 with bad key 9 (see concluding remarks).
+Dropping key 9 we see 18@3 with its supersets 24@1,8.
 
 ### Non-lcm key sets
 Some non-lcm key sets are of interest due to traditional popularity or notable structural features.
@@ -132,14 +118,12 @@ The symmetric chord dim7 (0 3 6 9) consists of four dim chords, each prominent i
 | 3 6 9 | | 45? | 60 | | 24? | 60? | 15 | 40? | 30? | | 120 | 20? |
 | 0 3 6 9 | | 120? | 60? | | 120? | 60? | | 120? | 60? | | 120? | 60? |
 
-Notably dim@x has lcm 24@x+1 and lcm 15@x+3.
-This implies that dim7@0 has access to 24@1, 4, 7, 10 and 15@0, 3, 6, 9.
-
-Applying lcm 24/15 adjacency to 15@0 produces lcm 24@1,8, recovering 24@1,4,7,10 in the root 1 case and producing the set 24@8,11,2,5 in the root 8 case.
+Notably dim@x has supersets of 24@x+1 and 15@x+3.
+Perhaps dim7@0 then has access to 24@1, 4, 7, 10 and 15@0, 3, 6, 9 in some way.
 
 #### Harmonic Minor
 The harmonic minor scale at 0 (harm@0) = `{0 2 3 5 7 8 11}` is not itself an LCM family but popular in classical music and produces a nice coherent style of melody, 
-where 15@2 instead seems to collapse when playing key 10.
+where 15@2 instead sounds dissonant when playing key 10.
 
 Dropping a single key (via `melodroid table subsets --keys 0 2 3 5 7 8 11 --ktet 12`) gives these subsets:
 
@@ -155,9 +139,12 @@ Dropping a single key (via `melodroid table subsets --keys 0 2 3 5 7 8 11 --ktet
 | 0 2 3 5 7 8 11 | 120? | | | 120? | 120? | | | 60? | | | 120? | |
 
 Notably harm@0 is adjacent to 15@2 and 24@3. 
-Harm@10 can then be used to compare with our analysis of 15@0, which was found to be adjacent to 24@1,8.
+If we were to look at smaller subsets still we would find 18@5 along with 24@10 as well.
 
-Perhaps harm@x is best thought of as 15@x+2, with the collapsing key x+10 removed and the key x+8 (belonging to 24@x+3) added in.
+Notably harm@0 contains dim7@2 and is otherwise quite similar to 15@2.
+
+Perhaps harm@x is best thought of as a composition of other lcm families, providing rapid modulation between notes.
+We will return to this notion in the composition section below.
 
 #### Blues
 The blues scale at 0 (blues@0) is `{0 2 3 4 7}`.
@@ -173,36 +160,25 @@ the full set:
 | 2 3 4 7 | 40? | | 45? | 120 | 40? | 72? | 15? | 30 | | | | 60 |
 | 0 2 3 4 7 | 40? | | 45? | 120 | 40? | 72? | | 30 | | | | 60 |
 
-Notably the blues scale is adjacent to 15@2 and 24@3 - same as harm@0. 
-It is also adjacent to 15@7, 24@10 and 8@0, and removing the root puts it adjacent to 15@6.
+Dropping key 4 the blues scale is adjacent to 18@5 - same as harm@0.
 
-The subset adjacent to 24@10 could perhaps be the reason for the blues note:
-playing key 3 in an 0 4 7 context with its strong 8@5 placement perhaps pullls it toward 24@10.
+Dropping key 3 it is adjacent to 8@0.
+
+Dropping key 2 it is adjacent to 15@7 (similarly to 4@0 = 3@7).
+
+Dropping key 0 it is adjacent to 15@6 which could functionally imply being perceived as 18@9 with the corresponding 24@7,2
+
+Blues is perhaps similarly to harmonic minor a set useful for rapid modulation between adjacent sets.
 
 ### Concluding Remarks
 There seems to be a phenomena where there is a large difference of perception between a major vs. minor (or even dim or blues) chord feel when a 15@x placement includes or excludes note x+8.
-As we saw in the example for 15@0, key 8 is the root for 8@8 but also for 12@8 (8@1).
-Including it in lcm 15 perhaps collapses the perception of the odd pattern to lcm 8 or 24.
 
-The key sets for 24 and 15 are quite similar, with 15@k being adjacent to 24@k+1,k+8 and conversely 24@k being adjacent to 15@k+4,k+11 by only dropping one key from each set.
+As we saw in the example for 15@0 it is adjacent to 24@1,8, and key 8 is the root for 8@8 but also for 12@8 (8@1).
+Including it in lcm 15 perhaps forces a choice between an lcm 15 or 24 perception, with 24 being preferred, even though all notes technically could be parsed as lcm 15. 
+The resulting dissonance might be due to experiencing 24@1 or 24@8, neither of which contains key 9, causing it to sound out of key.
 
-Concretely, the maximal shared sets — dropping the single non-matching key from each placement — are:
-
-For `24@0` = `{0 2 4 5 7 9 11}`:
-
-* `24@0 ∩ 15@4` = `{0 2 4 5 7 9} = 18@7` (24@0 drops key 11, 15@4 drops key 1)
-* `24@0 ∩ 15@11` = `{0 2 4 7 9 11} = 18@2` (24@0 drops key 5, 15@11 drops key 8)
-
-Notably the collapsing key for 15@4 is 0 and for 15@11 is 7.
-
-For `15@0` = `{0 1 3 5 8 9 10}`:
-
-* `15@0 ∩ 24@1` = `{0 1 3 5 8 10} = 18@3` (15@0 drops key 9, 24@1 drops key 6)
-* `15@0 ∩ 24@8` = `{0 1 3 5 8 10} = 18@3` (15@0 drops key 9, 24@8 drops key 7)
-
-Both `24@1` and `24@8` yield the same shared set with `15@0` by dropping the collapsing key 9.
-
-Notably the adjacency overlap is lcm 18. As we saw in the section on lcm 18, 18@0 is a subset of 24@5,10 and 15@9.
+The key sets for 24 and 15 are quite similar, which is to be expected as they both share a subset of lcm 18,
+with 15@k being adjacent to 24@k+1,k+8 via 18@k+3 and conversely 24@k being adjacent to 15@k+4,k+11 via 18@k+2 by only dropping one key from each set.
 
 #### On Blues
 When playing a major chord 0 4 7 the blues note 3 could perhaps work via a pull to 24@10.
@@ -215,21 +191,16 @@ Blues@x is also related to harm@x+4 via 15@6 - playing e.g. a major@x with note 
 
 #### On Harmonic Minor
 The harmonic minor scale could be the result of ambiguity between 15@x and 24@x+1, similar to blues@x and 24@x+10.
-Further, 24@0 is 8@0 composed with 8@5 - a pattern which can be repeated the other way, saying 8@7 composes with 8@0, producing the circle of fifths.
-
-Practically this could mean that playing harm@0 is perhaps best thought of as modulating between 8@3,8,10 - the three isomorphic groups constituting 24@3.
-Of note is taking care playing key 10 explicitly as this causes lcm 15 collapse, janking perception from 15 to 8.
 
 #### On composition and perception
-Perhaps the larger lcms are not only perceived as themselves, but can be perceived as their consituents. 
-Certain musical feels are perhaps an exploitation of this ambiguity, e.g. the swinging motion of blues could be a pull from one perceived placement to another due to ambigous interpretations.
+Perhaps the larger lcms are not only perceived as themselves, but can be perceived as their constituents. 
+Certain musical feels or styles could be an exploitation of this ambiguity, e.g. the swinging motion of blues could be a pull from one perceived placement to another due to ambigous interpretations.
 
 Such ambiguity might interact with the human capacity for auditory streams, e.g. cocktail party effect and auditory scene analysis.
 If so, some musical feels are perhaps dependent on having multiple interpretations and are thus intrinsically complex.
 
 In this way, perhaps adjacency is an instructive way of looking at the ambiguity of harmonic structures,
-allowing us to modulate between consituent parts,
-respecting some seemingly arbitrary preferences of the musical brain.
+allowing us to modulate between constituent parts, respecting some seemingly arbitrary preferences of the musical brain.
 
 ## High LCMs as compositions of low LCMs
 A high lcm family can sometimes be expressed as a composition of lower lcm families.
@@ -315,6 +286,8 @@ The overlap is
 `{0 5}` is a bare fifth (2@5), again the smallest good fraction — as with lcm 20's `{0 7}` the two pieces barely overlap, perhaps why a full voicing of 15 also sounds tense.
 
 ### Concluding remarks
+TODO: notes on harmonic minor - harm@x is perhaps best thought of as 15@x+2, with the collapsing key x+10 removed and the key x+8 (belonging to 24@x+3) added in.
+
 Looking at high LCMs as compositions of low lcms we have the following patterns:
 
 * 24@0 is (perfectly) 
