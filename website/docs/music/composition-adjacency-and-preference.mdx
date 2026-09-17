@@ -247,6 +247,57 @@ appears once at its first growth step, and both branches converge on the shared 
 `24@0` and the lcm-15 scales `15@4`, `15@11` — each reached by adding a single key to
 an lcm-18 or lcm-20 hexachord.
 
+The same structure as a graph makes the convergence explicit: where the text tree
+must repeat the shared tops, the DAG shares them as single nodes. Each edge is
+labelled with the key added at that growth step, and the two clustered lcm-18 nodes
+(the `*` above) are drawn in red.
+
+```mermaid
+flowchart TD
+    N1["1@0<br/>{0}"]
+    P0["2@0<br/>{0 7}"]
+    P5["2@5<br/>{0 5}"]
+    TA["4@0 = 3@7<br/>{0 4 7}"]
+    TB["4@5 = 3@0<br/>{0 5 9}"]
+    QA["6@7 = 5@4<br/>{0 2 4 7}"]
+    QB["6@0 = 5@9<br/>{0 5 7 9}"]
+    FA["8@0 = 9@2 = 10@4 = 12@7<br/>{0 2 4 7 11}"]
+    FB["8@5 = 9@7 = 10@9 = 12@0<br/>{0 4 5 7 9}"]
+    H18A["18@2<br/>{0 2 4 7 9 11}"]
+    H20A["20@4<br/>{0 2 4 7 8 11}"]
+    H18B["18@7<br/>{0 2 4 5 7 9}"]
+    H20B["20@9<br/>{0 1 4 5 7 9}"]
+    S24_0["24@0<br/>{0 2 4 5 7 9 11}"]
+    S24_7["24@7<br/>{0 2 4 6 7 9 11}"]
+    S24_5["24@5<br/>{0 2 4 5 7 9 10}"]
+    S15_11["15@11<br/>{0 2 4 7 8 9 11}"]
+    S15_4["15@4<br/>{0 1 2 4 5 7 9}"]
+
+    N1 -->|+7| P0
+    N1 -->|+5| P5
+    P0 -->|+4| TA
+    P5 -->|+9| TB
+    TA -->|+2| QA
+    TB -->|+7| QB
+    QA -->|+11| FA
+    QB -->|+4| FB
+    FA -->|+9| H18A
+    FA -->|+8| H20A
+    FB -->|+2| H18B
+    FB -->|+1| H20B
+    H18A -->|+5| S24_0
+    H18A -->|+6| S24_7
+    H18A -->|+8| S15_11
+    H20A -->|+9| S15_11
+    H18B -->|+11| S24_0
+    H18B -->|+10| S24_5
+    H18B -->|+1| S15_4
+    H20B -->|+2| S15_4
+
+    style H18A stroke:#c0392b,stroke-width:2px,color:#c0392b
+    style H18B stroke:#c0392b,stroke-width:2px,color:#c0392b
+```
+
 Since all families $\leq$ 12 are subsets or isomorphisms of each other it seems prudent to use this largest isomorphic group (lcm 8-12) as the building block.
 There is some merit to lcm 15 as well, since the the good fractions 15/8 and 16/15 are related to length 15.
 This can be explored using the superpositions subcommand:
