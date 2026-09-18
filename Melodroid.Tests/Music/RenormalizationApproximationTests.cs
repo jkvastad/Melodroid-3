@@ -139,6 +139,65 @@ public class RenormalizationApproximationTests
         tight.Should().BeEmpty();
     }
 
+    // Standard families (max size 24, max prime 5, max lcm 24) for placement expression.
+    private static readonly IReadOnlyList<LcmFamily> Families =
+        LcmFamilies.Compute(GoodFractions, 24);
+
+    private static PlacementImage PlacementFor(int lcm, Fraction @base)
+    {
+        var family = Families.Single(f => f.Lcm == lcm);
+        var snapped = RenormalizationApproximation.Snap(
+            Renormalization.Renormalize(family.Fractions, @base), GoodFractions);
+        return RenormalizationApproximation.AsPlacement(snapped, @base, ktet: 12, maxLcm: 24, Families);
+    }
+
+    [Fact]
+    public void AsPlacement_exact_isomorphism_lcm4_by_three_halves_is_3_at_7()
+    {
+        // 4@0 = {0 4 7} rotated onto 3/2 (key 7) re-roots to lcm 3 at key 7 — an exact isomorphism.
+        var p = PlacementFor(4, new Fraction(3, 2));
+
+        p.Good.Should().BeTrue();
+        p.Exact.Should().BeTrue();
+        p.Lcm.Should().Be(3);
+        p.At.Should().Be(7);
+    }
+
+    [Fact]
+    public void AsPlacement_exact_renormalization_lcm18_by_four_thirds_is_subset_of_24_at_5()
+    {
+        // lcm 18 onto 4/3 (key 5) is an exact good subset of the lcm-24 major scale: ⊆ 24@5.
+        var p = PlacementFor(18, new Fraction(4, 3));
+
+        p.Good.Should().BeTrue();
+        p.Exact.Should().BeFalse();
+        p.Lcm.Should().Be(24);
+        p.At.Should().Be(5);
+    }
+
+    [Fact]
+    public void AsPlacement_syntonic_comma_lcm18_by_sixteen_ninths_is_subset_of_24_at_10()
+    {
+        // lcm 18 onto 16/9 (key 10) only reaches lcm 24 after 27/16 snaps to 5/3 at c = 1/161 —
+        // still good, since the snap stays within the syntonic comma: ⊆ 24@10.
+        var p = PlacementFor(18, new Fraction(16, 9));
+
+        p.Good.Should().BeTrue();
+        p.Exact.Should().BeFalse();
+        p.Lcm.Should().Be(24);
+        p.At.Should().Be(10);
+    }
+
+    [Fact]
+    public void AsPlacement_ballooning_lcm24_by_five_thirds_is_not_good()
+    {
+        // lcm 24 onto 5/3 stays within the comma per fraction but its nearest snap balloons to
+        // lcm 120 — beyond --max-lcm — so it is not a good placement.
+        var p = PlacementFor(24, new Fraction(5, 3));
+
+        p.Good.Should().BeFalse();
+    }
+
     [Fact]
     public void NearestGoodFraction_snaps_bad_fraction_to_closest_good_one()
     {

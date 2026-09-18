@@ -18,7 +18,7 @@ public static class HearingConstants
     /// Maximum bin radius for standard good fractions with max size 24 and max prime 5. 
     /// Note that it is basically JND with 1/161 ~0.00621, about a 10th of a 12-tet semitone.
     /// </summary>
-    public const double MaxUniqueStandardBinRadius = 1/161;
+    public const double MaxUniqueStandardBinRadius = 1.0 / 161;
 
     /// <summary>
     /// Action-to-sound latency JND: maximum delay between a triggering action

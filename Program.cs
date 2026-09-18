@@ -443,6 +443,17 @@ class Program
             DefaultValueFactory = _ => 0.05,
         };
 
+        var renormPlacementsOption = new Option<bool>("--placements")
+        {
+            Description = "With --approximate, add a Placement column expressing each rotation as a k-tet placement: '= L'@k' (exact isomorphism) or '⊆ L'@k' (renormalized subset) for rotations that reach a good LCM (≤ --max-lcm) within the syntonic comma (c ≤ 1/161); other rows show —.",
+        };
+
+        var renormKtetOption = new Option<int>("--ktet")
+        {
+            Description = "With --placements, the equal-tempered keyboard size used to place each rotation's base fraction. Default 12.",
+            DefaultValueFactory = _ => 12,
+        };
+
         var renormalizationsCommand = new Command(
             "renormalizations",
             "Renormalize one LCM family onto each of its member fractions, showing the resulting (isomorphic) fraction sets.");
@@ -454,6 +465,8 @@ class Program
         renormalizationsCommand.Add(renormPerSnapCOption);
         renormalizationsCommand.Add(renormLcmTradeoffOption);
         renormalizationsCommand.Add(renormMaxCOption);
+        renormalizationsCommand.Add(renormPlacementsOption);
+        renormalizationsCommand.Add(renormKtetOption);
         renormalizationsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -464,6 +477,8 @@ class Program
             var perSnapC = parse.GetValue(renormPerSnapCOption);
             var lcmTradeoff = parse.GetValue(renormLcmTradeoffOption);
             var maxC = parse.GetValue(renormMaxCOption);
+            var placementsFlag = parse.GetValue(renormPlacementsOption);
+            var ktet = parse.GetValue(renormKtetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -472,6 +487,8 @@ class Program
             if (perSnapC && !approximate) { AnsiConsole.MarkupLine("[red]--per-snap-c requires --approximate.[/]"); return 1; }
             if (lcmTradeoff && !approximate) { AnsiConsole.MarkupLine("[red]--lcm-tradeoff requires --approximate.[/]"); return 1; }
             if (lcmTradeoff && maxC <= 0) { AnsiConsole.MarkupLine("[red]--max-c must be > 0.[/]"); return 1; }
+            if (placementsFlag && !approximate) { AnsiConsole.MarkupLine("[red]--placements requires --approximate.[/]"); return 1; }
+            if (placementsFlag && ktet < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
@@ -494,7 +511,12 @@ class Program
                             Renormalization.Renormalize(family.Fractions, b), fractions, maxLcm, maxC))
                         .ToList()
                     : null;
-                RenormalizationTableRenderer.RenderApproximate(family, approxRows, perSnapC: perSnapC, frontiers: frontiers);
+                IReadOnlyList<PlacementImage>? placementImages = placementsFlag
+                    ? approxRows
+                        .Select(r => RenormalizationApproximation.AsPlacement(r.Item2, r.b, ktet, maxLcm, families))
+                        .ToList()
+                    : null;
+                RenormalizationTableRenderer.RenderApproximate(family, approxRows, perSnapC: perSnapC, frontiers: frontiers, placements: placementImages);
                 return 0;
             }
 

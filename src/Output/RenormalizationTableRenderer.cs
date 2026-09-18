@@ -37,7 +37,8 @@ public static class RenormalizationTableRenderer
         IReadOnlyList<(Fraction Base, IReadOnlyList<SnappedImage> Snapped)> rows,
         IAnsiConsole? console = null,
         bool perSnapC = false,
-        IReadOnlyList<IReadOnlyList<SnapFrontierPoint>>? frontiers = null)
+        IReadOnlyList<IReadOnlyList<SnapFrontierPoint>>? frontiers = null,
+        IReadOnlyList<PlacementImage>? placements = null)
     {
         console ??= AnsiConsole.Console;
 
@@ -51,6 +52,7 @@ public static class RenormalizationTableRenderer
             .AddColumn(new TableColumn("c").RightAligned())
             .AddColumn(new TableColumn("c %").RightAligned());
         if (frontiers is not null) table.AddColumn(new TableColumn("LCM↔c options").LeftAligned());
+        if (placements is not null) table.AddColumn(new TableColumn("Placement").LeftAligned());
 
         var worst = new Fraction(0, 1);
         for (var i = 0; i < rows.Count; i++)
@@ -81,23 +83,30 @@ public static class RenormalizationTableRenderer
                 ? "—"
                 : RatioMath.WavePatternLength(snapped.Select(s => s.Nearest)).ToString();
 
-            if (frontiers is null)
-            {
-                table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct);
-            }
-            else
+            var cells = new List<string> { baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct };
+
+            if (frontiers is not null)
             {
                 // Lowest-LCM (most-compressed) option first and bolded; radii fall as LCM rises.
                 var points = frontiers[i];
-                var frontierCell = points.Count == 0
+                cells.Add(points.Count == 0
                     ? "—"
                     : string.Join("\n", points.Select((p, idx) =>
                     {
                         var text = $"{p.Lcm} → {p.WorstRadius.Value.ToString("P2", CultureInfo.InvariantCulture)}";
                         return idx == 0 ? $"[bold]{text}[/]" : text;
-                    }));
-                table.AddRow(baseFrac.ToString(), snapped.Count.ToString(), fractions, exactLcm, good, snappedLcm, cExact, cPct, frontierCell);
+                    })));
             }
+
+            if (placements is not null)
+            {
+                // Good rows re-root the snapped set on the base's key: = for an exact isomorphism,
+                // ⊆ for a renormalized proper subset. Rows that balloon or exceed the comma show —.
+                var p = placements[i];
+                cells.Add(p.Good ? $"{(p.Exact ? "=" : "⊆")} {p.Lcm}@{p.At}" : "—");
+            }
+
+            table.AddRow(cells.ToArray());
         }
 
         var worstText = worst.Numerator == 0

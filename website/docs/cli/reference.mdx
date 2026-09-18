@@ -92,7 +92,7 @@ Prints the keys and fractions for one or more LCM placements at a shared anchor.
 ```bash
 melodroid table renormalizations --lcm 24 \
   [--max-size 24] [--max-prime 5] [--max-lcm 24] [--approximate] [--per-snap-c] \
-  [--lcm-tradeoff] [--max-c 0.05]
+  [--lcm-tradeoff] [--max-c 0.05] [--placements] [--ktet 12]
 ```
 
 Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure. The `LCM` column gives the wave pattern length (LCM of denominators) of each renormalized set — for non-unison bases this often exceeds the family's own LCM as images fall off the good-fraction grid. In `--approximate` mode an additional `LCM ✓` column reports the wave pattern length after snapping to nearest-good fractions (shown as `—` on rows that were already all-good).
@@ -122,6 +122,15 @@ frontier room) caps how large a bin radius a snap may cost; caps no assignment c
 are omitted, and a row with no feasible option shows `—`. For lcm 24 renormalized onto `5/3`,
 nearest-good snapping balloons to an lcm-120 set at only `0.621 %`, but the frontier shows the same
 renormalization can be held to lcm ≤ 24 for about `2 %` — the price of a recognizable pattern.
+
+`--placements` (companion to `--approximate`) adds a `Placement` column re-expressing each rotation
+as a `--ktet` (default 12) placement. Renormalising onto member fraction `b` re-roots the same keys
+on the key `k` where `b` sits, so the snapped set reads as another family `L'` there: `= L'@k` for an
+exact isomorphism, `⊆ L'@k` for a renormalised proper subset. Only rotations reaching a good LCM
+(`L' ≤ --max-lcm`) entirely within the syntonic comma (`c ≤ 1/161`) are placed; those that balloon
+past `--max-lcm` or overshoot the comma show `—`. See
+[voicings and placements](../music/voicings-and-placements.mdx#renormalisations-expressed-as-placements)
+for the full sweep across families 1–24.
 
 ### `family-overlap`
 

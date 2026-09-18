@@ -15,6 +15,12 @@ public readonly record struct SnapFrontierPoint(
     Fraction WorstRadius,
     IReadOnlyList<Fraction> Snapped);
 
+// A renormalization row re-expressed as a k-tet placement: the snapped set, re-rooted on the base
+// fraction's key At, is family Lcm placed there. Good is true only when the snap reaches a good LCM
+// family (Lcm ≤ maxLcm) entirely within the syntonic comma (required radius ≤ 1/161). Exact
+// distinguishes an exact isomorphism (= Lcm@At) from a renormalized proper subset (⊆ Lcm@At).
+public readonly record struct PlacementImage(bool Good, int Lcm, int At, bool Exact);
+
 public static class RenormalizationApproximation
 {
     // Snap each renormalized image to its nearest good fraction; Radius is the exact
@@ -47,6 +53,34 @@ public static class RenormalizationApproximation
             if (s.Radius.Value > best.Value) best = s.Radius;
         }
         return best;
+    }
+
+    // Re-express one snapped renormalization as a k-tet placement. The base fraction becomes the new
+    // 1/1, sitting at key At = NearestKey(base); the snapped set is then family L' (= its wave-pattern
+    // length) anchored on At. Good requires L' to be a real family within maxLcm and the whole snap to
+    // stay within the syntonic comma (1/161); Exact is true when the snapped set fills the whole target
+    // family (an isomorphism) rather than a proper subset. `families` supplies the target family sizes.
+    public static PlacementImage AsPlacement(
+        IReadOnlyList<SnappedImage> snapped,
+        Fraction baseFraction,
+        int ktet,
+        int maxLcm,
+        IReadOnlyList<LcmFamily> families)
+    {
+        var lcm = RatioMath.WavePatternLength(snapped.Select(s => s.Nearest));
+        var required = RequiredRadius(snapped);
+        // Exact fraction comparison against the syntonic comma 1/161 (a/b ≤ 1/161 ⇔ 161·a ≤ b),
+        // avoiding float boundary error on the 27/16 → 5/3 case that lands exactly on 1/161.
+        var withinComma = 161L * required.Numerator <= required.Denominator;
+        var good = lcm <= maxLcm && withinComma;
+
+        var at = KeysNeeded.NearestKey(baseFraction.Value, ktet).N;
+
+        var target = families.FirstOrDefault(f => f.Lcm == lcm);
+        var distinctCount = snapped.Select(s => s.Nearest).Distinct().Count();
+        var exact = target.Fractions is not null && distinctCount == target.Fractions.Count;
+
+        return new PlacementImage(good, lcm, at, exact);
     }
 
     // The LCM↔radius tradeoff for one renormalization. Instead of snapping each image to its

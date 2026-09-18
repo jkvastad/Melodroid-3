@@ -72,3 +72,55 @@ key). A few highlights from `{0, 4, 7}`:
 
 The isomorphic `3@7` and `4@0` fit exactly; each larger family that contains the triad pads it
 out with more keys, up to the full C major scale at `24@0`.
+
+## Renormalisations expressed as placements
+We earlier discussed [renormalisations of the lcm families](../theory/lcm-families.mdx#renormalisation-and-isomorphism).
+Using the renormalizations command we could view the fraction sets from the perspective of each constituent fraction as reference point.
+
+We can now express this as placements. Renormalising a family `L@0` onto one of its member
+fractions `b` re-roots the *same physical keys* on the key `k` where `b` sits. Read as a placement,
+those keys are simply another family `L'` anchored on `k`:
+
+- when the renormalised set is an exact good family we get a placement **equality** `L@0 = L'@k`
+  (an isomorphism — e.g. `4@0` = `{0 4 7}` onto `3/2` at key 7 is `3@7`);
+- when it is a proper subset of a larger good family we get a **renormalised subset** `L@0 ⊆ L'@k` 
+(e.g. `18@0` = `{0 2 5 7 9 10}` renormalised onto `4/3` at key 5 sits inside `24@5`).
+
+Not every rotation lands on a good family. We keep only those that reach **both** a good LCM
+(`L' ≤ 24`) **and** stay all-good within a **syntonic comma** (bin radius `c ≤ 1/161 ≈ 0.621 %`, see
+[cluster ranges](../theory/cluster-ranges.mdx)). A rotation can satisfy one without the other: `24@0`
+onto `5/3` keeps every fraction within the comma yet its nearest snap balloons the wave-pattern
+length to lcm 120, so it is dropped. The `--placements` option computes this column directly:
+
+```bash
+melodroid table renormalizations --lcm 24 --approximate --placements
+```
+
+Sweeping every family `1..24` and keeping the good rotations gives the placements below, one row
+per family (the trivial identity `= L@0` and the base fractions are omitted for brevity; an empty
+row means the family has no non-trivial good rotation):
+
+| Family | Renormalised placements |
+| -----: | :---------------------- |
+|   `2@0` | `⊆ 3@7` |
+|   `3@0` | `= 4@5`, `⊆ 5@9` |
+|   `4@0` | `= 3@7`, `⊆ 5@4` |
+|   `5@0` | `= 6@3`, `⊆ 8@8`, `⊆ 9@10` |
+|   `6@0` | `= 5@9`, `⊆ 8@5`, `⊆ 9@7` |
+|   `8@0` | `= 9@2`, `= 10@4`, `= 12@7`, `⊆ 15@11` |
+|   `9@0` | `= 8@10`, `= 10@2`, `= 12@5`, `⊆ 15@9` |
+|  `10@0` | `= 8@8`, `= 9@10`, `= 12@3`, `⊆ 15@7` |
+|  `12@0` | `= 8@5`, `= 9@7`, `= 10@9`, `⊆ 15@4` |
+|  `15@0` | -|
+|  `18@0` | `⊆ 15@9`, `⊆ 24@5`, `⊆ 24@10`* |
+|  `20@0` | `⊆ 15@7` |
+|  `24@0` | - |
+
+`*` `18@0 → ⊆ 24@10` is the only rotation above that is not exact: its `16/9` base needs `27/16` to
+snap to `5/3` within the **syntonic comma** (`c = 1/161 ≈ 0.621 %`, see
+[cluster ranges](../theory/cluster-ranges.mdx)); every other placement is exact (`c = 0`).
+
+Two features stand out. The two top families `15@0` and `24@0` have **no** non-trivial good
+rotation — every other reference balloons the LCM or overshoots the comma.
+And `18@0` is the sole family whose rotations reach *both* tops: `⊆ 24@5` and `⊆ 15@9` exactly, plus
+`⊆ 24@10` only after `27/16` snaps to `5/3` at the syntonic comma.
