@@ -126,6 +126,9 @@ The symmetric chord dim7 (0 3 6 9) consists of four dim chords, each prominent i
 
 Notably dim@x has supersets of 24@x+1 and 15@x+3.
 
+A single dim7 thus points equally at the four families 24@1,4,7,10 (and 15@0,3,6,9). 
+Perhaps this ambiguity of subsets is why the dim 7 sounds both consonant yet tense.
+
 #### Harmonic Minor
 The harmonic minor scale at 0 (harm@0) = `{0 2 3 5 7 8 11}` is not itself an LCM family but popular in classical music and produces a nice coherent style of melody, 
 where 15@2 instead sounds dissonant when playing key 10.
@@ -145,12 +148,6 @@ Dropping a single key (via `melodroid table subsets --keys 0 2 3 5 7 8 11 --ktet
 
 We see that harm@0 is adjacent to 15@2 and 24@3. 
 If we were to look at smaller subsets still we would find 18@5 along with 24@10 as well.
-
-Notably harm@0 contains dim7@2 and is otherwise quite similar to 15@2. 
-Harm@0 also collapses when playing key 10, either sounding dissonant when played as a block chord or bluesy when played as melody (e.g. with G major (3@2) or C minor (15@2)).
-This bluesy sound is perhaps the subset 24@10 surfacing.
-
-TODO: why is harm@k so close to 24@k+10 and 15@k+2? It seems key k+10 is omitted to avoid collapse into 24@k, but why is key k+8 added? Simply to create a dim7@k+2? Why?
 
 Perhaps harm@x is best thought of as a composition of other lcm families, providing rapid modulation between notes.
 We will return to this notion in the composition section below.
@@ -180,6 +177,65 @@ Dropping key 0 it is adjacent to 15@6 which could functionally imply being perce
 Blues is perhaps similarly to harmonic minor a set useful for rapid modulation between adjacent sets.
 
 ### Concluding Remarks
+By removing a single key from large lcm sets we could often recover lcm subsets, notably 18@k with supersets 24@k+5,k+10 and 15@k+9.
+Conversely we can think of these subsets as being ambigous between which top level set they represent, and adding in a distinguishing key settles our perception.
+
+Faced with such a multitude of ambigous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities under certain circumstances.
+One such case could be the ambiguity between lcm 24 and 15, where 15@k is adjacent to 24@k+1,k+8 via 18@k+3.
+
+As we heard in the "Voicings and LCM Families" section, key k+8 in 15@k sounds dissonant (last note in the arpeggio) even though technically being part of 15@k.
+This might be because the brain prefers lcm 24 over 15. 
+It might identify 18@k+3 and try to fit the sounded keys into either 24@k+1,k+8 - thus key k+8 collapses 15@k by being a distinguishing key for 24@k+1,k+8, leaving key k+9 as a sour note.
+
+Perception then might be governed by pragmatic subsets, e.g. lcm 4, 8 and 18, which are expanded with distinguishing keys to collapse a decision space of possible perceptions based on placements.
+
+This could be true even for non-lcm key sets, such as dim7, harmonic minor and blues.
+
+#### On Dim7
+Dim7 consists of multiple dim triads, each with dim@k having supersets of 24@k+1 and 15@k+3, and so playing e.g. key k+1 and k+10 could focus our perception on 15@k.
+
+#### On Harmonic Minor
+Harmonic minor harm@k could be thought of as 18@k+5.
+Consider the adjacent pair 15@2 and 24@3, which share the subset 18@5:
+
+* 18@5 = `{0 2 3 5 7 10}`
+* 15@2 = 18@5 $\cup$ `{11}` — distinguishing key **11**
+* 24@3 = 18@5 $\cup$ `{8}` — distinguishing key **8**
+
+Harmonic minor takes the subset `{0 2 3 5 7 10}` (18@5) and adds **both** distinguishing keys while removing the collapsing key 10:
+
+harm@0 = `{0 2 3 5 7}` $\cup$ `{8, 11}` = `{0 2 3 5 7 8 11}`
+
+Key 8 is 24@3's distinguishing note, 15@2's key is 11 — harm@0 then plays with the ambiguity between 15@2 and 24@3.
+
+This also explains why harm@0 beats plain 15@2:
+15@2 still contains the collapse key 10, which forces the ear toward a competing 24 parse.
+Harmonic minor removes 10, so it straddles 15@2 and 24@3 cleanly through their unique notes — richness and rapid modulation without the collapse clash.
+
+#### On Blues
+The same mechanism of dual distinguishing keys as in the harmonic minor case is at work in blues, but across a pair of lcm 24 families a whole step apart rather than a 15/24 pair.
+
+* blues@0 = `{0 2 3 4 7}`
+* 24@0 = `{0 2 4 5 7 9 11}`
+* 24@3 = `{0 2 3 5 7 9 10}`
+
+From this we see that the classic blues scale should perhaps be `{0 2 3 4 5 7 9}` = 18@7 as this is the shared set between 24@3 and 24@0.
+
+TODO: clean u pslop, also investigate 0 3 7 6 with the dual adjacency.
+
+blues@0 = `{0 2 3 4 7}` holds *both* thirds: the major third 4 (the `{0 2 4 7}` $\subseteq$ 8@0 $\subseteq$ 24@0 home) and the blue third 3 (the `{0 2 3 7}` $\subseteq$ 18@5 $\subseteq$ 24@10).
+So the blue note is precisely the distinguishing key that swings the parse into 24@10 while a major triad still asserts 24@0, and the swing between the two is the blues feel (developed further in [On Blues](#on-blues) below).
+
+concluding slop -
+The three sets above are all instances of one idea, which we might call *double adjacency*: a non-lcm set that sits between good families by holding the *distinguishing* key of each neighbour at once, while shedding the key they collapse on. They differ only in which families they straddle:
+
+* **dim7** — the symmetric fourfold limit, straddling 24@1,4,7,10 (each dim triad a consonant subset of a different family).
+* **harmonic minor** — a 15/24 pair (15@2 and 24@3, sharing subset 18@5).
+* **blues** — a 24/24 pair a whole step apart (24@0 and 24@10, via the two thirds).
+
+In each case the residual tension is a dim7, and the "feel" of the scale is the ear swinging between the co-present interpretations rather than resting in one — matching the intuition that these are sets for rapid modulation between adjacent families.
+
+old text -
 There seems to be a phenomena where there is a large difference of perception between a major vs. minor (or even dim or blues) chord feel when a 15@x placement includes or excludes note x+8.
 
 As we saw in the example for 15@0 it is adjacent to 24@1,8, and key 8 is the root for 8@8 but also for 12@8 (8@1).
@@ -300,7 +356,7 @@ The overlap is
 `{0 5}` is a bare fifth (2@5), again the smallest good fraction — as with lcm 20's `{0 7}` the two pieces barely overlap, perhaps why a full voicing of 15 also sounds tense.
 
 ### Concluding remarks
-TODO: notes on harmonic minor - harm@x is perhaps best thought of as 15@x+2, with the collapsing key x+10 removed and the key x+8 (belonging to 24@x+3) added in.
+As derived under [Harmonic Minor](#harmonic-minor) above, harm@x is the subset 18@x+5 with its collapse key x+10 dropped and *both* distinguishing keys added — x+8 from 24@x+3 and x+11 from 15@x+2 — so it is best thought of not as a single composition but as a set straddling the adjacent pair 15@x+2 / 24@x+3.
 
 Looking at high LCMs as compositions of low lcms we have the following patterns:
 
