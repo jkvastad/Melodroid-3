@@ -177,18 +177,7 @@ Dropping key 0 it is adjacent to 15@6. This could imply being functionally perce
 Blues is perhaps similarly to harmonic minor a set useful for rapid modulation between adjacent sets.
 
 #### Pentatonic Major
-The pentatonic major pent@0 = `0 2 4 7 9` is the subset of some interesting supersets, as can be seen by running the key-supersets command:
-
-* pent@0 = `{0 2 4 7 9}` = 18@2 $\cap$ 18@7 = 15@4 $\cap$ 15@11 = 24@5 $\cap$ 24@7
-* 18@2 = `{0 2 4 7 9 11}`
-* 18@7 = `{0 2 4 5 7 9}`
-* 15@4 = `{0 1 2 4 5 7 9}`
-* 15@11 = `{0 2 4 7 8 9 11}`
-* 24@0 = `{0 2 4 5 7 9 11}`
-* 24@5 = `{0 2 4 5 7 9 10}`
-* 24@7 = `{0 2 4 6 7 9 11}`
-
-18@2 and 18@7 share 24@0 as a superset, as can be seen in the graph below:
+The pentatonic major pent@0 = `0 2 4 7 9` is the subset of some interesting supersets. The results from the key-supersets command are illustrated as a graph below:
 
 ```mermaid
 flowchart TD
@@ -210,6 +199,8 @@ flowchart TD
     A18 -- "+6" --> A24
     A18 -- "+8" --> A15
 ```
+
+We see that  pent@0 = `{0 2 4 7 9}` = 18@2 $\cap$ 18@7 = 15@4 $\cap$ 15@11 = 24@5 $\cap$ 24@7.
 
 In this way pent@0 can be thought of as a 24@0 core with the possibility of resolving into 24@5 with key 10 (key 5 shared with 24@0) or 24@7 with key 6 (key 11 shared with 24@0)
 
