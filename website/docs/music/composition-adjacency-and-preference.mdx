@@ -149,32 +149,69 @@ Dropping a single key (via `melodroid table subsets --keys 0 2 3 5 7 8 11 --ktet
 We see that harm@0 is adjacent to 15@2 and 24@3. 
 If we were to look at smaller subsets still we would find 18@5 along with 24@10 as well.
 
-Perhaps harm@x is best thought of as a composition of other lcm families, providing rapid modulation between notes.
+Perhaps harmonic minor is best thought of as a composition of other lcm families, providing rapid modulation between notes.
 We will return to this notion in the composition section below.
 
 #### Blues
-The blues scale at 0 (blues@0) is `{0 2 3 4 7}`.
-Dropping a single key (via `melodroid table subsets --keys 0 2 3 4 7 --ktet 12`) gives these subsets together with
+[The blues scale](https://en.wikipedia.org/wiki/Blues_scale#Hexatonic) at 0 (blues@0) is `{0 2 3 4 7 9}`.
+Dropping a single key (via `melodroid table subsets --keys 0 2 3 4 7 9 --ktet 12`) gives these subsets together with
 the full set:
 
 | Subset | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 2 3 4 | 40? | 120? | 45? | 120 | 40? | 72? | | 30 | | | | 60 |
-| 0 2 3 7 | 40? | | 15? | 24 | 40? | 18? | | 30 | | | 24? | 60 |
-| 0 2 4 7 | 8? | | 9? | 120 | 5? | 24? | | 6 | | 30? | | 15 |
-| 0 3 4 7 | 20 | | 45? | 60 | 40 | 40? | | 15 | 40 | | | 60 |
-| 2 3 4 7 | 40? | | 45? | 120 | 40? | 72? | 15? | 30 | | | | 60 |
+| 0 2 3 4 7 9 | 120? | | 90? | | 120? | 72? | | 90? | | | | 60? |
 | 0 2 3 4 7 | 40? | | 45? | 120 | 40? | 72? | | 30 | | | | 60 |
+| 0 2 3 4 9 | 120? | 120? | 90? | | 120? | 72? | | 90? | | | | 60? |
+| 0 2 3 7 9 | 90? | | 30? | | 120? | 36? | | 90? | | | 24? | 60? |
+| 0 2 4 7 9 | 24? | | 18? | | 15? | 24? | | 18? | | 30? | | 15? |
+| 0 3 4 7 9 | 60 | | 90? | | 120 | 40? | | 45? | 120 | | | 60? |
+| 2 3 4 7 9 | 120? | | 90? | | 120? | 72? | 15? | 90? | | | | 60? |
 
-Dropping key 4 the blues scale is adjacent to 18@5 - same as harm@0.
+Dropping key 4 the blues scale is adjacent to 24@10.
 
-Dropping key 3 it is adjacent to 8@0.
+Dropping key 3 (the blue note) it is adjacent to 18@7 with supersets 24@0,5 and 15@4, as well as 18@2 with supersets 24@7,0 and 15@11.
+This also produces another popular traditional non-lcm scale: the pentatonic major pent@0 = `0 2 4 7 9`.
 
-Dropping key 2 it is adjacent to 15@7 (similarly to 4@0 = 3@7).
-
-Dropping key 0 it is adjacent to 15@6 which could functionally imply being perceived as 18@9 with the corresponding 24@7,2
+Dropping key 0 it is adjacent to 15@6. This could imply being functionally perceived as 18@9 with the corresponding 24@7,2
 
 Blues is perhaps similarly to harmonic minor a set useful for rapid modulation between adjacent sets.
+
+#### Pentatonic Major
+The pentatonic major pent@0 = `0 2 4 7 9` is the subset of some interesting supersets, as can be seen by running the key-supersets command:
+
+* pent@0 = `{0 2 4 7 9}` = 18@2 $\cap$ 18@7 = 15@4 $\cap$ 15@11 = 24@5 $\cap$ 24@7
+* 18@2 = `{0 2 4 7 9 11}`
+* 18@7 = `{0 2 4 5 7 9}`
+* 15@4 = `{0 1 2 4 5 7 9}`
+* 15@11 = `{0 2 4 7 8 9 11}`
+* 24@0 = `{0 2 4 5 7 9 11}`
+* 24@5 = `{0 2 4 5 7 9 10}`
+* 24@7 = `{0 2 4 6 7 9 11}`
+
+18@2 and 18@7 share 24@0 as a superset, as can be seen in the graph below:
+
+```mermaid
+flowchart TD
+    P["pent@0<br/>{0 2 4 7 9}"]
+    B18["18@7<br/>{0 2 4 5 7 9}"]
+    A18["18@2<br/>{0 2 4 7 9 11}"]
+    B15["15@4<br/>{0 1 2 4 5 7 9}"]
+    B24["24@5<br/>{0 2 4 5 7 9 10}"]
+    C24["24@0<br/>{0 2 4 5 7 9 11}"]
+    A24["24@7<br/>{0 2 4 6 7 9 11}"]
+    A15["15@11<br/>{0 2 4 7 8 9 11}"]
+
+    P -- "+5" --> B18
+    P -- "+11" --> A18
+    B18 -- "+1" --> B15
+    B18 -- "+10" --> B24
+    B18 -- "+11" --> C24
+    A18 -- "+5" --> C24
+    A18 -- "+6" --> A24
+    A18 -- "+8" --> A15
+```
+
+In this way pent@0 can be thought of as a 24@0 core with the possibility of resolving into 24@5 with key 10 (key 5 shared with 24@0) or 24@7 with key 6 (key 11 shared with 24@0)
 
 ### Concluding Remarks
 By removing a single key from large lcm sets we could often recover lcm subsets, notably 18@k with supersets 24@k+5,k+10 and 15@k+9.
@@ -185,7 +222,10 @@ One such case could be the ambiguity between lcm 24 and 15, where 15@k is adjace
 
 As we heard in the "Voicings and LCM Families" section, key k+8 in 15@k sounds dissonant (last note in the arpeggio) even though technically being part of 15@k.
 This might be because the brain prefers lcm 24 over 15. 
-It might identify 18@k+3 and try to fit the sounded keys into either 24@k+1,k+8 - thus key k+8 collapses 15@k by being a distinguishing key for 24@k+1,k+8, leaving key k+9 as a sour note.
+
+It might identify 18@k+3 and try to fit the sounded keys into either 24@k+1 or 24@k+8. 
+Key k+8 might simply be a distinguishing key for 24@k+1,k+8 - perhaps by virtue of being the root or smallest fraction of those placements.
+Key k+8 then collapses 15@k, leaving key k+9 as a note extraenous to the possible placements - perceived as a sour or false note.
 
 Perception then might be governed by pragmatic subsets, e.g. lcm 4, 8 and 18, which are expanded with distinguishing keys to collapse a decision space of possible perceptions based on placements.
 
@@ -208,16 +248,22 @@ harm@0 = `{0 2 3 5 7}` $\cup$ `{8, 11}` = `{0 2 3 5 7 8 11}`
 
 Key 8 is 24@3's distinguishing note, 15@2's key is 11 — harm@0 then plays with the ambiguity between 15@2 and 24@3.
 
-This also explains why harm@0 beats plain 15@2:
-15@2 still contains the collapse key 10, which forces the ear toward a competing 24 parse.
-Harmonic minor removes 10, so it straddles 15@2 and 24@3 cleanly through their unique notes — richness and rapid modulation without the collapse clash.
+This also explains why harm@0 is less dissonant than plain 15@2:
+15@2 still contains the collapse key 10, which forces preference toward 24@3 or 24@10, leaving a sour note 11.
+Harmonic minor removes 10, leaving enough ambiguity to not force a sour note.
 
 #### On Blues
-The same mechanism of dual distinguishing keys as in the harmonic minor case is at work in blues, but across a pair of lcm 24 families a whole step apart rather than a 15/24 pair.
+The same mechanism of dual distinguishing keys as in the harmonic minor case is at work in blues, but across a pair of lcm 24 families rather than a 15/24 pair.
+As we saw in the subset analysis, blues@0 was adjacent to 18@5 with supersets 24@3,10 and 15@2, but also 15@6 which is a superset of 18@9 along with 24@7,2.
 
 * blues@0 = `{0 2 3 4 7}`
+* 18@5 = `{0 2 3 5 7 10}`
 * 24@0 = `{0 2 4 5 7 9 11}`
 * 24@3 = `{0 2 3 5 7 9 10}`
+* 24@0 $\cap$ 24@3= `{0 2 5 7 9}` = penta@5
+
+Interestingly the interesection of the lcm 24 supersets for 18@k is the pentatonic major rooted at k.
+TODO: discuss relationship between pentatonics on 5 and 9, their relationship to blues by adding a blue note,  and 
 
 From this we see that the classic blues scale should perhaps be `{0 2 3 4 5 7 9}` = 18@7 as this is the shared set between 24@3 and 24@0.
 
