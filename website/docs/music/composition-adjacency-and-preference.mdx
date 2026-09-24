@@ -40,8 +40,6 @@ Similarly dropping key 5 produces 18@2 with its accompanying supersets 24@0, 15@
 This is expected from the clustered renormalisations we saw previously, where renormalising lcm 18 onto base fraction 16/9 (10 semitones) required a syntonic comma bin radius (~0.6%).
 Since 12 tet uses slightly larger bin radii (~1%) it is expected that both lcm 18 subsets show up here.
 
-This illustrates that a possible relationship between lcms is not just shared supersets, but shared subsets, i.e. lcm 18 being shared between lcm 15 and 24.
-
 ### LCM 20
 The lcm 20 subsets produced by dropping a single key from `20@0` = `{0 3 4 7 8 10}`
 together with the full set look like this (smaller subsets cropped):
@@ -86,11 +84,11 @@ Indeed we see those full matches here.
 
 Dropping key 7 produces 8@10. Perhaps 18@k is musically closest to 8@k+10 out of all the lcm 8 families.
 
-Dropping key 9 produces a subset of 18@5 and adding in key 3 completes 18@5.
-18@5 is a subset of 24@10, a superset of 8@10, so perhaps 18@k is musically closest to 24@k+10 despite needing the syntonic comma.
+Dropping key 9 produces the pentatonic major scale at 10 - pent@10 = `{0 2 5 7 10}`. 
+This is a subset of 18@5 and adding in key 3 completes 18@5.
+Since 18@k is adjacent to 18@k+5 via pent@2 we could call this pentatonic adjacency.
 
-This might also be the reason for the circle of fifths, where each 18@k is recursively adjacent to 18@k+5.
-Expressed in lcm 4 major chord) we have the rule 4@k+5(18@k) $\leftrightarrow$ 4@k+10(18@k+5) which can produce e.g. A# major to F major with k=0.
+This adjacency of 18@k with 18@k+5 might be the reason for the circle of fifths.
 
 ### LCM 15
 The lcm 15 subsets produced by dropping a single key from `15@0` together with the full set look like this (smaller subsets cropped):
@@ -192,35 +190,70 @@ flowchart TD
 
     P -- "+5" --> B18
     P -- "+11" --> A18
-    B18 -- "+1" --> B15
     B18 -- "+10" --> B24
+    B18 -- "+1" --> B15
     B18 -- "+11" --> C24
     A18 -- "+5" --> C24
-    A18 -- "+6" --> A24
     A18 -- "+8" --> A15
+    A18 -- "+6" --> A24
 ```
 
 We see that  pent@0 = `{0 2 4 7 9}` = 18@2 $\cap$ 18@7 = 15@4 $\cap$ 15@11 = 24@5 $\cap$ 24@7.
 
-In this way pent@0 can be thought of as a 24@0 core with the possibility of resolving into 24@5 with key 10 (key 5 shared with 24@0) or 24@7 with key 6 (key 11 shared with 24@0)
+We can also note there are circles of fifths at the lcm levels of 15, 18 and 24.
+This is a consequence of 18@k being adjacent to 18@k+5, which could also explain the classical cadence of V -> I: 
+The I chord is perceived as the 18@k+5 subset and moving to it is causes a resolving feeling as the "extraenous" key k+9 is removed.
+
+Perhaps since pent@0 is related to 24@0 via both its supersets 18@2 and 18@7 
+it can be thought of as a 24@0 core with the possibility of resolving into 24@5 with key 10 (key 5 shared with 24@0) or 24@7 with key 6 (key 11 shared with 24@0)
 
 ### Concluding Remarks
 By removing a single key from large lcm sets we could often recover lcm subsets, notably 18@k with supersets 24@k+5,k+10 and 15@k+9.
-Conversely we can think of these subsets as being ambigous between which top level set they represent, and adding in a distinguishing key settles our perception.
+Conversely we can think of these subsets as being ambigous between which top level set they represent, and adding distinguishing keys helps settle our perception.
 
-Faced with such a multitude of ambigous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities under certain circumstances.
+#### On Chord Progressions
+The ambiguity between voiced keys and possible placements illustrates that an important relationship between lcms might not just be shared lcm **supersets**, but shared lcm **subsets**, i.e. lcm 18 being shared between lcm 15 and 24.
+Such relationships might motivate chord progressions via superset and subset principles:
+* Superset Principle - Chord A can progress to chord B if A shares an lcm **superset** with B. 
+* Subset Principle - Chord A can progress to chord B if A shares an lcm **subset** with B.
+
+A motivation for the superset principle could be that chords are voicings of the same placement and placements govern perception.
+The superset principle has a nice directness to it, moving straight up/down in the lcm family hierarchy.
+
+A motivation for the subset principle feels less straightforward. Perhaps the brain recognizing that two subsequent chords, while not in the same lcm family, share a subset is good enough.
+One also wonders to what extent such supersets are allowed as there are a lot of dyads which can serve as shared subsets.
+
+The subset principle is less direct than the superset principle, necessitating a mediating subset in the lcm hierarchy via which a move is motivated.
+Looking back at the lcm family chapter, notably lcm 8 and 18 are the big bridging families, and perhaps these subsets are privileged or preferred when identifying shared subsets.
+
+A concrete example of the superset principle for the chord progression C to Eb (4@0 -> 4@3):
+* C is part of 15@7 (4@0 $\cong$ 3@7), Eb = 4@3 is part of 18@10.
+* Placement 3@7 is subset of 15@7, superset of 18@10.
+* The superset principle thus allows a progression from 3@7(superset 15@7) to 4@3(subset 18@10).
+
+In this way, although `{0 4 7}`(3@7) is not a subset of `{0 3 5 7 8 10}`(18@10) since they do not share key 4,
+it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
+
+A concrete example of the subset principle for the chord progression C to Db (4@0 -> 4@1): 
+* C is part of 15@7 (4@0 $\cong$ 3@7), Db = 4@1 is part of 24@8.
+* Placement 3@7 is subset of 15@7, which is a superset of 18@10.
+* Placement 4@1 is subset of 24@8, which is a superset of 18@10.
+* The subset principle thus allows a progression from 3@7(15@7) to 4@1(24@8) via the shared subset 18@10.
+
+#### On Preference
+Faced with a multitude of ambigous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities under certain circumstances.
 One such case could be the ambiguity between lcm 24 and 15, where 15@k is adjacent to 24@k+1,k+8 via 18@k+3.
 
 As we heard in the "Voicings and LCM Families" section, key k+8 in 15@k sounds dissonant (last note in the arpeggio) even though technically being part of 15@k.
 This might be because the brain prefers lcm 24 over 15. 
 
 It might identify 18@k+3 and try to fit the sounded keys into either 24@k+1 or 24@k+8. 
-Key k+8 might simply be a distinguishing key for 24@k+1,k+8 - perhaps by virtue of being the root or smallest fraction of those placements.
-Key k+8 then collapses 15@k, leaving key k+9 as a note extraenous to the possible placements - perceived as a sour or false note.
+Key k+8 might simply be a distinguishing key for 24@k+1,k+8 - perhaps by virtue of being the root or smallest fraction (perfect fifth, 3/2) of those placements.
+Key k+8 then collapses 15@k, leaving key k+9 as a note extraenous to the possible placements, perceived as a sour or false note.
 
 Perception then might be governed by pragmatic subsets, e.g. lcm 4, 8 and 18, which are expanded with distinguishing keys to collapse a decision space of possible perceptions based on placements.
 
-This could be true even for non-lcm key sets, such as dim7, harmonic minor and blues.
+This could be true even for non-lcm key sets, such as dim7, harmonic minor, blues and the pentatonic scale.
 
 #### On Dim7
 Dim7 consists of multiple dim triads, each with dim@k having supersets of 24@k+1 and 15@k+3, and so playing e.g. key k+1 and k+10 could focus our perception on 15@k.
