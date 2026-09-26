@@ -208,7 +208,7 @@ it can be thought of as a 24@0 core with the possibility of resolving into 24@5 
 
 ### Concluding Remarks
 By removing a single key from large lcm sets we could often recover lcm subsets, notably 18@k with supersets 24@k+5,k+10 and 15@k+9.
-Conversely we can think of these subsets as being ambigous between which top level set they represent, and adding distinguishing keys helps settle our perception.
+Conversely we can think of these subsets as being ambigous between which top level set they represent, and adding distinguishing keys help settle our perception.
 
 #### On Chord Progressions
 The adjacency relations between voiced keys and possible placements illustrates that an important relationship between lcms might not just be shared lcm **supersets**, but shared lcm **subsets**,
@@ -277,21 +277,22 @@ This also explains why harm@0 is less dissonant than plain 15@2:
 Harmonic minor removes 10, leaving enough ambiguity to not force a sour note.
 
 #### On Blues
+TODO: check out "Rock & Roll Flat-Key Borrowing (Modal Interchange)" which apparently involves the set `{I, IV, V, bIII, bVII, bVI}`,
+where `{I, IV, V}` is from 24@0(0 4 7) and `{bIII, bVII, bVI}` is from 24@10(0 3 7), sharing 4@5 as a subset, allowing the subset principle to explain the movement.
+
+TODO: relate to pentatonic, which is adjacent to 18@2,7. Blues is adjacent to 18@9,2,7. Adding in the blue note pulls to the 18@9.
+
+
 The same mechanism of dual distinguishing keys as in the harmonic minor case is at work in blues, but across a pair of lcm 24 families rather than a 15/24 pair.
-As we saw in the subset analysis, blues@0 was adjacent to 18@5 with supersets 24@3,10 and 15@2, but also 15@6 which is a superset of 18@9 along with 24@7,2.
 
-* blues@0 = `{0 2 3 4 7}`
-* 18@5 = `{0 2 3 5 7 10}`
-* 24@0 = `{0 2 4 5 7 9 11}`
-* 24@3 = `{0 2 3 5 7 9 10}`
-* 24@0 $\cap$ 24@3= `{0 2 5 7 9}` = penta@5
+As we saw in the subset analysis, blues@0 was adjacent to penta@0 with its supersets 18@7 and 18@2. 
+Blues@0 is also adjacent to 15@6 which is a superset of 18@9, hinting that perhaps it is also related to penta@2 or penta@7.
 
-Interestingly the interesection of the lcm 24 supersets for 18@k is the pentatonic major rooted at k.
-TODO: discuss relationship between pentatonics on 5 and 9, their relationship to blues by adding a blue note,  and 
+This is quite reasonable as we saw a circle of fifths relationship for the pentatonic majors via their lcm 18 supersets - penta@2->penta@7->penta@0.
 
-From this we see that the classic blues scale should perhaps be `{0 2 3 4 5 7 9}` = 18@7 as this is the shared set between 24@3 and 24@0.
+--- deferred below
 
-TODO: clean u pslop, also investigate 0 3 7 6 with the dual adjacency.
+TODO: clean up slop, also investigate 0 3 7 6 with the dual adjacency.
 
 blues@0 = `{0 2 3 4 7}` holds *both* thirds: the major third 4 (the `{0 2 4 7}` $\subseteq$ 8@0 $\subseteq$ 24@0 home) and the blue third 3 (the `{0 2 3 7}` $\subseteq$ 18@5 $\subseteq$ 24@10).
 So the blue note is precisely the distinguishing key that swings the parse into 24@10 while a major triad still asserts 24@0, and the swing between the two is the blues feel (developed further in [On Blues](#on-blues) below).
