@@ -309,7 +309,9 @@ melodroid table principle-progression --chord-keys 0 4 7 \
 A **general** formalisation of the two progression principles from the
 [composition doc](/docs/music/composition-adjacency-and-preference) ("On Chord Progressions"). For
 **any** set of `--chord-keys` (12-tet only), it lists every major/minor target triad (add
-`--include-dim` for the 12 diminished triads too) and tags each with a **Category**:
+`--include-dim` for the 12 diminished triads too) and tags each with a **Category**. Output is
+split into **one table per triad quality** (major, minor, and — with `--include-dim` — dim), so
+the root alone identifies each target chord; there are no per-row quality or next-chord columns.
 
 - **superset** — some single good-LCM family placement contains *both* the source chord and the
   target (e.g. C→Eb: both under `15@7`).

@@ -17,33 +17,39 @@ public static class PrincipleProgressionTableRenderer
     {
         console ??= AnsiConsole.Console;
 
-        var table = new Table()
-            .AddColumn(new TableColumn("Next Chord").RightAligned())
-            .AddColumn(new TableColumn("Quality"))
-            .AddColumn(new TableColumn("Root").RightAligned())
-            .AddColumn(new TableColumn("Category"))
-            .AddColumn(new TableColumn("Via"));
-
-        foreach (var target in targets)
+        // One table per triad quality: the quality is the title, so root alone identifies the chord.
+        var qualityOrder = new[] { TriadQuality.Major, TriadQuality.Minor, TriadQuality.Diminished };
+        foreach (var quality in qualityOrder)
         {
-            var via = new List<string>();
-            if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges)}");
-            if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(target.SubsetBridges)}");
+            var group = targets.Where(t => t.Quality == quality).OrderBy(t => t.Root).ToList();
+            if (group.Count == 0) continue;
 
-            table.AddRow(
-                string.Join(" ", target.Keys),
-                QualityName(target.Quality),
-                target.Root.ToString(),
-                CategoryMarkup(target.Category),
-                string.Join(" · ", via));
+            var table = new Table()
+                .Title(QualityName(quality))
+                .AddColumn(new TableColumn("Root").RightAligned())
+                .AddColumn(new TableColumn("Category"))
+                .AddColumn(new TableColumn("Via"));
+
+            foreach (var target in group)
+            {
+                var via = new List<string>();
+                if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges)}");
+                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(target.SubsetBridges)}");
+
+                table.AddRow(
+                    target.Root.ToString(),
+                    CategoryMarkup(target.Category),
+                    string.Join(" · ", via));
+            }
+
+            console.Write(table);
         }
 
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
-        table.Caption(
-            $"principle-progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
+        console.MarkupLine(
+            $"[grey]principle-progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
             $"bridges: {(rawBridges ? "raw" : "pooled")} · " +
-            $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet");
-        console.Write(table);
+            $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
     }
 
     private static string Cap(IReadOnlyList<string> bridges) =>
