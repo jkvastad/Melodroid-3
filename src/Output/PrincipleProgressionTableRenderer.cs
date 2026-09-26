@@ -11,6 +11,7 @@ public static class PrincipleProgressionTableRenderer
     public static void Render(
         IReadOnlyCollection<int> chordKeys,
         int minSubsetNotes,
+        bool rawBridges,
         IReadOnlyList<PrincipleTarget> targets,
         IAnsiConsole? console = null)
     {
@@ -40,6 +41,7 @@ public static class PrincipleProgressionTableRenderer
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         table.Caption(
             $"principle-progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
+            $"bridges: {(rawBridges ? "raw" : "pooled")} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet");
         console.Write(table);
     }

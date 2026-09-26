@@ -11,8 +11,9 @@ public class PrincipleProgressionsTests
     private static IReadOnlyList<LcmFamily> Families() =>
         LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
 
-    private static IReadOnlyList<PrincipleTarget> Compute(int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false) =>
-        PrincipleProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim);
+    private static IReadOnlyList<PrincipleTarget> Compute(
+        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false, bool rawBridges = false) =>
+        PrincipleProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim, rawBridges);
 
     private static PrincipleTarget Target(IReadOnlyList<PrincipleTarget> targets, params int[] keys)
     {
@@ -30,6 +31,32 @@ public class PrincipleProgressionsTests
             .SelectMany(f => Placements.Sweep(f, Ktet))
             .Any(p => union.IsSubsetOf(p.Keys));
     }
+
+    // Reconstruct a placement's key set from a "{Lcm}@{At}" label.
+    private static HashSet<int> KeysOf(string label)
+    {
+        var parts = label.Split('@');
+        var family = Families().First(f => f.Lcm == int.Parse(parts[0]));
+        return new HashSet<int>(Placements.Compute(family, int.Parse(parts[1]), Ktet).Keys);
+    }
+
+    // Independent power-of-2-preferred representative label for a given key set, recomputed over all
+    // family placements (the oracle for the canonicalisation the production BuildCanonicalMap does).
+    private static string CanonicalRep(HashSet<int> keys)
+    {
+        static bool Pow2(int n) => n > 0 && (n & (n - 1)) == 0;
+        var rep = Families()
+            .SelectMany(f => Placements.Sweep(f, Ktet))
+            .Where(p => keys.SetEquals(p.Keys))
+            .OrderBy(p => Pow2(p.Lcm) ? 0 : 1)
+            .ThenBy(p => p.Lcm)
+            .ThenBy(p => p.At)
+            .First();
+        return $"{rep.Lcm}@{rep.At}";
+    }
+
+    private static IEnumerable<string> AllLabels(PrincipleTarget t) =>
+        t.SupersetBridges.Concat(t.SubsetBridges.SelectMany(triple => triple.Split('·')));
 
     [Fact]
     public void Default_yields_major_and_minor_targets_only()
@@ -60,10 +87,27 @@ public class PrincipleProgressionsTests
         }
     }
 
+    // Category is derived from the raw placements, so it must be identical whether the displayed
+    // bridges are the raw triples or the decluttered (isomorphism-collapsed + pooled) default.
     [Fact]
-    public void Category_is_consistent_with_the_bridge_lists()
+    public void Category_is_invariant_between_raw_and_pooled_bridges()
     {
-        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+
+        foreach (var p in pooled)
+        {
+            var r = Target(raw, p.Keys.ToArray());
+            p.Category.Should().Be(r.Category);
+        }
+    }
+
+    // With the raw bridge lists the category is exactly the (superset-nonempty, subset-nonempty)
+    // pair — the un-pooled lists carry every witness.
+    [Fact]
+    public void Raw_category_is_consistent_with_the_bridge_lists()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true))
         {
             var expected = (t.SupersetBridges.Count > 0, t.SubsetBridges.Count > 0) switch
             {
@@ -76,9 +120,49 @@ public class PrincipleProgressionsTests
         }
     }
 
+    // Every label in the decluttered output is the power-of-2-preferred representative of its key
+    // set — so isomorphic aliases (e.g. 3@k for 4@k, or 9/10/12@k for 8@k) never appear.
+    [Fact]
+    public void Pooled_labels_are_canonical_power_of_two_representatives()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        {
+            foreach (var label in AllLabels(t))
+                label.Should().Be(CanonicalRep(KeysOf(label)));
+        }
+    }
+
+    // Pooling keeps only maximal containing placements, so no superset bridge's key set is a proper
+    // subset of another's.
+    [Fact]
+    public void Pooled_superset_bridges_form_an_antichain()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        {
+            var keySets = t.SupersetBridges.Select(KeysOf).ToList();
+            foreach (var x in keySets)
+                keySets.Should().NotContain(y => y.Count > x.Count && x.IsSubsetOf(y));
+        }
+    }
+
+    // Decluttering only ever removes labels — it never invents bridges the raw view lacked.
+    [Fact]
+    public void Pooling_never_grows_the_bridge_lists()
+    {
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+
+        foreach (var p in pooled)
+        {
+            var r = Target(raw, p.Keys.ToArray());
+            p.SupersetBridges.Count.Should().BeLessThanOrEqualTo(r.SupersetBridges.Count);
+            p.SubsetBridges.Count.Should().BeLessThanOrEqualTo(r.SubsetBridges.Count);
+        }
+    }
+
     // Doc example (composition-adjacency-and-preference.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8}
-    // is reachable by the subset principle (via shared subset 18@10) but the two chords share no
-    // single containing placement — so subset, not superset.
+    // is reachable by the subset principle (via a shared subset) but the two chords share no single
+    // containing placement — so subset, not superset.
     [Fact]
     public void C_to_Db_is_subset_only()
     {

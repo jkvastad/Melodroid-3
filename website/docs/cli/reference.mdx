@@ -302,7 +302,8 @@ website's `perceptionWalk` player still uses the triad-only tables in
 
 ```bash
 melodroid table principle-progression --chord-keys 0 4 7 \
-  [--min-subset-notes 2] [--include-dim] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+  [--min-subset-notes 2] [--include-dim] [--raw-bridges] \
+  [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
 A **general** formalisation of the two progression principles from the
@@ -319,7 +320,20 @@ A **general** formalisation of the two progression principles from the
 - **neither** — neither; the row is still listed.
 
 The **Via** column shows the bridging placements: superset bridges as `{Lcm}@{At}` labels, subset
-bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`).
+bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). By default these lists are
+**decluttered**, exploiting the LCM-family lattice — without changing any category:
+
+- **isomorphism-collapsed** — isomorphic families share a key set at shifted anchors (`3@7` and
+  `4@0` are both `{0 4 7}`), so every placement is relabelled to its key set's representative,
+  preferring a power-of-2 LCM (`3@k`→`4@k`, `9/10/12@k`→`8@k`);
+- **pooled upward** — only *maximal* containing placements `P_A`/`P_B` and *maximal* shared subsets
+  `S` are kept (a placement whose keys are contained in another's is dropped).
+
+Pooling is lossless for reachability (if `S ⊆ P_A ∩ P_B` and `P_A ⊆ P_A'` then `S ⊆ P_A' ∩ P_B'`),
+and the two category booleans are computed from the **raw** placements regardless, so the
+**Category** column is identical with or without decluttering. `--raw-bridges` restores the full
+un-collapsed lists (every containing placement; every `P_A·S·P_B` triple with plain `{Lcm}@{At}`
+labels) for deep inspection.
 
 Unlike `progression`, this does **no** 12-tet preference collapsing and does not hardcode the
 15↔24-via-18 adjacency: any good-LCM family may serve as the shared subset `S`. `--min-subset-notes`

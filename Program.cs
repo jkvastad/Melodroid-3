@@ -879,6 +879,12 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
+        var principleRawBridgesOption = new Option<bool>("--raw-bridges")
+        {
+            Description = "Show the full un-collapsed Via lists — every containing placement and every P_A·S·P_B triple with plain {Lcm}@{At} labels — instead of the default isomorphism-collapsed (power-of-2), maximally-pooled view. Categories are identical either way.",
+            DefaultValueFactory = _ => false,
+        };
+
         var principleProgressionCommand = new Command(
             "principle-progression",
             "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
@@ -888,6 +894,7 @@ class Program
         principleProgressionCommand.Add(principleChordKeysOption);
         principleProgressionCommand.Add(principleMinSubsetNotesOption);
         principleProgressionCommand.Add(principleIncludeDimOption);
+        principleProgressionCommand.Add(principleRawBridgesOption);
         principleProgressionCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -896,6 +903,7 @@ class Program
             var chordKeys = parse.GetValue(principleChordKeysOption) ?? Array.Empty<int>();
             var minSubsetNotes = parse.GetValue(principleMinSubsetNotesOption);
             var includeDim = parse.GetValue(principleIncludeDimOption);
+            var rawBridges = parse.GetValue(principleRawBridgesOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -915,8 +923,8 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
-            var targets = PrincipleProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim);
-            PrincipleProgressionTableRenderer.Render(dedupChord, minSubsetNotes, targets);
+            var targets = PrincipleProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges);
+            PrincipleProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, targets);
             return 0;
         });
 

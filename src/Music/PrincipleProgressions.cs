@@ -24,6 +24,17 @@ namespace Melodroid_3.Music;
 //
 // Every candidate target is returned (including `Neither`) so the full major/minor (+ optional dim)
 // matrix can be inspected. 12-tet by construction (the triad shapes are defined mod 12).
+//
+// Via output — the two category booleans are always computed from the *raw* placements (existence),
+// so the displayed bridge lists never affect the category. By default those lists are decluttered:
+//   * isomorphism-collapsed — isomorphic families produce identical key sets at shifted anchors
+//     (3@7 and 4@0 are both {0,4,7}), so every placement is relabelled to the representative of its
+//     key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor;
+//   * pooled upward — only *maximal* containing placements P_A/P_B (by key-set inclusion) and the
+//     *maximal* shared subsets S are kept. Pooling is lossless for existence — if S ⊆ P_A ∩ P_B and
+//     P_A ⊆ P_A', then S ⊆ P_A' ∩ P_B' too — so it only removes redundant, subsumed labels.
+// `rawBridges` restores the full un-collapsed lists (every containing placement; every P_A·S·P_B
+// triple with plain {Lcm}@{At} labels).
 
 public enum ProgressionCategory { Neither, Superset, Subset, Both }
 
@@ -53,6 +64,11 @@ public static class PrincipleProgressions
 
     private static string Label(Placement p) => $"{p.Lcm}@{p.At}";
 
+    private static bool IsPowerOf2(int n) => n > 0 && (n & (n - 1)) == 0;
+
+    private static string Signature(IReadOnlyCollection<int> keys) =>
+        string.Join(",", keys.OrderBy(k => k));
+
     private static IReadOnlyList<int> Shape(TriadQuality quality) => quality switch
     {
         TriadQuality.Major => MajorShape,
@@ -76,72 +92,96 @@ public static class PrincipleProgressions
         }
     }
 
+    private readonly record struct P(Placement Placement, IReadOnlySet<int> Keys);
+
+    // Placements whose key set is not a proper subset of another item's — the antichain by inclusion.
+    private static List<P> Maximal(IReadOnlyList<P> items) =>
+        items
+            .Where(x => !items.Any(y =>
+                y.Keys.Count > x.Keys.Count && x.Keys.IsSubsetOf(y.Keys)))
+            .ToList();
+
+    // key-set signature → canonical placement label, preferring a power-of-2 LCM, then lowest LCM,
+    // then lowest anchor. Isomorphic (and any keyboard-coincident) placements share a key set and so
+    // collapse to one label.
+    private static IReadOnlyDictionary<string, string> BuildCanonicalMap(
+        IReadOnlyList<LcmFamily> families, int ktet)
+    {
+        var map = new Dictionary<string, string>();
+        foreach (var group in families
+            .SelectMany(f => Placements.Sweep(f, ktet))
+            .GroupBy(p => Signature(p.Keys)))
+        {
+            var rep = group
+                .OrderBy(p => IsPowerOf2(p.Lcm) ? 0 : 1)
+                .ThenBy(p => p.Lcm)
+                .ThenBy(p => p.At)
+                .First();
+            map[group.Key] = Label(rep);
+        }
+        return map;
+    }
+
+    private static string Canonical(IReadOnlyDictionary<string, string> map, P placement) =>
+        map[Signature((IReadOnlyCollection<int>)placement.Keys)];
+
     // Every candidate next chord for the given source chord keys, each tagged superset / subset /
-    // both / neither per the two principles above. Sorted by root, then quality.
+    // both / neither per the two principles above. Sorted by root, then quality. Bridge lists are
+    // decluttered (isomorphism-collapsed + pooled) unless rawBridges is set.
     public static IReadOnlyList<PrincipleTarget> Compute(
         IReadOnlyCollection<int> chordKeys,
         IReadOnlyList<LcmFamily> families,
         int minSubsetNotes,
         bool includeDim,
+        bool rawBridges = false,
         int ktet = 12)
     {
         // Placements containing the source chord A (raw — every good-LCM family placement ⊇ A).
         var supA = Placements.FindSupersets(chordKeys, families, ktet)
-            .Select(r => (r.Placement, Keys: (IReadOnlySet<int>)new HashSet<int>(r.Placement.Keys)))
+            .Select(r => new P(r.Placement, new HashSet<int>(r.Placement.Keys)))
             .ToList();
 
         // Shared-subset S candidates: every family placement with at least minSubsetNotes keys.
         var subsetCandidates = families
             .SelectMany(f => Placements.Sweep(f, ktet))
-            .Select(p => (Placement: p, Keys: (IReadOnlySet<int>)new HashSet<int>(p.Keys)))
+            .Select(p => new P(p, new HashSet<int>(p.Keys)))
             .Where(x => x.Keys.Count >= minSubsetNotes)
             .ToList();
+
+        var canonical = rawBridges ? null : BuildCanonicalMap(families, ktet);
+        var maxA = rawBridges ? supA : Maximal(supA);
 
         var results = new List<PrincipleTarget>();
         foreach (var (keys, quality, root) in Candidates(includeDim, ktet))
         {
-            var targetSet = new HashSet<int>(keys);
+            var targetSet = (IReadOnlySet<int>)new HashSet<int>(keys);
+
+            var supB = Placements.FindSupersets(keys, families, ktet)
+                .Select(r => new P(r.Placement, new HashSet<int>(r.Placement.Keys)))
+                .ToList();
 
             // Superset principle: a single placement (∈ supA) contains both A and B.
-            var supersetBridges = supA
-                .Where(pa => targetSet.IsSubsetOf(pa.Keys))
-                .Select(pa => Label(pa.Placement))
-                .Distinct()
-                .ToList();
+            var containing = supA.Where(pa => targetSet.IsSubsetOf(pa.Keys)).ToList();
+            var hasSuperset = containing.Count > 0;
 
             // Subset principle: distinct P_A ⊇ A, P_B ⊇ B sharing a subset family S (|S| ≥ min).
-            var supB = Placements.FindSupersets(keys, families, ktet)
-                .Select(r => (r.Placement, Keys: (IReadOnlySet<int>)new HashSet<int>(r.Placement.Keys)))
-                .ToList();
+            var hasSubset = SubsetExists(supA, supB, subsetCandidates, minSubsetNotes);
 
-            var subsetBridges = new List<string>();
-            var seenBridge = new HashSet<string>();
-            foreach (var pa in supA)
-            {
-                foreach (var pb in supB)
-                {
-                    if (pa.Placement.Lcm == pb.Placement.Lcm && pa.Placement.At == pb.Placement.At) continue;
-
-                    var intersection = new HashSet<int>(pa.Keys);
-                    intersection.IntersectWith(pb.Keys);
-                    if (intersection.Count < minSubsetNotes) continue;
-
-                    foreach (var s in subsetCandidates)
-                    {
-                        if (!s.Keys.IsSubsetOf(intersection)) continue;
-                        var label = $"{Label(pa.Placement)}·{Label(s.Placement)}·{Label(pb.Placement)}";
-                        if (seenBridge.Add(label)) subsetBridges.Add(label);
-                    }
-                }
-            }
-
-            var category = (supersetBridges.Count > 0, subsetBridges.Count > 0) switch
+            var category = (hasSuperset, hasSubset) switch
             {
                 (true, true) => ProgressionCategory.Both,
                 (true, false) => ProgressionCategory.Superset,
                 (false, true) => ProgressionCategory.Subset,
                 _ => ProgressionCategory.Neither,
             };
+
+            var supersetBridges = rawBridges
+                ? containing.Select(pa => Label(pa.Placement)).Distinct().ToList()
+                : Maximal(containing).Select(pa => Canonical(canonical!, pa)).Distinct().OrderBy(SortKey).ToList();
+
+            var subsetBridges = rawBridges
+                ? RawSubsetTriples(supA, supB, subsetCandidates, minSubsetNotes)
+                : PooledSubsetTriples(maxA, Maximal(supB), subsetCandidates, minSubsetNotes, canonical!);
 
             results.Add(new PrincipleTarget(keys, quality, root, category, supersetBridges, subsetBridges));
         }
@@ -150,5 +190,87 @@ public static class PrincipleProgressions
             .OrderBy(t => t.Root)
             .ThenBy(t => t.Quality)
             .ToList();
+    }
+
+    private static bool SubsetExists(
+        IReadOnlyList<P> supA, IReadOnlyList<P> supB, IReadOnlyList<P> subsetCandidates, int minSubsetNotes)
+    {
+        foreach (var pa in supA)
+        {
+            foreach (var pb in supB)
+            {
+                if (pa.Placement.Lcm == pb.Placement.Lcm && pa.Placement.At == pb.Placement.At) continue;
+
+                var intersection = new HashSet<int>(pa.Keys);
+                intersection.IntersectWith(pb.Keys);
+                if (intersection.Count < minSubsetNotes) continue;
+
+                if (subsetCandidates.Any(s => s.Keys.IsSubsetOf(intersection))) return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<string> RawSubsetTriples(
+        IReadOnlyList<P> supA, IReadOnlyList<P> supB, IReadOnlyList<P> subsetCandidates, int minSubsetNotes)
+    {
+        var bridges = new List<string>();
+        var seen = new HashSet<string>();
+        foreach (var pa in supA)
+        {
+            foreach (var pb in supB)
+            {
+                if (pa.Placement.Lcm == pb.Placement.Lcm && pa.Placement.At == pb.Placement.At) continue;
+
+                var intersection = new HashSet<int>(pa.Keys);
+                intersection.IntersectWith(pb.Keys);
+                if (intersection.Count < minSubsetNotes) continue;
+
+                foreach (var s in subsetCandidates)
+                {
+                    if (!s.Keys.IsSubsetOf(intersection)) continue;
+                    var label = $"{Label(pa.Placement)}·{Label(s.Placement)}·{Label(pb.Placement)}";
+                    if (seen.Add(label)) bridges.Add(label);
+                }
+            }
+        }
+        return bridges;
+    }
+
+    private static List<string> PooledSubsetTriples(
+        IReadOnlyList<P> maxA, IReadOnlyList<P> maxB, IReadOnlyList<P> subsetCandidates,
+        int minSubsetNotes, IReadOnlyDictionary<string, string> canonical)
+    {
+        var bridges = new List<string>();
+        var seen = new HashSet<string>();
+        foreach (var pa in maxA)
+        {
+            var la = Canonical(canonical, pa);
+            foreach (var pb in maxB)
+            {
+                var lb = Canonical(canonical, pb);
+                if (la == lb) continue; // isomorphic-coincident: that single placement is a superset bridge
+
+                var intersection = new HashSet<int>(pa.Keys);
+                intersection.IntersectWith(pb.Keys);
+                if (intersection.Count < minSubsetNotes) continue;
+
+                var fitting = subsetCandidates.Where(s => s.Keys.IsSubsetOf(intersection)).ToList();
+                foreach (var s in Maximal(fitting))
+                {
+                    var label = $"{la}·{Canonical(canonical, s)}·{lb}";
+                    if (seen.Add(label)) bridges.Add(label);
+                }
+            }
+        }
+        bridges.Sort(StringComparer.Ordinal);
+        return bridges;
+    }
+
+    // Sort key for a single "{Lcm}@{At}" label: by LCM then anchor.
+    private static (int Lcm, int At) SortKey(string label)
+    {
+        var parts = label.Split('@');
+        return (int.Parse(parts[0]), int.Parse(parts[1]));
     }
 }
