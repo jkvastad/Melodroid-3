@@ -327,7 +327,11 @@ bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). By default 
   `4@0` are both `{0 4 7}`), so every placement is relabelled to its key set's representative,
   preferring a power-of-2 LCM (`3@k`→`4@k`, `9/10/12@k`→`8@k`);
 - **pooled upward** — only *maximal* containing placements `P_A`/`P_B` and *maximal* shared subsets
-  `S` are kept (a placement whose keys are contained in another's is dropped).
+  `S` are kept (a placement whose keys are contained in another's is dropped). A chord's containing
+  placement is kept as *all* of its incomparable maximal parents (e.g. `4@0` = `{0 4 7}` sits in both
+  `24@0` and `15@7`, which are incomparable, so both are retained and `4@0` is dropped); consequently
+  a single underlying bridge can appear under more than one parent context (`24@0·S·P_B` *and*
+  `15@7·S·P_B`) — this is intentional and lossless.
 
 Pooling is lossless for reachability (if `S ⊆ P_A ∩ P_B` and `P_A ⊆ P_A'` then `S ⊆ P_A' ∩ P_B'`),
 and the two category booleans are computed from the **raw** placements regardless, so the
