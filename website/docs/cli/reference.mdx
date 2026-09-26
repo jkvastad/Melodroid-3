@@ -298,6 +298,41 @@ The direct supersets are **derived**, not authored: they are exactly the rows of
 website's `perceptionWalk` player still uses the triad-only tables in
 `website/src/lib/perceptionTables.ts`.)
 
+### `principle-progression`
+
+```bash
+melodroid table principle-progression --chord-keys 0 4 7 \
+  [--min-subset-notes 2] [--include-dim] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+A **general** formalisation of the two progression principles from the
+[composition doc](/docs/music/composition-adjacency-and-preference) ("On Chord Progressions"). For
+**any** set of `--chord-keys` (12-tet only), it lists every major/minor target triad (add
+`--include-dim` for the 12 diminished triads too) and tags each with a **Category**:
+
+- **superset** — some single good-LCM family placement contains *both* the source chord and the
+  target (e.g. C→Eb: both under `15@7`).
+- **subset** — the source's and target's *raw* containing placements (`P_A`, `P_B` from
+  `key-supersets`, with **no** preference collapsing) share a common subset family `S` (e.g. C→Db:
+  `15@7` and `24@8` both contain `18@10`).
+- **both** — both conditions hold via their own witnesses.
+- **neither** — neither; the row is still listed.
+
+The **Via** column shows the bridging placements: superset bridges as `{Lcm}@{At}` labels, subset
+bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`).
+
+Unlike `progression`, this does **no** 12-tet preference collapsing and does not hardcode the
+15↔24-via-18 adjacency: any good-LCM family may serve as the shared subset `S`. `--min-subset-notes`
+(default `2`, dyads allowed) sets the minimum size of a bridging family `S` — raise it to tame the
+"lots of dyads bridge everything" effect the doc warns about (at the default almost every target is
+subset-reachable). The two containing placements in the subset test must be **distinct**: a single
+placement holding both chords is classified as *superset*, so the subset principle fires only for
+chords in different placements bridged by a shared subset.
+
+The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
+generated. This command is aimed at the research question of whether superset- vs subset-reachable
+progressions have a distinguishable "feel".
+
 ## Graphs
 
 ### `lcm-families`

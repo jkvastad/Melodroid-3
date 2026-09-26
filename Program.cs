@@ -860,6 +860,66 @@ class Program
             return 0;
         });
 
+        var principleChordKeysOption = new Option<int[]>("--chord-keys")
+        {
+            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var principleMinSubsetNotesOption = new Option<int>("--min-subset-notes")
+        {
+            Description = "Minimum number of keys a good-LCM family placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
+            DefaultValueFactory = _ => 2,
+        };
+
+        var principleIncludeDimOption = new Option<bool>("--include-dim")
+        {
+            Description = "Also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
+            DefaultValueFactory = _ => false,
+        };
+
+        var principleProgressionCommand = new Command(
+            "principle-progression",
+            "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
+        principleProgressionCommand.Add(maxSizeOption);
+        principleProgressionCommand.Add(maxPrimeOption);
+        principleProgressionCommand.Add(maxLcmOption);
+        principleProgressionCommand.Add(principleChordKeysOption);
+        principleProgressionCommand.Add(principleMinSubsetNotesOption);
+        principleProgressionCommand.Add(principleIncludeDimOption);
+        principleProgressionCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var chordKeys = parse.GetValue(principleChordKeysOption) ?? Array.Empty<int>();
+            var minSubsetNotes = parse.GetValue(principleMinSubsetNotesOption);
+            var includeDim = parse.GetValue(principleIncludeDimOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
+            if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
+            foreach (var key in chordKeys)
+            {
+                if (key < 0 || key >= 12)
+                {
+                    AnsiConsole.MarkupLine($"[red]--chord-keys value {key} is outside [[0, 11]].[/]");
+                    return 1;
+                }
+            }
+
+            var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+
+            var targets = PrincipleProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim);
+            PrincipleProgressionTableRenderer.Render(dedupChord, minSubsetNotes, targets);
+            return 0;
+        });
+
         var voicingsLcmOption = new Option<int?>("--lcm")
         {
             Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of. Mutually exclusive with --keys.",
@@ -1195,6 +1255,7 @@ class Program
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(progressionCommand);
+        tableCommand.Add(principleProgressionCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
         tableCommand.Add(chordsCommand);

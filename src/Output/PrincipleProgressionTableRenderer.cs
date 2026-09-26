@@ -1,0 +1,66 @@
+using Melodroid_3.Music;
+using Spectre.Console;
+
+namespace Melodroid_3.Output;
+
+public static class PrincipleProgressionTableRenderer
+{
+    // Cap the bridge lists so a "Via" cell stays readable; overflow is summarised as …(+M).
+    private const int MaxBridges = 6;
+
+    public static void Render(
+        IReadOnlyCollection<int> chordKeys,
+        int minSubsetNotes,
+        IReadOnlyList<PrincipleTarget> targets,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var table = new Table()
+            .AddColumn(new TableColumn("Next Chord").RightAligned())
+            .AddColumn(new TableColumn("Quality"))
+            .AddColumn(new TableColumn("Root").RightAligned())
+            .AddColumn(new TableColumn("Category"))
+            .AddColumn(new TableColumn("Via"));
+
+        foreach (var target in targets)
+        {
+            var via = new List<string>();
+            if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges)}");
+            if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(target.SubsetBridges)}");
+
+            table.AddRow(
+                string.Join(" ", target.Keys),
+                QualityName(target.Quality),
+                target.Root.ToString(),
+                CategoryMarkup(target.Category),
+                string.Join(" · ", via));
+        }
+
+        var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
+        table.Caption(
+            $"principle-progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
+            $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet");
+        console.Write(table);
+    }
+
+    private static string Cap(IReadOnlyList<string> bridges) =>
+        bridges.Count <= MaxBridges
+            ? string.Join(" ", bridges)
+            : string.Join(" ", bridges.Take(MaxBridges)) + $" …(+{bridges.Count - MaxBridges})";
+
+    private static string CategoryMarkup(ProgressionCategory category) => category switch
+    {
+        ProgressionCategory.Both => "[green]both[/]",
+        ProgressionCategory.Superset => "[blue]superset[/]",
+        ProgressionCategory.Subset => "[yellow]subset[/]",
+        _ => "[grey]neither[/]",
+    };
+
+    private static string QualityName(TriadQuality quality) => quality switch
+    {
+        TriadQuality.Major => "major",
+        TriadQuality.Minor => "minor",
+        _ => "dim",
+    };
+}
