@@ -68,7 +68,7 @@ Given the tonic (key 0), we can see all placements which contain it by running
 melodroid table key-supersets --keys 0 --ktet 12
 ```
 
-By collapsing isomorphisms, we can then illustrate the following hierarchy:
+By collapsing isomorphisms, we can then illustrate the placement hierarchy:
 
 ```mermaid
 flowchart TD
@@ -91,8 +91,10 @@ flowchart TD
 ```
 
 Notably the tonic is only directly adjacent to 2@0,5 and 3@3 - any other placement is either isomorphic to these or contains one of them.
+Already at this low level we see a circle of fiths relationship via the tonic with 4@5 -> 4@0 via the tonic.
+There is also the possibility of a circle of fourths, with 4@8 -> 4@0 via the tonic.
 
-From lcm 4 it looks like this:
+From lcm 4 the placement hierarchy looks like this:
 
 ```mermaid
 flowchart TD
@@ -118,6 +120,8 @@ flowchart TD
     A18 -- "+5" --> C24
     B18 -- "+11" --> C24
 ```
+
+Here we see circle of fifth relationships on all levels of 8, 15, 18 and 24.
 
 From lcm 5 it looks like this:
 
@@ -147,9 +151,6 @@ flowchart TD
     A18 -- "+7" --> C24
 ```
 
-Here $3@3$ is the shared $\{0\ 3\ 8\}$ core alongside $5@0$ (adding key 10 to $3@3$ reaches $5@0$),
-with $15@3$ as its parallel leaf — the counterpart to the $15@0$ and $15@7$ leaves grown from the
-$5@0$ branch.
-
-And lcm 15 is a top level node.
-
+The structure is quite similar to the lcm 4 placement hierarchy, only adding in an lcm 20 intermediary.
+Notably the lcm placement graph is almost identical to an lcm4@8 graph, probably since 5@0 is a superset of 4@8.
+Walking a circle of fifths by repeating 4@0 -> 4@5 we could reach 4@8 in 4 steps.
