@@ -41,6 +41,14 @@ complete into triads by adding a third. Nothing higher introduces a new direct b
 superset of one of these three covers (e.g. the lcm 5 families 5@2 $\supseteq$ 2@5, 5@4 $\supseteq$ 2@0, 5@0 $\supseteq$ 3@3,
 and 5@9 $\supseteq$ both fifth-dyads 2@0 and 2@5).
 
+That these three are the *only* covers can be shown directly:
+
+1. **The only two-key family is the perfect fifth** 2@k = `{k, k+7}` - lcm 1 is the bare unison and every family of lcm $\geq$ 3 has three or more keys. It contains key 0 only for k = 0 and k = 5, giving 2@0 = `{0 7}` and 2@5 = `{0 5}`. Each is a cover, since a two-key set leaves no room for an intermediate family on key 0.
+2. **Every other family on key 0 is a proper superset of a cover.** Enumerating all placements containing key 0 (`key-supersets --keys 0` over every lcm the good fractions reach - 152 placements in total), each one besides the three candidates holds key 7, key 5, or *both* keys 3 and 8, i.e. it contains 2@0, 2@5, or `{0 3 8}`. There are no exceptions, so no larger family is ever a new cover.
+3. **3@3 = `{0 3 8}` is the third cover.** It contains neither fifth-dyad, and its only smaller subsets on key 0 - `{0 3}` (minor third) and `{0 8}` (minor sixth) - are not families, so nothing lies between it and the tonic.
+
+The three covers are then the two orientations of key 0 within a perfect fifth (as the lower or the upper note) together with its lone attachment as a major third that carries no fifth of its own.
+
 The third-triad 3@3 is the sole gateway for every family with no fifth on key 0, and this odd branch keeps climbing through
 5@0 and 15@3 into the counter-rotating lcm 15 circle. The two even fifth-branches instead lead up through 4@0 into the even
 (8, 18, 24) side.
@@ -75,6 +83,40 @@ flowchart TD
 ```
 
 Notably we see circle of fifths relationships at levels 8, 15 and 18 as well, with the odd WPL 15 direction going counter to the even 8, 18 and 24.
+
+The same climb can be made on the odd branch. Starting from 5@0 = `{0 3 8 10}` - the odd branch off the third-triad 3@3 seen in the first graph - we get its counterpart:
+
+```mermaid
+flowchart TD
+    O5["5@0<br/>{0 3 8 10}"]
+    E8["8@8<br/>{0 3 7 8 10}"]
+    O20["20@0<br/>{0 3 4 7 8 10}"]
+    A18["18@3<br/>{0 1 3 5 8 10}"]
+    B18["18@10<br/>{0 3 5 7 8 10}"]
+    A15["15@0<br/>{0 1 3 5 8 9 10}"]
+    B15["15@7<br/>{0 3 4 5 7 8 10}"]
+    A24["24@1<br/>{0 1 3 5 6 8 10}"]
+    B24["24@3<br/>{0 2 3 5 7 8 10}"]
+    C24["24@8<br/>{0 1 3 5 7 8 10}"]
+
+    O5 -- "+7" --> E8
+    O5 -- "+1,5" --> A18
+    E8 -- "+5" --> B18
+    E8 -- "+4" --> O20
+    O20 -- "+5" --> B15
+    A18 -- "+9" --> A15
+    A18 -- "+6" --> A24
+    B18 -- "+4" --> B15
+    B18 -- "+2" --> B24
+    B18 -- "+1" --> C24
+    A18 -- "+7" --> C24
+```
+
+The shape echoes the 4@0 cascade: two lcm 18 families each fan out into an lcm 15 and two lcm 24 placements, converging on a shared 24@8 - the odd-side analogue of the shared 24@0 in the even graph.
+
+There is one asymmetry. The even arm passes through an lcm 8 family (8@8) on its way to 18@10, but the odd arm reaches 18@3 directly, since 8@8 is the *only* lcm 8 superset of 5@0. The odd branch also carries extra structure the 4@0 graph lacks: an lcm 20 side branch 8@8 -> 20@0 -> 15@7, tying back into the lcm 20 discussion below.
+
+As before we find circle of fifths relationships at levels 15, 18 and 24, with the odd lcm 15 direction running counter to the even side.
 
 ## Adjacent key sets and preference
 Assuming the brain does not passively parse incoming sounds but rather looks actively for patterns, we would expect preference for certain patterns.
