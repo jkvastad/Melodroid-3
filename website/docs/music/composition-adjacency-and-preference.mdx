@@ -4,8 +4,44 @@ description: High LCMs as compositions of lower families, and how adjacency and 
 ---
 
 # Composition, Adjacency and Preference
-Some large lcms are composed of smaller lcms, while some lcms are close in the sense that their keys mostly overlap. 
+Some large lcms are close in the sense that their keys mostly overlap.
+
+A notable example is lcm 18@0 which we saw is a subset of 15@9 and 24@5,10.
+From this we see a circle of fifths relationship between lcm 24 placements - every 24@k contains an 18@k+7, which has a superset of 24@k+5.
+
 Such ambigous structures might give rise to a preference for parsing wave patterns and constructing a perception.
+
+Indeed if lcm 24 has a circle of fiths relationship via lcm 18, perhaps going further and looking into subsets of lcm 18 will reveal other similar relationships?
+Going up from lcm 4 we see:
+
+
+```mermaid
+flowchart TD
+    M["4@0<br/>{0 4 7}"]
+    B8["8@0<br/>{0 2 4 7 11}"]
+    C8["8@5<br/>{0 4 5 7 9}"]
+    A18["18@2<br/>{0 2 4 7 9 11}"]
+    B18["18@7<br/>{0 2 4 5 7 9}"]
+    C24["24@0<br/>{0 2 4 5 7 9 11}"]
+    A15["15@11<br/>{0 2 4 7 8 9 11}"]
+    A24["24@7<br/>{0 2 4 6 7 9 11}"]
+    B24["24@5<br/>{0 2 4 5 7 9 10}"]
+    B15["15@4<br/>{0 1 2 4 5 7 9}"]
+
+    M -- "+2,11" --> B8
+    M -- "+5,9" --> C8
+    B8 -- "+9" --> A18
+    C8 -- "+2" --> B18
+    A18 -- "+6" --> A24
+    A18 -- "+8" --> A15
+    B18 -- "+1" --> B15
+    B18 -- "+10" --> B24
+    A18 -- "+5" --> C24
+    B18 -- "+11" --> C24
+```
+
+Notably we see circle of fifths relationships at levels 8, 15 and 18 as well, with the odd WPL 15 direction going counter to the even 8, 18 and 24.
+
 
 ## Adjacent key sets and preference
 Assuming the brain does not passively parse incoming sounds but rather looks actively for patterns, we would expect preference for certain patterns.
