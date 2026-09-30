@@ -65,10 +65,12 @@ out with more keys, up to the full C major scale at `24@0`.
 Given the tonic (key 0), we can see all placements which contain it by running
 
 ```bash
-melodroid table key-supersets --keys 0 --ktet 12
+melodroid table key-supersets --keys 0 --ktet 12 --collapse
 ```
 
-By collapsing isomorphisms, we can then illustrate the placement hierarchy:
+The `--collapse` flag folds placements that cover the same keys (isomorphic families sweep out
+identical key patterns) down to the lowest-LCM representative, so the hierarchy shows up without
+redundancy. From that we can illustrate the placement hierarchy:
 
 ```mermaid
 flowchart TD

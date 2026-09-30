@@ -132,6 +132,36 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void CollapseIsomorphic_tonic_drops_duplicate_key_sets()
+    {
+        var families = LcmFamilies.Compute(
+            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
+            maxLcm: 24);
+
+        var rows = Placements.FindSupersets(new[] { 0 }, families, ktet: 12);
+        var collapsed = Placements.CollapseIsomorphic(rows);
+
+        // The tonic's exhaustive superset sweep repeats key sets across isomorphic families,
+        // so collapsing strictly reduces the row count.
+        collapsed.Count.Should().BeLessThan(rows.Count);
+
+        // Every surviving row covers a distinct key set.
+        collapsed
+            .Select(r => string.Join(",", r.Placement.Keys.OrderBy(k => k)))
+            .Should().OnlyHaveUniqueItems();
+
+        // Each survivor is the lowest LCM among all rows sharing its key set.
+        foreach (var r in collapsed)
+        {
+            var signature = string.Join(",", r.Placement.Keys.OrderBy(k => k));
+            var minLcm = rows
+                .Where(o => string.Join(",", o.Placement.Keys.OrderBy(k => k)) == signature)
+                .Min(o => o.Placement.Lcm);
+            r.Placement.Lcm.Should().Be(minLcm);
+        }
+    }
+
+    [Fact]
     public void FindSupersets_rows_are_sorted_by_extra_then_lcm_then_at()
     {
         var families = LcmFamilies.Compute(

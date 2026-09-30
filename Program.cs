@@ -596,6 +596,11 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
+        var keySupersetsCollapseOption = new Option<bool>("--collapse")
+        {
+            Description = "Collapse placements that cover the identical key set (isomorphic families sweep out the same keys) down to the lowest-LCM representative.",
+        };
+
         var keySupersetsCommand = new Command(
             "key-supersets",
             "Enumerate every (lcm, at) placement whose k-tet keys are a superset of the given --keys; ranked by smallest extra-keys count. Pass --compare to split supersets against a second key set.");
@@ -604,6 +609,7 @@ class Program
         keySupersetsCommand.Add(maxLcmOption);
         keySupersetsCommand.Add(keySupersetsKeysOption);
         keySupersetsCommand.Add(keySupersetsCompareOption);
+        keySupersetsCommand.Add(keySupersetsCollapseOption);
         keySupersetsCommand.Add(ktetOption);
         keySupersetsCommand.SetAction(parse =>
         {
@@ -612,6 +618,7 @@ class Program
             var maxLcm = parse.GetValue(maxLcmOption);
             var keys = parse.GetValue(keySupersetsKeysOption) ?? Array.Empty<int>();
             var compare = parse.GetValue(keySupersetsCompareOption) ?? Array.Empty<int>();
+            var collapse = parse.GetValue(keySupersetsCollapseOption);
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -625,6 +632,7 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var rows = Placements.FindSupersets(dedupKeys, families, k);
+            if (collapse) rows = Placements.CollapseIsomorphic(rows);
 
             if (compare.Length == 0)
             {
@@ -634,6 +642,7 @@ class Program
 
             var compareKeys = compare.Select(key => ((key % k) + k) % k).Distinct().OrderBy(x => x).ToList();
             var compareRows = Placements.FindSupersets(compareKeys, families, k);
+            if (collapse) compareRows = Placements.CollapseIsomorphic(compareRows);
             var (common, onlyA, onlyB) = Placements.CompareSupersets(rows, compareRows);
             KeySupersetsTableRenderer.RenderComparison(dedupKeys, compareKeys, k, common, onlyA, onlyB);
             return 0;
