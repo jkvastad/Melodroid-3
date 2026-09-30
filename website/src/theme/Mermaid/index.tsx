@@ -33,15 +33,13 @@ export default function MermaidWrapper(props: Props): React.ReactElement {
       const viewBox = svg.viewBox?.baseVal;
       const renderedWidth = container.clientWidth || svg.clientWidth || 0;
       const maxHeightPx = window.innerHeight * 0.7;
-      // Extra vertical room so svg-pan-zoom's on-screen +/reset/− controls sit in
-      // the margin rather than overlaying the graph in a tightly-fitted box.
-      const controlsAllowancePx = 150;
+      // Size the box to the graph's natural aspect ratio (capped at 70vh) so short
+      // graphs sit flush with no dead space above/below, while large graphs stay
+      // bounded and pan/zoomable. (No extra allowance: svg-pan-zoom centres the
+      // content, so any surplus height shows up as whitespace above the graph.)
       const heightPx =
         viewBox && viewBox.width > 0 && renderedWidth > 0
-          ? Math.min(
-              (viewBox.height / viewBox.width) * renderedWidth + controlsAllowancePx,
-              maxHeightPx,
-            )
+          ? Math.min((viewBox.height / viewBox.width) * renderedWidth, maxHeightPx)
           : maxHeightPx;
       svg.style.height = `${Math.round(heightPx)}px`;
 
