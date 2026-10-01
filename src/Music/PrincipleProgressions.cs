@@ -1,7 +1,7 @@
 namespace Melodroid_3.Music;
 
 // General formalisation of the two chord-progression principles from
-// website/docs/music/composition-adjacency-and-preference.mdx ("On Chord Progressions"):
+// website/docs/music/progression-principles.mdx ("Progression Principles"):
 //
 //   * Superset principle — chord A may progress to chord B when a single good-LCM family placement
 //     contains both (e.g. C→Eb: both sit under 15@7).

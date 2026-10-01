@@ -160,7 +160,7 @@ public class PrincipleProgressionsTests
         }
     }
 
-    // Doc example (composition-adjacency-and-preference.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8}
+    // Doc example (progression-principles.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8}
     // is reachable by the subset principle (via a shared subset) but the two chords share no single
     // containing placement — so subset, not superset.
     [Fact]

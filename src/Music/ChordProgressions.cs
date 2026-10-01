@@ -12,7 +12,7 @@ namespace Melodroid_3.Music;
 //     lcm-24 placements 24@(At+1),(At+8) and each direct lcm-24 row reaches the adjacent lcm-15
 //     placements 15@(At+4),(At+11). A target is reachable when it is a subset of a direct superset
 //     or of any adjacency placement. This reproduces the four progression tables in
-//     website/docs/music/composition-adjacency-and-preference.mdx (e.g. a major source reaches every
+//     website/docs/music/progression-principles.mdx (e.g. a major source reaches every
 //     major triad but the tritone): the 4@k ↔ 3@(k+7) isomorphism falls out of the uniform subset
 //     test, since 4@k is a literal subset of the full 15@(k+7) reached via 24→15 adjacency.
 //   * --stable: the narrower one-directional walk — adjacency only from stable lcm-15 rows to their
