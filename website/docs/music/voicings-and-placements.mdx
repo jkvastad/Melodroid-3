@@ -72,16 +72,10 @@ The `--collapse` flag folds placements that cover the same keys (isomorphic fami
 identical key patterns) down to the lowest-LCM representative, so the hierarchy shows up without
 redundancy, down to 41 placements from 63.
 
-We can collapse further. If we also treat placements that are the same **shape** shifted around the
-keyboard (a **transposition**) as one, the whole structure reduces to just **9 shapes** and
-**18 distinct relationships** between them. The 9 shapes are the tonic, the dyad, the triad, the
-tetrad, the pentad, two different hexads (the lcm-18 family and the lcm-20 family), and two different heptads (lcm-15 and lcm-24). Every placement of a given shape
-is a transposition of every other — all six lcm-20 placements are one shape, all seven lcm-15 are
-one shape, and so on.
-
-The tonic itself is directly adjacent only to the two dyads `2@0`/`2@5` and the triad `3@3` — every
-other placement is a transposition of these or contains one of them. Already here we see a circle of
-fifths via the tonic (`4@5 → 4@0`) and a circle of fourths (`4@8 → 4@0`).
+We can collapse further by defining **shapes** as keys relative to a root key, and then equating placements with equal shapes.
+This reduces the whole structure to just **9 shapes** and **18 distinct relationships** between them. 
+The 9 shapes are the tonic, the dyad, the triad, the tetrad, the pentad, two different hexads (the lcm-18 family and the lcm-20 family), and two different heptads (lcm-15 and lcm-24).
+Every placement of a given shape is a transposition of every other — all six lcm-20 placements are one shape, all seven lcm-15 are one shape, and so on.
 
 The following graph shows all 18 relationships at once, one per edge. Each node is a shape (with one
 example placement shown); each edge is labelled by a single representative placement pair, and every
@@ -101,28 +95,28 @@ flowchart TD
 
     S1 -- "1@0→2@0 (fifth +7)" --> S2
     S1 -- "1@0→2@5 (fourth +5)" --> S2
-    S1 -- "1@0→3@3 (+3,8)" --> S3
     S2 -- "2@0→3@7 (+4)" --> S3
+    S1 -- "1@0→3@3 (+3,8)" --> S3
     S2 -- "2@0→5@9 (+5,9)" --> S5
+    S5 -- "5@0→8@8 (+7)" --> S8
     S2 -- "2@0→8@8 (+3,8,10)" --> S8
     S2 -- "2@0→18@5 (+2,3,5,10)" --> H18
     S3 -- "3@0→5@9 (+7)" --> S5
     S3 -- "3@0→8@10 (+2,10)" --> S8
+    S8 -- "8@0→20@4 (+8)" --> H20
     S3 -- "3@0→20@5 (+1,3,8)" --> H20
-    S5 -- "5@0→8@8 (+7)" --> S8
     S5 -- "5@0→18@3 (+1,5)" --> H18
     S8 -- "8@0→18@2 (+9)" --> H18
-    S8 -- "8@0→20@4 (+8)" --> H20
     H18 -- "18@0→15@9 (+6)" --> P15
     H18 -- "18@0→24@5 (+4)" --> P24
     H18 -- "18@0→24@10 (+3)" --> P24
     H20 -- "20@0→15@7 (+5)" --> P15
 ```
 
-We can lay these 18 relationships out as three concrete graphs, one for each source shape from the
-tonic upward. The tonic branches only into the two dyads and one triad; the dyad adds the branches
-that leap straight past a triad into a larger family; and everything whose source is a triad or a
-larger shape lives inside a single **triad graph**.
+We can illustrate these 18 relationships with three concrete graphs, one for each source shape from the
+tonic upward. The tonic branches only into the two dyads and one triad; the dyad adds branches
+which leap straight past the triad into larger families; everything whose source is a triad or a
+larger shape lives inside a single triad graph.
 
 The **tonic graph** shows those three adjacencies directly — a fifth and a fourth to the two dyads,
 and the triad `3@3` (≅ `4@8`):
@@ -138,6 +132,10 @@ flowchart TD
     T -- "+5  (fourth → dyad)" --> D5
     T -- "+3,8  (→ triad)" --> X
 ```
+
+The tonic is directly adjacent only to the two dyads `2@0`/`2@5` and the triad `3@3` — every
+other placement is a transposition of these or contains one of them. Already here we see a circle of
+fifths via the tonic (`4@5 → 4@0`) and a circle of thirds (`4@8 → 4@0`).
 
 The **dyad graph** — `2@0` branching directly into the tetrad, pentad and lcm-18 hexad, shown next
 to the ordinary `2@0 → 4@0` triad path for contrast:
@@ -202,3 +200,5 @@ flowchart TD
 (`5@4` also reaches `18@7`; `20@9` and `20@4` also cover `15@4` and `15@11`, drawn here via `18@7`
 and `18@2`.) The `4@5` and `3@3` branches are this same graph shifted +5 and +8, and the lcm-5
 placements are the `5@4 → …` sub-branch of the +8 copy, so none of them are redrawn.
+
+Such connections between the different lcm placement shapes could be the foundation for scales and chord progressions, which we will cover in the upcoming sections.
