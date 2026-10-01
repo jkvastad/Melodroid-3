@@ -283,7 +283,7 @@ triad is reachable when it is a subset of one of the current chord's direct supe
 *superset* rule) or of an adjacency placement (the *adjacency* rule).
 
 By **default** the walk follows the strict rules of the
-[composition doc](/docs/music/composition-adjacency-and-preference): composition, the
+[progression principles doc](/docs/music/composition-adjacency-and-preference): composition, the
 `4@k ↔ 3@(k+7)` isomorphism, and **bidirectional** 15↔24 adjacency (each direct `15@X` reaches
 `24@(X+1)`,`24@(X+8)` and each direct `24@X` reaches `15@(X+4)`,`15@(X+11)`, materialised as full
 families). This reproduces the four progression tables in that doc — e.g. a major source reaches
@@ -307,7 +307,8 @@ melodroid table principle-progression --chord-keys 0 4 7 \
 ```
 
 A **general** formalisation of the two progression principles from the
-[composition doc](/docs/music/composition-adjacency-and-preference) ("On Chord Progressions"). For
+[progression principles doc](/docs/music/composition-adjacency-and-preference) ("Progression
+principles"). For
 **any** set of `--chord-keys` (12-tet only), it lists every major/minor target triad (add
 `--include-dim` for the 12 diminished triads too) and tags each with a **Category**. Output is
 split into **one table per triad quality** (major, minor, and — with `--include-dim` — dim), so
