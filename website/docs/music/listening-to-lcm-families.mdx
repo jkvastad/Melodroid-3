@@ -1,11 +1,11 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 description: Melody and harmony of LCM families.
 ---
 
 import Player from '@site/src/components/Player';
 
-# Voicings and LCM Families
+# Listening to LCM Families
 
 Having discussed concrete voicings and placement structure, we can now turn to listening to Harmonic Pattern Theory.
 Our good-fraction LCM families mostly correspond to traditional chords and scales:
@@ -27,24 +27,6 @@ Traditionally consonant voicings favor triads (intervals 3, 4 in 12-TET) and avo
 both easier on the hand and lower in dissonance.[^lots-stone] 
 Consonance however is a complex subject, depending both on harmonicity, timbre and culture - 
 [see related research on consonance.](/docs/related-research/consonance)
-
-## Scoring voicings
-
-To create some nicely spread out voicings we can rank a voicing by scoring each interval and summing:
-
-- intervals in $\{3, 4\}$ (triadic) cost $0$;
-- intervals in $\{2, 5\}$ (near-triadic) cost $1$;
-- intervals $i \geq 6$ (wide) cost $i - 4$ (so $6 \to 2$, $7 \to 3$, …, $k{-}1 \to k{-}5$).
-
-A pure-triadic voicing scores $0$; the score grows as the voicing is forced into nears and then
-wides.
-
-```bash
-melodroid table voicings --lcm 24 --ktet 12
-```
-
-prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. 
-Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
 
 ## High LCMs
 

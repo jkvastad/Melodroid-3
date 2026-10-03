@@ -1,7 +1,7 @@
 // Perception-based progression logic for the RhythmPatternPlayer. Each rhythmic unit (meter
 // group) sounds a triad and draws its melody from a placement chosen by the unit's *opening
 // key*, per a hand-authored perception table (see the "Perception Based Progression" section of
-// docs/music/voicings-and-lcm-families.mdx). The next unit's chord is drawn from the current
+// docs/music/chord-progressions.mdx). The next unit's chord is drawn from the current
 // chord's *stable melodic supersets*. Pure (no React/Tone), mirroring chordWalk.ts / placements.ts;
 // the tables are authored data (subjective perception), so unlike the placement math there is no
 // C# oracle — the key-set constants and superset lists are transcribed from the doc.

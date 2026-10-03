@@ -1,7 +1,7 @@
 // Shared partial-spectrum math for the timbre-morph demos. Both the audio player
 // (TimbreMorphPlayerClient) and the visual sweep map (PartialSweepPlot) compute the exact
 // same partial frequencies and amplitudes from these functions, so the picture and the sound
-// can never drift apart. See the prose in voicings-and-lcm-families.mdx (§ Dissonant LCM) and
+// can never drift apart. See the prose in related-research/consonance.mdx and
 // Marjieh et al. (2024) for what the spectra mean.
 
 export type TimbreMorphMode =

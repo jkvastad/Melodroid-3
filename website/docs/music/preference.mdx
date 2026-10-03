@@ -1,18 +1,51 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 description: The preference principle — why perception favours lcm 24 over 15 in ambiguous contexts.
 ---
 
+import Player from '@site/src/components/Player';
+
 # Preference
 
-The [tonic placement structure](/docs/music/voicings-and-placements#tonic-placement-structure) laid out how the
-LCM-family shapes relate — which placements sit inside which.
+As we heard in the [Listening to LCM Families](/docs/music/listening-to-lcm-families) section,
+lcms with 6+ notes start sounding tense or dissonant, with the exception of lcm 18 being the minor 11 chord.
+This raises some questions:
 
-Faced with a multitude of ambiguous interpretations of frequencies, the brain might employ heuristic
-preference and collapse competing possibilities under certain circumstances. One such case is the
-ambiguity between lcm 24 and 15, where 15@k is adjacent to 24@k+1,k+8 via the shared subset 18@k+3.
+* Why does the other hexad, lcm 20, not sound consonant?
+* Why is the lcm 24 heptad more consonant than the lcm 15 heptad?
 
-As we heard in the [Voicings and LCM Families](/docs/music/voicings-and-lcm-families) section, key
+Looking back at the placement structure, lcm 20 must be reached via the lcm triad, but such a triad is also always present in lcm 15, 18 and 24.
+
+Faced with such a multitude of ambiguous interpretations of frequencies, 
+the brain might employ heuristic preference and collapse competing possibilities.
+
+For instance, it might try to avoid using prime 5 (the largest good fraction prime) to express the lcms, a prime absent from both lcm 18 and 24.
+
+* **Preference Principle** — Perception prefers small primes in ambiguous contexts.
+
+Looking back at the placement structure we see that 8@0 has supersets 18@2, 20@4, 15@11 and 24@0,7.
+
+This could mean that when playing 15@11, the brain easily slips into perceiving it as 18@2 or 24@0,7.
+Indeed if we play melody over 15@11 key 7 seems to be a sour note, even though it is part of 15@11.
+Notably key 7 is the root of 24@7 and the dyad for 24@0.
+The dyad for 24@7 is key 2, which sounds good with 15@11.
+The root for 24@0 is key 0, which sounds good with 15@11.
+Both key 0 and 2 provide the characteristic oriental feel of lcm 15.
+Interestingly key 5 fits well with the other keys of 15@11, producing the harmonic minor at 9.
+Key 5 is part of both 24@0,7 but not 15@11.
+
+
+
+** deferred below **
+
+Notable features:
+Perhaps by being the dyad in 8@0 key 7 collapses 15@11?
+Both lcm 18 and 24 lack a prime factor of 5.
+lcm 18 lacks a symmetric subset; 0 4 8 in 15 and 20; 0 3 6 in 15, 20, 24.
+
+... one such case is the ambiguity between lcm 24 and 15, where 15@k is adjacent to 24@k+1,k+8 via the shared subset 18@k+3.
+
+As we heard in the [Listening to LCM Families](/docs/music/listening-to-lcm-families) section, key
 k+8 in 15@k sounds dissonant (the last note in the arpeggio) even though it is technically part of
 15@k. This might be because the brain prefers lcm 24 over 15:
 
@@ -27,3 +60,10 @@ note extraneous to the lcm 24 placements, perceived as a sour or false note.
 Perception then might be governed by pragmatic subsets, e.g. lcm 4, 8 and 18, which are expanded with
 distinguishing keys to collapse a decision space of possible perceptions. This could be true even for
 non-lcm key sets, such as dim7, harmonic minor, blues and the pentatonic scale.
+
+TODO: example showing preference via 18@k placement structure
+
+- <Player keys={[0, 4, 7, 10, 16]} gain={0.7} label="▶ 0 4 7 10 12 16" />
+- <Player keys={[0, 3, 7, 10, 15]} gain={0.7} label="▶ 0 3 7 10 12 15" />
+- <Player keys={[0, 4, 7, 10, 15]} gain={0.7} label="▶ 0 4 7 10 12 15" />
+- <Player keys={[0, 3, 7, 10, 16]} gain={0.7} label="▶ 0 3 7 10 12 16" />

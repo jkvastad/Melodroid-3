@@ -380,7 +380,7 @@ function chordOffsets(keys: number[] | null, pitchHz: number): number[] | null {
 // A match labelled for the dropdown, e.g. "24 @ 0" (LCM family 24 anchored at key 0).
 const matchLabel = (m: Superset): string => `${m.lcm} @ ${m.at}`;
 
-// The LCM families of the intro table on voicings-and-lcm-families.mdx, keyed to that
+// The LCM families of the intro table on listening-to-lcm-families.mdx, keyed to that
 // table's rows. `keys` holds the raw table voicing (so the provenance is visible); the
 // player folds them into a single octave before drawing pitches from them. The leading
 // id '0' is not a family: it is the chromatic draw pool — all 12 pitch classes, a uniform

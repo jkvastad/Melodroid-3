@@ -23,8 +23,9 @@
 
 ## The Sound of Music
 
-### Voicings and Placements (music/voicings-and-placements.mdx)
-### Voicings and LCM Families (music/voicings-and-lcm-families.mdx)
+### Placements (music/placements.mdx)
+### Voicings (music/voicings.mdx)
+### Listening to LCM Families (music/listening-to-lcm-families.mdx)
 TODO: compare LCMs with modes - e.g. playing Mixolydian C is just playing Major scale F but using the C note as tonic.
  * True tonic is perhaps the reference point and playing music as if another note is the reference point produces a certain feel (probably juking/jiving/feinting/unexpected feelings).
 

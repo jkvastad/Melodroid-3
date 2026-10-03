@@ -1,6 +1,6 @@
 # Melodroid 3
 
-A program for **music research from first principles**: exploring music as the meeting point between the **physics of sound** (origin) and the **biology of human hearing** (destination). Melodroid is mainly a CLI program producing various plots and printouts for study, with a companion website under [website/](website/) that works as docs and explains the theory.
+A program for **music research from first principles**: exploring music as the meeting point between the **physics of sound** (origin) and the **biology of human hearing** (destination). Melodroid is both a CLI program producing various plots and printouts for study, and a companion website under [website/](website/) that works as docs and explains the theory.
 
 The program is exploratory — it produces artifacts you inspect, not a polished user-facing app. Current output modes:
 
@@ -139,9 +139,7 @@ The *why*, so the codebase doesn't drift away from its research purpose.
 
 **Sweeps** — bin renormalized input ratios against the good fractions, either across a swept reference octave ([src/Music/OctaveSweep.cs](src/Music/OctaveSweep.cs)) or stepping through the *k* keys of a tuning ([src/Music/KeySweep.cs](src/Music/KeySweep.cs)); see docs `keyboard/key-sweep`.
 
-**Placements & voicings** — a **placement** maps an LCM family's fractions onto *k*-tet keys anchored on a chosen key ([src/Music/Placements.cs](src/Music/Placements.cs), used by `placement`, `family-overlap`, `key-supersets`, `chord-melody`). **Voicings** are ascending, semitone-avoiding orderings of a key set, lowest-penalty per root ([src/Music/Voicings.cs](src/Music/Voicings.cs)); see docs `music/voicings-and-placements`.
-
-**What's next** — the original research compass remains aspirational and may guide future work: Fourier decomposition, wavepackets, beat frequencies, dissonance from interference (physics side); cochlear frequency mapping, critical bands, equal-loudness contours, broader JNDs, consonance perception (biology side). These are directions, not current scope.
+**Placements & voicings** — a **placement** maps an LCM family's fractions onto *k*-tet keys anchored on a chosen key ([src/Music/Placements.cs](src/Music/Placements.cs), used by `placement`, `family-overlap`, `key-supersets`, `chord-melody`). **Voicings** are ascending, semitone-avoiding orderings of a key set, lowest-penalty per root ([src/Music/Voicings.cs](src/Music/Voicings.cs)); see docs `music/placements` and `music/voicings`.
 
 A good change usually:
 

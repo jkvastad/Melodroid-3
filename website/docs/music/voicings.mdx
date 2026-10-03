@@ -1,0 +1,35 @@
+---
+sidebar_position: 2
+description: "Explicit key choices: scoring and spreading voicings."
+---
+
+import Player from '@site/src/components/Player';
+
+# Voicings
+
+Sometimes we must be explicit about the keys being played.
+We call this a **Voicing**, e.g. "$24@0$ voiced as `{7 11 2 5 9 0 4}`" is the G13 chord.
+Voicings can help alleviate some dissonance from adjacent keys (e.g. `{0,1}` vs. `{0,13}`) or make the chord more playable by hand.
+
+<Player keys={[0, 1]} label="▶ Close semitone {0, 1}" />
+<Player keys={[0, 13]} gain={0.8} label="▶ Spread minor ninth {0, 13}" />
+
+Neither sounds pleasant in a sustained tone, but the close semitone produces very audible beating effects as well.
+
+## Scoring voicings
+
+To create some nicely spread out voicings we can rank a voicing by scoring each interval and summing:
+
+- intervals in $\{3, 4\}$ (triadic) cost $0$;
+- intervals in $\{2, 5\}$ (near-triadic) cost $1$;
+- intervals $i \geq 6$ (wide) cost $i - 4$ (so $6 \to 2$, $7 \to 3$, …, $k{-}1 \to k{-}5$).
+
+A pure-triadic voicing scores $0$; the score grows as the voicing is forced into nears and then
+wides.
+
+```bash
+melodroid table voicings --lcm 24 --ktet 12
+```
+
+prints the lowest-penalty voicings of the C major scale (`24@0`) from every root. 
+Pass `--keys` instead of `--lcm` to enumerate voicings for an arbitrary key set, e.g. `--keys 0 2 3 5 7 8 11` for C harmonic minor scale in 12 tet.
