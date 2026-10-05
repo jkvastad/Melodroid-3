@@ -54,7 +54,7 @@ $c = (\text{Upper} - \text{Lower}) / (\text{Upper} + \text{Lower})$. The $c$ col
 value as a percentage. The final row handles the octave wrap by pairing the largest good
 fraction with a virtual $2/1$, so $N$ good fractions give $N$ rows.
 
-The minimum unique bin radius for LCM 24 is thus $1/161 \approx 0.621\%$, within human JND.
+The minimum unique bin radius for the good fractions is thus $1/161 \approx 0.621\%$, within human JND.
 
 This smallest ratio between any two good fractions happens to be the **syntonic comma** $81/80$.
 It appears twice above, at $10/9 \to 9/8$ and $16/9 \to 9/5$, where setting $b/a = 81/80$ in $c = (b-a)/(b+a)$ gives $c = 1/161$ exactly with $161 = 80 + 81$.
@@ -75,7 +75,7 @@ See the [CLI reference](../cli/reference.mdx#renormalizations).
 
 Notably all lcm families of size 12 or smaller are perfect renormalisations. 
 Lcms 15, 18, 20 and 24 have a mixed bag of renormalisations - some bases are perfect, some require the syntonic comma, some are on the JND edge of about 1% and some are quite large (2.6%).
-These four families are tabulated and discussed below.
+These four families are tabulated and discussed below (each table is the output of the same command with its own `--lcm` value: `--lcm 15`, `18`, `20`, `24`).
 
 Each row renormalises a family onto one base fraction. Bolded entries in the **Fractions** column are
 images that fall outside the good fractions, and **LCM** is the wave pattern length of that (pre-snap)

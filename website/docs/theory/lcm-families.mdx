@@ -7,7 +7,7 @@ import Player from '@site/src/components/Player';
 
 # LCM Families
 
-Given a set of [good fractions](../intro.mdx), we can compute the LCM of the denominators of any
+Given a set of [good fractions](good-fractions.mdx), we can compute the LCM of the denominators of any
 non-empty subset — this LCM is the **wave pattern length** for that subset. For a given LCM $L$,
 the maximal subset of the good fractions whose denominators have LCM exactly $L$ is the **LCM
 family** of size $L$.
@@ -187,7 +187,7 @@ flowchart TD
     C7 -.-> C9
     C8 -.-> C6
 ```
-From this we see that all LCM families of max WPD 24 and max prime 5 pool into either the odd-length LCM 15 or even length LCM 24, with LCM 18 sitting between them.
+From this we see that all LCM families of max WPL 24 and max prime 5 pool into either the odd-length LCM 15 or even length LCM 24, with LCM 18 sitting between them.
 
 Looking at the full structure it is tempting to guess that the size for a good fraction is 16, but the maximum lcm family size might be 12, exploiting the isomorphic nature of octave renormalized fractions.
 Running 
