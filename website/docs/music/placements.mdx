@@ -58,63 +58,19 @@ Given the tonic (key 0), we can list all placements which contain it by running
 melodroid table key-supersets --keys 0 --ktet 12 --collapse
 ```
 
-(The `--collapse` flag folds placements that cover the same keys, down from 63 placements to 41)
+The `--collapse` flag folds placements that cover the same keys, down from 63 placements to 41.
 
-We can collapse even further by using lcm families.
+We note that not only is the tonic contained in each of the placements listed, but that some placements contain each other.
+For instance 0 is in 0 7 and 0 4 7, but 0 7 is also in 0 4 7.
 
-As noted earlier there are 9 classes of lcm families.
-The 9 families correspond to a tonic (lcm 1), a dyad (lcm 2), a triad (lcm 3,4), a tetrad (lcm 5,6), the pentad (lcm 8,9,10,12), two different hexads (lcm 18,20), and two different heptads (lcm 15,24).
+* Two placements are **adjacent** if the larger placement contains the smaller placement. The unshared keys are called **distinguishing keys**.
+* Two placement are **directly adjacent** if they are adjacent, and there is no third placement adjacent to both.
 
-Since each family has a specific **shape** (keys relative to a root), this reduces the whole structure to just **9 shapes** and **18 distinct relationships** between them.
-(Every placement of a given shape is a transposition of every other — all six lcm-20 placements are one shape, all seven lcm-15 are one shape, and so on.)
+From this we can produce **placements graphs** which show a placement and all of its directly adjacent placements.
 
-The following graph shows all 18 relationships at once, one per edge. Each node is a shape (with one
-example placement shown), each edge is labelled by a single representative placement pair, and every
-other placement of that shape realises the same relationship transposed.
+### The Tonic Placement Graph
 
-```mermaid
-flowchart TD
-    S1["tonic · e.g. 1@0<br/>{0}"]
-    S2["dyad · e.g. 2@0<br/>{0 7}"]
-    S3["triad · e.g. 4@0<br/>{0 4 7}"]
-    S5["tetrad · e.g. 5@0<br/>{0 3 8 10}"]
-    S8["pentad · e.g. 8@0<br/>{0 2 4 7 11}"]
-    H18["hexad-A (18) · e.g. 18@0<br/>{0 2 5 7 9 10}"]
-    H20["hexad-B (20) · e.g. 20@0<br/>{0 3 4 7 8 10}"]
-    P15["heptad-A (15) · e.g. 15@0<br/>{0 1 3 5 8 9 10}"]
-    P24["heptad-B (24) · e.g. 24@0<br/>{0 2 4 5 7 9 11}"]
-
-    S1 -- "1@0→2@0 (fifth +7)" --> S2
-    S1 -- "1@0→2@5 (fourth +5)" --> S2
-    S2 -- "2@0→3@7 (+4)" --> S3
-    S1 -- "1@0→3@3 (+3,8)" --> S3
-    S2 -- "2@0→5@9 (+5,9)" --> S5
-    S5 -- "5@0→8@8 (+7)" --> S8
-    S2 -- "2@0→8@8 (+3,8,10)" --> S8
-    S2 -- "2@0→18@5 (+2,3,5,10)" --> H18
-    S3 -- "3@0→5@9 (+7)" --> S5
-    S3 -- "3@0→8@10 (+2,10)" --> S8
-    S8 -- "8@0→20@4 (+8)" --> H20
-    S3 -- "3@0→20@5 (+1,3,8)" --> H20
-    S5 -- "5@0→18@3 (+1,5)" --> H18
-    S8 -- "8@0→18@2 (+9)" --> H18
-    H18 -- "18@0→15@9 (+6)" --> P15
-    H18 -- "18@0→24@5 (+4)" --> P24
-    H18 -- "18@0→24@10 (+3)" --> P24
-    H20 -- "20@0→15@7 (+5)" --> P15
-```
-
-We can illustrate these 18 relationships with three **shape graphs**, one for each shape from the tonic upward. 
-
-* A shape graph starts with a shape as root and then branches into **directly adjacent** shapes via **distinguishing keys**.
-* Two shapes are **adjacent** if the larger shape contains the smaller shape. The distinguishing keys are the unshared keys.
-* Two shapes are directly adjacent if they are adjacent, and there is no third shape adjacent to both.
-
-The tonic branches only into the two dyads and one triad; 
-the dyad adds branches which leap straight past the triad into larger families;
-everything whose source is a triad or larger shape lives inside a single triad graph.
-
-### The Tonic Graph
+The tonic is directly adjacent only to the two dyads `2@0`/`2@5` and the triad `3@3`.
 
 ```mermaid
 flowchart TD
@@ -128,9 +84,10 @@ flowchart TD
     T -- "+3,8  (→ triad)" --> X
 ```
 
-The tonic is directly adjacent only to the two dyads `2@0`/`2@5` and the triad `3@3`.
+### The Dyad Placement Graph
 
-### The Dyad Graph
+The dyad `2@0` is shown below.
+The mirror dyad `2@5` from the tonic graph is identical but shifted +5 (`5@2`, `8@1`, `18@10`).
 
 ```mermaid
 flowchart TD
@@ -146,12 +103,14 @@ flowchart TD
     D0 -- "+2,3,5,10  (bypass → hexad 18)" --> N185
 ```
 
-The mirror dyad `2@5` carries the identical branch shifted +5 (`5@2`, `8@1`, `18@10`). These
-bypass scales still climb into the same upper families (`5@9 → 18@0`, `8@8 → 20@0`,
-`18@5 → 15@2`), so the dyad can reach every heptad without ever sounding a triad along the way.
+### The Triad Placement Graph
+The triad `4@0` is shown below.
 
-### The Triad Graph
+TODO: add triad placement graph
 
+TODO: Add all higher order lcm families from the tonic supersets, including the tetrad, pentad, the two hexads and the two heptads.
+
+TODO: While quite illustrative, how does this old triad graph fit in with the new definitions? It is not a strict placement graph.
 ```mermaid
 flowchart TD
     M["4@0<br/>{0 4 7}"]
@@ -191,8 +150,58 @@ The triad graph contains every relationship whose source is a triad
 or a larger shape (tetrad → pentad → hexad → heptad, and the lcm-20 branch), so no separate tetrad,
 pentad or hexad graph is needed.
 
-(`5@4` also reaches `18@7`; `20@9` and `20@4` also cover `15@4` and `15@11`, drawn here via `18@7`
-and `18@2`.) The `4@5` and `3@3` branches are this same graph shifted +5 and +8, and the lcm-5
-placements are the `5@4 → …` sub-branch of the +8 copy, so none of them are redrawn.
+
+--- rework below ---
+
+As noted earlier there are 9 classes of lcm families.
+The 9 families correspond to a tonic (lcm 1), a dyad (lcm 2), a triad (lcm 3, 4), a tetrad (lcm 5, 6), the pentad (lcm 8, 9, 10, 12), two different hexads (lcm 18, 20), and two different heptads (lcm 15, 24).
+
+Since each family has a specific **shape**, this reduces the whole structure to just 9 shapes and 18 distinct relationships between them.
+(Every placement of a given shape is a transposition of every other — all six lcm-20 placements are one shape, all seven lcm-15 are one shape, and so on.)
+
+The following graph shows all 18 relationships at once, one per edge. Each node is a shape (with one
+example placement shown), each edge is labelled by a single representative placement pair, and every
+other placement of that shape realises the same relationship transposed.
+
+```mermaid
+flowchart TD
+    S1["tonic · e.g. 1@0<br/>{0}"]
+    S2["dyad · e.g. 2@0<br/>{0 7}"]
+    S3["triad · e.g. 4@0<br/>{0 4 7}"]
+    S5["tetrad · e.g. 5@0<br/>{0 3 8 10}"]
+    S8["pentad · e.g. 8@0<br/>{0 2 4 7 11}"]
+    H18["hexad-A (18) · e.g. 18@0<br/>{0 2 5 7 9 10}"]
+    H20["hexad-B (20) · e.g. 20@0<br/>{0 3 4 7 8 10}"]
+    P15["heptad-A (15) · e.g. 15@0<br/>{0 1 3 5 8 9 10}"]
+    P24["heptad-B (24) · e.g. 24@0<br/>{0 2 4 5 7 9 11}"]
+
+    S1 -- "1@0→2@0 (fifth +7)" --> S2
+    S1 -- "1@0→2@5 (fourth +5)" --> S2
+    S2 -- "2@0→3@7 (+4)" --> S3
+    S1 -- "1@0→3@3 (+3,8)" --> S3
+    S2 -- "2@0→5@9 (+5,9)" --> S5
+    S5 -- "5@0→8@8 (+7)" --> S8
+    S2 -- "2@0→8@8 (+3,8,10)" --> S8
+    S2 -- "2@0→18@5 (+2,3,5,10)" --> H18
+    S3 -- "3@0→5@9 (+7)" --> S5
+    S3 -- "3@0→8@10 (+2,10)" --> S8
+    S8 -- "8@0→20@4 (+8)" --> H20
+    S3 -- "3@0→20@5 (+1,3,8)" --> H20
+    S5 -- "5@0→18@3 (+1,5)" --> H18
+    S8 -- "8@0→18@2 (+9)" --> H18
+    H18 -- "18@0→15@9 (+6)" --> P15
+    H18 -- "18@0→24@5 (+4)" --> P24
+    H18 -- "18@0→24@10 (+3)" --> P24
+    H20 -- "20@0→15@7 (+5)" --> P15
+```
+
+We can illustrate these 18 relationships with three **placement graphs**, one for each shape from the tonic upward. 
+A placement graph starts with a placement as root and then branches into **directly adjacent** placements via **distinguishing keys**.
+
+
+The tonic branches only into the two dyads and one triad; 
+the dyad adds branches which leap straight past the triad into larger families;
+everything whose source is a triad or larger shape lives inside a single triad graph.
+
 
 This tonic structure linking the different lcm placement shapes could be the foundation for scales and chord progressions.
