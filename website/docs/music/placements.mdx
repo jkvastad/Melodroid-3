@@ -63,12 +63,12 @@ The `--collapse` flag folds placements that cover the same keys, down from 63 pl
 We note that not only is the tonic contained in each of the placements listed, but that some placements contain each other.
 For instance 0 is in 0 7 and 0 4 7, but 0 7 is also in 0 4 7.
 
-* Two placements are **adjacent** if the larger placement contains the smaller placement. The unshared keys are called **distinguishing keys**.
-* Two placements are **directly adjacent** if they are adjacent, and no third placement contained by the larger placement also contains the smaller placement.
+* Two key sets are **adjacent** if the larger key set contains the smaller key set. The unshared keys are called **distinguishing keys**.
+* Two key sets are **directly adjacent** if they are adjacent, and no third key set contained by the larger key set also contains the smaller key set.
 
 We also note that several supersets have identical shapes; 2@0 and 2@5 are both a fifth with intervals `{0 7}`, while 3@3 and 4@0 are both triads with intervals `{0 4 7}`.
 
-* Two placements have the same **shape** if their key sets are equal under transposition modulo 12.
+* Two key sets have the same **shape** if their key sets are equal under transposition modulo 12.
 
 Example transposed sets with the same shape:
 * 4@0: root 0, intervals `{0,4,7}` → `{0, 4, 7}` = `{0 4 7}`
