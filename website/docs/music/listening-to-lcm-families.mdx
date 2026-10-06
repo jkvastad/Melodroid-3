@@ -81,5 +81,27 @@ HPT is not directly a perfect fit to music, since then all lcms would be pleasan
 Let's look at some traditional non-lcm scales and chords for comparison, and maybe glean some insight into what is going on.
 
 ### Traditional Scales and Chords
-Let's look at the harmonic minor, the major blues and the pentatonic scale
+Let's look at the harmonic minor, the major blues and the pentatonic scale.
+
+Try it below the same way as before.
+
+<RhythmPatternPlayer
+  meter="4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: 'Harmonic minor (0 2 3 5 7 8 11)', keys: [0, 2, 3, 5, 7, 8, 11]},
+    {label: 'Major blues (0 2 3 4 7 9)', keys: [0, 2, 3, 4, 7, 9]},
+    {label: 'Major pentatonic (0 2 4 7 9)', keys: [0, 2, 4, 7, 9]},
+  ]}
+/>
+
+The harmonic minor harm@0 = `{0, 2, 3, 5, 7, 8, 11}` is quite close to 15@2, having exchanged key 10 for key 8, but it sounds more pleasant than pure lcm 15.
+
+The major pentatonic pent@0 = `{0, 2, 4, 7, 9}` is a subset of several placements, namely 15@4,11, 18@2,7 and 24@0,5,7. 
+Accompanied by minor and major triads it sounds quite pleasant.
+
+The major blues blues@0 = `{0, 2, 3, 4, 7, 9}` is the major pentatonic but with an added key 3. 
+This makes it adjacent to 8@0, 15@2,6,11, 20@0 18@5, and 24@3,5.
+Accompanied by minor and major triads it sounds quite pleasant, especially with a faster beat, increased syncopation and lowered resolution to make it "swing".
 
