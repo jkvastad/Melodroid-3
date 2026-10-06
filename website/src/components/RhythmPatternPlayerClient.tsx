@@ -288,19 +288,27 @@ function generateOpenWalkRelaxed(
 }
 
 // Progression heuristics — how the per-group chords are chosen from the set. Each maps to a
-// chord-pool generator (see progressionTriads memo): "tertian-triads" draws only the four
-// 3-note triad qualities (maj/min/dim/aug); "tertian-chords" draws any stack of thirds (those
-// triads plus the tertian seventh chords); "random-triads" draws any minor-second-free 3-note
-// triad. The set constrains which of these actually appear.
-type ProgressionHeuristic = {
-  id: 'tertian-triads' | 'major-minor-triads' | 'tertian-chords' | 'random-triads';
-  label: string;
-};
+// chord-pool generator (see HEURISTIC_POOLS): "tertian-triads" draws only the four 3-note triad
+// qualities (maj/min/dim/aug); "tertian-chords" draws any stack of thirds (those triads plus the
+// tertian seventh chords); "random-triads" draws any minor-second-free 3-note triad;
+// "random-triad" / "random-tetrad" draw any 3- / 4-note subset with no filter at all (minor
+// seconds allowed — the deliberately unconstrained contrast to "random-triads"). The set
+// constrains which of these actually appear.
+type HeuristicId =
+  | 'tertian-triads'
+  | 'major-minor-triads'
+  | 'tertian-chords'
+  | 'random-triads'
+  | 'random-triad'
+  | 'random-tetrad';
+type ProgressionHeuristic = {id: HeuristicId; label: string};
 const PROGRESSION_HEURISTICS: ProgressionHeuristic[] = [
   {id: 'tertian-triads', label: 'Triads (maj/min/dim/aug)'},
   {id: 'major-minor-triads', label: 'Major and minor triads'},
   {id: 'tertian-chords', label: 'Tertian (triads + 7ths)'},
   {id: 'random-triads', label: 'Random triads (no m2)'},
+  {id: 'random-triad', label: 'Random triad (any 3)'},
+  {id: 'random-tetrad', label: 'Random tetrad (any 4)'},
 ];
 
 // Chord mode only auditions LCM families within the study range; larger folded LCMs
@@ -500,6 +508,28 @@ function isMajorOrMinorTriad(notes: number[]): boolean {
 function majorMinorTriads(set: number[]): number[][] {
   return combinations(foldOctave(set), 3).filter(isMajorOrMinorTriad);
 }
+
+// Progression-mode chord pools: every 3- (resp. 4-) note subset of the folded set, with NO filter
+// — unlike m2FreeTriads these keep minor seconds, so the draw is genuinely unconstrained. chordOffsets
+// voices whatever comes out (an m2 just costs penalty). Empty when the set has fewer than 3 (resp. 4)
+// notes, which the progression bake / live draw already guard against.
+function randomTriads(set: number[]): number[][] {
+  return combinations(foldOctave(set), 3);
+}
+function randomTetrads(set: number[]): number[][] {
+  return combinations(foldOctave(set), 4);
+}
+
+// Single source of truth mapping a heuristic id to its chord-pool generator, shared by progression
+// mode (progressionTriads) and chord-walk mode (walkCandidates) so the two selection sites never drift.
+const HEURISTIC_POOLS: Record<HeuristicId, (set: number[]) => number[][]> = {
+  'tertian-triads': tertianTriads,
+  'major-minor-triads': majorMinorTriads,
+  'tertian-chords': tertianChords,
+  'random-triads': m2FreeTriads,
+  'random-triad': randomTriads,
+  'random-tetrad': randomTetrads,
+};
 
 // The pulses that actually sound, in the order the scheduler fires them. Factored so the
 // baked melody assigns one key per event in exactly that order (play() reuses this).
@@ -936,15 +966,7 @@ export default function RhythmPatternPlayerClient({
   // or any m2-free triad) that are a subset of ≥1 curated placement, deduped across placements.
   const walkCandidates = useMemo(() => {
     if (!chordWalkOn || !curatedPool) return null;
-    const id = PROGRESSION_HEURISTICS[walkHeuristicIdx].id;
-    const gen =
-      id === 'tertian-triads'
-        ? tertianTriads
-        : id === 'major-minor-triads'
-          ? majorMinorTriads
-          : id === 'tertian-chords'
-            ? tertianChords
-            : m2FreeTriads;
+    const gen = HEURISTIC_POOLS[PROGRESSION_HEURISTICS[walkHeuristicIdx].id];
     const seen = new Set<string>();
     const out: number[][] = [];
     for (const p of curatedPool)
@@ -1157,17 +1179,7 @@ export default function RhythmPatternPlayerClient({
     // A pinned set collapses the pool to its one chord — every group plays it, heuristic ignored.
     if (setEntry.chord && setEntry.chord.length > 0) return [foldOctave(setEntry.chord)];
     const set = setEntry.keys;
-    const id = PROGRESSION_HEURISTICS[selectedHeuristicIdx].id;
-    switch (id) {
-      case 'tertian-triads':
-        return tertianTriads(set);
-      case 'major-minor-triads':
-        return majorMinorTriads(set);
-      case 'tertian-chords':
-        return tertianChords(set);
-      case 'random-triads':
-        return m2FreeTriads(set);
-    }
+    return HEURISTIC_POOLS[PROGRESSION_HEURISTICS[selectedHeuristicIdx].id](set);
   }, [progressionOn, progression, selectedProgIdx, selectedHeuristicIdx],
   );
   const progressionTriadsRef = useRef(progressionTriads);
