@@ -4,6 +4,7 @@ description: Melody and harmony of LCM families.
 ---
 
 import Player from '@site/src/components/Player';
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 
 # Listening to LCM Families
 
@@ -49,12 +50,24 @@ For dynamic harmony we need chord accompaniment, rhythm and melody.
 Rhythm is discussed in the [related research on rhythm.](/docs/related-research/rhythm)
 
 For chords and melody we have several different options.
-The most naive approach is perhaps to simple select an lcm, draw 3-4 notes from it as a static chord, then draw notes from the same lcm to play some melody:
+The most naive approach is perhaps to simply select an lcm, draw a few notes from it as a static chord, then draw notes from the same lcm to play some melody.
 
-TODO: insert rhythmpatternplayer according to the above - 
-reader can choose one of the lcms, 
-then 3-4 notes are chosen from the lcm to create a random chord which is then played with its best voicing,
-melody is then played by drawing notes from the lcm
+Try it below. Pick an lcm family from the **set** dropdown, press **Generate** to roll a random chord drawn from that family (voiced with its best voicing), and **Play** to loop it with a melody drawn from the same family. 
+The **chord** dropdown defaults to three-note triads; switch it to *Tertian (triads + 7ths)* to also draw four-note chords.
 
-
-We look closer into this in [Preference](/docs/music/preference).
+<RhythmPatternPlayer
+  meter="4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: '1 · Unison (0)', keys: [0], chord: [0]},
+    {label: '2 · Perfect Fifth (0 7)', keys: [0, 7], chord: [0, 7]},
+    {label: '3,4 · Major Third (0 4 7)', keys: [0, 4, 7]},
+    {label: '5,6 · Add 9 (0 4 7 14)', keys: [0, 4, 7, 14]},
+    {label: '8,9,10,12 · Major 9 (0 4 7 11 14)', keys: [0, 4, 7, 11, 14]},
+    {label: '15 (0 3 7 11 14 17 22)', keys: [0, 3, 7, 11, 14, 17, 22]},
+    {label: '18 · Minor 11 (0 3 7 10 14 17)', keys: [0, 3, 7, 10, 14, 17]},
+    {label: '20 (0 4 8 11 15 18)', keys: [0, 4, 8, 11, 15, 18]},
+    {label: '24 · Major 13 (0 4 7 11 14 17 21)', keys: [0, 4, 7, 11, 14, 17, 21]},
+  ]}
+/>
