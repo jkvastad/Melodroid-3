@@ -4,39 +4,82 @@ description: The preference principle — why perception favours lcm 24 over 15 
 ---
 
 import Player from '@site/src/components/Player';
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 
 # Preference
 
 As we heard in the [Listening to LCM Families](/docs/music/listening-to-lcm-families) section,
 lcms with 6+ notes start sounding tense or dissonant, with the exception of lcm 18 being the minor 11 chord.
+
+We also heard that harmonic minor, in a sense a modified lcm 15, produces better/more coherent melodies than pure lcm 15.
+Similarly the major blues also produced nice melodies despite not being a proper lcm family.
+
 This raises some questions:
 
 * Why does the other hexad, lcm 20, not sound consonant?
 * Why is the lcm 24 heptad more consonant than the lcm 15 heptad?
+* Why do blues and harmonic minor produce coherent melodies without being proper lcm sets?
 
-Looking back at the placement structure, lcm 20 must be reached via the lcm triad, but such a triad is also always present in lcm 15, 18 and 24.
+Looking back at [the placement structure](/docs/music/placements) we see that for any given note, there are plenty of possibilities for which placement it belongs to.
+Faced with such a multitude of ambiguous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities.
 
-Faced with such a multitude of ambiguous interpretations of frequencies, 
-the brain might employ heuristic preference and collapse competing possibilities.
-
-For instance, it might try to avoid using prime 5 (the largest good fraction prime) to express the lcms, a prime absent from both lcm 18 and 24.
+## The principle of preference
+One way to decide which placement to perceive is to to avoid using prime 5 (the largest good fraction prime) to express the lcms, a prime absent from both lcm 18 and 24.
+Such a bias would lead to a principle when parsing sound for music:
 
 * **Preference Principle** — Perception prefers small primes in ambiguous contexts.
 
-Looking back at the placement structure we see that 8@0 has supersets 18@2, 20@4, 15@11 and 24@0,7.
+Lets look at 15@11, displayed as a leaf node in the extended triad placement graph.
 
-This could mean that when playing 15@11, the brain easily slips into perceiving it as 18@2 or 24@0,7.
-Indeed if we play melody over 15@11 key 7 seems to be a sour note, even though it is part of 15@11.
+When playing 15@11, the preference principle could make the brain easily it as 18@2.
+Since 18@2 has supersets of 24@0,7 an attempt to play 15@11 might be perceived as playing 18@2 or 24@0,7 but with bad notes - namely key 8 which is exclusive to 15@11.
+
+Indeed if we play melody over 15@11 then key 7 seems to be a sour note, producing a dissonant experience, even though it is part of 15@11.
+
+The player below lets us hear this. It sounds a fixed accompaniment chord — swap between a major
+`4 8 11` and a minor `9 0 4` in the chord dropdown, both subsets of 15@11 — while drawing a random
+melody from the selected set (15@11 by default). Whenever the melody lands on key **7**, its bar
+turns **black**, so you can see exactly when the sour note sounds against the chord. Switching the
+melody to `15s@11` drops key 7 entirely (the stable 15, without the sour note) for comparison, and
+the preferred collapses (18@2, 24@0, 24@7) reinterpret the same region without the 15@11-exclusive
+key 8.
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  chord
+  markKeys={[7]}
+  presets={[
+    {label: 'Major 4 8 11', keys: [4, 8, 11], melodies: [
+      {label: '15@11', lcm: 15, at: 11},
+      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11]},
+      {label: '18@2', lcm: 18, at: 2},
+      {label: '24@0', lcm: 24, at: 0},
+      {label: '24@7', lcm: 24, at: 7},
+    ]},
+    {label: 'Minor 9 0 4', keys: [9, 0, 4], melodies: [
+      {label: '15@11', lcm: 15, at: 11},
+      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11]},
+      {label: '18@2', lcm: 18, at: 2},
+      {label: '24@0', lcm: 24, at: 0},
+      {label: '24@7', lcm: 24, at: 7},
+    ]},
+  ]}
+/>
+
+Notably it is easier for the perception to sour for the major chord rather than the minor chord - 
+this could perhaps be due to 9 0 4 having a superset of 8@5 which naturally includes key 7, while 4 8 11 must resolve to 15@11 or its subset 20@4 to fit in key 7.
+
+
+** deferred/tentative below **
+
 Notably key 7 is the root of 24@7 and the dyad for 24@0.
 The dyad for 24@7 is key 2, which sounds good with 15@11.
 The root for 24@0 is key 0, which sounds good with 15@11.
 Both key 0 and 2 provide the characteristic oriental feel of lcm 15.
 Interestingly key 5 fits well with the other keys of 15@11, producing the harmonic minor at 9.
 Key 5 is part of both 24@0,7 but not 15@11.
-
-
-
-** deferred below **
 
 Notable features:
 Perhaps by being the dyad in 8@0 key 7 collapses 15@11?

@@ -54,6 +54,9 @@ export type RhythmPatternPlayerProps = {
   phrase?: string; // initial phrase scheme, e.g. 'ABAC' or 'A Ba A Ca'; default ''
   pitchHz?: number; // fixed blip pitch in Hz; default 165
   height?: number; // plot height in px; default 240
+  markKeys?: number[]; // "watched" pitch classes: their firing bars render as a distinct
+  // black/outlined bar instead of the spectrum hue, so the reader sees exactly when one of
+  // these keys sounds (e.g. the sour key 7 over a 15@11 melody). Folded to [0,12); default none
   melody?: boolean; // show the lcm-family melody controls (this page only); default false
   chord?: boolean; // chord mode: roll a random chord, find the LCM families whose placement
   // contains it, draw melody from a matched family, and sound the chord as long notes
@@ -630,6 +633,11 @@ const spectrumHue = (key: number): number => ((((key % 12) + 12) % 12) / 12) * 2
 const pitchFill = (key: number): string => `hsla(${spectrumHue(key)}, 85%, 55%, 0.6)`;
 const pitchStroke = (key: number): string => `hsl(${spectrumHue(key)}, 85%, 45%)`;
 
+// "Watched key" bar colours (see the markKeys prop): an opaque near-black that reads over the
+// amber playhead and both light/dark themes, standing clearly apart from the spectrum hues.
+const MARK_FILL = 'rgba(20,20,20,0.85)';
+const MARK_STROKE = '#000';
+
 // The same red→violet ramp as the bars, as a CSS gradient for the plot's legend swatch:
 // one stop per pitch class 0…11 so the legend gradient matches the bar colours exactly.
 const SPECTRUM_GRADIENT = `linear-gradient(to right, ${Array.from(
@@ -744,6 +752,7 @@ export default function RhythmPatternPlayerClient({
   phrase: phraseProp = '',
   pitchHz = 196,
   height = 240,
+  markKeys,
   melody = false,
   chord = false,
   presets,
@@ -935,6 +944,18 @@ export default function RhythmPatternPlayerClient({
   // baked-colour effect and the live loop-off scheduler write them and cheap-redraw.
   const fillColorsRef = useRef<string[] | null>(null);
   const strokeColorsRef = useRef<string[] | null>(null);
+
+  // Watched keys folded to [0,12). A firing bar whose pitch class is watched is painted the
+  // flat mark colour (MARK_FILL/MARK_STROKE) instead of its spectrum hue; fillFor/strokeFor are
+  // the single funnel both colour-assignment sites (baked effect + live scheduler) go through so
+  // loop-on and loop-off agree. Empty set ⇒ always falls through to the spectrum colour.
+  const markedKeys = useMemo(
+    () => new Set((markKeys ?? []).map((k) => ((k % 12) + 12) % 12)),
+    [markKeys],
+  );
+  const isMarked = (key: number) => markedKeys.has(((key % 12) + 12) % 12);
+  const fillFor = (key: number) => (isMarked(key) ? MARK_FILL : pitchFill(key));
+  const strokeFor = (key: number) => (isMarked(key) ? MARK_STROKE : pitchStroke(key));
 
   // Sing-along playhead: the current bar's unitBeat (null when stopped), read by
   // playheadPlugin. playRunRef tags each play() run so scheduled callbacks left in flight
@@ -1301,8 +1322,8 @@ export default function RhythmPatternPlayerClient({
       const strokes = Array<string>(n).fill(BLUE_STROKE);
       const idx = firingPulseIndices(pattern.pulses);
       bakedKeys.forEach((key, e) => {
-        fills[idx[e]] = pitchFill(key);
-        strokes[idx[e]] = pitchStroke(key);
+        fills[idx[e]] = fillFor(key);
+        strokes[idx[e]] = strokeFor(key);
       });
       fillColorsRef.current = fills;
       strokeColorsRef.current = strokes;
@@ -1314,7 +1335,7 @@ export default function RhythmPatternPlayerClient({
     plotRef.current?.redraw(true, false);
     // loopMelody is a dep so flipping loop back on mid-play restores the baked colours the
     // live loop-off scheduler had overwritten (the body always paints the baked preview).
-  }, [pattern, melodyOn, octaveKeys, bakedKeys, loopMelody]);
+  }, [pattern, melodyOn, octaveKeys, bakedKeys, loopMelody, markedKeys]);
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
@@ -1881,10 +1902,10 @@ export default function RhythmPatternPlayerClient({
           if (chordOnset && walkOn) setCurrentPlacement(displayPlacement);
           if (colourKey != null) {
             (fillColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_FILL))[bar] =
-              pitchFill(colourKey);
+              fillFor(colourKey);
             (strokeColorsRef.current ??= Array<string>(pulses.length).fill(BLUE_STROKE))[
               bar
-            ] = pitchStroke(colourKey);
+            ] = strokeFor(colourKey);
           }
           // Rebuild paths only when a colour changed (so disp re-reads); otherwise a cheap
           // repaint that still re-runs the playhead draw hook. setScale=false keeps the axes.
@@ -2093,6 +2114,24 @@ export default function RhythmPatternPlayerClient({
               }}
             />
             <span style={{opacity: 0.85}}>high</span>
+            {markedKeys.size > 0 && (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 10,
+                    height: 10,
+                    borderRadius: '2px',
+                    background: MARK_FILL,
+                    border: `1px solid ${MARK_STROKE}`,
+                    marginLeft: '0.4rem',
+                  }}
+                />
+                <span style={{opacity: 0.85}}>
+                  key {[...markedKeys].sort((a, b) => a - b).join(', ')}
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>
