@@ -20,7 +20,10 @@ General statements of how things sound are thus to be understood as my experienc
 
 We start with static harmony, where we let a fix set of frequencies play. Then we move on to dynamic harmony, where we change frequencies along with a rhythm.
 
-## Static Harmony
+## LCM-Bases Scales and Chords
+Let's first listen directly to the lcm families.
+
+### Static Harmony
 Our good-fraction LCM families mostly correspond to traditional chords and scales:
 
 | LCM | Name | Chord | Arpeggio |
@@ -44,7 +47,7 @@ where chords are meant to function as static blocks, scales are rather sets of k
 
 Perhaps tension from the high lcms is a feature of the high number of notes, although not uniquely as lcm 18 and 20 both have 6 notes but 18 is decidedly more pleasant than 20.
 
-## Dynamic Harmony
+### Dynamic Harmony
 For dynamic harmony we need chord accompaniment, rhythm and melody.
 
 Rhythm is discussed in the [related research on rhythm.](/docs/related-research/rhythm)
@@ -52,7 +55,6 @@ Rhythm is discussed in the [related research on rhythm.](/docs/related-research/
 For chords and melody we have several different options.
 The most naive approach is perhaps to simply select an lcm, draw a few notes from it as a static chord, then draw notes from the same lcm to play some melody.
 
-### LCM-based Scales and Chords
 Try it below. Pick an lcm family from the **set** dropdown, press **Generate** to roll a random chord drawn from that family (voiced with its best voicing), and **Play** to loop it with a melody drawn from the same family. 
 The **chord** dropdown defaults to three-note triads; switch it to *Tertian (triads + 7ths)* to also draw four-note chords, or to *Random triad (any 3)* / *Random tetrad (any 4)* to draw genuinely unconstrained 3- or 4-note chords from the set (minor seconds allowed, unlike *Random triads (no m2)*).
 
@@ -76,14 +78,35 @@ The **chord** dropdown defaults to three-note triads; switch it to *Tertian (tri
 Random triads and tertians sound quite pleasant with lcms 1 to 12 and 18, a bit less so with lcm 24 and least plasant with lcm 20 and 15.
 
 This mixed outcome of randomly drawing melody and chords from lcms sets is quite interesting.
-HPT is not directly a perfect fit to music, since then all lcms would be pleasant, but it does fit somewhat since all the lcms 12 and lower sound quite nice.
+If HPT was a perfect fit to music, should all lcms be pleasant? 
+The fact that lcms 12 and lower sound quite nice warrants some further investigation.
 
-Let's look at some traditional non-lcm scales and chords for comparison, and maybe glean some insight into what is going on.
+Let's look at some traditional non-lcm scales and chords for comparison and maybe glean some insight into what is going on.
 
-### Traditional Scales and Chords
+## Traditional Scales and Chords
 Let's look at the harmonic minor, the major blues and the pentatonic scale.
+These are not LCM families, but instead popular traditional scales.
 
-Try it below the same way as before.
+### Static Harmony
+
+| Scale | Chord | Arpeggio |
+| :--- | :--- | :--- |
+| Harmonic minor | <Player keys={[0, 3, 7, 11, 14, 17, 20]} fundamental={174.61} gain={0.7} label="▶ 0 3 7 11 14 17 20" /> | <Player keys={[0, 3, 7, 11, 14, 17, 20]} mode="arpeggio" fundamental={174.61} gain={0.7} label="▶ 0 3 7 11 14 17 20" /> |
+| Major pentatonic | <Player keys={[0, 4, 7, 9, 14]} fundamental={174.61} gain={0.8} label="▶ 0 4 7 9 14" /> | <Player keys={[0, 4, 7, 9, 14]} mode="arpeggio" fundamental={174.61} gain={0.8} label="▶ 0 4 7 9 14" /> |
+| Major blues | <Player keys={[0, 3, 7, 9, 14, 16]} fundamental={174.61} gain={0.8} label="▶ 0 3 7 9 14 16" /> | <Player keys={[0, 3, 7, 9, 14, 16]} mode="arpeggio" fundamental={174.61} gain={0.8} label="▶ 0 3 7 9 14 16" /> |
+
+The harmonic minor harm@0 = `{0, 2, 3, 5, 7, 8, 11}` is quite close to 15@2, having exchanged key 10 for key 8, but it is not an lcm family and lacks any lcm superset.
+Similarly to lcm 15 it sounds dissonant as a block chord, and with arpeggio the last note seems to "break" any coherence during the build up of notes.
+
+The major pentatonic pent@0 = `{0, 2, 4, 7, 9}` is a subset of several placements, namely 15@4,11, 18@2,7 and 24@0,5,7.
+It sounds quite nice as a block chord.
+
+The major blues blues@0 = `{0, 2, 3, 4, 7, 9}` is the major pentatonic but with an added key 3.
+This makes it adjacent to 8@0, 15@2,6,11, 20@0 18@5, and 24@3,5.
+Unlike the major pentatonic, the major blues has no lcm superset, perhaps the reason for its dissonant sound as a block chord.
+
+### Dynamic Harmony
+While not impressive as block chords, these scales are instead traditionally used for drawing melody and chords.
 
 <RhythmPatternPlayer
   meter="4"
@@ -97,6 +120,7 @@ Try it below the same way as before.
 />
 
 The harmonic minor harm@0 = `{0, 2, 3, 5, 7, 8, 11}` is quite close to 15@2, having exchanged key 10 for key 8, but it sounds more pleasant than pure lcm 15.
+Playing it with major and minor triads produces a distinct kind of melancholic feel.
 
 The major pentatonic pent@0 = `{0, 2, 4, 7, 9}` is a subset of several placements, namely 15@4,11, 18@2,7 and 24@0,5,7. 
 Accompanied by minor and major triads it sounds quite pleasant.
@@ -105,3 +129,8 @@ The major blues blues@0 = `{0, 2, 3, 4, 7, 9}` is the major pentatonic but with 
 This makes it adjacent to 8@0, 15@2,6,11, 20@0 18@5, and 24@3,5.
 Accompanied by minor and major triads it sounds quite pleasant, especially with a faster beat, increased syncopation and lowered resolution to make it "swing".
 
+From this we note that so for all block chords which sound good are contained by even lcm supersets, 
+with problems arising for the largest families (6 or 7 members) and particularly for key sets related to lcm 15 (20 is a subset of 15, harmonic minor is similar to 15).
+
+In the next section we will look back at the shape and placements graphs to study the possibility of heuristic preference, 
+where the brain might prefer to parse wave components in a biased way, sometimes producing sour notes.
