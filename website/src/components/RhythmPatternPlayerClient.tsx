@@ -82,7 +82,18 @@ export type RhythmPatternPlayerProps = {
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
 // placementKeys) or an explicit folded key set (for scales that are not a plain placement,
 // e.g. the harmonic minor `0 3 4 6 7 9 11`). `label` is what the dropdown shows.
-export type DuetMelody = {label: string; lcm?: number; at?: number; keys?: number[]};
+// An optional `sequence` overrides the random draw: a fixed, authored phrase of raw keys with
+// octave contour (values outside [0,12) move up/down octaves) plus `null` rests (silent onsets).
+// It cycles over the generated firing events (looping/cutting to fit), so meter/subdivision/tempo
+// still shape the rhythm while the melody is curated. `keys`/`lcm`/`at` still define the pool
+// (legend, melodyOn, spectrum colouring); the sequence just picks the actual pitches.
+export type DuetMelody = {
+  label: string;
+  lcm?: number;
+  at?: number;
+  keys?: number[];
+  sequence?: (number | null)[];
+};
 // A guided-mode chord: its 12-tet keys (sounded as the low, re-struck accompaniment) plus
 // the melody sets offered under it. Two of these (minor / major) drive the two dropdowns.
 export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
@@ -1122,6 +1133,14 @@ export default function RhythmPatternPlayerClient({
   // pitch — the single flag that replaces the old `octaveKeys`-truthiness tests.
   const melodyOn = isRandomPitch || octaveKeys != null;
 
+  // The selected guided melody's authored phrase, or null for a random-pool melody. When set, the
+  // scheduler plays it in order over the firing events (cycling) instead of drawing from the pool;
+  // the pool (octaveKeys) still drives melodyOn / legend / colouring.
+  const melodySequence = useMemo(() => {
+    if (!guided) return null;
+    return presets![selectedChordIdx]?.melodies[selectedMelodyIdx]?.sequence ?? null;
+  }, [guided, presets, selectedChordIdx, selectedMelodyIdx]);
+
   // Loop-on melody: one random key per firing event, drawn with the same seeded RNG as
   // the rhythm so a given (pattern, family, seed) always yields the same phrase. Re-rolls
   // when the rhythm (pattern/seed) or the family changes; null when fixed pitch.
@@ -1174,6 +1193,7 @@ export default function RhythmPatternPlayerClient({
   // loop without a replay.
   const octaveKeysRef = useRef(octaveKeys);
   const bakedKeysRef = useRef(bakedKeys);
+  const melodySequenceRef = useRef(melodySequence);
   const loopMelodyRef = useRef(loopMelody);
   const loopChordsRef = useRef(loopChords);
   const freeRoamRef = useRef(freeRoam);
@@ -1291,6 +1311,9 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     bakedKeysRef.current = bakedKeys;
   }, [bakedKeys]);
+  useEffect(() => {
+    melodySequenceRef.current = melodySequence;
+  }, [melodySequence]);
   useEffect(() => {
     loopMelodyRef.current = loopMelody;
   }, [loopMelody]);
@@ -1860,18 +1883,26 @@ export default function RhythmPatternPlayerClient({
         // Loop-off re-rolls each hit; capture that key so the Draw callback can light up this
         // bar's spectrum colour when it sounds (loop-on / non-melody leave colourKey null).
         let colourKey: number | null = null;
+        // A sequence step that is `null` is a rest: the onset fires no note (freq stays unused),
+        // the bar keeps its default fill, but the playhead still advances.
+        let rest = false;
         if (melodyOnRef.current) {
+          const seq = melodySequenceRef.current;
           const baked = bakedKeysRef.current;
           const loopOn = loopMelodyRef.current && baked;
-          // Loop on → the frozen baked phrase. Else, if this cycle's melody is bound, replay it
-          // (so repeated groups restate their motif); otherwise re-roll a fresh pitch per hit.
-          let key = loopOn
-            ? baked![i % N]
-            : cycleMelody
-              ? cycleMelody[i % N]
-              : isRandomPitchRef.current
-                ? Math.random() * 12
-                : okeys![Math.floor(Math.random() * okeys!.length)];
+          // Authored phrase (if any) wins: play it in order over the firing events, cycling by the
+          // absolute event index so it loops continuously / cuts cleanly when it doesn't divide the
+          // pattern length. Else loop-on → the frozen baked phrase; else a bound cycle replays its
+          // motif; else re-roll a fresh pitch per hit.
+          let key: number | null = seq && seq.length
+            ? seq[i % seq.length]
+            : loopOn
+              ? baked![i % N]
+              : cycleMelody
+                ? cycleMelody[i % N]
+                : isRandomPitchRef.current
+                  ? Math.random() * 12
+                  : okeys![Math.floor(Math.random() * okeys!.length)];
           // Perception-walk: if this event opens its meter group, sound the group's opening key
           // (the note that selected the placement/perception) instead of a drawn pitch. Overrides
           // every path — baked, bound, and live — so the perception is always articulated first.
@@ -1886,8 +1917,14 @@ export default function RhythmPatternPlayerClient({
               if (ok != null) key = ((ok % 12) + 12) % 12;
             }
           }
-          freq = pitchHz * Math.pow(2, key / 12);
-          if (!loopOn) colourKey = key;
+          if (key == null) {
+            rest = true;
+          } else {
+            freq = pitchHz * Math.pow(2, key / 12);
+            // An authored phrase is deterministic, so colour it live every hit (its length need
+            // not divide the bar count, which the baked loop-on colouring would mishandle).
+            if (!loopOn || (seq && seq.length)) colourKey = key;
+          }
         }
         // One Draw callback per onset, fired exactly when it sounds: move the sing-along
         // playhead to this bar (all players) and, for loop-off melody, recolour it live.
@@ -1911,7 +1948,7 @@ export default function RhythmPatternPlayerClient({
           // repaint that still re-runs the playhead draw hook. setScale=false keeps the axes.
           plotRef.current.redraw(colourKey != null, false);
         }, at);
-        synth.triggerAttackRelease(freq, durSec, at, vel);
+        if (!rest) synth.triggerAttackRelease(freq, durSec, at, vel);
         prevTime = at;
         prevBeat = absBeat;
         i++;

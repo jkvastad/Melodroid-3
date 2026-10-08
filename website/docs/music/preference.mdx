@@ -24,53 +24,52 @@ Looking back at [the placement structure](/docs/music/placements) we see that fo
 Faced with such a multitude of ambiguous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities.
 
 ## The principle of preference
-One way to decide which placement to perceive is to to avoid using prime 5 (the largest good fraction prime) to express the lcms, a prime absent from both lcm 18 and 24.
+A prime absent from both lcm 18 and 24 is the largest good fraction prime 5. 
+One way to decide which placement to perceive is to avoid using it.
 Such a bias would lead to a principle when parsing sound for music:
 
 * **Preference Principle** — Perception prefers small primes in ambiguous contexts.
 
 Lets look at 15@11, displayed as a leaf node in the extended triad placement graph.
 
-When playing 15@11, the preference principle could make the brain easily it as 18@2.
-Since 18@2 has supersets of 24@0,7 an attempt to play 15@11 might be perceived as playing 18@2 or 24@0,7 but with bad notes - namely key 8 which is exclusive to 15@11.
+When playing 15@11, the preference principle could make the brain perceive it as 18@2.
+Since 18@2 has supersets of 24@0,7, an attempt to play 15@11 might be perceived as playing 18@2 or 24@0,7 but with bad notes - namely key 8 which is exclusive to 15@11.
 
 Indeed if we play melody over 15@11 then key 7 seems to be a sour note, producing a dissonant experience, even though it is part of 15@11.
+The player below has fixed melodies per chord and scale to showcase this.
 
-The player below lets us hear this. It sounds a fixed accompaniment chord — swap between a major
-`4 8 11` and a minor `9 0 4` in the chord dropdown, both subsets of 15@11 — while drawing a random
-melody from the selected set (15@11 by default). Whenever the melody lands on key **7**, its bar
-turns **black**, so you can see exactly when the sour note sounds against the chord. Switching the
-melody to `15s@11` drops key 7 entirely (the stable 15, without the sour note) for comparison, and
-the preferred collapses (18@2, 24@0, 24@7) reinterpret the same region without the 15@11-exclusive
-key 8.
+Let's introduce the stable lcm 15 scale 15s, which is lcm 15 without 8/5 (key 7 in 15@11). 
+The melodies for 15s@11 and 15@11 are identical except that key 8 is changed for 7 in 15@11.
+We also have a similar melody for harm@9 which is 15s@11 with an added key 5.
+The blues melody starts of like the others but then uses the blues exclusive key 1.
 
 <RhythmPatternPlayer
-  meter="4 4"
+  meter="4"
   subdivisions="4"
-  bpm={100}
+  bpm={90}
   chord
   markKeys={[7]}
   presets={[
     {label: 'Major 4 8 11', keys: [4, 8, 11], melodies: [
-      {label: '15@11', lcm: 15, at: 11},
-      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11]},
-      {label: '18@2', lcm: 18, at: 2},
-      {label: '24@0', lcm: 24, at: 0},
-      {label: '24@7', lcm: 24, at: 7},
+      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11], sequence: [4,8,4,8, 9,11,12,14, 16,8,16,14, 12,8,12,11]},
+      {label: '15@11', lcm: 15, at: 11, sequence: [7,8,7,8, 9,11,12,14, 16,7,16,14, 12,7,12,11]},
+      {label: 'blues@4', keys: [1, 4, 7, 8, 9, 11], sequence: [7,8,7,8, 13,4,null,4, 7,8,4,11, null,9,null,8]},
+      {label: 'harm@9', keys: [0, 2, 4, 5, 8, 9, 11], sequence: [4,8,5,8, 9,11,12,14, 16,8,17,14, 12,8,12,11]},
     ]},
     {label: 'Minor 9 0 4', keys: [9, 0, 4], melodies: [
-      {label: '15@11', lcm: 15, at: 11},
-      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11]},
-      {label: '18@2', lcm: 18, at: 2},
-      {label: '24@0', lcm: 24, at: 0},
-      {label: '24@7', lcm: 24, at: 7},
+      {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11], sequence: [4,8,4,8, 9,11,12,14, 16,8,16,14, 12,8,12,11]},
+      {label: '15@11', lcm: 15, at: 11, sequence: [7,8,7,8, 9,11,12,14, 16,7,16,14, 12,7,12,11]},
+      {label: 'blues@4', keys: [1, 4, 7, 8, 9, 11], sequence: [7,8,7,8, 13,4,null,4, 7,8,4,11, null,9,null,8]},
+      {label: 'harm@9', keys: [0, 2, 4, 5, 8, 9, 11], sequence: [4,8,5,8, 9,11,12,14, 16,8,17,14, 12,8,12,11]},
     ]},
   ]}
 />
 
-Notably it is easier for the perception to sour for the major chord rather than the minor chord - 
-this could perhaps be due to 9 0 4 having a superset of 8@5 which naturally includes key 7, while 4 8 11 must resolve to 15@11 or its subset 20@4 to fit in key 7.
+With a major chord accompaniment 15s@11, harm@9 and blues@4 sound good but key 7 in 15@11 sounds like it is pulling into the blues scale, creating a confused/dissonant feeling.
 
+With a minor chord accompaniment 15s@11 and harm@9 still sound good, 15@11 sounds better but blues@4 is now dissonant, likely because key 0 is not in blues 4.
+
+This effect could perhaps be due to 9 0 4 having a superset of 8@5 which naturally includes key 7, while 4 8 11 must resolve to 15@11 or its subset 20@4 to fit in key 7.
 
 ** deferred/tentative below **
 
