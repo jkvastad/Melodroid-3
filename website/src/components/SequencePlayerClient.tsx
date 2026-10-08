@@ -94,8 +94,9 @@ export default function SequencePlayerClient({
     return synthRef.current;
   };
 
-  // Lazily build the sampled-piano voice over the C-per-octave Salamander samples; Tone.Sampler
-  // pitch-shifts them across the keyboard. Samples fetch on first build — the caller awaits load.
+  // Lazily build the sampled-piano voice over the minor-third Salamander samples (A/C/D♯/F♯ per
+  // octave); Tone.Sampler pitch-shifts them across the keyboard. Samples fetch on first build —
+  // the caller awaits load.
   const getPiano = () => {
     if (!pianoRef.current) {
       pianoGainRef.current = new Tone.Gain(0.5).toDestination();

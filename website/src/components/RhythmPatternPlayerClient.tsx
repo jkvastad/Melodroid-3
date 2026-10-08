@@ -1485,8 +1485,8 @@ export default function RhythmPatternPlayerClient({
     return chordSynthRef.current;
   };
 
-  // Lazily build the sampled-piano melody voice: a Tone.Sampler over the C-per-octave
-  // samples, on its own persistent gain node (kept for the component's life). Same
+  // Lazily build the sampled-piano melody voice: a Tone.Sampler over the minor-third
+  // samples (A/C/D♯/F♯ per octave), on its own persistent gain node (kept for the component's life). Same
   // triggerAttackRelease(freqHz, durSec, at, vel) surface as the sine synths, so the
   // scheduler treats it identically. Samples fetch on first build; the caller awaits load.
   const getPianoMelody = () => {

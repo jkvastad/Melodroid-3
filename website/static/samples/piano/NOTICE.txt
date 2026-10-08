@@ -1,9 +1,10 @@
-Piano samples (C2.mp3, C3.mp3, C4.mp3, C5.mp3, C6.mp3) are from the
+Piano samples (A/C/D#/F# per octave, C2.mp3 … C6.mp3) are from the
 Salamander Grand Piano by Alexander Holm, licensed under Creative Commons
 Attribution 3.0 (CC-BY 3.0).
 
 Obtained from the Tone.js sample set: https://tonejs.github.io/audio/salamander/
 Original project: https://archive.org/details/SalamanderGrandPianoV3
 
-Used here (a small C-per-octave subset) as a lightweight sampled instrument for
-the RhythmPatternPlayer, pitch-shifted across the keyboard via Tone.Sampler.
+Used here (a minor-third subset — A/C/D#/F# per octave) as a lightweight sampled
+instrument for the RhythmPatternPlayer, pitch-shifted across the keyboard via
+Tone.Sampler (worst-case shift <= +/-1 semitone).
