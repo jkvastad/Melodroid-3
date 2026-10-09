@@ -1464,7 +1464,7 @@ export default function RhythmPatternPlayerClient({
         oscillator: {type: 'triangle'},
         // Percussive blip with a short body: a small sustain lets the per-hit duration
         // (set from velocity below) actually change the blip length, not just its volume.
-        envelope: {attack: 0.001, decay: 0.04, sustain: 0.3, release: 0.04},
+        envelope: {attack: 0.001, decay: 0.052, sustain: 0.3, release: 0.052},
       }).connect(gainRef.current);
     }
     return synthRef.current;
