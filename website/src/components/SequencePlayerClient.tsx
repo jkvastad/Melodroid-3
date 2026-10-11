@@ -24,7 +24,7 @@ export type SequencePlayerProps = {
   beatSec?: number; // seconds per grid beat; default 0.25
   noteBeats?: number; // fallback note duration when `beats` omitted; default 1
   ktet?: number; // default 12
-  fundamental?: number; // Hz, default 220
+  fundamental?: number; // Hz of key 0; default C3 = 130.81
   label?: string; // default 'Play'
   oscillator?: 'sine' | 'triangle' | 'square' | 'sawtooth'; // default 'sine'
   gain?: number; // linear amplitude multiplier; default 0.6 (chord + melody stack)
@@ -48,7 +48,7 @@ export default function SequencePlayerClient({
   beatSec = 0.25,
   noteBeats = 1,
   ktet = 12,
-  fundamental = 220,
+  fundamental = 130.81,
   label = 'Play',
   oscillator = 'sine',
   gain = 0.6,

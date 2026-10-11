@@ -23,15 +23,15 @@ Meter (and rhythm) can be categorised as [additive or divisive](https://en.wikip
 A **divisive** meter takes one span and splits it into equal units. 
 The common 4/4 divides a measure into halves then quarters, e.g. strong, weak, medium, weak.
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 4/4 — divisive (strong-weak-medium-weak)" melody={pulses(['S', 'w', 'm', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 4/4 — divisive (strong-weak-medium-weak)" melody={pulses(['S', 'w', 'm', 'w'])} />
 
 An **additive** meter instead concatenates groups of pulses which do not produce a divise rhythm e.g. $\frac{2}{8} + \frac{3}{8} = \frac{5}{8}$. 
 This necessitates uneven groupings which produces a characteristic limping feel well known in [aksak music](https://en.wikipedia.org/wiki/Aksak).
 Note that the pulse rate is identical to the 4/4 example above — only the grouping changes, but the feel is drastically different.
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 9/8 Aksak — 2+2+2+3" melody={pulses(['S', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 9/8 Aksak — 2+2+2+3" melody={pulses(['S', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 8/8 Aksak — 3+3+2" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'm', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 8/8 Aksak — 3+3+2" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'm', 'w'])} />
 
 ## Rhythmic Preference of Integer Ratios
 When presented with random sequences of three interval rhythms (e.g. $1.6:2.14:1$) and asked to iteratively reproduce the rhythms, 
@@ -41,12 +41,12 @@ both western (US) and non-western (Bolivian Tsimane) listeners converge to simpl
 This was later reproduced in 15 countries on 5 continents[^jacoby2] - everyone prefers integer ratios, but the exact ratios preferred vary by culture.
 For example in Mali there is a relatively popular Maraka rhythm of $7:2:3$
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Maraka — 7+2+3 ([2+2+3]+2+3)" melody={pulses(['S', 'w', 'm', 'w', 'm', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 12/8 Maraka — 7+2+3 ([2+2+3]+2+3)" melody={pulses(['S', 'w', 'm', 'w', 'm', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
 
 and also Manjanin/Woloso[^polak] with $3:4:5$ (slowed down to show the structure)
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Manjanin/Woloso — 3+4+5" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'w', 'm', 'w', 'w', 'w', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 12/8 Manjanin/Woloso — 3+4+5" melody={pulses(['S', 'w', 'w', 'm', 'w', 'w', 'w', 'm', 'w', 'w', 'w', 'w'])} />
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 12/8 Manjanin/Woloso — 3+4+5 (3+[2+2+2]+3)" melody={pulses(['S', 'w', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 12/8 Manjanin/Woloso — 3+4+5 (3+[2+2+2]+3)" melody={pulses(['S', 'w', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'm', 'w', 'w'])} />
 
 Original recordings can be found at [Polak's field recordings site](https://www.rainerpolak.de/field-recordings/audio-albums/).
 
@@ -60,23 +60,23 @@ nor is is important that the fastest pulse has a fixed time length over a piece 
 ## Perceiving and Producing Polyrythms
 Above we listened to examples of additive and divise meters and rhythms. Now we turn to simultaneous rhythms. Perhaps the simplest polyrythm is $3:2$
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 3:2 polyrhythm" melody={pulses(['m', 's', 'm', 'm', 'm', 's'])} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 3:2 polyrhythm" melody={pulses(['m', 's', 'm', 'm', 'm', 's'])} />
 
 If you try to tap this rhythm using first one hand for the $2:1$ beat and then adding in the other for the $3:1$ you will most likely run into problems.
 If instead you try to structure it in your mind as one single pattern over six pulses it will suddenly become easy.[^maslovat] For example try thinking of it as two blocks:
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 3:2 polyrhythm" melody={polyrhythm(2, 3)} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 3:2 polyrhythm" melody={polyrhythm(2, 3)} />
 * both hands (2 pulses)
 * left (1), right(1), left(2)
 
 With 10 pulses we have $5:2$
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:5 polyrhythm" melody={polyrhythm(2,5)} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 2:5 polyrhythm" melody={polyrhythm(2,5)} />
 * both hands(2 pulses), left(2)
 * left(1), right(1)
 * left(2), left(2)
 
 With 12 pulses we have $4:3$
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 4:3 polyrhythm" melody={polyrhythm(4,3)} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 4:3 polyrhythm" melody={polyrhythm(4,3)} />
 * both hands(3 pulses)
 * right(1), left(2), right(2)
 * left(1), right(3)
@@ -87,11 +87,11 @@ If you listen to them and tap along you can find a beat which divides the patter
 Changing the tempo changes the preference for where this beat is perceived.[^moller]
 Try this out below and note where in the pattern you place the finger taps based on low/mid/high tempo.
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:3 — tap and find the beat" melody={polyrhythm(2, 3, {cycles: 1})} loopBeats={6} tempoSlider={{streams: [2, 3]}} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 2:3 — tap and find the beat" melody={polyrhythm(2, 3, {cycles: 1})} loopBeats={6} tempoSlider={{streams: [2, 3]}} />
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 2:5 — tap and find the beat" melody={polyrhythm(2, 5, {cycles: 1})} loopBeats={10} tempoSlider={{streams: [2, 5]}} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 2:5 — tap and find the beat" melody={polyrhythm(2, 5, {cycles: 1})} loopBeats={10} tempoSlider={{streams: [2, 5]}} />
 
-<SequencePlayer beatSec={0.2} gain={1} label="▶ 4:3 — tap and find the beat" melody={polyrhythm(4, 3, {cycles: 1})} loopBeats={12} tempoSlider={{streams: [4, 3]}} />
+<SequencePlayer beatSec={0.2} gain={1} fundamental={220} label="▶ 4:3 — tap and find the beat" melody={polyrhythm(4, 3, {cycles: 1})} loopBeats={12} tempoSlider={{streams: [4, 3]}} />
 
 As noted earlier a $2:3$ polyrhythm can be thought of as a pattern of six pulses. 
 This allows us to hear a 2-beat pulse train consisting of three pulses each (a ternary subdivision)

@@ -1,5 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as Tone from 'tone';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import {PIANO_URLS, PIANO_SAMPLE_PATH} from '@site/src/lib/piano';
 
 export type VoicingPlayerProps = {
   // Either fractions on [1, 2) ...
@@ -12,6 +14,7 @@ export type VoicingPlayerProps = {
   mode?: 'chord' | 'arpeggio'; // default 'chord'
   oscillator?: 'sine' | 'triangle' | 'square' | 'sawtooth'; // default 'sine'
   gain?: number; // linear amplitude multiplier, default 1 (e.g. 0.8 = 80%)
+  instrumentToggle?: boolean; // show a Sine/Piano selector (adds the sampled piano); default false
 };
 
 export default function VoicingPlayer({
@@ -23,6 +26,7 @@ export default function VoicingPlayer({
   mode = 'chord',
   oscillator = 'sine',
   gain = 1,
+  instrumentToggle = false,
 }: VoicingPlayerProps) {
   const synthRef = useRef<Tone.PolySynth | null>(null);
   // Output gain the synth runs through, so stop() can ramp the level to zero
@@ -30,6 +34,15 @@ export default function VoicingPlayer({
   const gainRef = useRef<Tone.Gain | null>(null);
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [playing, setPlaying] = useState(false);
+
+  // Optional sampled-piano voice (built lazily on first Play with Piano selected). Shares the
+  // exact triggerAttack / triggerAttackRelease surface as the sine PolySynth, so the chord and
+  // arpeggio scheduling below is instrument-agnostic. Kept on its own gain node for the fade.
+  const pianoRef = useRef<Tone.Sampler | null>(null);
+  const pianoGainRef = useRef<Tone.Gain | null>(null);
+  const [instrument, setInstrument] = useState<'sine' | 'piano'>('sine');
+  const [pianoLoading, setPianoLoading] = useState(false);
+  const sampleBase = useBaseUrl(PIANO_SAMPLE_PATH);
 
   const ratios = fractions ?? (keys ?? []).map((n) => Math.pow(2, n / ktet));
   const freqs = ratios.map((r) => fundamental * r);
@@ -47,11 +60,36 @@ export default function VoicingPlayer({
     return synthRef.current;
   };
 
+  // Lazily build the sampled-piano voice over the minor-third Salamander samples; Tone.Sampler
+  // pitch-shifts them across the keyboard. Runs through its own gain node so stop() can fade it.
+  const getPiano = () => {
+    if (!pianoRef.current) {
+      pianoGainRef.current = new Tone.Gain(1).toDestination();
+      pianoRef.current = new Tone.Sampler({
+        urls: PIANO_URLS,
+        baseUrl: sampleBase,
+        release: 0.8,
+      }).connect(pianoGainRef.current);
+    }
+    return pianoRef.current;
+  };
+
+  // The active voice for this Play. Both types expose the same triggerAttack /
+  // triggerAttackRelease surface, so the scheduling in play() treats them identically.
+  const getVoice = (): Tone.PolySynth | Tone.Sampler =>
+    instrument === 'piano' ? getPiano() : getSynth();
+
   useEffect(() => () => stop(), []); // dispose on unmount
 
   const play = async () => {
     await Tone.start(); // unlock audio on user gesture
-    const synth = getSynth();
+    const synth = getVoice();
+    if (instrument === 'piano') {
+      setPianoLoading(true);
+      await Tone.loaded(); // wait for sample buffers so the first note isn't silent
+      setPianoLoading(false);
+      if (!pianoRef.current) return; // Stop pressed while samples loaded — bail out
+    }
     if (mode === 'arpeggio') {
       // Notes enter one at a time and ring on, accumulating into the full
       // chord; once the last has entered they all sustain together for `hold`
@@ -78,35 +116,72 @@ export default function VoicingPlayer({
     setPlaying(true);
   };
 
-  // Ramp the output gain to zero (smooth fade, no click), then dispose once the
-  // fade completes. Disposing — not releaseAll — is what actually cancels any
-  // future-scheduled arpeggio notes; a disposed synth can't retrigger, so we
-  // null the refs and rebuild on the next play.
+  // Ramp the active voice's output gain to zero (smooth fade, no click), then dispose once the
+  // fade completes. Disposing — not releaseAll — is what actually cancels any future-scheduled
+  // arpeggio notes; a disposed voice can't retrigger, so we null the refs and rebuild on the next
+  // play. Both the sine synth and the piano sampler are torn down the same way.
   const stop = () => {
     if (endTimerRef.current) {
       clearTimeout(endTimerRef.current);
       endTimerRef.current = null;
     }
     const synth = synthRef.current;
-    const gainNode = gainRef.current;
+    const synthGain = gainRef.current;
+    const piano = pianoRef.current;
+    const pianoGain = pianoGainRef.current;
     synthRef.current = null;
     gainRef.current = null;
+    pianoRef.current = null;
+    pianoGainRef.current = null;
     setPlaying(false);
-    if (!synth) return;
     const fadeSec = 0.30;
-    gainNode?.gain.rampTo(0, fadeSec); // fade currently-sounding + pending notes
-    setTimeout(() => {
-      synth.dispose();
-      gainNode?.dispose();
-    }, fadeSec * 1000 + 50);
+    const fade = (
+      voice: Tone.PolySynth | Tone.Sampler | null,
+      gainNode: Tone.Gain | null,
+    ) => {
+      if (!voice) return;
+      gainNode?.gain.rampTo(0, fadeSec); // fade currently-sounding + pending notes
+      setTimeout(() => {
+        voice.dispose();
+        gainNode?.dispose();
+      }, fadeSec * 1000 + 50);
+    };
+    fade(synth, synthGain);
+    fade(piano, pianoGain);
   };
 
-  return (
+  const button = (
     <button
       className="button button--primary button--sm"
       style={{margin: '0.4rem 0'}}
       onClick={playing ? stop : play}>
       {playing ? 'Stop' : label}
     </button>
+  );
+
+  if (!instrumentToggle) return button; // unchanged: a bare button
+
+  // Sine/Piano selector, shown beside the button only when instrumentToggle is set — so existing
+  // embeds (no toggle) render exactly the bare button as before. The choice is read at Play;
+  // switching mid-playback takes effect on the next Play.
+  return (
+    <span style={{display: 'inline-flex', alignItems: 'center', gap: '0.6rem'}}>
+      {button}
+      <label style={{fontSize: '0.9em'}}>
+        instrument{' '}
+        <select
+          value={instrument}
+          onChange={(e) => setInstrument(e.target.value as 'sine' | 'piano')}
+          aria-label="instrument timbre">
+          <option value="sine">Sine</option>
+          <option value="piano">Piano</option>
+        </select>
+        {pianoLoading && (
+          <span style={{marginLeft: '0.4rem', opacity: 0.7, fontStyle: 'italic'}}>
+            loading…
+          </span>
+        )}
+      </label>
+    </span>
   );
 }
