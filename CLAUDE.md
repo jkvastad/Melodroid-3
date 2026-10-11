@@ -123,6 +123,8 @@ The authoritative full flag surface lives in [website/docs/cli/reference.mdx](we
 
 The *why*, so the codebase doesn't drift away from its research purpose.
 
+**First principles, not tradition** — this project builds a *predictive* theory of music from the physics of sound and the biology of hearing. Traditional music theory is *descriptive*: it records what established practice does but has no predictive power, so it may **never** be used as an argument or justification here. Derive every result from the first-principles machinery (WPL / good fractions / LCM families / placements) first. A traditional name (major triad, harmonic minor, blues) may be invoked only *afterward*, as empirical verification — when a derived result lines up with a known name, that parallel is corroborating evidence, not the reason the result holds.
+
 **Core thesis** — harmony as **pattern recognition of simultaneous waves**. A chord expressed as fractions of a reference frequency (e.g. a major triad as `{1, 5/4, 3/2}`) produces a superposition whose **wave pattern length** (WPL) is the LCM of the denominators, in units of the reference period.
 
 **Hearing constraint** — the lower bound of human pitch perception (≈ 20 Hz) implies a pattern lasting much longer than ~50 ms is unlikely to be recognised as a unit. See [src/Hearing/HearingConstants.cs](src/Hearing/HearingConstants.cs). Note: two constants share the value 50 ms but mean different things — `MinAudibleFrequencyHz` (period of 20 Hz) is the pattern-length ceiling, while `ActionToSoundLatencyJndMs` is the key-press → sound latency JND. Don't conflate them.
