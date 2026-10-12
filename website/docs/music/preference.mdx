@@ -22,13 +22,12 @@ This raises some questions:
 * Why do blues and harmonic minor produce coherent melodies without being proper lcm sets?
 
 Looking back at [the placement structure](/docs/music/placements) we see that for any given note, there are plenty of possibilities for which placement it belongs to.
-Faced with such a multitude of ambiguous interpretations of frequencies, the brain might employ heuristic preference and collapse competing possibilities.
+Faced with such a multitude of ambiguous interpretations of frequencies, the brain might employ heuristic preference to reduce competing possibilities.
 
 ## The principle of preference
-A prime absent from both lcm 18 and 24 is the largest good fraction prime 5. 
-A possible heuristic for deciding which placement to perceive is to favor placements with small primes.
-This could be motivated by the brain favoring not just patterns with small WPL, but patterns with small subpatterns to chunk up.
-Such behavior would be in line with having WPLs on the larger side, e.g. 15 and 24, as their constituent primes might be the bottleneck.
+A possible heuristic for deciding which placement to perceive is to favour placements with small primes.
+This could be motivated by the brain favouring not just patterns with small WPL, but patterns with small subpatterns to chunk up.
+Such behaviour would be in line with having WPLs on the larger side, e.g. 15 and 24, as their constituent primes might be the bottleneck.
 It would also explain why lcm 15 and 20 sound more dissonant than 24, since they carry the large prime 5.
 
 The bias stated as a principle when parsing sound for music:
@@ -36,14 +35,33 @@ The bias stated as a principle when parsing sound for music:
 * **Preference Principle** — Perception prefers placements with small primes.
 
 Keys not covered by the preferred placement, or key sets completely lacking any covering placement, 
-will likely sound sour or wrong while covered keys sound good or right.
-Such feedback would establish a sort of communication protocol for humans, sending data on certain channels (placements), which can have evolutionary benefits.
+could sound sour or wrong while covered keys sound good or right.
+Such feedback would establish a sort of communication protocol, encouraging sending data on certain channels (placements), which can have evolutionary benefits.
+
+The preference principle could explain why isomorphic lcm families do not have several different perceptions:
+
+lcm 3, 4:
+<Player keys={[0, 4, 7]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 4@0 = 0 4 7" />
+<Player keys={[-5, 0, 4]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 3@7 = -5 0 4" />
+
+lcm 5, 6:
+<Player keys={[0, 5, 7, 9]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 6@0 = 0 5 7 9" />
+<Player keys={[-3, 0, 5, 7]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 5@9 = -3 0 5 7" />
+
+lcm 8, 9, 10, 12:
+<Player keys={[0, 4, 7, 11, 14]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 8@0 = 0 4 7 11 14" />
+<Player keys={[2, 7, 12, 16, 23]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 9@2 = 2 7 12 16 23" />
+<Player keys={[4, 11, 14, 19, 24]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 10@4 = 4 11 14 19 24" />
+<Player keys={[-5, 0, 4, 11, 14]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 12@7 = -5 0 4 11 14" />
+
+
+By the preference principle the perceived lcm would be 4, 6 and 8 for the three isomorphisms respectively.
 
 The preference principle will be of particular interest in competing contexts.
-Lets look at 15@11, displayed as a leaf node in the extended triad placement graph.
+Lets look at 15@11 in the context of a leaf node in the extended triad placement graph.
 
 ### 15 vs 24
-When playing 15@11, the preference principle could make the brain perceive it as 18@2.
+When playing 15@11, the preference principle could make the brain perceive it as 18@2:
 Since 18@2 has supersets of 24@0,7, an attempt to play 15@11 might be perceived as playing 18@2 or 24@0,7 but with bad notes - namely key 8 which is exclusive to 15@11.
 
 Indeed if we play melody over 15@11 the experience turns dissonant with key 7, even though it is part of 15@11.
@@ -52,8 +70,12 @@ The player below has fixed melodies per chord and scale to showcase this
 
 Let's introduce the stable lcm 15 based placement 15s@0 = `{0 1 3 5 9 10}`, which is lcm 15 without 8/5 (key 7 in 15@11). 
 The melodies for 15s@11 and 15@11 are identical except that key 8 is changed for 7 in 15@11.
+
 We also have a similar melody for harm@9 which is 15s@11 with an added key 5.
-The blues melody starts of like the others but then uses the blues exclusive keys 1 and 6.
+This is to showcase that while key 7 seems not to fit in with lcm 15, despite technically being in the family, key 5 does fit in nicely.
+
+Playing key 7 produces a sound reminiscent of blues, so a blues melody and scale is added for comparison.
+The blues melody starts off like the others but then uses the blues exclusive keys 1 and 6.
 
 <RhythmPatternPlayer
   meter="4"
@@ -77,33 +99,26 @@ The blues melody starts of like the others but then uses the blues exclusive key
   ]}
 />
 
-With a major chord accompaniment 15s@11, harm@9 and blues@4 sound good but key 7 in 15@11 sounds like it is pulling into the blues scale, creating a confused/dissonant feeling.
-
-With a minor chord accompaniment 15s@11 and harm@9 still sound good, 15@11 sounds better but blues@4 is now dissonant, likely because neither key 0 or 9 is in blues 4.
-
-In summary:
-
-| Placement | Major (4 8 11) | Minor (9 0 4) |
-| --- | --- | --- |
-| 15s@11 | good | good |
-| 15@11 | bad | good |
-| blues@4 | good | bad |
-| harm@9 | good | good |
-
-Notably when key 7 is played to imply 15@11 the major chord accompaniment sounds bad but the minor chord sounds good.
+Notably when key 7 is played to imply 15@11 the major chord accompaniment sounds worse than the minor chord:
+* With a major chord accompaniment the placements 15s@11, harm@9 and blues@4 sound good but key 7 in 15@11 sounds like it is pulling into the blues scale, creating a confused/dissonant feeling.
+* With a minor chord accompaniment the placements 15s@11 and harm@9 still sound good, 15@11 sounds better but blues@4 is now dissonant, likely because neither key 0 or 9 is in blues 4.
 
 Here we should take care with causation and correlation: playing key 7 correlates with a dissonant perception, but key 7 is perhaps not the offender:
 * The placement 15@11 is adjacent to 18@2 and via it closely related to 24@0 and 24@7. 
 * All of these related placements lack key 8, but are also free of prime 5.
 
 The brain might at first be perceiving the sounds played as 15@11, but when key 7 is introduced the principle of preference forces perception of a placement without key 8 - 
-leaving the major chord 4 8 11 dissonant with its key 8 suddenly an extraenous key.
-Since 9 0 4 does not have a key 8 and is a subset of 18@2 it has no problem with playing key 7.
+leaving the major chord 4 8 11 dissonant with its key 8 suddenly an extraneous key.
+Since 9 0 4 does not have a key 8 and is a subset of 18@2 it survives the collapse of 15@11.
 
-### Why only key 7?
-Why does collapse depend on the chord being played, and why don't other keys of 15@11 collapse perception?
+### Perception collapse
+If one lcm family can collapse, what about the rest of them?
 
-Tabulating each key as the fraction it represents in 15@11 and in the three prime-5-free relatives:
+Families 1 and 2 have no alternative lcms of the same size.
+As noted in the chapter intro the isomorphic families collapse onto 4 (3), 6 (5) and 8 (9, 10, 12).
+This leaves 18 vs 20 and 15 vs 24.
+
+It turns out investigating each key as the fraction it represents in 15@11 provides some insight:
 
 | Key | 15@11 | 18@2 | 24@0 | 24@7 |
 | --- | --- | --- | --- | --- |
@@ -115,29 +130,24 @@ Tabulating each key as the fraction it represents in 15@11 and in the three prim
 | 9  | 9/5   | 3/2  | 5/3  | 9/8  |
 | 11 | 1/1   | 5/3  | 15/8 | 5/4  |
 
-Note the very different feel of 24@0 as a 13 chord, based on major vs minor:
+Looking at the key rows we see that key 8 (5/3) is the only key of 15@11 with no prime-5-free alternative perception.
+Key 7 instead has alternatives which are the smallest prime good fractions, which could be why it collapses 15@11 - likely to 24@0, which has both tonic and perfect fifth.
 
-Play each as a block chord and as an arpeggio — the arpeggio enters the voicing low→high and accumulates, so you can hear exactly which note the dissonance enters on.
+Why does the collapse sound worse with major and better with minor?
+* Major chord `4 8 11` contains key 8, so after the collapse key 8 is extraneous (present in no relative) and the chord "sours".
+* Minor chord `9 0 4` is a subset of 18@2 and carries no key 8, so it stays consonant, even if the collapse of the underlying placement itself might feel a bit jarring.
 
-| Voicing | Chord | Arpeggio |
-| :--- | :--- | :--- |
-| 24@0 from major@-5 | <Player keys={[-5, -1, 2, 5, 9, 12, 16]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-5, -1, 2, 5, 9, 12, 16]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
-| 24@0 from minor@-3 | <Player keys={[-3, 0, 4, 7, 11, 14, 17]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-3, 0, 4, 7, 11, 14, 17]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
-| 24@7 from major@-5 | <Player keys={[-5, -1, 2, 6, 9, 12, 16]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-5, -1, 2, 6, 9, 12, 16]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
-| 24@7 from minor@-3 | <Player keys={[-3, 0, 4, 7, 11, 14, 18]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-3, 0, 4, 7, 11, 14, 18]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
+Now let's look at 20@4, the lcm 20 subset placement of 15@11. 
+The table is thus the same as for 15@11 but with the key 9 row removed.
 
-One could expect that 24@0,7 played as a block would produce a similar feeling, but it seems the voicing is important:
+Voiced similarly to 15@11 the collapse is evident in the arpeggio at key 19 (key 7 an octave up):
+<Player keys={[0, 4, 8, 11, 14, 19]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ 20@4 = 0 4 8 11 14 19" />
+<Player keys={[0, 4, 8, 11, 14, 19]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio = 0 4 8 11 14 19" />
 
-* 24@0 from major sounds consonant
-* 24@0 from minor is dissonant at key 17
-* 24@7 from major is dissonant at key 12
-* 24@7 from minor is consonant
-
-TODO: investigate further
+Finally lcm 24 is the collapse target of 15 so does not itself collapse, see sound examples in [The Importance of Voicing](/docs/music/preference#the-importance-of-voicing) below.
 
 ## Alternative explanations
-Notably an alternative reason disregarding HPT could be that we are playing key 7 together with the chord 4 8 11, thus introducing a semitone which can sound harsh.
-
+An alternative reason for why key 7 sounds bad in 15@11 could be that we are playing key 7 together with the chord 4 8 11, thus introducing a semitone which can sound harsh (especially with piano overtones):
 <SequencePlayer
   label="▶ 11 12, semitone"
   beatSec={0.4}
@@ -145,6 +155,17 @@ Notably an alternative reason disregarding HPT could be that we are playing key 
   instrumentToggle
   chords={[
     {keys: [11, 12], beat: 0, beats: 5, velocity: 1},    
+  ]}
+/>
+
+Spacing with an octave reduces dissonance
+<SequencePlayer
+  label="▶ 0 11, octave spaced semitone"
+  beatSec={0.4}
+  fundamental={220}
+  instrumentToggle
+  chords={[
+    {keys: [0, 11], beat: 0, beats: 5, velocity: 1},    
   ]}
 />
 
@@ -157,6 +178,12 @@ Notably an alternative reason disregarding HPT could be that we are playing key 
     {keys: [-1, 12], beat: 0, beats: 5, velocity: 1},    
   ]}
 />
+
+The 0 11 spacing sounds softer than the -1 12.
+This could be related to placements: if low tones are preferred for deciding placements then the -1 12 placement is a spaced 16/15 at -1 while the 0 11 is a 15/8 implying lcm 15 vs. 8, explaining the softer/harsher sound.
+Such preference could be motivated by fundamental tones in overtone series being naturally lower.
+
+Indeed adding an lcm 8 context to the originally harsh 11 12 softens it
 
 <SequencePlayer
 label="▶ 0 4 7"
@@ -198,6 +225,8 @@ chords={[
 ]}
 />
 
+Compare this with 3 4 which sounds harsh with the major chord (0 3 4 7 $\subset$ 15@7) regardless of being octave spaced or not, hinting that there is more than just beating going on.
+
 <SequencePlayer
 label="▶ 0 3 4 7"
 beatSec={0.4}
@@ -218,5 +247,22 @@ chords={[
 ]}
 />
 
-From this we note that 11 12 sounds quite harsh played as is but not so bad if included in a major chord.
-Compare this with 3 4 which sounds harsh with the major chord regardless of being octave spaced or not, hinting that there is more than just beating going on.
+### The Importance of Voicing
+Similarly to how different voicings of semitones produce more or less harsh experiences, listening to 24@0,7 voiced as a 13 chord feels very different based on a major vs minor subset:
+
+| Voicing | Chord | Arpeggio |
+| :--- | :--- | :--- |
+| 24@0 from major@-5 | <Player keys={[-5, -1, 2, 5, 9, 12, 16]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-5, -1, 2, 5, 9, 12, 16]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
+| 24@0 from minor@-3 | <Player keys={[-3, 0, 4, 7, 11, 14, 17]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-3, 0, 4, 7, 11, 14, 17]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
+| 24@7 from major@-5 | <Player keys={[-5, -1, 2, 6, 9, 12, 16]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-5, -1, 2, 6, 9, 12, 16]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
+| 24@7 from minor@-3 | <Player keys={[-3, 0, 4, 7, 11, 14, 18]} fundamental={174.61} gain={0.7} instrumentToggle label="▶ chord" /> | <Player keys={[-3, 0, 4, 7, 11, 14, 18]} mode="arpeggio" fundamental={174.61} gain={0.7} instrumentToggle label="▶ arpeggio" /> |
+
+One could expect that an lcm family played as a block would produce a similar feeling regardless of voicing, but it seems the voicing is important:
+
+* 24@0 from major sounds consonant
+* 24@0 from minor is dissonant at key 17
+* 24@7 from major is dissonant at key 12
+* 24@7 from minor is consonant
+
+The position within the block affects perception, perhaps a hint that the brain identifies subsets.
+Another possibility are effects based on neural resonance, which might explain a preference for certain primes.
