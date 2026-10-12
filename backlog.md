@@ -10,6 +10,8 @@
 * Investigate relation between lcm 18, blues and harmonic minor
 * Investigate clustered renormalisations, perhaps they are related to adjacency mechanisms.
 
+* Does preference for small primes tie in with musical neurodynamics?
+
 ## Intro (intro.mdx)
 
 ## Theory
