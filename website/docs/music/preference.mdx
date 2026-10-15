@@ -173,14 +173,17 @@ Looking at the subsets of harm@9 we see the following subsets with placements:
 | 2 4 8 9 11 | 120? | 30? | | | 36? | | 45? | 120? | | 24? | | 15? |
 | 4 5 8 9 11 | 120 | 20? | | | 60 | | 120? | 120? | 15 | 40? | | |
 
-Notably there are no direct adjacencies, likely because as we saw in the extended triad placement graph
+Notably there are no direct adjacencies, likely because as we saw in the extended triad placement graph:
 
+* `18@2 = {0 2 4 7 9 11}`
 * `15@11 = 18@2` ∪ `{8}` - distinguishing key **8**
 * `24@0 = 18@2` ∪ `{5}` - distinguishing key **5**
 * `harm@9 = {0 2 4 9 11}` ∪ `{5 8} = {0 2 4 5 8 9 11}`
 
 and so two keys must be stripped away to produce stable lcm subsets.
-This also hints at the main modulation of harm@9 - that between 24@0 and 15@11 via 18@2.
+(The set `{0 2 4 9 11}` — 18@2 with key 7 removed — is the **minor pentachord**. It is also the **Jins Nahawand** in Arabic maqam theory.)
+
+The set structure hints at the main modulation of harm@9 - that between 24@0 and 15@11 via 18@2.
 
 Condensing the redundant placements and grouping by the triad placement graph rule — 15@k relates to 24@k+1, 24@k+8 and 18@k+3:
 * 15@4 with 24@0,5 and 18@7
