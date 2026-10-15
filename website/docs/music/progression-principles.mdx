@@ -5,14 +5,21 @@ description: The superset and subset progression principles, and how non-LCM sca
 
 # Progression Principles
 
-The [tonic placement structure](/docs/music/placements#tonic-placement-structure) laid out how the
-LCM-family shapes relate — which placements sit inside which. Those relations are not just a static
-map: they suggest *why* certain chords want to move to certain others.
+The [placements chapter](/docs/music/placements) laid out the relationships of placements from a given key.
+In the [preference chapter](/docs/music/preference) we proposed a principle of preference for small primes in the WPL, 
+explaining dissonance of lcm 15 and 20 as well as why the isomorphic lcm families sound similar regardless of voicing.
 
-This chapter turns the structure into two progression principles — **superset** and **subset** — and
-then shows how several non-LCM scales (dim7, harmonic minor, blues) live by exploiting them.
+Thus far we have mostly been looking at static harmony, i.e. various block chords, with limited melody.
+Let's now turn to more dynamic harmony using series of chords, also known as chord progressions.
 
-The placement structure shows that an important relationship between LCMs is not only shared lcm
+While any two chords can be played one after another, some seem to fit better together -
+surely there are reasons for phenomena such as cadences, circle of fifths and 3-chord-songs (e.g. C, F, G). 
+If we can define principles based on physical features which recover popular progressions, 
+we might glean some insight into the inner workings of music and then extrapolate from those principles to aid in composition.
+
+## The Principles of Chord Progressions
+
+The extended placement graphs show that an important relationship between LCMs is not only shared lcm
 **supersets** but shared lcm **subsets** — e.g. lcm 18 sits below *both* lcm 15 and lcm 24 (the
 hexad-A shape feeds both heptads). Such relationships might motivate chord progressions via two
 principles:
@@ -20,24 +27,26 @@ principles:
 * **Superset Principle** — Chord A can progress to chord B if A shares an lcm **superset** with B.
 * **Subset Principle** — Chord A can progress to chord B if A shares an lcm **subset** with B.
 
-A motivation for the superset principle could be that two subsequent chords are voicings of the same
-placement, and placements govern perception. The superset principle has a nice directness to it,
-moving straight up/down in the lcm family hierarchy.
+In practice lcm supersets and lcm subsets are lcm placements, e.g. 4@0 (C) can progress to 4@5 (F) since they are both in 8@0.
 
-A motivation for the subset principle feels less straightforward. Perhaps the brain recognising that
-two subsequent chords, while not in the same lcm family, share a subset is good enough. One also
-wonders to what extent such subsets are allowed, as there are a lot of dyads which can serve as
-shared subsets. Notably lcm 8 and 18 are the big bridging families, and perhaps these subsets are
-privileged or preferred when identifying shared subsets.
+A motivation for the superset principle could be that two subsequent chords are voicings of the same placement, which the brain somehow picks up and rewards. 
+The superset principle has a nice directness to it, moving straight up/down in the lcm family hierarchy.
+
+A motivation for the subset principle could be similar, but instead of recognizing an invariant placement the brain recognises that two subsequent chords share an lcm subset.
+One wonders to what extent such subsets are allowed, as there are a lot of dyads which can serve as shared subsets. 
+As observed in the extended triad placement graph, lcm 8 and 18 are the big bridging families, and perhaps these subsets are privileged or preferred when identifying shared subsets.
 
 A concrete example of the **superset** principle for the chord progression C to Eb (4@0 → 4@3):
 
 * C is part of 15@7 (4@0 ≅ 3@7), Eb = 4@3 is part of 18@10.
 * Placement 15@7 is an lcm superset of 18@10.
-* Both C and Eb then share the superset 15@7 and the superset principle thus allows the progression.
+* Both C and Eb then share the superset 15@7 and the superset principle thus allows this progression.
 
 In this way, although `{0 4 7}` (3@7) is not a subset of `{0 3 5 7 8 10}` (18@10) since they do not
 share key 4, it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
+
+Of further interest here is that the root key for Eb, key 3, is the collapsing key for 15@7. 
+Since we do not land there but instead go to 18@10 it would seem collapsing keys are useful when progressing chords.
 
 A concrete example of the **subset** principle for the chord progression C to Db (4@0 → 4@1):
 
@@ -46,74 +55,17 @@ A concrete example of the **subset** principle for the chord progression C to Db
 * The subset principle thus allows a progression from 3@7 (15@7) to 4@1 (24@8) via the shared subset
   18@10.
 
-We should also note what is meant by an *allowed* progression — there is no physical law denying any
-two chords from being played one after another. Progressions as motivated by principles instead
-guarantee that there is some physically motivated pattern which the brain could find and reward for finding, thus eliciting reproducible emotions.
+-- rewrite in progress, old below --
 
-## Double adjacency and non-LCM scales
+TODO: chords to explain - 
+* C to Em - both sit in 8@0 but the minor has a very different feel from the major
+* C to B - related to C to Em via Em and 15@6
+* C to Cm - seems easier to go from C to Cm than Cm to C. C to Cm then likes to go to G (lcm 15) with a cadence feel, rather than the lcm 8s at G# or D#
+* C F G loop - the common three chord song
+* Cm to Bm - from Bowie's "Changes", three minors in a row with semitone displacement 
+* Em to A
 
-Several traditional scales are not themselves lcm families, yet sound coherent. A unifying idea is
-*double adjacency*: a non-lcm set that sits between two good families by holding the *distinguishing*
-key of each neighbour at once, while shedding the key they collapse on. Three well-known sets are
-instances, differing only in which families they straddle:
-
-* **dim7** — the symmetric fourfold limit, straddling 24@1,4,7,10 (each dim triad a consonant subset
-  of a different family).
-* **harmonic minor** — a 15/24 pair (15@2 and 24@3, sharing the subset 18@5).
-* **blues** — a 24/24 pair a whole step apart (24@0 and 24@10, via the two thirds).
-
-In each case the residual tension is a dim7, and the "feel" of the scale is the ear swinging between
-the co-present interpretations rather than resting in one — these are sets for rapid modulation
-between adjacent families.
-
-### Harmonic minor
-
-Harmonic minor harm@k can be thought of as 18@k+5. Consider the adjacent pair 15@2 and 24@3, which
-share the subset 18@5:
-
-* 18@5 = `{0 2 3 5 7 10}`
-* 15@2 = 18@5 ∪ `{11}` — distinguishing key **11**
-* 24@3 = 18@5 ∪ `{8}` — distinguishing key **8**
-
-Harm@0 takes the subset `{0 2 3 5 7 10}` (18@5) and adds **both** distinguishing keys while removing
-the collapsing key 10:
-
-harm@0 = `{0 2 3 5 7}` ∪ `{8, 11}` = `{0 2 3 5 7 8 11}`
-
-Key 8 is 24@3's distinguishing note, 11 is 15@2's — so harm@0 plays with the ambiguity between 15@2
-and 24@3.
-
-This also explains why harm@0 is less dissonant than plain 15@2: 15@2 still contains the collapse key
-10, which forces [preference](/docs/music/preference) toward 24@3 or 24@10, leaving a sour note 11.
-Harmonic minor removes 10, leaving enough ambiguity to not force a sour note.
-
-The set `{0 2 3 5 7}` — 18@5 with key 10 removed — is the **minor pentachord**. It is also the **Jins
-Nahawand** in Arabic maqam theory.
-
-### Dim7
-
-A single dim triad dim@k has supersets 24@k+1 and 15@k+3, so the fourfold symmetric dim7 `{0 3 6 9}`
-points equally at the four families 24@1,4,7,10 (and 15@0,3,6,9) — each of its four dim triads a
-consonant subset of a different family. Adding a distinguishing key (e.g. k+1 with k+10) can focus
-perception onto one of them. Perhaps this ambiguity of subsets is why the dim7 sounds both consonant
-yet tense.
-
-> TODO: investigate `0 3 7 6` with the dual adjacency.
-
-### Blues
-
-blues@0 = `{0 2 3 4 7}` holds *both* thirds: the major third 4 (the `{0 2 4 7}` ⊆ 8@0 ⊆ 24@0 home)
-and the blue third 3 (the `{0 2 3 7}` ⊆ 18@5 ⊆ 24@10). So the blue note is precisely the
-distinguishing key that swings the parse into 24@10 while a major triad still asserts 24@0, and the
-swing between the two is the blues feel. This is the same dual-distinguishing-key mechanism as in
-harmonic minor, but across a pair of lcm 24 families a whole step apart rather than a 15/24 pair.
-
-Concretely, when playing a major chord 0 4 7 the blues note 3 works via a pull to 24@10. Blues@0 is
-adjacent to 15@2 which collapses on key 10 — indeed the major chord 7 11 2 using blues note 10 works
-well together with 0 4 7 using note 3. There is a similar bluesy feel to a 7 chord e.g. 0 4 7 10,
-where the 10 fits the 24@10 pull. Practically this suggests thinking of blues@x as modulating between
-8@x+10 and 8@x+3 — the isomorphic groups constituting 24@x+10.
-
+Old TODOs:
 > TODO: "Rock & Roll Flat-Key Borrowing (Modal Interchange)" involves the set
 > `{I, IV, V, bIII, bVII, bVI}`, where `{I, IV, V}` is from 24@0 (0 4 7) and `{bIII, bVII, bVI}` is
 > from 24@10 (0 3 7), sharing 4@5 as a subset — the subset principle would explain the movement.
