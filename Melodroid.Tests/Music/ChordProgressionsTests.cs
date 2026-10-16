@@ -233,9 +233,30 @@ public class ChordProgressionsTests
             t.SupersetBridges.Should().OnlyContain(b => !Collapsed15(b, source));
     }
 
+    // A superset bridge is played as A ∪ B, so --drop-collapsed target (and both) must also remove
+    // lcm-15 placements collapsed by the *target* triad. From C, the C-minor target {0 3 7} sits
+    // under 15@7 (collapsing key 3 ∈ {0 3 7}); with --target it must disappear as a superset bridge,
+    // and no collapsed lcm-15 may survive as a superset bridge for any target.
+    [Fact]
+    public void DropCollapsed_target_removes_collapsed_fifteen_superset_bridges()
+    {
+        var source = new[] { 0, 4, 7 };
+
+        var none = Target(Compute(source, rawBridges: true), 0, 3, 7);
+        none.SupersetBridges.Should().Contain("15@7");
+
+        foreach (var filter in new[] { CollapseFilter.Target, CollapseFilter.Both })
+        {
+            var results = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: filter);
+            Target(results, 0, 3, 7).SupersetBridges.Should().NotContain("15@7");
+            foreach (var t in results)
+                t.SupersetBridges.Should().OnlyContain(b => !Collapsed15(b, t.Keys));
+        }
+    }
+
     // In a raw P_A·S·P_B subset triple, P_A ⊇ source (origin side) and P_B ⊇ target (target side).
     // --drop-collapsed origin removes collapsed lcm-15 placements from the P_A slot; --target removes
-    // them from the P_B slot. (Superset bridges are unaffected by --target: they derive from P_A only.)
+    // them from the P_B slot.
     [Fact]
     public void DropCollapsed_filters_the_respective_subset_triple_slot()
     {

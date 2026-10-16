@@ -175,8 +175,16 @@ public static class ChordProgressions
                 .Select(p => new P(p, new HashSet<int>(p.Keys)))
                 .ToList();
 
-            // Superset principle: a single placement (∈ supA) contains both A and B.
-            var containing = supA.Where(pa => targetSet.IsSubsetOf(pa.Keys)).ToList();
+            // Superset principle: a single placement (∈ supA, already origin-filtered) contains both
+            // A and B. With dropTarget, additionally disqualify bridges whose collapsing key ∈ this
+            // target triad — a superset bridge is played as A ∪ B, so it collapses if either chord
+            // collapses it.
+            var containingPlacements = supA
+                .Where(pa => targetSet.IsSubsetOf(pa.Keys))
+                .Select(x => x.Placement)
+                .ToList();
+            if (dropTarget) containingPlacements = Placements.DropCollapsed(containingPlacements, keys, ktet).ToList();
+            var containing = containingPlacements.Select(p => new P(p, new HashSet<int>(p.Keys))).ToList();
             var hasSuperset = containing.Count > 0;
 
             // Subset principle: distinct P_A ⊇ A, P_B ⊇ B sharing a subset family S (|S| ≥ min).
