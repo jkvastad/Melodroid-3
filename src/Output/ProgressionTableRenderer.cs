@@ -14,6 +14,7 @@ public static class ProgressionTableRenderer
         bool rawBridges,
         CollapseFilter dropCollapsed,
         IReadOnlyList<ProgressionTarget> targets,
+        bool allBridges = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -34,8 +35,8 @@ public static class ProgressionTableRenderer
             foreach (var target in group)
             {
                 var via = new List<string>();
-                if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges)}");
-                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(GroupSubsetTriples(target.SubsetBridges))}");
+                if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges, allBridges)}");
+                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(GroupSubsetTriples(target.SubsetBridges), allBridges)}");
 
                 table.AddRow(
                     target.Root.ToString(),
@@ -49,7 +50,7 @@ public static class ProgressionTableRenderer
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         console.MarkupLine(
             $"[grey]progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
-            $"bridges: {(rawBridges ? "raw" : "pooled")} · " +
+            $"bridges: {(rawBridges ? "raw" : "pooled")}{(allBridges ? ", all" : "")} · " +
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
     }
@@ -94,8 +95,8 @@ public static class ProgressionTableRenderer
         return (int.Parse(parts[0]), int.Parse(parts[1]));
     }
 
-    private static string Cap(IReadOnlyList<string> bridges) =>
-        bridges.Count <= MaxBridges
+    private static string Cap(IReadOnlyList<string> bridges, bool showAll) =>
+        showAll || bridges.Count <= MaxBridges
             ? string.Join(" ", bridges)
             : string.Join(" ", bridges.Take(MaxBridges)) + $" …(+{bridges.Count - MaxBridges})";
 

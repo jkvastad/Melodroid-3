@@ -830,6 +830,12 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
+        var progressionAllBridgesOption = new Option<bool>("--all-bridges")
+        {
+            Description = "Show every bridge in each Via cell instead of capping at 6 and summarising the rest as …(+M). Cells grow taller (wrapped across lines) as needed.",
+            DefaultValueFactory = _ => false,
+        };
+
         var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
         {
             Description = "Disqualify lcm-15 placements collapsed (collapsing key (At+8) mod 12 is a chord key) by their respective chord, so they no longer count toward categories or appear in Via: 'none' (default), 'origin' (source-chord side), 'target' (each target triad), or 'both'. 12-tet only.",
@@ -846,6 +852,7 @@ class Program
         progressionCommand.Add(progressionMinSubsetNotesOption);
         progressionCommand.Add(progressionIncludeDimOption);
         progressionCommand.Add(progressionRawBridgesOption);
+        progressionCommand.Add(progressionAllBridgesOption);
         progressionCommand.Add(progressionDropCollapsedOption);
         progressionCommand.SetAction(parse =>
         {
@@ -856,6 +863,7 @@ class Program
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
             var includeDim = parse.GetValue(progressionIncludeDimOption);
             var rawBridges = parse.GetValue(progressionRawBridgesOption);
+            var allBridges = parse.GetValue(progressionAllBridgesOption);
             var dropCollapsedString = parse.GetValue(progressionDropCollapsedOption) ?? "none";
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -891,7 +899,7 @@ class Program
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
             var targets = ChordProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges, dropCollapsed.Value);
-            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, dropCollapsed.Value, targets);
+            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, dropCollapsed.Value, targets, allBridges);
             return 0;
         });
 

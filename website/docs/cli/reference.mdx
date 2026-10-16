@@ -273,7 +273,7 @@ generated for the Placements column (and the `--lcm-only` filter).
 
 ```bash
 melodroid table progression --chord-keys 0 4 7 \
-  [--min-subset-notes 2] [--include-dim] [--raw-bridges] \
+  [--min-subset-notes 2] [--include-dim] [--raw-bridges] [--all-bridges] \
   [--drop-collapsed none|origin|target|both] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -295,7 +295,8 @@ the root alone identifies each target chord; there are no per-row quality or nex
 - **neither** — neither; the row is still listed.
 
 The **Via** column shows the bridging placements: superset bridges as `{Lcm}@{At}` labels, subset
-bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). Triples sharing a source placement
+bridges as `P_A·S·P_B` triples (capped at 6 per list, overflowing to `…(+M)`; `--all-bridges`
+disables the cap and shows every bridge, growing the cell across more lines as needed). Triples sharing a source placement
 `P_A` and shared subset `S` are factored by that prefix, brace-listing the varying target
 placements — `P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`). This factoring is
 display-only and applies to both the default and `--raw-bridges` lists. By default these lists are
