@@ -35,7 +35,7 @@ public static class ProgressionTableRenderer
             {
                 var via = new List<string>();
                 if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges)}");
-                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(target.SubsetBridges)}");
+                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(GroupSubsetTriples(target.SubsetBridges))}");
 
                 table.AddRow(
                     target.Root.ToString(),
@@ -52,6 +52,46 @@ public static class ProgressionTableRenderer
             $"bridges: {(rawBridges ? "raw" : "pooled")} · " +
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
+    }
+
+    // Factor a flat list of "P_A·S·P_B" subset triples by their shared "P_A·S" prefix, brace-listing
+    // the varying P_B. Purely visual — triples sharing a source placement and shared subset collapse
+    // to "P_A·S·{P_B, …}" (or "P_A·S·P_B" when a single target). Applies to raw and pooled lists alike.
+    private static List<string> GroupSubsetTriples(IReadOnlyList<string> triples)
+    {
+        var order = new List<string>();
+        var byPrefix = new Dictionary<string, List<string>>();
+        foreach (var triple in triples)
+        {
+            var parts = triple.Split('·');
+            var prefix = parts[0] + "·" + parts[1];
+            if (!byPrefix.TryGetValue(prefix, out var pbs))
+            {
+                pbs = new List<string>();
+                byPrefix[prefix] = pbs;
+                order.Add(prefix);
+            }
+            if (!pbs.Contains(parts[2])) pbs.Add(parts[2]);
+        }
+
+        return order
+            .OrderBy(prefix => SortKey(prefix.Split('·')[0]))
+            .ThenBy(prefix => SortKey(prefix.Split('·')[1]))
+            .Select(prefix =>
+            {
+                var pbs = byPrefix[prefix].OrderBy(SortKey).ToList();
+                return pbs.Count == 1
+                    ? $"{prefix}·{pbs[0]}"
+                    : $"{prefix}·{{{string.Join(", ", pbs)}}}";
+            })
+            .ToList();
+    }
+
+    // Sort key for a single "{Lcm}@{At}" label: by LCM then anchor.
+    private static (int Lcm, int At) SortKey(string label)
+    {
+        var parts = label.Split('@');
+        return (int.Parse(parts[0]), int.Parse(parts[1]));
     }
 
     private static string Cap(IReadOnlyList<string> bridges) =>

@@ -295,8 +295,11 @@ the root alone identifies each target chord; there are no per-row quality or nex
 - **neither** — neither; the row is still listed.
 
 The **Via** column shows the bridging placements: superset bridges as `{Lcm}@{At}` labels, subset
-bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). By default these lists are
-**decluttered**, exploiting the LCM-family lattice — without changing any category:
+bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). Triples sharing a source placement
+`P_A` and shared subset `S` are factored by that prefix, brace-listing the varying target
+placements — `P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`). This factoring is
+display-only and applies to both the default and `--raw-bridges` lists. By default these lists are
+also **decluttered**, exploiting the LCM-family lattice — without changing any category:
 
 - **isomorphism-collapsed** — isomorphic families share a key set at shifted anchors (`3@7` and
   `4@0` are both `{0 4 7}`), so every placement is relabelled to its key set's representative,
@@ -311,8 +314,8 @@ bridges as `P_A·S·P_B` triples (capped, overflowing to `…(+M)`). By default 
 Pooling is lossless for reachability (if `S ⊆ P_A ∩ P_B` and `P_A ⊆ P_A'` then `S ⊆ P_A' ∩ P_B'`),
 and the two category booleans are computed from the **raw** placements regardless, so the
 **Category** column is identical with or without decluttering. `--raw-bridges` restores the full
-un-collapsed lists (every containing placement; every `P_A·S·P_B` triple with plain `{Lcm}@{At}`
-labels) for deep inspection.
+un-collapsed lists (every containing placement; every triple with plain `{Lcm}@{At}` labels, still
+prefix-factored for readability) for deep inspection.
 
 `--min-subset-notes` (default `2`, dyads allowed) sets the minimum size of a bridging family `S` — raise it to tame the
 "lots of dyads bridge everything" effect the doc warns about (at the default almost every target is
