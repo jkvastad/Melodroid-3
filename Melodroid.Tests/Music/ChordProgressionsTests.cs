@@ -5,135 +5,197 @@ namespace Melodroid_3.Tests.Music;
 
 public class ChordProgressionsTests
 {
-    // The family data under the standard good-fraction defaults, as production builds it.
-    private static (IReadOnlyList<LcmFamily> Families, IReadOnlyList<FamilyRelation> Relations, LcmFamily Lcm24, LcmFamily Lcm15) Data()
+    private const int Ktet = 12;
+
+    // Family data under the standard good-fraction defaults, as production builds it.
+    private static IReadOnlyList<LcmFamily> Families() =>
+        LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
+
+    private static IReadOnlyList<ProgressionTarget> Compute(
+        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false, bool rawBridges = false) =>
+        ChordProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim, rawBridges);
+
+    private static ProgressionTarget Target(IReadOnlyList<ProgressionTarget> targets, params int[] keys)
     {
-        var families = LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
-        var relations = FamilyRelations.Compute(families);
-        return (families, relations, families.First(f => f.Lcm == 24), families.First(f => f.Lcm == 15));
+        var want = keys.OrderBy(k => k).ToArray();
+        return targets.Single(t => t.Keys.OrderBy(k => k).SequenceEqual(want));
     }
 
-    private static IReadOnlyList<ProgressionTarget> Compute(int[] chordKeys, bool stable)
+    // Independent oracle: the superset principle holds for A→B exactly when some good-LCM family
+    // placement's key set contains the union A ∪ B. Reimplemented here from Placements.Sweep rather
+    // than reusing the production supA-then-check-B path.
+    private static bool SharesSuperset(int[] a, int[] b)
     {
-        var (families, relations, lcm24, lcm15) = Data();
-        return ChordProgressions.Compute(chordKeys, stable, families, relations, lcm24, lcm15);
+        var union = new HashSet<int>(a.Concat(b));
+        return Families()
+            .SelectMany(f => Placements.Sweep(f, Ktet))
+            .Any(p => union.IsSubsetOf(p.Keys));
     }
 
-    // Roots of the reachable targets of a given quality, sorted — the independent oracle for the
-    // reachability tests below.
-    private static int[] ReachableRoots(int[] chordKeys, bool stable, TriadQuality quality) =>
-        Compute(chordKeys, stable)
-            .Where(t => t.Quality == quality)
-            .Select(t => t.Root)
-            .OrderBy(r => r)
-            .ToArray();
-
-    // --- Stable walk: pins the derived per-quality bridge labels (formerly hardcoded). ---
-
-    // Equivalence oracle: the derived stable melodic supersets for the three tabled triads must
-    // reproduce the documented per-quality superset bridge labels.
-    [Theory]
-    [InlineData(new[] { 0, 4, 7 }, new[] { "24@0", "24@5", "24@7", "15s@7" })]   // major
-    [InlineData(new[] { 0, 3, 7 }, new[] { "24@3", "24@8", "24@10", "15s@2" })]  // minor
-    [InlineData(new[] { 0, 3, 6 }, new[] { "24@1", "15s@3" })]                   // dim
-    public void Stable_superset_bridges_match_the_documented_tables(int[] chordKeys, string[] expected)
+    // Reconstruct a placement's key set from a "{Lcm}@{At}" label.
+    private static HashSet<int> KeysOf(string label)
     {
-        var targets = Compute(chordKeys, stable: true);
-
-        var labels = targets.SelectMany(t => t.SupersetBridges).Distinct();
-        labels.Should().BeEquivalentTo(expected);
+        var parts = label.Split('@');
+        var family = Families().First(f => f.Lcm == int.Parse(parts[0]));
+        return new HashSet<int>(Placements.Compute(family, int.Parse(parts[1]), Ktet).Keys);
     }
 
-    // Independent oracle for the stable adjacency rule (15s@X ⇒ 24@(X+1), 24@(X+8) mod 12): the
-    // distinct adjacency bridge labels for each tabled triad must be exactly the derived placements.
-    [Theory]
-    [InlineData(new[] { 0, 4, 7 }, new[] { "24@8", "24@3" })]        // 15s@7 ⇒ 24@8, 24@3 (15→3)
-    [InlineData(new[] { 0, 3, 7 }, new[] { "24@3", "24@10" })]       // 15s@2 ⇒ 24@3, 24@10
-    [InlineData(new[] { 0, 3, 6 }, new[] { "24@4", "24@11" })]       // 15s@3 ⇒ 24@4, 24@11
-    public void Stable_adjacency_bridges_match_the_documented_derivation(int[] chordKeys, string[] expected)
+    // Independent power-of-2-preferred representative label for a given key set, recomputed over all
+    // family placements (the oracle for the canonicalisation the production BuildCanonicalMap does).
+    private static string CanonicalRep(HashSet<int> keys)
     {
-        var targets = Compute(chordKeys, stable: true);
-
-        var labels = targets.SelectMany(t => t.AdjacencyBridges).Distinct();
-        labels.Should().BeEquivalentTo(expected);
+        static bool Pow2(int n) => n > 0 && (n & (n - 1)) == 0;
+        var rep = Families()
+            .SelectMany(f => Placements.Sweep(f, Ktet))
+            .Where(p => keys.SetEquals(p.Keys))
+            .OrderBy(p => Pow2(p.Lcm) ? 0 : 1)
+            .ThenBy(p => p.Lcm)
+            .ThenBy(p => p.At)
+            .First();
+        return $"{rep.Lcm}@{rep.At}";
     }
 
-    // --- Strict walk (default): reproduces the four progression tables in the composition doc. ---
+    private static IEnumerable<string> AllLabels(ProgressionTarget t) =>
+        t.SupersetBridges.Concat(t.SubsetBridges.SelectMany(triple => triple.Split('·')));
 
-    // Major source reaches every major triad but the tritone 4@6.
     [Fact]
-    public void Strict_major_to_major_reaches_all_but_the_tritone()
+    public void Default_yields_major_and_minor_targets_only()
     {
-        ReachableRoots(new[] { 0, 4, 7 }, stable: false, TriadQuality.Major)
-            .Should().Equal(0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11);
-    }
-
-    // Minor source reaches only the minors at {0, ±2, ±5}: relative fifths + whole-step neighbours.
-    [Fact]
-    public void Strict_minor_to_minor_reaches_only_fifths_and_whole_step_neighbours()
-    {
-        ReachableRoots(new[] { 0, 3, 7 }, stable: false, TriadQuality.Minor)
-            .Should().Equal(0, 2, 5, 7, 10);
-    }
-
-    // Major source reaches eight minors: the major scale's own roots plus min@10.
-    [Fact]
-    public void Strict_major_to_minor_reaches_eight_minors()
-    {
-        ReachableRoots(new[] { 0, 4, 7 }, stable: false, TriadQuality.Minor)
-            .Should().Equal(0, 2, 4, 5, 7, 9, 10, 11);
-    }
-
-    // Minor source reaches eight majors, including the parallel major 4@0 via the 15@7 superset.
-    [Fact]
-    public void Strict_minor_to_major_reaches_eight_majors()
-    {
-        ReachableRoots(new[] { 0, 3, 7 }, stable: false, TriadQuality.Major)
-            .Should().Equal(0, 1, 2, 3, 5, 7, 8, 10);
-    }
-
-    // The strict walk reaches at least everything the stable walk does (bidirectional adjacency only
-    // adds placements). Verified on the major source, where the distant majors 4@4,9,11 appear.
-    [Fact]
-    public void Strict_is_a_superset_of_stable()
-    {
-        string Sig(ProgressionTarget t) => $"{t.Quality}:{t.Root}";
-
-        var strict = Compute(new[] { 0, 4, 7 }, stable: false).Select(Sig).ToHashSet();
-        var stable = Compute(new[] { 0, 4, 7 }, stable: true).Select(Sig);
-
-        strict.Should().Contain(stable);
-        strict.Should().Contain(new[] { "Major:4", "Major:9", "Major:11" });
+        var targets = Compute(new[] { 0, 4, 7 });
+        targets.Should().HaveCount(24);
+        targets.Should().OnlyContain(t => t.Quality == TriadQuality.Major || t.Quality == TriadQuality.Minor);
     }
 
     [Fact]
-    public void A_chord_can_progress_to_itself_via_its_own_supersets()
+    public void IncludeDim_adds_the_twelve_diminished_targets()
     {
-        var targets = Compute(new[] { 0, 4, 7 }, stable: true);
-
-        targets.Should().Contain(t =>
-            t.Quality == TriadQuality.Major && t.Root == 0 && t.SupersetBridges.Count > 0);
+        var targets = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        targets.Should().HaveCount(36);
+        targets.Count(t => t.Quality == TriadQuality.Diminished).Should().Be(12);
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void Every_returned_target_carries_a_bridge(bool stable)
+    [InlineData(0, 4, 7)] // major
+    [InlineData(0, 3, 7)] // minor
+    public void Superset_flag_matches_the_union_oracle(int k0, int k1, int k2)
     {
-        var targets = Compute(new[] { 0, 3, 7 }, stable);
-
-        targets.Should().OnlyContain(t => t.SupersetBridges.Count > 0 || t.AdjacencyBridges.Count > 0);
-        targets.Should().NotBeEmpty();
+        var source = new[] { k0, k1, k2 };
+        foreach (var target in Compute(source))
+        {
+            var hasSuperset = target.Category is ProgressionCategory.Superset or ProgressionCategory.Both;
+            hasSuperset.Should().Be(SharesSuperset(source, target.Keys.ToArray()));
+        }
     }
 
-    // A non-triad source (0 4 7 10) yields progressions instead of erroring; every target still
-    // carries a bridge.
+    // Category is derived from the raw placements, so it must be identical whether the displayed
+    // bridges are the raw triples or the decluttered (isomorphism-collapsed + pooled) default.
     [Fact]
-    public void A_non_triad_source_yields_bridge_carrying_targets()
+    public void Category_is_invariant_between_raw_and_pooled_bridges()
     {
-        var targets = Compute(new[] { 0, 4, 7, 10 }, stable: false);
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
 
-        targets.Should().NotBeEmpty();
-        targets.Should().OnlyContain(t => t.SupersetBridges.Count > 0 || t.AdjacencyBridges.Count > 0);
+        foreach (var p in pooled)
+        {
+            var r = Target(raw, p.Keys.ToArray());
+            p.Category.Should().Be(r.Category);
+        }
+    }
+
+    // With the raw bridge lists the category is exactly the (superset-nonempty, subset-nonempty)
+    // pair — the un-pooled lists carry every witness.
+    [Fact]
+    public void Raw_category_is_consistent_with_the_bridge_lists()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true))
+        {
+            var expected = (t.SupersetBridges.Count > 0, t.SubsetBridges.Count > 0) switch
+            {
+                (true, true) => ProgressionCategory.Both,
+                (true, false) => ProgressionCategory.Superset,
+                (false, true) => ProgressionCategory.Subset,
+                _ => ProgressionCategory.Neither,
+            };
+            t.Category.Should().Be(expected);
+        }
+    }
+
+    // Every label in the decluttered output is the power-of-2-preferred representative of its key
+    // set — so isomorphic aliases (e.g. 3@k for 4@k, or 9/10/12@k for 8@k) never appear.
+    [Fact]
+    public void Pooled_labels_are_canonical_power_of_two_representatives()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        {
+            foreach (var label in AllLabels(t))
+                label.Should().Be(CanonicalRep(KeysOf(label)));
+        }
+    }
+
+    // Pooling keeps only maximal containing placements, so no superset bridge's key set is a proper
+    // subset of another's.
+    [Fact]
+    public void Pooled_superset_bridges_form_an_antichain()
+    {
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        {
+            var keySets = t.SupersetBridges.Select(KeysOf).ToList();
+            foreach (var x in keySets)
+                keySets.Should().NotContain(y => y.Count > x.Count && x.IsSubsetOf(y));
+        }
+    }
+
+    // Decluttering only ever removes labels — it never invents bridges the raw view lacked.
+    [Fact]
+    public void Pooling_never_grows_the_bridge_lists()
+    {
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+
+        foreach (var p in pooled)
+        {
+            var r = Target(raw, p.Keys.ToArray());
+            p.SupersetBridges.Count.Should().BeLessThanOrEqualTo(r.SupersetBridges.Count);
+            p.SubsetBridges.Count.Should().BeLessThanOrEqualTo(r.SubsetBridges.Count);
+        }
+    }
+
+    // Doc example (progression-principles.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8}
+    // is reachable by the subset principle (via a shared subset) but the two chords share no single
+    // containing placement — so subset, not superset.
+    [Fact]
+    public void C_to_Db_is_subset_only()
+    {
+        var db = Target(Compute(new[] { 0, 4, 7 }), 1, 5, 8);
+        db.Category.Should().Be(ProgressionCategory.Subset);
+        db.SupersetBridges.Should().BeEmpty();
+        db.SubsetBridges.Should().NotBeEmpty();
+    }
+
+    // Doc example: from C, Eb = 4@3 = {3 7 10} is reachable by the superset principle (both under
+    // 15@7). With any-family subset bridges it also picks up subset bridges, so the category is Both;
+    // the salient assertion is that the superset bridge is present.
+    [Fact]
+    public void C_to_Eb_shares_a_superset()
+    {
+        var eb = Target(Compute(new[] { 0, 4, 7 }), 3, 7, 10);
+        eb.SupersetBridges.Should().NotBeEmpty();
+        eb.Category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
+    }
+
+    // Raising the minimum subset size can only ever remove subset bridges, never add them: the
+    // candidate S families at a higher threshold are a subset of those at a lower one.
+    [Fact]
+    public void Raising_min_subset_notes_never_adds_subset_bridges()
+    {
+        var source = new[] { 0, 4, 7 };
+        var loose = Compute(source, minSubsetNotes: 2);
+        var tight = Compute(source, minSubsetNotes: 4);
+
+        foreach (var t in tight)
+        {
+            var looseBridges = new HashSet<string>(Target(loose, t.Keys.ToArray()).SubsetBridges);
+            t.SubsetBridges.Should().OnlyContain(b => looseBridges.Contains(b));
+        }
     }
 }

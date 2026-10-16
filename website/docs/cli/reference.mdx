@@ -273,40 +273,11 @@ generated for the Placements column (and the `--lcm-only` filter).
 
 ```bash
 melodroid table progression --chord-keys 0 4 7 \
-  [--stable] [--max-size 24] [--max-prime 5] [--max-lcm 24]
-```
-
-For **any** set of `--chord-keys` (12-tet only), lists every major/minor/dim triad it may progress
-to under the **perception walk**. Each row is a reachable next chord with its quality, root, the
-reaching **Rule** (`superset` / `adjacency` / `both`), and the bridging placements (**Via**). A
-triad is reachable when it is a subset of one of the current chord's direct supersets (the
-*superset* rule) or of an adjacency placement (the *adjacency* rule).
-
-By **default** the walk follows the strict rules of the
-[progression principles doc](/docs/music/progression-principles): composition, the
-`4@k ↔ 3@(k+7)` isomorphism, and **bidirectional** 15↔24 adjacency (each direct `15@X` reaches
-`24@(X+1)`,`24@(X+8)` and each direct `24@X` reaches `15@(X+4)`,`15@(X+11)`, materialised as full
-families). This reproduces the four progression tables in that doc — e.g. a major source reaches
-every major triad but the tritone.
-
-`--stable` uses the narrower **stable-superset walk**: adjacency is only one-directional, from each
-stable lcm-15 row `15s@X` to `24@(X+1)`,`24@(X+8)`. `--max-lcm` must be ≥ 24 (both walks reference
-the lcm-24 family); the strict default also needs the lcm-15 family.
-
-The direct supersets are **derived**, not authored: they are exactly the rows of
-`chord-melody --drop-renormalized-subsets --drop-collapsed --stable-15` for the same keys. (The
-website's `perceptionWalk` player still uses the triad-only tables in
-`website/src/lib/perceptionTables.ts`.)
-
-### `principle-progression`
-
-```bash
-melodroid table principle-progression --chord-keys 0 4 7 \
   [--min-subset-notes 2] [--include-dim] [--raw-bridges] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-A **general** formalisation of the two progression principles from the
+A command based on the two progression principles from the
 [progression principles doc](/docs/music/progression-principles) ("Progression
 principles"). For
 **any** set of `--chord-keys` (12-tet only), it lists every major/minor target triad (add
@@ -342,17 +313,14 @@ and the two category booleans are computed from the **raw** placements regardles
 un-collapsed lists (every containing placement; every `P_A·S·P_B` triple with plain `{Lcm}@{At}`
 labels) for deep inspection.
 
-Unlike `progression`, this does **no** 12-tet preference collapsing and does not hardcode the
-15↔24-via-18 adjacency: any good-LCM family may serve as the shared subset `S`. `--min-subset-notes`
-(default `2`, dyads allowed) sets the minimum size of a bridging family `S` — raise it to tame the
+`--min-subset-notes` (default `2`, dyads allowed) sets the minimum size of a bridging family `S` — raise it to tame the
 "lots of dyads bridge everything" effect the doc warns about (at the default almost every target is
 subset-reachable). The two containing placements in the subset test must be **distinct**: a single
 placement holding both chords is classified as *superset*, so the subset principle fires only for
 chords in different placements bridged by a shared subset.
 
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
-generated. This command is aimed at the research question of whether superset- vs subset-reachable
-progressions have a distinguishable "feel".
+generated.
 
 ## Graphs
 

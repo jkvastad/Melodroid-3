@@ -53,6 +53,19 @@ Adding in phrasing, where e.g. Ba in ABaACa means that group B reuses the first 
 />
 
 ## Perception Based Progression
+
+:::caution Update required
+This section's perception-walk tables (the stable/adjacency derivations below) and the
+`perceptionWalk` players were reproduced and verified by the old `table progression` CLI command,
+which has been **removed**. The CLI's `progression` command is now the former
+`principle-progression` (superset / subset / both / neither categorisation) and does **not**
+reproduce the strict/stable-walk and 15↔24 adjacency tables shown here. The website
+`perceptionWalk` players still run — they read the static, hand-authored tables in
+[perceptionTables.ts](https://github.com/jkvastad/Melodroid-3/blob/master/website/src/lib/perceptionTables.ts)
+— but this section's tie to a CLI command (and its C# verification oracle) is broken and needs to
+be rewritten against the new command or re-derived by other means.
+:::
+
 As we saw with melodic supersets, the notes played along with a chord produces expectations for which placement is most likely.
 Randomly drawing chords and melody from lcm sets means that we sometimes create a sort of false signal, where we play notes signaling a placement which we are not drawing from,
 similar to the problem of lcm 24 preference when playing lcm 15.

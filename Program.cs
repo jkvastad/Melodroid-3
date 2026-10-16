@@ -812,107 +812,43 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
-        var progressionStableOption = new Option<bool>("--stable")
+        var progressionMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
-            Description = "Use the narrower stable-superset walk (one-directional 15s@X ⇒ 24@(X+1),(X+8) adjacency) instead of the default strict isomorphism/composition/adjacency walk.",
+            Description = "Minimum number of keys a good-LCM family placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
+            DefaultValueFactory = _ => 2,
+        };
+
+        var progressionIncludeDimOption = new Option<bool>("--include-dim")
+        {
+            Description = "Also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionRawBridgesOption = new Option<bool>("--raw-bridges")
+        {
+            Description = "Show the full un-collapsed Via lists — every containing placement and every P_A·S·P_B triple with plain {Lcm}@{At} labels — instead of the default isomorphism-collapsed (power-of-2), maximally-pooled view. Categories are identical either way.",
             DefaultValueFactory = _ => false,
         };
 
         var progressionCommand = new Command(
             "progression",
-            "For any set of 12-tet keys, list every major/minor/dim triad it may progress to under the perception walk. By default follows the strict rules (composition, 4↔3 isomorphism, bidirectional 15↔24 adjacency); --stable uses the narrower stable-superset walk. 12-tet only.");
+            "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
         progressionCommand.Add(progressionChordKeysOption);
-        progressionCommand.Add(progressionStableOption);
+        progressionCommand.Add(progressionMinSubsetNotesOption);
+        progressionCommand.Add(progressionIncludeDimOption);
+        progressionCommand.Add(progressionRawBridgesOption);
         progressionCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
             var chordKeys = parse.GetValue(progressionChordKeysOption) ?? Array.Empty<int>();
-            var stable = parse.GetValue(progressionStableOption);
-
-            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
-            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
-            if (maxLcm < 24) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 24 (progression needs the lcm-24 family).[/]"); return 1; }
-            if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
-            foreach (var key in chordKeys)
-            {
-                if (key < 0 || key >= 12)
-                {
-                    AnsiConsole.MarkupLine($"[red]--chord-keys value {key} is outside [[0, 11]].[/]");
-                    return 1;
-                }
-            }
-
-            var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
-            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
-            var families = LcmFamilies.Compute(fractions, maxLcm);
-            var relations = FamilyRelations.Compute(families);
-            var lcm24Family = families.FirstOrDefault(f => f.Lcm == 24);
-            if (lcm24Family.Fractions is null || lcm24Family.Fractions.Count == 0)
-            {
-                AnsiConsole.MarkupLine("[red]No lcm-24 family for the current --max-size / --max-prime (progression needs it).[/]");
-                return 1;
-            }
-            var lcm15Family = families.FirstOrDefault(f => f.Lcm == 15);
-            if (!stable && (lcm15Family.Fractions is null || lcm15Family.Fractions.Count == 0))
-            {
-                AnsiConsole.MarkupLine("[red]No lcm-15 family for the current --max-size / --max-prime (the strict walk needs it; use --stable or raise --max-prime).[/]");
-                return 1;
-            }
-
-            var targets = ChordProgressions.Compute(dedupChord, stable, families, relations, lcm24Family, lcm15Family);
-            ProgressionTableRenderer.Render(dedupChord, stable, targets);
-            return 0;
-        });
-
-        var principleChordKeysOption = new Option<int[]>("--chord-keys")
-        {
-            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
-            Required = true,
-            AllowMultipleArgumentsPerToken = true,
-        };
-
-        var principleMinSubsetNotesOption = new Option<int>("--min-subset-notes")
-        {
-            Description = "Minimum number of keys a good-LCM family placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
-            DefaultValueFactory = _ => 2,
-        };
-
-        var principleIncludeDimOption = new Option<bool>("--include-dim")
-        {
-            Description = "Also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
-            DefaultValueFactory = _ => false,
-        };
-
-        var principleRawBridgesOption = new Option<bool>("--raw-bridges")
-        {
-            Description = "Show the full un-collapsed Via lists — every containing placement and every P_A·S·P_B triple with plain {Lcm}@{At} labels — instead of the default isomorphism-collapsed (power-of-2), maximally-pooled view. Categories are identical either way.",
-            DefaultValueFactory = _ => false,
-        };
-
-        var principleProgressionCommand = new Command(
-            "principle-progression",
-            "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
-        principleProgressionCommand.Add(maxSizeOption);
-        principleProgressionCommand.Add(maxPrimeOption);
-        principleProgressionCommand.Add(maxLcmOption);
-        principleProgressionCommand.Add(principleChordKeysOption);
-        principleProgressionCommand.Add(principleMinSubsetNotesOption);
-        principleProgressionCommand.Add(principleIncludeDimOption);
-        principleProgressionCommand.Add(principleRawBridgesOption);
-        principleProgressionCommand.SetAction(parse =>
-        {
-            var maxSize = parse.GetValue(maxSizeOption);
-            var maxPrime = parse.GetValue(maxPrimeOption);
-            var maxLcm = parse.GetValue(maxLcmOption);
-            var chordKeys = parse.GetValue(principleChordKeysOption) ?? Array.Empty<int>();
-            var minSubsetNotes = parse.GetValue(principleMinSubsetNotesOption);
-            var includeDim = parse.GetValue(principleIncludeDimOption);
-            var rawBridges = parse.GetValue(principleRawBridgesOption);
+            var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
+            var includeDim = parse.GetValue(progressionIncludeDimOption);
+            var rawBridges = parse.GetValue(progressionRawBridgesOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -932,8 +868,8 @@ class Program
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
-            var targets = PrincipleProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges);
-            PrincipleProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, targets);
+            var targets = ChordProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges);
+            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, targets);
             return 0;
         });
 
@@ -1272,7 +1208,6 @@ class Program
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(progressionCommand);
-        tableCommand.Add(principleProgressionCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
         tableCommand.Add(chordsCommand);
