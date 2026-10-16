@@ -39,6 +39,10 @@ public enum TriadQuality { Major, Minor, Diminished }
 
 public enum ProgressionCategory { Neither, Superset, Subset, Both }
 
+// Which side's collapsed lcm-15 placements to disqualify as bridges: none (default), the origin
+// (source-chord) supersets, each target triad's supersets, or both. See Placements.CollapsingKey.
+public enum CollapseFilter { None, Origin, Target, Both }
+
 // One candidate next chord and how it is (or is not) reachable: the absolute folded key set +
 // quality/root, the derived category, and the bridging labels under each principle. Superset
 // bridges are placement labels ("{Lcm}@{At}") containing both chords; subset bridges are
@@ -135,11 +139,18 @@ public static class ChordProgressions
         int minSubsetNotes,
         bool includeDim,
         bool rawBridges = false,
+        CollapseFilter dropCollapsed = CollapseFilter.None,
         int ktet = 12)
     {
+        var dropOrigin = dropCollapsed is CollapseFilter.Origin or CollapseFilter.Both;
+        var dropTarget = dropCollapsed is CollapseFilter.Target or CollapseFilter.Both;
+
         // Placements containing the source chord A (raw — every good-LCM family placement ⊇ A).
-        var supA = Placements.FindSupersets(chordKeys, families, ktet)
-            .Select(r => new P(r.Placement, new HashSet<int>(r.Placement.Keys)))
+        // With dropOrigin, lcm-15 placements collapsed by A (collapsing key ∈ A) are disqualified.
+        var supAPlacements = Placements.FindSupersets(chordKeys, families, ktet).Select(r => r.Placement).ToList();
+        if (dropOrigin) supAPlacements = Placements.DropCollapsed(supAPlacements, chordKeys, ktet).ToList();
+        var supA = supAPlacements
+            .Select(p => new P(p, new HashSet<int>(p.Keys)))
             .ToList();
 
         // Shared-subset S candidates: every family placement with at least minSubsetNotes keys.
@@ -157,8 +168,11 @@ public static class ChordProgressions
         {
             var targetSet = (IReadOnlySet<int>)new HashSet<int>(keys);
 
-            var supB = Placements.FindSupersets(keys, families, ktet)
-                .Select(r => new P(r.Placement, new HashSet<int>(r.Placement.Keys)))
+            // With dropTarget, lcm-15 placements collapsed by this target triad are disqualified.
+            var supBPlacements = Placements.FindSupersets(keys, families, ktet).Select(r => r.Placement).ToList();
+            if (dropTarget) supBPlacements = Placements.DropCollapsed(supBPlacements, keys, ktet).ToList();
+            var supB = supBPlacements
+                .Select(p => new P(p, new HashSet<int>(p.Keys)))
                 .ToList();
 
             // Superset principle: a single placement (∈ supA) contains both A and B.

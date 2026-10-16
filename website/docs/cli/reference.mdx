@@ -274,6 +274,7 @@ generated for the Placements column (and the `--lcm-only` filter).
 ```bash
 melodroid table progression --chord-keys 0 4 7 \
   [--min-subset-notes 2] [--include-dim] [--raw-bridges] \
+  [--drop-collapsed none|origin|target|both] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -318,6 +319,14 @@ labels) for deep inspection.
 subset-reachable). The two containing placements in the subset test must be **distinct**: a single
 placement holding both chords is classified as *superset*, so the subset principle fires only for
 chords in different placements bridged by a shared subset.
+
+`--drop-collapsed` (default `none`) disqualifies an `lcm-15` placement whose collapsing key
+`(At+8) mod 12` is one of the keys of the chord it contains — under the
+[preference principle](/docs/music/preference) such a placement has already collapsed onto an
+adjacent `lcm-24` and is not a valid bridge. `origin` applies the filter to the source chord's
+containing placements `P_A`, `target` to each target triad's containing placements `P_B`, and `both`
+to both sides. Because the categories and the Via lists both derive from these placements, a
+disqualified placement is removed from each. 12-tet / `lcm-15` only; other families are untouched.
 
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
 generated.

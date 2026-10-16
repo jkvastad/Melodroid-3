@@ -12,8 +12,24 @@ public class ChordProgressionsTests
         LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
 
     private static IReadOnlyList<ProgressionTarget> Compute(
-        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false, bool rawBridges = false) =>
-        ChordProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim, rawBridges);
+        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false, bool rawBridges = false,
+        CollapseFilter dropCollapsed = CollapseFilter.None) =>
+        ChordProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim, rawBridges, dropCollapsed);
+
+    // Parse a raw "{Lcm}@{At}" label into its (lcm, at) pair. Independent of production's label code.
+    private static (int Lcm, int At) ParseLabel(string label)
+    {
+        var parts = label.Split('@');
+        return (int.Parse(parts[0]), int.Parse(parts[1]));
+    }
+
+    // Is `label` an lcm-15 placement collapsed by `chord` — i.e. its collapsing key (At+8) mod 12 is
+    // one of the chord keys? Reimplements the (At+8) mod 12 rule as the independent oracle.
+    private static bool Collapsed15(string label, IEnumerable<int> chord)
+    {
+        var (lcm, at) = ParseLabel(label);
+        return lcm == 15 && chord.Contains((at + 8) % 12);
+    }
 
     private static ProgressionTarget Target(IReadOnlyList<ProgressionTarget> targets, params int[] keys)
     {
@@ -181,6 +197,59 @@ public class ChordProgressionsTests
         var eb = Target(Compute(new[] { 0, 4, 7 }), 3, 7, 10);
         eb.SupersetBridges.Should().NotBeEmpty();
         eb.Category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
+    }
+
+    // --drop-collapsed defaults to None, so an explicit None must reproduce the default behaviour
+    // exactly (categories and bridge lists alike).
+    [Fact]
+    public void DropCollapsed_none_matches_the_default()
+    {
+        var @default = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+        var none = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.None);
+
+        foreach (var t in none)
+        {
+            var d = Target(@default, t.Keys.ToArray());
+            t.Category.Should().Be(d.Category);
+            t.SupersetBridges.Should().Equal(d.SupersetBridges);
+            t.SubsetBridges.Should().Equal(d.SubsetBridges);
+        }
+    }
+
+    // Origin-side superset bridges come straight from the source chord's containing placements. With
+    // the default (None) the C-major self-target {0 4 7} is bridged by collapsed lcm-15 placements
+    // (15@4, collapsing key 0; 15@11, collapsing key 7 — both ∈ {0 4 7}); --drop-collapsed origin
+    // disqualifies them, and no collapsed lcm-15 may survive as a superset bridge for any target.
+    [Fact]
+    public void DropCollapsed_origin_removes_collapsed_fifteen_superset_bridges()
+    {
+        var source = new[] { 0, 4, 7 };
+
+        var self = Target(Compute(source, rawBridges: true), 0, 4, 7);
+        self.SupersetBridges.Should().Contain("15@4").And.Contain("15@11");
+
+        var origin = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Origin);
+        foreach (var t in origin)
+            t.SupersetBridges.Should().OnlyContain(b => !Collapsed15(b, source));
+    }
+
+    // In a raw P_A·S·P_B subset triple, P_A ⊇ source (origin side) and P_B ⊇ target (target side).
+    // --drop-collapsed origin removes collapsed lcm-15 placements from the P_A slot; --target removes
+    // them from the P_B slot. (Superset bridges are unaffected by --target: they derive from P_A only.)
+    [Fact]
+    public void DropCollapsed_filters_the_respective_subset_triple_slot()
+    {
+        var source = new[] { 0, 4, 7 };
+
+        var origin = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Origin);
+        foreach (var t in origin)
+            foreach (var triple in t.SubsetBridges)
+                Collapsed15(triple.Split('·')[0], source).Should().BeFalse();
+
+        var target = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Target);
+        foreach (var t in target)
+            foreach (var triple in t.SubsetBridges)
+                Collapsed15(triple.Split('·')[2], t.Keys).Should().BeFalse();
     }
 
     // Raising the minimum subset size can only ever remove subset bridges, never add them: the

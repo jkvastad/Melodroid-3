@@ -830,6 +830,12 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
+        var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
+        {
+            Description = "Disqualify lcm-15 placements collapsed (collapsing key (At+8) mod 12 is a chord key) by their respective chord, so they no longer count toward categories or appear in Via: 'none' (default), 'origin' (source-chord side), 'target' (each target triad), or 'both'. 12-tet only.",
+            DefaultValueFactory = _ => "none",
+        };
+
         var progressionCommand = new Command(
             "progression",
             "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
@@ -840,6 +846,7 @@ class Program
         progressionCommand.Add(progressionMinSubsetNotesOption);
         progressionCommand.Add(progressionIncludeDimOption);
         progressionCommand.Add(progressionRawBridgesOption);
+        progressionCommand.Add(progressionDropCollapsedOption);
         progressionCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -849,6 +856,7 @@ class Program
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
             var includeDim = parse.GetValue(progressionIncludeDimOption);
             var rawBridges = parse.GetValue(progressionRawBridgesOption);
+            var dropCollapsedString = parse.GetValue(progressionDropCollapsedOption) ?? "none";
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -864,12 +872,26 @@ class Program
                 }
             }
 
+            var dropCollapsed = dropCollapsedString.ToLowerInvariant() switch
+            {
+                "none" => CollapseFilter.None,
+                "origin" => CollapseFilter.Origin,
+                "target" => CollapseFilter.Target,
+                "both" => CollapseFilter.Both,
+                _ => (CollapseFilter?)null,
+            };
+            if (dropCollapsed is null)
+            {
+                AnsiConsole.MarkupLine($"[red]--drop-collapsed value '{dropCollapsedString}' is not one of none|origin|target|both.[/]");
+                return 1;
+            }
+
             var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
-            var targets = ChordProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges);
-            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, targets);
+            var targets = ChordProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges, dropCollapsed.Value);
+            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, dropCollapsed.Value, targets);
             return 0;
         });
 

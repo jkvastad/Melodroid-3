@@ -12,6 +12,7 @@ public static class ProgressionTableRenderer
         IReadOnlyCollection<int> chordKeys,
         int minSubsetNotes,
         bool rawBridges,
+        CollapseFilter dropCollapsed,
         IReadOnlyList<ProgressionTarget> targets,
         IAnsiConsole? console = null)
     {
@@ -49,6 +50,7 @@ public static class ProgressionTableRenderer
         console.MarkupLine(
             $"[grey]progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
             $"bridges: {(rawBridges ? "raw" : "pooled")} · " +
+            $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
     }
 
