@@ -12,6 +12,8 @@
 
 * Does preference for small primes tie in with musical neurodynamics?
 
+* Perhaps collapse in the progression command should also affect lcm 20 due to its relation to lcm 15?
+
 ## Intro (intro.mdx)
 
 ## Theory
