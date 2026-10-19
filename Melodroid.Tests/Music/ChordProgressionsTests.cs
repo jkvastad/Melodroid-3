@@ -12,9 +12,18 @@ public class ChordProgressionsTests
         LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
 
     private static IReadOnlyList<ProgressionTarget> Compute(
-        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false, bool rawBridges = false,
+        int[] chordKeys, int minSubsetNotes = 2, bool includeDim = false,
+        bool collapseIsomorphic = false, bool poolMaximal = false,
         CollapseFilter dropCollapsed = CollapseFilter.None) =>
-        ChordProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim, rawBridges, dropCollapsed);
+        ChordProgressions.Compute(chordKeys, Families(), minSubsetNotes, includeDim,
+            collapseIsomorphic, poolMaximal, dropCollapsed);
+
+    private static (ProgressionCategory Category, IReadOnlyList<ProgressionTriplet> Triplets) ComputePair(
+        int[] origin, int[] target, int minSubsetNotes = 2,
+        bool collapseIsomorphic = false, bool poolMaximal = false,
+        CollapseFilter dropCollapsed = CollapseFilter.None) =>
+        ChordProgressions.ComputePair(origin, target, Families(), minSubsetNotes,
+            collapseIsomorphic, poolMaximal, dropCollapsed);
 
     // Parse a raw "{Lcm}@{At}" label into its (lcm, at) pair. Independent of production's label code.
     private static (int Lcm, int At) ParseLabel(string label)
@@ -108,8 +117,8 @@ public class ChordProgressionsTests
     [Fact]
     public void Category_is_invariant_between_raw_and_pooled_bridges()
     {
-        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
-        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true, collapseIsomorphic: true, poolMaximal: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true);
 
         foreach (var p in pooled)
         {
@@ -123,7 +132,7 @@ public class ChordProgressionsTests
     [Fact]
     public void Raw_category_is_consistent_with_the_bridge_lists()
     {
-        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true))
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
         {
             var expected = (t.SupersetBridges.Count > 0, t.SubsetBridges.Count > 0) switch
             {
@@ -141,7 +150,7 @@ public class ChordProgressionsTests
     [Fact]
     public void Pooled_labels_are_canonical_power_of_two_representatives()
     {
-        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true, collapseIsomorphic: true, poolMaximal: true))
         {
             foreach (var label in AllLabels(t))
                 label.Should().Be(CanonicalRep(KeysOf(label)));
@@ -153,7 +162,7 @@ public class ChordProgressionsTests
     [Fact]
     public void Pooled_superset_bridges_form_an_antichain()
     {
-        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
+        foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true, collapseIsomorphic: true, poolMaximal: true))
         {
             var keySets = t.SupersetBridges.Select(KeysOf).ToList();
             foreach (var x in keySets)
@@ -165,8 +174,8 @@ public class ChordProgressionsTests
     [Fact]
     public void Pooling_never_grows_the_bridge_lists()
     {
-        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true);
-        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
+        var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true, collapseIsomorphic: true, poolMaximal: true);
+        var raw = Compute(new[] { 0, 4, 7 }, includeDim: true);
 
         foreach (var p in pooled)
         {
@@ -204,8 +213,8 @@ public class ChordProgressionsTests
     [Fact]
     public void DropCollapsed_none_matches_the_default()
     {
-        var @default = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true);
-        var none = Compute(new[] { 0, 4, 7 }, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.None);
+        var @default = Compute(new[] { 0, 4, 7 }, includeDim: true);
+        var none = Compute(new[] { 0, 4, 7 }, includeDim: true, dropCollapsed: CollapseFilter.None);
 
         foreach (var t in none)
         {
@@ -225,10 +234,10 @@ public class ChordProgressionsTests
     {
         var source = new[] { 0, 4, 7 };
 
-        var self = Target(Compute(source, rawBridges: true), 0, 4, 7);
+        var self = Target(Compute(source), 0, 4, 7);
         self.SupersetBridges.Should().Contain("15@4").And.Contain("15@11");
 
-        var origin = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Origin);
+        var origin = Compute(source, includeDim: true, dropCollapsed: CollapseFilter.Origin);
         foreach (var t in origin)
             t.SupersetBridges.Should().OnlyContain(b => !Collapsed15(b, source));
     }
@@ -242,12 +251,12 @@ public class ChordProgressionsTests
     {
         var source = new[] { 0, 4, 7 };
 
-        var none = Target(Compute(source, rawBridges: true), 0, 3, 7);
+        var none = Target(Compute(source), 0, 3, 7);
         none.SupersetBridges.Should().Contain("15@7");
 
         foreach (var filter in new[] { CollapseFilter.Target, CollapseFilter.Both })
         {
-            var results = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: filter);
+            var results = Compute(source, includeDim: true, dropCollapsed: filter);
             Target(results, 0, 3, 7).SupersetBridges.Should().NotContain("15@7");
             foreach (var t in results)
                 t.SupersetBridges.Should().OnlyContain(b => !Collapsed15(b, t.Keys));
@@ -262,12 +271,12 @@ public class ChordProgressionsTests
     {
         var source = new[] { 0, 4, 7 };
 
-        var origin = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Origin);
+        var origin = Compute(source, includeDim: true, dropCollapsed: CollapseFilter.Origin);
         foreach (var t in origin)
             foreach (var triple in t.SubsetBridges)
                 Collapsed15(triple.Split('·')[0], source).Should().BeFalse();
 
-        var target = Compute(source, includeDim: true, rawBridges: true, dropCollapsed: CollapseFilter.Target);
+        var target = Compute(source, includeDim: true, dropCollapsed: CollapseFilter.Target);
         foreach (var t in target)
             foreach (var triple in t.SubsetBridges)
                 Collapsed15(triple.Split('·')[2], t.Keys).Should().BeFalse();
@@ -286,6 +295,57 @@ public class ChordProgressionsTests
         {
             var looseBridges = new HashSet<string>(Target(loose, t.Keys.ToArray()).SubsetBridges);
             t.SubsetBridges.Should().OnlyContain(b => looseBridges.Contains(b));
+        }
+    }
+
+    // Standard form, doc example: C = {0 4 7} → Eb = {3 7 10} has a superset triplet (both chords
+    // sit under 15@7). A superset triplet's three slots are the one containing placement (P, P, P).
+    [Fact]
+    public void ComputePair_C_to_Eb_has_a_superset_triplet_via_fifteen_at_seven()
+    {
+        var (category, triplets) = ComputePair(new[] { 0, 4, 7 }, new[] { 3, 7, 10 });
+
+        category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
+        triplets.Should().Contain(t =>
+            t.Principle == ProgressionPrinciple.Superset && t.Bridge.Lcm == 15 && t.Bridge.At == 7);
+
+        foreach (var t in triplets.Where(t => t.Principle == ProgressionPrinciple.Superset))
+        {
+            t.Origin.Should().Be(t.Bridge);
+            t.Target.Should().Be(t.Bridge);
+        }
+    }
+
+    // Standard form, doc example: C → Db = {1 5 8} is subset-only — no single placement holds both,
+    // so every triplet is a subset triple whose origin slot ⊇ C and target slot ⊇ Db.
+    [Fact]
+    public void ComputePair_C_to_Db_is_subset_only_with_containing_slots()
+    {
+        var origin = new[] { 0, 4, 7 };
+        var target = new[] { 1, 5, 8 };
+        var (category, triplets) = ComputePair(origin, target);
+
+        category.Should().Be(ProgressionCategory.Subset);
+        triplets.Should().NotBeEmpty();
+        foreach (var t in triplets)
+        {
+            t.Principle.Should().Be(ProgressionPrinciple.Subset);
+            new HashSet<int>(t.Origin.Keys).IsSupersetOf(origin).Should().BeTrue();
+            new HashSet<int>(t.Target.Keys).IsSupersetOf(target).Should().BeTrue();
+        }
+    }
+
+    // ComputePair is the per-pair core of the convenience enumeration: for every enumerated target it
+    // must agree on the category, and the raw triplet list is non-empty exactly when reachable.
+    [Fact]
+    public void ComputePair_agrees_with_Compute_per_target()
+    {
+        var origin = new[] { 0, 4, 7 };
+        foreach (var t in Compute(origin, includeDim: true))
+        {
+            var (category, triplets) = ComputePair(origin, t.Keys.ToArray());
+            category.Should().Be(t.Category);
+            (triplets.Count == 0).Should().Be(category == ProgressionCategory.Neither);
         }
     }
 }

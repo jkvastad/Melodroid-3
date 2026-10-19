@@ -5,13 +5,70 @@ namespace Melodroid_3.Output;
 
 public static class ProgressionTableRenderer
 {
-    // Cap the bridge lists so a "Via" cell stays readable; overflow is summarised as …(+M).
+    // Cap the convenience-table bridge lists so a "Via" cell stays readable; overflow is …(+M).
     private const int MaxBridges = 6;
 
+    // Standard form: one ordered chord pair rendered as explicit origin/bridge/target triplet rows,
+    // superset rows first, then subset — each sorted by bridge, then origin, then target.
+    public static void RenderPair(
+        IReadOnlyCollection<int> origin,
+        IReadOnlyCollection<int> target,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        CollapseFilter dropCollapsed,
+        ProgressionCategory category,
+        IReadOnlyList<ProgressionTriplet> triplets,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var originStr = KeySet(origin);
+        var targetStr = KeySet(target);
+
+        if (triplets.Count == 0)
+        {
+            console.MarkupLine($"{originStr} → {targetStr}: [grey]neither — no progression found[/]");
+        }
+        else
+        {
+            var table = new Table()
+                .Title($"{originStr} → {targetStr}")
+                .AddColumn("Principle")
+                .AddColumn("Origin")
+                .AddColumn("Bridge")
+                .AddColumn("Target");
+
+            var ordered = triplets
+                .OrderBy(t => t.Principle == ProgressionPrinciple.Superset ? 0 : 1)
+                .ThenBy(t => Key(t.Bridge))
+                .ThenBy(t => Key(t.Origin))
+                .ThenBy(t => Key(t.Target));
+
+            foreach (var t in ordered)
+            {
+                table.AddRow(
+                    t.Principle == ProgressionPrinciple.Superset ? "[blue]superset[/]" : "[yellow]subset[/]",
+                    Label(t.Origin),
+                    Label(t.Bridge),
+                    Label(t.Target));
+            }
+
+            console.Write(table);
+        }
+
+        console.MarkupLine(
+            $"[grey]progression: {originStr} → {targetStr} · {category.ToString().ToLowerInvariant()} · " +
+            $"minSubsetNotes={minSubsetNotes} · bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
+            $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
+    }
+
+    // Convenience form: one table per triad quality, a row per candidate target root.
     public static void Render(
         IReadOnlyCollection<int> chordKeys,
         int minSubsetNotes,
-        bool rawBridges,
+        bool collapseIsomorphic,
+        bool poolMaximal,
         CollapseFilter dropCollapsed,
         IReadOnlyList<ProgressionTarget> targets,
         bool allBridges = false,
@@ -47,10 +104,9 @@ public static class ProgressionTableRenderer
             console.Write(table);
         }
 
-        var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         console.MarkupLine(
-            $"[grey]progression: chord={chordStr} · minSubsetNotes={minSubsetNotes} · " +
-            $"bridges: {(rawBridges ? "raw" : "pooled")}{(allBridges ? ", all" : "")} · " +
+            $"[grey]progression: chord={KeySet(chordKeys)} · minSubsetNotes={minSubsetNotes} · " +
+            $"bridges: {BridgeMode(collapseIsomorphic, poolMaximal)}{(allBridges ? ", all" : "")} · " +
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · " +
             $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
     }
@@ -86,6 +142,22 @@ public static class ProgressionTableRenderer
                     : $"{prefix}·{{{string.Join(", ", pbs)}}}";
             })
             .ToList();
+    }
+
+    private static string Label(Placement p) => $"{p.Lcm}@{p.At}";
+
+    private static (int Lcm, int At) Key(Placement p) => (p.Lcm, p.At);
+
+    private static string KeySet(IReadOnlyCollection<int> keys) =>
+        "{" + string.Join(", ", keys.OrderBy(k => k)) + "}";
+
+    // "raw" when neither declutter is active, else the active ones (e.g. "collapse-isomorphic+pool-maximal").
+    private static string BridgeMode(bool collapseIsomorphic, bool poolMaximal)
+    {
+        var parts = new List<string>();
+        if (collapseIsomorphic) parts.Add("collapse-isomorphic");
+        if (poolMaximal) parts.Add("pool-maximal");
+        return parts.Count == 0 ? "raw" : string.Join("+", parts);
     }
 
     // Sort key for a single "{Lcm}@{At}" label: by LCM then anchor.

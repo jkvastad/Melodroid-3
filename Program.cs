@@ -805,10 +805,16 @@ class Program
             return 0;
         });
 
-        var progressionChordKeysOption = new Option<int[]>("--chord-keys")
+        var progressionOriginKeysOption = new Option<int[]>("--origin-keys")
         {
-            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
+            Description = "Origin-chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
             Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var progressionTargetKeysOption = new Option<int[]>("--target-keys")
+        {
+            Description = "Target-chord key indices (each in [0, 11]), space-separated. When given, print every origin→target progression as explicit origin/bridge/target triplet rows. When omitted, enumerate all major/minor (+ --include-dim) triads as candidate targets and print the per-target table.",
             AllowMultipleArgumentsPerToken = true,
         };
 
@@ -820,38 +826,46 @@ class Program
 
         var progressionIncludeDimOption = new Option<bool>("--include-dim")
         {
-            Description = "Also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
+            Description = "Convenience form only (no --target-keys): also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
             DefaultValueFactory = _ => false,
         };
 
-        var progressionRawBridgesOption = new Option<bool>("--raw-bridges")
+        var progressionCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
         {
-            Description = "Show the full un-collapsed Via lists — every containing placement and every P_A·S·P_B triple with plain {Lcm}@{At} labels — instead of the default isomorphism-collapsed (power-of-2), maximally-pooled view. Categories are identical either way.",
+            Description = "Declutter: relabel each placement to the representative of its key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Categories are unaffected. Default off (raw labels).",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionPoolMaximalOption = new Option<bool>("--pool-maximal")
+        {
+            Description = "Declutter: keep only the maximal containing placements P_A/P_B (by key-set inclusion) and the maximal shared subsets S. Lossless for existence, so categories are unaffected. Default off (raw).",
             DefaultValueFactory = _ => false,
         };
 
         var progressionAllBridgesOption = new Option<bool>("--all-bridges")
         {
-            Description = "Show every bridge in each Via cell instead of capping at 6 and summarising the rest as …(+M). Cells grow taller (wrapped across lines) as needed.",
+            Description = "Convenience form only: show every bridge in each Via cell instead of capping at 6 and summarising the rest as …(+M). Cells grow taller (wrapped across lines) as needed.",
             DefaultValueFactory = _ => false,
         };
 
         var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
         {
-            Description = "Disqualify lcm-15 placements collapsed (collapsing key (At+8) mod 12 is a chord key) by their respective chord, so they no longer count toward categories or appear in Via: 'none' (default), 'origin' (source-chord side), 'target' (each target triad), or 'both'. 12-tet only.",
+            Description = "Disqualify lcm-15 placements collapsed (collapsing key (At+8) mod 12 is a chord key) by their respective chord, so they no longer count toward categories or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
             DefaultValueFactory = _ => "none",
         };
 
         var progressionCommand = new Command(
             "progression",
-            "For any set of 12-tet keys, categorise every major/minor (and, with --include-dim, dim) triad it may progress to as superset / subset / both / neither under the two progression principles. Superset: a single good-LCM placement contains both chords. Subset: the chords' (raw) containing placements share a common subset family of ≥ --min-subset-notes keys. Unreachable ('neither') targets are listed too. 12-tet only.");
+            "Formalise the two progression principles for 12-tet chords. With --target-keys: print every origin→target progression as explicit origin/bridge/target placement triplets (superset = one good-LCM placement holds both chords; subset = P_A·S·P_B via a shared subset family S of ≥ --min-subset-notes keys). Without --target-keys: enumerate every major/minor (+ --include-dim) triad as a candidate target and categorise each as superset / subset / both / neither. Bridge lists are raw by default; --collapse-isomorphic and --pool-maximal declutter them without changing categories. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
-        progressionCommand.Add(progressionChordKeysOption);
+        progressionCommand.Add(progressionOriginKeysOption);
+        progressionCommand.Add(progressionTargetKeysOption);
         progressionCommand.Add(progressionMinSubsetNotesOption);
         progressionCommand.Add(progressionIncludeDimOption);
-        progressionCommand.Add(progressionRawBridgesOption);
+        progressionCommand.Add(progressionCollapseIsomorphicOption);
+        progressionCommand.Add(progressionPoolMaximalOption);
         progressionCommand.Add(progressionAllBridgesOption);
         progressionCommand.Add(progressionDropCollapsedOption);
         progressionCommand.SetAction(parse =>
@@ -859,10 +873,12 @@ class Program
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
-            var chordKeys = parse.GetValue(progressionChordKeysOption) ?? Array.Empty<int>();
+            var originKeys = parse.GetValue(progressionOriginKeysOption) ?? Array.Empty<int>();
+            var targetKeys = parse.GetValue(progressionTargetKeysOption) ?? Array.Empty<int>();
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
             var includeDim = parse.GetValue(progressionIncludeDimOption);
-            var rawBridges = parse.GetValue(progressionRawBridgesOption);
+            var collapseIsomorphic = parse.GetValue(progressionCollapseIsomorphicOption);
+            var poolMaximal = parse.GetValue(progressionPoolMaximalOption);
             var allBridges = parse.GetValue(progressionAllBridgesOption);
             var dropCollapsedString = parse.GetValue(progressionDropCollapsedOption) ?? "none";
 
@@ -870,12 +886,20 @@ class Program
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
-            if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
-            foreach (var key in chordKeys)
+            if (originKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--origin-keys must contain at least one value.[/]"); return 1; }
+            foreach (var key in originKeys)
             {
                 if (key < 0 || key >= 12)
                 {
-                    AnsiConsole.MarkupLine($"[red]--chord-keys value {key} is outside [[0, 11]].[/]");
+                    AnsiConsole.MarkupLine($"[red]--origin-keys value {key} is outside [[0, 11]].[/]");
+                    return 1;
+                }
+            }
+            foreach (var key in targetKeys)
+            {
+                if (key < 0 || key >= 12)
+                {
+                    AnsiConsole.MarkupLine($"[red]--target-keys value {key} is outside [[0, 11]].[/]");
                     return 1;
                 }
             }
@@ -894,12 +918,28 @@ class Program
                 return 1;
             }
 
-            var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
+            var dedupOrigin = originKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
-            var targets = ChordProgressions.Compute(dedupChord, families, minSubsetNotes, includeDim, rawBridges, dropCollapsed.Value);
-            ProgressionTableRenderer.Render(dedupChord, minSubsetNotes, rawBridges, dropCollapsed.Value, targets, allBridges);
+            if (targetKeys.Length > 0)
+            {
+                var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
+                var (category, triplets) = ChordProgressions.ComputePair(
+                    dedupOrigin, dedupTarget, families, minSubsetNotes,
+                    collapseIsomorphic, poolMaximal, dropCollapsed.Value);
+                ProgressionTableRenderer.RenderPair(
+                    dedupOrigin, dedupTarget, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                    dropCollapsed.Value, category, triplets);
+                return 0;
+            }
+
+            var targets = ChordProgressions.Compute(
+                dedupOrigin, families, minSubsetNotes, includeDim,
+                collapseIsomorphic, poolMaximal, dropCollapsed.Value);
+            ProgressionTableRenderer.Render(
+                dedupOrigin, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                dropCollapsed.Value, targets, allBridges);
             return 0;
         });
 
