@@ -247,9 +247,21 @@ public class PlacementsTests
     }
 
     [Theory]
-    [InlineData(24, 0, 12)] // non-15 family
+    [InlineData(20, 4, 12, 7)] // 20@4 is the subset of 15@11, collapses on key 7
+    [InlineData(20, 0, 12, 3)]
+    [InlineData(20, 9, 12, 0)]
+    public void CollapsingKey_lcm20_in_12tet_is_at_plus_3(int lcm, int at, int ktet, int expected)
+    {
+        var placement = new Placement(lcm, at, new[] { 0 });
+
+        Placements.CollapsingKey(placement, ktet).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(24, 0, 12)] // non-15/20 family
     [InlineData(15, 7, 19)] // non-12 ktet
-    public void CollapsingKey_returns_null_off_the_12tet_lcm15_case(int lcm, int at, int ktet)
+    [InlineData(20, 7, 19)] // non-12 ktet
+    public void CollapsingKey_returns_null_off_the_12tet_lcm15_or_lcm20_case(int lcm, int at, int ktet)
     {
         var placement = new Placement(lcm, at, new[] { 0 });
 
@@ -281,6 +293,22 @@ public class PlacementsTests
     }
 
     [Fact]
+    public void DropCollapsed_drops_a_collapsed_lcm20_but_keeps_a_stable_one()
+    {
+        // 20@4 collapses on key (4+3) mod 12 = 7; 20@0 collapses on key 3.
+        var placements = new List<Placement>
+        {
+            new(20, 4, new[] { 0, 2, 4, 7, 8, 11 }),
+            new(20, 0, new[] { 0 }),
+        };
+        var chord = new[] { 0, 4, 7 }; // contains 7 (drops 20@4), not 3 (keeps 20@0)
+
+        var kept = Placements.DropCollapsed(placements, chord, ktet: 12);
+
+        kept.Select(p => (p.Lcm, p.At)).Should().Equal(new[] { (20, 0) });
+    }
+
+    [Fact]
     public void StableFifteen_drops_only_the_collapsing_key_of_lcm15_rows()
     {
         var families = LcmFamilies.Compute(
@@ -302,6 +330,15 @@ public class PlacementsTests
         // Non-lcm-15 placements are untouched (same key sets as before).
         foreach (var p in placements.Where(p => p.Lcm != 15))
             stable.Single(s => s.Lcm == p.Lcm && s.At == p.At).Keys.Should().Equal(p.Keys);
+    }
+
+    [Fact]
+    public void StableFifteen_leaves_lcm20_placements_untouched()
+    {
+        // CollapsingKey now fires for lcm-20, but 15s is an lcm-15 concept — lcm-20 rows pass through.
+        var placements = new List<Placement> { new(20, 4, new[] { 0, 2, 4, 7, 8, 11 }) };
+
+        Placements.StableFifteen(placements, ktet: 12)[0].Keys.Should().Equal(0, 2, 4, 7, 8, 11);
     }
 
     [Fact]

@@ -45,8 +45,9 @@ public enum ProgressionCategory { Neither, Superset, Subset, Both }
 
 public enum ProgressionPrinciple { Superset, Subset }
 
-// Which side's collapsed lcm-15 placements to disqualify as bridges: none (default), the origin
-// (source-chord) supersets, the target's supersets, or both. See Placements.CollapsingKey.
+// Which side's collapsed unstable placements (lcm-15 / lcm-20) to disqualify as bridges: none
+// (default), the origin (source-chord) supersets, the target's supersets, or both. See
+// Placements.CollapsingKey.
 public enum CollapseFilter { None, Origin, Target, Both }
 
 // One progression as a triplet of placements. Superset principle: a single placement contains both

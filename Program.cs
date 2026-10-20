@@ -747,7 +747,7 @@ class Program
 
         var chordMelodyDropCollapsedOption = new Option<bool>("--drop-collapsed")
         {
-            Description = "Drop lcm-15 placements whose collapsing key (At+8) mod 12 is one of --chord-keys — they have collapsed onto an lcm-24 under lcm-24 preference. 12-tet only; no effect on other families or ktets.",
+            Description = "Drop unstable placements whose collapsing key is one of --chord-keys — they have collapsed onto a smaller pattern under preference: lcm-15 (key (At+8) mod 12, collapses to lcm-24) and lcm-20 (key (At+3) mod 12, collapses to 15@(At+7)). 12-tet only; no effect on other families or ktets.",
             DefaultValueFactory = _ => false,
         };
 
@@ -850,7 +850,7 @@ class Program
 
         var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
         {
-            Description = "Disqualify lcm-15 placements collapsed (collapsing key (At+8) mod 12 is a chord key) by their respective chord, so they no longer count toward categories or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
+            Description = "Disqualify unstable placements collapsed by their respective chord (collapsing key is a chord key) — lcm-15 (key (At+8) mod 12) and lcm-20 (key (At+3) mod 12) — so they no longer count toward categories or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
             DefaultValueFactory = _ => "none",
         };
 

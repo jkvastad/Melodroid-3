@@ -166,14 +166,21 @@ public static class Placements
             .ToList();
     }
 
-    // The collapsing key of an lcm-15 placement: playing key (At+8) mod 12 reinterprets 15@At as the
-    // adjacent lcm-24 placements 24@(At+1)/24@(At+8) ("lcm 24 preference"). 12-tet / lcm-15 only,
-    // matching the adjacency rule in ChordProgressions. Null for any other family or ktet.
+    // The collapsing key of an unstable placement: the key whose presence reinterprets it as a
+    // smaller/simpler pattern under preference.
+    //   - lcm-15: playing (At+8) mod 12 reinterprets 15@At as the adjacent lcm-24 placements
+    //     24@(At+1)/24@(At+8) ("lcm 24 preference").
+    //   - lcm-20: 20@At is the lcm-20 subset of 15@(At+7) and collapses to it (20@k → 15@(k+7)), so
+    //     it shares that parent's collapsing key: ((At+7)+8) mod 12 = (At+3) mod 12.
+    // 12-tet only; null for any other family or ktet.
     public static int? CollapsingKey(Placement placement, int ktet) =>
-        ktet == 12 && placement.Lcm == 15 ? (placement.At + 8) % 12 : null;
+        ktet != 12 ? null
+        : placement.Lcm == 15 ? (placement.At + 8) % 12
+        : placement.Lcm == 20 ? (placement.At + 3) % 12
+        : null;
 
-    // Drop lcm-15 placements whose collapsing key is one of the chord keys (they have collapsed onto
-    // an lcm-24 under lcm-24 preference). Other placements pass through untouched.
+    // Drop unstable placements (lcm-15 / lcm-20) whose collapsing key is one of the chord keys (they
+    // have collapsed onto a smaller pattern under preference). Other placements pass through untouched.
     public static IReadOnlyList<Placement> DropCollapsed(
         IReadOnlyList<Placement> placements,
         IReadOnlyCollection<int> chordKeys,
@@ -188,9 +195,9 @@ public static class Placements
     // Reduce each lcm-15 placement to its stable form (15s@At) by dropping its collapsing key
     // (At+8) mod 12 — the key whose lcm-24 preference collapses 15@At onto an adjacent lcm-24. The
     // remaining keys are exactly the stable 15s subset (e.g. 15@0 → 0 1 3 5 8 9 10 becomes
-    // 0 1 3 5 9 10). Other placements pass through untouched. 12-tet / lcm-15 only (CollapsingKey is
-    // null otherwise). A stabilized row is recognisable by the absence of its collapsing key, which
-    // a full 15@At placement always contains.
+    // 0 1 3 5 9 10). Other placements pass through untouched — lcm-15 only (even though CollapsingKey
+    // now also fires for lcm-20, the 15s stable form is an lcm-15 concept). A stabilized row is
+    // recognisable by the absence of its collapsing key, which a full 15@At placement always contains.
     public static IReadOnlyList<Placement> StableFifteen(
         IReadOnlyList<Placement> placements,
         int ktet)
@@ -198,7 +205,7 @@ public static class Placements
         var result = new List<Placement>(placements.Count);
         foreach (var p in placements)
         {
-            if (CollapsingKey(p, ktet) is int ck)
+            if (p.Lcm == 15 && CollapsingKey(p, ktet) is int ck)
                 result.Add(p with { Keys = p.Keys.Where(key => key != ck).ToList() });
             else
                 result.Add(p);

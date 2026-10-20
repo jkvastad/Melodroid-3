@@ -40,6 +40,14 @@ public class ChordProgressionsTests
         return lcm == 15 && chord.Contains((at + 8) % 12);
     }
 
+    // Is `label` an lcm-20 placement collapsed by `chord` — i.e. its collapsing key (At+3) mod 12 is
+    // one of the chord keys? Reimplements the (At+3) mod 12 rule as the independent oracle.
+    private static bool Collapsed20(string label, IEnumerable<int> chord)
+    {
+        var (lcm, at) = ParseLabel(label);
+        return lcm == 20 && chord.Contains((at + 3) % 12);
+    }
+
     private static ProgressionTarget Target(IReadOnlyList<ProgressionTarget> targets, params int[] keys)
     {
         var want = keys.OrderBy(k => k).ToArray();
@@ -280,6 +288,22 @@ public class ChordProgressionsTests
         foreach (var t in target)
             foreach (var triple in t.SubsetBridges)
                 Collapsed15(triple.Split('·')[2], t.Keys).Should().BeFalse();
+    }
+
+    // lcm-20 is unstable too: 20@At collapses to 15@(At+7) on key (At+3) mod 12. With the default the
+    // C-major self-target {0 4 7} is bridged by 20@4 (collapsing key 7 ∈ {0 4 7}); --drop-collapsed
+    // origin disqualifies it, and no collapsed lcm-20 may survive as a superset bridge for any target.
+    [Fact]
+    public void DropCollapsed_origin_removes_collapsed_twenty_superset_bridges()
+    {
+        var source = new[] { 0, 4, 7 };
+
+        var self = Target(Compute(source), 0, 4, 7);
+        self.SupersetBridges.Should().Contain("20@4");
+
+        var origin = Compute(source, includeDim: true, dropCollapsed: CollapseFilter.Origin);
+        foreach (var t in origin)
+            t.SupersetBridges.Should().OnlyContain(b => !Collapsed20(b, source));
     }
 
     // Raising the minimum subset size can only ever remove subset bridges, never add them: the
