@@ -343,6 +343,56 @@ untouched.
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
 generated.
 
+### `junction-scales`
+
+```bash
+melodroid table junction-scales \
+  [--min-subset-notes 4] [--stable] \
+  [--collapse-isomorphic] [--pool-maximal] [--dedupe-transposition] \
+  [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+The **subset principle read as a scale generator**. The
+[progression principles doc](/docs/music/progression-principles) defines the subset principle for
+chord *progressions* — two placements `P_A`, `P_B` bridged by a shared LCM-family subset `S`. Read the
+same structure as a *scale* and you get a **junction scale**: the key-union `P_A ∪ P_B`. This
+recovers the useful non-LCM scales the [preference chapter](/docs/music/preference#blues-and-harmonic-minor)
+decomposes by hand.
+
+The command sweeps every distinct placement pair over all anchors that share a subset `S` of
+`≥ --min-subset-notes` keys and prints one row per scale (12-tet only):
+
+- **Scale** — the concrete key-index set to play, e.g. `{0, 2, 4, 5, 8, 9, 11}`.
+- **Size** — number of keys.
+- **P_A·S·P_B** — the constituents the scale was generated from.
+
+**Stable form (`--stable`, default on).** A collapsing (prime-5: `lcm-15`/`lcm-20`) constituent
+contributes its *stable* key set (collapse key dropped), and every collapsing constituent's collapse
+key is then subtracted from the whole union. This is what makes **harmonic minor** fall out cleanly:
+
+- `15@11 = {0 2 4 7 8 9 11}` (collapse key `(11+8) mod 12 = 7`), stable form `{0 2 4 8 9 11}`.
+- `24@0 = {0 2 4 5 7 9 11}` — but `24@0` *independently* carries key 7, so it must be dropped from
+  the finished union, not merely from `15@11`.
+- Result `({0 2 4 8 9 11} ∪ {0 2 4 5 7 9 11}) \ {7} = {0 2 4 5 8 9 11}` = `harm@9`, generated as
+  `15@11·18@2·24@0`.
+
+With `--stable false` the raw unions are emitted and harmonic minor no longer appears (the union keeps
+key 7).
+
+**Blues is a looser member and is *not* a union output.** `24@9 ∪ 24@2 = {1 2 4 6 7 8 9 11}`, whereas
+`blues@4 = {1 4 6 7 8 11}` keeps strictly fewer keys — neither `lcm-24` collapses, so no rule drops
+keys 2 and 9. The command emits the full union (a superset of blues) and shows the `24@2·S·24@9`
+triplet; blues itself is a manual sub-selection of that union.
+
+**Decluttering.** `--dedupe-transposition` (default on) folds the 12 transpositions of each scale to a
+single representative anchor (so harmonic minor shows once, as some transposition of
+`{0 2 4 5 8 9 11}`); turn it off to list every anchored instance. `--collapse-isomorphic` and
+`--pool-maximal` behave as in [`progression`](#progression), decluttering the `P_A·S·P_B` labels —
+`--pool-maximal` in particular surfaces the maximal bridge, so harmonic minor reads as the clean
+`15@·18@·24@` triplet rather than a small incidental subset. `--min-subset-notes` (default `4`) keeps
+`S` a substantial `18`/`8` parent (harmonic minor's `S = 18@2` has 6 keys); lower it to admit smaller
+bridges and many more scales.
+
 ## Graphs
 
 ### `lcm-families`

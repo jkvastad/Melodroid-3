@@ -218,6 +218,27 @@ public static class ChordProgressions
             .ToList();
     }
 
+    // Every (P_A, S, P_B) subset-principle triplet over the *whole* placement universe, with no chord
+    // anchoring: distinct placements P_A, P_B sharing a subset S ⊆ P_A ∩ P_B (|S| ≥ minSubsetNotes).
+    // Reuses the chord-anchored SubsetTriplets by passing every family placement as both sides — that
+    // method makes no assumption that the two lists came from a chord's supersets. Used by
+    // JunctionScales to read each triplet as a scale (the key-union of P_A and P_B). Both orderings
+    // (P_A,S,P_B) and (P_B,S,P_A) are produced; callers that treat the pair as unordered dedupe.
+    public static IReadOnlyList<ProgressionTriplet> SubsetPairs(
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic = false,
+        bool poolMaximal = false,
+        int ktet = 12)
+    {
+        var all = families.SelectMany(f => Placements.Sweep(f, ktet)).Select(Wrap).ToList();
+        var subsetCandidates = SubsetCandidates(families, minSubsetNotes, ktet);
+        var canonical = collapseIsomorphic ? BuildCanonicalMap(families, ktet) : null;
+        return SubsetTriplets(
+            all, all, subsetCandidates, minSubsetNotes, collapseIsomorphic, poolMaximal, canonical)
+            .ToList();
+    }
+
     // Raw placements containing the origin chord (drop-origin filtered when requested). Shared across
     // every candidate target in the convenience form, so computed once by the callers above.
     private static List<P> OriginSupersets(

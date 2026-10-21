@@ -943,6 +943,72 @@ class Program
             return 0;
         });
 
+        var junctionScalesMinSubsetNotesOption = new Option<int>("--min-subset-notes")
+        {
+            Description = "Minimum number of keys the shared subset S (a good-LCM family placement bridging the pair) must have. Default 4, so S is a substantial 18/8 parent (harm's S=18 has 6 keys); lower to admit smaller bridges and more scales.",
+            DefaultValueFactory = _ => 4,
+        };
+
+        var junctionScalesStableOption = new Option<bool>("--stable")
+        {
+            Description = "Use the stable form of any collapsing (prime-5: lcm-15/20) constituent and drop its collapse key from the union. Default on; harm@9 = 15@11·18@2·24@0 requires it. --stable false emits the raw unions (harm will not appear).",
+            DefaultValueFactory = _ => true,
+        };
+
+        var junctionScalesCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
+        {
+            Description = "Declutter: relabel each constituent placement to the representative of its key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Default off (raw labels).",
+            DefaultValueFactory = _ => false,
+        };
+
+        var junctionScalesPoolMaximalOption = new Option<bool>("--pool-maximal")
+        {
+            Description = "Declutter: keep only the maximal containing placements P_A/P_B (by key-set inclusion) and the maximal shared subsets S. Default off (raw).",
+            DefaultValueFactory = _ => false,
+        };
+
+        var junctionScalesDedupeTranspositionOption = new Option<bool>("--dedupe-transposition")
+        {
+            Description = "Fold the 12 transpositions of each scale to one representative (lowest constituent LCMs/anchors). Default on; turn off to list every anchored instance.",
+            DefaultValueFactory = _ => true,
+        };
+
+        var junctionScalesCommand = new Command(
+            "junction-scales",
+            "Catalog non-LCM \"junction\" scales: each is the key-union of a distinct placement pair (P_A, P_B) sharing an LCM-family subset S of ≥ --min-subset-notes keys (the subset principle read as a scale). Emits the concrete 12-tet key set to play plus the P_A·S·P_B constituents. --stable (default) uses collapsing placements' stable form and drops their collapse keys from the union (harm@9 = 15@11·18@2·24@0 requires it). --dedupe-transposition (default) keeps one anchor per necklace; --collapse-isomorphic / --pool-maximal declutter labels. 12-tet only.");
+        junctionScalesCommand.Add(maxSizeOption);
+        junctionScalesCommand.Add(maxPrimeOption);
+        junctionScalesCommand.Add(maxLcmOption);
+        junctionScalesCommand.Add(junctionScalesMinSubsetNotesOption);
+        junctionScalesCommand.Add(junctionScalesStableOption);
+        junctionScalesCommand.Add(junctionScalesCollapseIsomorphicOption);
+        junctionScalesCommand.Add(junctionScalesPoolMaximalOption);
+        junctionScalesCommand.Add(junctionScalesDedupeTranspositionOption);
+        junctionScalesCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var minSubsetNotes = parse.GetValue(junctionScalesMinSubsetNotesOption);
+            var stable = parse.GetValue(junctionScalesStableOption);
+            var collapseIsomorphic = parse.GetValue(junctionScalesCollapseIsomorphicOption);
+            var poolMaximal = parse.GetValue(junctionScalesPoolMaximalOption);
+            var dedupeTransposition = parse.GetValue(junctionScalesDedupeTranspositionOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var scales = JunctionScales.Enumerate(
+                families, minSubsetNotes, stable, collapseIsomorphic, poolMaximal, dedupeTransposition);
+            JunctionScaleTableRenderer.Render(
+                scales, minSubsetNotes, stable, collapseIsomorphic, poolMaximal, dedupeTransposition);
+            return 0;
+        });
+
         var voicingsLcmOption = new Option<int?>("--lcm")
         {
             Description = "LCM (wave pattern length) of the family whose @0 placement we enumerate voicings of. Mutually exclusive with --keys.",
@@ -1278,6 +1344,7 @@ class Program
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(progressionCommand);
+        tableCommand.Add(junctionScalesCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
         tableCommand.Add(chordsCommand);
