@@ -67,29 +67,20 @@ A concrete example of the **subset** principle for the chord progression C to Db
 In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce coherent melodies while being neither lcm sets nor subsets.
 Instead they appear to be composed of adjacent lcm scales, producing pragmatic key sets for rapid modulation of melody.
 
-Interestingly we can use the subset principle to recover the harmonic minor scale and a superset of blues.
-Given three placements `P_A`, `P_B`, and a shared subset `S ⊆ P_A ∩ P_B`, we can define a scale `P_A ∪ P_B`. 
+We can make this precise with the subset principle.
+Given two placements `P_A`, `P_B` sharing a subset `S ⊆ P_A ∩ P_B`, we can define a scale `P_A ∪ P_B`. 
 We can call this a **junction scale** — a pitch set sitting at the junction of two placements that the subset principle bridges.
 
-Use the [`table junction-scales`](/docs/cli/reference#junction-scales) command to enumerate different junction scales.
-Running e.g. 
-
-`table junction-scales --pool-maximal --min-subset-notes 3`
-
-produces
+Using the [`table junction-scales`](/docs/cli/reference#junction-scales) command we can enumerate junction scales.
+However, not every shared subset is equally interesting. 
+A dyad or triad bridge is satisfied by almost any pair of placements, so the union balloons into a chromatic cluster. 
+Looking instead at large shared subsets with the `--min-subset-notes 6` option yields:
 
 ```
-Scale                             Size  P_A·S·P_B
-{0, 1, 3, 5, 6, 9, 10}              7   15@0·18@3·24@1     ← harmonic minor
-{0, 1, 3, 5, 7, 9, 10}              7   15@0·18@3·24@8     ← melodic minor
-{0, 2, 3, 5, 6, 9, 10}              7   15@0·5@5·15@5      ← harmonic major
-{0, 1, 2, 3, 5, 7, 9, 10}           8   15@0·5@0·24@3
-{0, 1, 3, 4, 5, 6, 9, 10}           8   15@0·3@3·15@3
-{0, 2, 4, 5, 7, 9, 10, 11}          8   24@0·18@7·24@5     ← bebop dominant (contains blues)
-{1, 2, 3, 4, 5, 7, 9, 10}           8   15@0·3@0·15@4
-{0, 1, 2, 3, 4, 5, 7, 9, 10}        9   15@0·3@0·24@5
-{0, 1, 2, 4, 5, 6, 7, 9, 11}        9   24@0·5@11·24@2
-{0, 1, 2, 3, 4, 5, 7, 9, 10, 11}   10   15@0·3@0·24@0
+Scale                         Size  P_A·S·P_B
+{0, 1, 3, 5, 6, 9, 10}          7   15@0·18@3·24@1     ← harmonic minor
+{0, 1, 3, 5, 7, 9, 10}          7   15@0·18@3·24@8     ← melodic minor
+{0, 2, 4, 5, 7, 9, 10, 11}      8   24@0·18@7·24@5     ← bebop dominant (contains blues)
 ```
 
 Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` constituents that produced it. 
@@ -98,14 +89,11 @@ The rows are specific anchorings; the same necklace recurs at other anchors and 
 Another important default option is the `--stable` option which removes collapsing keys from the final sets. 
 For example `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
 
-The three 7-note junctions turn out to be the three classical altered-diatonic scales — **harmonic minor, melodic minor, harmonic major**. 
-The 8-note junction is the **bebop dominant** scale, with blues a sub-selection of it. 
+In the table we see two classical minor scales — **harmonic minor** and **melodic minor**.
+We also see the **bebop dominant** scale, which contains blues as a subset.
 
-The larger rows carry runs of three or four consecutive semitones that common scales avoid, so none is itself named; most, however, sit one pruning away from a familiar
-scale (see [the un-named junctions](#the-un-named-junctions) below).
-
-The subsections below walk the named rows, each as a union of two placements with any collapse keys
-removed.
+Investigating smaller bridges produces the harmonic major at `--min-subset-notes 4`. 
+Going lower still produces no obvious traditional scales.
 
 ### Harmonic minor as a junction
 Looking at the first row of the intro table we have: `P_A = 15@0 = {0 1 3 5 8 9 10}` and
@@ -136,26 +124,45 @@ $$
 $$
 
 This set is the **melodic minor** (ascending). So the two `lcm-24` partners of `15@0` hand us the
-two classical minor scales — harmonic minor via `24@1`, melodic minor via `24@8` — without our ever
-reaching for either by name.
+two classical minor scales — harmonic minor via `24@1`, melodic minor via `24@8`.
+
+### Bebop dominant and blues
+
+Take `P_A = 24@0 = {0 2 4 5 7 9 11}` and `P_B = 24@5 = {0 2 4 5 7 9 10}`, sharing `S = 18@7 = {0 2 4 5 7 9}`:
+
+$$
+24@0 \cup 24@5 = \{0\;2\;4\;5\;7\;9\;10\;11\}
+$$
+
+This necklace is the [**bebop dominant**](https://en.wikipedia.org/wiki/Bebop_scale#Bebop_dominant_scale) — a major scale with an added flat seventh.
+
+Blues itself does *not* come straight out of a union. Anchored to match the row above,
+`blues@7 = {2 4 7 9 10 11}` keeps *fewer* keys than the bebop-dominant union `{0 2 4 5 7 9 10 11}`:
+it drops keys `0` and `5`, the root notes of the constituent lcm families - 
+in particular the root notes of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
+Perhaps this ambivalence between two closely adjacent lcm families is the source of the swingy sound.
 
 ### Harmonic major as a junction
 
-The harmonic minor junction paired an `lcm-15` placement with an `lcm-24` one across their shared
-`lcm-18` parent. The `{0 2 3 5 6 9 10}` row instead joins *two* `lcm-15` placements across a smaller
-shared subset. Take `P_A = 15@0 = {0 1 3 5 8 9 10}` and `P_B = 15@5 = {1 2 3 5 6 8 10}`. They share
+When allowing smaller bridges with `--min-subset-notes 4` we find the **harmonic major**. 
+
+Take `P_A = 15@0 = {0 1 3 5 8 9 10}`
+and `P_B = 15@5 = {1 2 3 5 6 8 10}`. They share
 
 $$
 S = 5@5 = \{1\;3\;5\;8\}
 $$
 
-the four-note `lcm-5` family — a leaner bridge than harmonic minor's six-note `18@2`. Their union is
+Their union is
 
 $$
 15@0 \cup 15@5 = \{0\;1\;2\;3\;5\;6\;8\;9\;10\}
 $$
 
-Now *both* sides are `lcm-15`, so *both* collapse keys drop — key `8` from `15@0` and key `1` from
+This looks similar to the bebop dominant and the blues.
+Instead of mixing two lcm 24 placements from two different branches (8@0,5) we mix two lcm 15 placements from the same distinct branches but less directly since we come from the tetrad instead of the hexad.
+
+This time however *both* sides are `lcm-15`, so *both* collapse keys drop — key `8` from `15@0` and key `1` from
 `15@5`:
 
 $$
@@ -166,44 +173,8 @@ This necklace is **harmonic major**.
 Where harmonic minor drops a single collapse key from a one-sided collapse,
 harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-15` junction.
 
-### Bebop dominant and blues
-
-The one 8-note row with a traditional name is the clean case. Take `P_A = 24@0 = {0 2 4 5 7 9 11}` and
-`P_B = 24@5 = {0 2 4 5 7 9 10}`, sharing `S = 18@7 = {0 2 4 5 7 9}`. Neither `lcm-24` collapses, so
-nothing is dropped and the union stands as emitted:
-
-$$
-24@0 \cup 24@5 = \{0\;2\;4\;5\;7\;9\;10\;11\}
-$$
-
-This necklace is **bebop dominant** — a major scale with an added flat seventh.
-
-Blues itself does *not* come straight out of a union. Anchored to match the row above,
-`blues@7 = {2 4 7 9 10 11}` keeps *fewer* keys than the bebop-dominant union `{0 2 4 5 7 9 10 11}`:
-it drops keys `0` and `5`, the root notes of the constituent lcm families - 
-in particular the root notes of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
-
-### The un-named junctions
-
-The remaining rows — the 8-, 9- and 10-note sets — carry runs of three or four consecutive semitones,
-which common scales avoid, so none is itself a traditional scale. They are not noise, though: most
-contain a familiar scale one note away, exactly as blues sits inside bebop dominant and harmonic minor
-emerges by pruning a union. The mechanical union simply over-generates by a tone or two.
-
-| Row (`P_A·S·P_B`) | Contains, one pruning away |
-| --- | --- |
-| `{0 1 2 3 5 7 9 10}` (`15@0·5@0·24@3`) | Dorian `{0 2 3 5 7 9 10}` (drop `1`); melodic minor `{0 1 3 5 7 9 10}` (drop `2`) |
-| `{0 1 3 4 5 6 9 10}` (`15@0·3@3·15@3`) | harmonic minor `{0 1 3 5 6 9 10}` (drop `4`) — the row-1 necklace plus one tone |
-| `{1 2 3 4 5 7 9 10}` (`15@0·3@0·15@4`) | harmonic minor `{1 2 4 5 7 9 10}` (drop `3`) |
-| `{0 1 2 3 4 5 7 9 10}` (`15@0·3@0·24@5`) | mixolydian / Dorian diatonic modes inside a chromatic cluster |
-| `{0 1 2 4 5 6 7 9 11}` (`24@0·5@11·24@2`) | two diatonic majors a whole tone apart — `24@0 ∪ 24@2`, i.e. its own two constituents |
-| `{0 1 2 3 4 5 7 9 10 11}` (`15@0·3@0·24@0`) | a major scale and its modes inside a six-semitone chromatic cluster |
-
-These are the rows resting on small `lcm-3` triad or four-note `lcm-5` bridges rather than a
-substantial `lcm-18` parent, so they are exactly the rows that `--min-subset-notes 4` drops. Read as
-named-scale-plus-passing-tones they echo the bebop scales (a diatonic scale with an added chromatic
-step); the clean junctions above are the cases where the union lands squarely on a named scale with
-nothing left over.
+Loosening the floor further to `--min-subset-notes 3` admits bare triad bridges, but these only
+generate 8-, 9- and 10-note chromatic clusters that aren't obvious traditional scales, so we leave them aside.
 
 ### Junctions on the placement graph
 
@@ -220,30 +191,23 @@ anchoring, we transpose each junction by some offset `t` to land its constituent
 | melodic minor | `15@11 · 18@2 · 24@7` | `18@2` hexad |
 | bebop dominant | `24@0 · 18@7 · 24@5` | `18@7` hexad |
 | harmonic major | `15@11 · 5@4 · 15@4` | `5@4` tetrad |
-| `{0 1 2 3 5 7 9 10}` | `15@4 · 5@4 · 24@7` | `5@4` tetrad |
-| `{0 1 2 4 5 6 7 9 11}` | `24@5 · 5@4 · 24@7` | `5@4` tetrad |
-| `{0 1 3 4 5 6 9 10}` | `15@4 · 4@0 · 15@7` | `4@0` triad |
-| `{1 2 3 4 5 7 9 10}` | `15@7 · 4@0 · 15@11` | `4@0` triad |
-| `{0 1 2 3 4 5 7 9 10}` | `15@7 · 4@0 · 24@0` | `4@0` triad |
-| `{0 1 2 3 4 5 7 9 10 11}` | `15@7 · 4@0 · 24@7` | `4@0` triad |
 
 The deeper the bridge, the less the two placements overlap and the larger, more chromatic their union.
-The three altered-diatonic scales and bebop dominant all bridge on the **hexad** `18@2`/`18@7`, where
-the graph draws a direct edge from the hexad to each partner (`18@2 → 15@11`, `18@2 → 24@0`), so the
-union adds only a note or two. The un-named rows fall to the **tetrad** `5@4` or the bare **triad**
-`4@0` at the bottom of the graph, where `P_A` and `P_B` share almost nothing, so the union balloons to
-eight, nine, ten notes.
+The three primary scales — harmonic minor, melodic minor and bebop dominant — all bridge on the
+**hexad** `18@2`/`18@7`, where the graph draws a direct edge from the hexad to each partner
+(`18@2 → 15@11`, `18@2 → 24@0`), so the union adds only a note or two. Harmonic major falls one level
+deeper, to the **tetrad** `5@4`, where `P_A` and `P_B` overlap less. Deeper still is the bare **triad**
+`4@0` at the bottom of the graph, where the two placements share almost nothing and the union balloons
+to the eight-, nine- and ten-note chromatic clusters we set aside.
 
 This is the privilege we conjectured for the big bridging families back in
 [the principles](#the-principles-of-chord-progressions): restrict the shared subset to the `lcm-18`
-hexad (take `--min-subset-notes` large enough to demand it) and only the named scales survive; admit
-triad and tetrad bridges and the chromatic over-generations flood in. Harmonic major is the honest
-in-between — it bridges on the tetrad `5@4` yet still lands on a named scale, because both its sides are
-collapsing `lcm-15` placements that each shed a key.
+hexad (using `--min-subset-notes`) and only the three primary scales survive.
+With the tetrad comes harmonic major and with triads chromatic scales.
 
-To trace any row yourself, pick its bridge node in the graph and walk up. For `15@7 · 4@0 · 24@7` (the
-10-note `{0 1 2 3 4 5 7 9 10 11}` row), start at the triad `4@0` and climb `4@0 → 20@0 → 15@7` on one
-side and `4@0 → 5@4 → 8@0 → 18@2 → 24@7` on the other — the two heptads share nothing above the triad.
+To trace any row yourself, pick its bridge node in the graph and walk up. For harmonic minor
+(`15@11 · 18@2 · 24@0`), start at the hexad `18@2` and climb its two direct edges — `18@2 → 15@11` on
+one side, `18@2 → 24@0` on the other — then union the two heptads and drop the collapse key.
 
 Let's look at some more examples from traditional music.
 
