@@ -35,8 +35,7 @@ This motivates two potential principles:
 We previously discussed stability of placements with lcm 15 collapsing to 24 as well as isomorphisms collapsing to representatives (and likely 20@k collapsing to 15@k+7).
 In the context of progressions, such stability may play a role - e.g. perhaps the target placement must be stable given the target chord, but the bridge and origin need not be.
 
-Regarding the subset principle, one wonders to what extent subsets are allowed (a lot of dyads can serve as shared subsets).
-As observed in the extended triad placement graph, lcm 8 and 18 are the big bridging families, and perhaps these subsets are privileged or preferred when identifying shared subsets.
+Regarding the subset principle, one wonders to what extent subsets are allowed, as a lot of dyads can serve as shared subsets but perhaps larger lcm families are privileged in this regard.
 
 A concrete example of the **superset** principle for the chord progression C to Eb (4@0 → 4@3):
 
@@ -48,8 +47,9 @@ In this way, although `{0 4 7}` (3@7) is not a subset of `{0 3 5 7 8 10}` (18@10
 share key 4, it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
 
 Notably 4@3 is also part of 15@7, but since key 4 collapses 15@7 it is not a stable target.
-An alternative explanation for 4@0 → 4@3:
-* Both are part of 20@0. Lcm 20 seems quite unstable and likely collapses to its superset 15@7. This in turn collapses with key 4, part of the target chord, making this progression seem unlikely.
+An alternative explanation for 4@0 → 4@3 is that both are part of 20@0. 
+However, lcm 20 seems quite unstable and likely collapses to its superset 15@7.
+This in turn collapses with key 4, part of the target chord, making this progression seem unlikely.
 
 Of further interest here is that the root key for Eb, key 3, is the collapsing key for 15@7.
 While not useful for sustaining melody or chords, perhaps the collapsing key still allows us to go to 18@10 when progressing chords.
@@ -93,10 +93,10 @@ Scale                             Size  P_A·S·P_B
 ```
 
 Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` constituents that produced it. 
-The rows are specific anchorings; the same necklace recurs at other anchors (so harmonic minor shows here as the `15@0` rotation, not literally `harm@9`), 
-and the default option `--dedupe-transposition` keeps one representative per necklace. 
+The rows are specific anchorings; the same necklace recurs at other anchors and the default option `--dedupe-transposition` keeps one representative per necklace. 
 
-Another important default option is the `--stable` option which removes collapsing keys from the final sets, e.g. `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
+Another important default option is the `--stable` option which removes collapsing keys from the final sets. 
+For example `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
 
 The three 7-note junctions turn out to be the three classical altered-diatonic scales — **harmonic minor, melodic minor, harmonic major**. 
 The 8-note junction is the **bebop dominant** scale, with blues a sub-selection of it. 
@@ -180,12 +180,8 @@ This necklace is **bebop dominant** — a major scale with an added flat seventh
 
 Blues itself does *not* come straight out of a union. Anchored to match the row above,
 `blues@7 = {2 4 7 9 10 11}` keeps *fewer* keys than the bebop-dominant union `{0 2 4 5 7 9 10 11}`:
-it drops keys `0` and `5`, and since neither `lcm-24` collapses, no rule discards them — so blues is a
-6-note hand-chosen sub-selection of the named 8-note scale, not a mechanical output. What it keeps is
-the characteristic blues clash: both the minor and major third (keys `10` and `11`) over the
-major-pentatonic core `{2 4 7 9 11}`. This is the honest boundary of the construction — the command
-surfaces the bebop-dominant junction, and the trim down to blues is ours: harmonic minor is the clean
-case, blues the loose one.
+it drops keys `0` and `5`, the root notes of the constituent lcm families - 
+in particular the root notes of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
 
 ### The un-named junctions
 
