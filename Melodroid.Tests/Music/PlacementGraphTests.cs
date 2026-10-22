@@ -112,6 +112,83 @@ public class PlacementGraphTests
             && scope.Contains(e.FromIndex) && scope.Contains(e.ToIndex));
     }
 
+    // The extended-triad scope (up-set of {0,4,7}) plus the cover edges with both endpoints in it, and
+    // the root index — the inputs the renderer feeds to SeedOrder.
+    private static (IReadOnlyList<int> Scope, List<(int From, int To)> Edges, int Root) ExtendedTriad()
+    {
+        var nodes = Universe();
+        var edges = PlacementGraph.CoverEdges(nodes);
+        var root = PlacementGraph.FindNode(nodes, new[] { 0, 4, 7 });
+        var scope = PlacementGraph.UpSet(nodes, nodes[root].Keys);
+        var inScope = new HashSet<int>(scope);
+        var inScopeEdges = edges
+            .Where(e => inScope.Contains(e.FromIndex) && inScope.Contains(e.ToIndex))
+            .Select(e => (e.FromIndex, e.ToIndex))
+            .ToList();
+        return (scope, inScopeEdges, root);
+    }
+
+    // Every node reachable from start by following the given edges (start excluded unless on a cycle).
+    private static HashSet<int> Reachable(int start, IEnumerable<(int From, int To)> edges)
+    {
+        var adjacency = edges.GroupBy(e => e.From)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.To).ToList());
+        var seen = new HashSet<int>();
+        var stack = new Stack<int>();
+        stack.Push(start);
+        while (stack.Count > 0)
+        {
+            var node = stack.Pop();
+            if (adjacency.TryGetValue(node, out var successors))
+                foreach (var next in successors)
+                    if (seen.Add(next)) stack.Push(next);
+        }
+        return seen;
+    }
+
+    [Fact]
+    public void SeedOrder_is_a_permutation_of_the_scope()
+    {
+        var (scope, edges, root) = ExtendedTriad();
+
+        var order = PlacementGraph.SeedOrder(scope, edges, root);
+
+        order.Should().BeEquivalentTo(scope);
+    }
+
+    [Fact]
+    public void SeedOrder_places_every_non_root_node_after_a_cover_parent()
+    {
+        var (scope, edges, root) = ExtendedTriad();
+
+        var order = PlacementGraph.SeedOrder(scope, edges, root);
+        var position = order.Select((node, i) => (node, i)).ToDictionary(x => x.node, x => x.i);
+
+        foreach (var node in order.Where(n => n != root))
+        {
+            var parents = edges.Where(e => e.To == node).Select(e => e.From);
+            parents.Should().Contain(parent => position[parent] < position[node],
+                "a DFS pre-order visits a node only after one of its parents");
+        }
+    }
+
+    [Fact]
+    public void SeedOrder_groups_the_first_branch_contiguously()
+    {
+        var (scope, edges, root) = ExtendedTriad();
+
+        var order = PlacementGraph.SeedOrder(scope, edges, root);
+        order[0].Should().Be(root);
+
+        // The root's first visited child is its lowest-indexed direct successor; its whole subtree must
+        // form the contiguous block right after the root, before any other branch begins.
+        var firstChild = edges.Where(e => e.From == root).Select(e => e.To).Min();
+        var firstBranch = Reachable(firstChild, edges);
+        firstBranch.Add(firstChild);
+
+        order.Skip(1).Take(firstBranch.Count).Should().BeEquivalentTo(firstBranch);
+    }
+
     [Fact]
     public void CoverEdges_never_skip_a_placement_that_lies_strictly_between()
     {

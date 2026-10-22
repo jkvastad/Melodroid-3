@@ -17,16 +17,28 @@ public static class PlacementGraphRenderer
         bool showIsomorphisms = false)
     {
         var inScope = new HashSet<int>(scope);
+        var inScopeEdges = edges
+            .Where(e => inScope.Contains(e.FromIndex) && inScope.Contains(e.ToIndex))
+            .ToList();
+
+        // Branch-group the declaration order (DFS pre-order from the root) so dagre's layout starts
+        // near-planar and crosses fewer wires. scope[0] is the minimal/root node in both modes.
+        var order = PlacementGraph.SeedOrder(
+            scope, inScopeEdges.Select(e => (e.FromIndex, e.ToIndex)), scope.First());
+        var position = new Dictionary<int, int>();
+        for (var p = 0; p < order.Count; p++) position[order[p]] = p;
+
         var sb = new StringBuilder();
         PlacementHeader(sb, title, maxSize, maxPrime, maxLcm, ktet, showIsomorphisms);
 
         sb.AppendLine("```mermaid");
         sb.AppendLine("flowchart TD");
-        foreach (var i in scope) sb.AppendLine($"    {NodeDef(i, nodes[i], showIsomorphisms)}");
+        foreach (var i in order) sb.AppendLine($"    {NodeDef(i, nodes[i], showIsomorphisms)}");
         sb.AppendLine();
-        foreach (var e in edges)
+        foreach (var e in inScopeEdges
+            .OrderBy(e => position[e.FromIndex])
+            .ThenBy(e => position[e.ToIndex]))
         {
-            if (!inScope.Contains(e.FromIndex) || !inScope.Contains(e.ToIndex)) continue;
             sb.AppendLine($"    P{e.FromIndex} -- \"+{JoinCommas(e.DistinguishingKeys)}\" --> P{e.ToIndex}");
         }
         sb.AppendLine("```");
@@ -48,15 +60,25 @@ public static class PlacementGraphRenderer
         sb.AppendLine("- Arrow `L@a→L'@b (+keys)` — one direct-adjacency relationship between shapes, shown with a representative concrete placement pair and its distinguishing keys. Every other placement of that shape realises the same relationship transposed.");
         sb.AppendLine();
 
+        // Branch-group the declaration order (DFS pre-order from the 1-note tonic shape 0, subset of all)
+        // so dagre seeds near-planar and crosses fewer wires.
+        var order = PlacementGraph.SeedOrder(
+            Enumerable.Range(0, shapes.Count).ToList(),
+            edges.Select(e => (e.FromShapeIndex, e.ToShapeIndex)), 0);
+        var position = new Dictionary<int, int>();
+        for (var p = 0; p < order.Count; p++) position[order[p]] = p;
+
         sb.AppendLine("```mermaid");
         sb.AppendLine("flowchart TD");
-        for (var i = 0; i < shapes.Count; i++)
+        foreach (var i in order)
         {
             var count = shapes[i].CanonicalKeys.Count;
             sb.AppendLine($"    S{i}[\"{count}-note · e.g. {Label(shapes[i].Representative)}<br/>{{{Join(shapes[i].CanonicalKeys)}}}\"]");
         }
         sb.AppendLine();
-        foreach (var e in edges)
+        foreach (var e in edges
+            .OrderBy(e => position[e.FromShapeIndex])
+            .ThenBy(e => position[e.ToShapeIndex]))
         {
             sb.AppendLine($"    S{e.FromShapeIndex} -- \"{Label(e.From)}→{Label(e.To)} (+{JoinCommas(e.DistinguishingKeys)})\" --> S{e.ToShapeIndex}");
         }

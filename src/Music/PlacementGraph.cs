@@ -127,6 +127,43 @@ public static class PlacementGraph
         return scope.Distinct().ToList();
     }
 
+    // A DFS pre-order of scope from root, following in-scope edges and visiting each node's out-neighbours
+    // in ascending target order (ascending index already reflects universe/discovery order, so smaller
+    // shapes/LCMs branch first). This branch-groups the declaration order so Mermaid's dagre layout is
+    // seeded near-planar, reducing crossing wires. Any scope member unreachable from root is appended in
+    // input order (defensive — the graph is a connected up-set in practice).
+    public static IReadOnlyList<int> SeedOrder(
+        IReadOnlyCollection<int> scope,
+        IEnumerable<(int From, int To)> edges,
+        int root)
+    {
+        var inScope = new HashSet<int>(scope);
+        var adjacency = new Dictionary<int, List<int>>();
+        foreach (var (from, to) in edges)
+        {
+            if (!inScope.Contains(from) || !inScope.Contains(to)) continue;
+            if (!adjacency.TryGetValue(from, out var successors))
+                adjacency[from] = successors = new List<int>();
+            successors.Add(to);
+        }
+        foreach (var successors in adjacency.Values) successors.Sort();
+
+        var order = new List<int>();
+        var visited = new HashSet<int>();
+
+        void Visit(int node)
+        {
+            if (!visited.Add(node)) return;
+            order.Add(node);
+            if (adjacency.TryGetValue(node, out var successors))
+                foreach (var next in successors) Visit(next);
+        }
+
+        if (inScope.Contains(root)) Visit(root);
+        foreach (var node in scope) Visit(node);
+        return order;
+    }
+
     // Collapse the cover edges to shape-to-shape relationships: group nodes into shapes (transposition
     // classes via Chords.Canonicalize) and group cover edges by their ordered-pair necklace, keeping one
     // representative edge per class. No shape-level Hasse reduction — a direct adjacency like
