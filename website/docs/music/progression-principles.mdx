@@ -3,6 +3,8 @@ sidebar_position: 5
 description: The superset and subset progression principles, and how non-LCM scales (dim7, harmonic minor, blues) exploit double adjacency.
 ---
 
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
+
 # Progression Principles
 
 The [placements chapter](/docs/music/placements) laid out the relationships of placements from a given key.
@@ -175,6 +177,22 @@ harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-1
 
 Loosening the floor further to `--min-subset-notes 3` admits bare triad bridges, but these only
 generate 8-, 9- and 10-note chromatic clusters that aren't obvious traditional scales, so we leave them aside.
+
+Having derived all five scales, we can audition them. Pick a scale from the
+**set** dropdown, **Generate** a chord, and **Play** a melody drawn from it.
+
+<RhythmPatternPlayer
+  meter="4"
+  subdivisions="4"
+  bpm={100}
+  progression={[
+    {label: 'Harmonic minor (harm@10 = 0 1 3 5 6 9 10)', keys: [0, 1, 3, 5, 6, 9, 10]},
+    {label: 'Melodic minor (0 1 3 5 7 9 10)', keys: [0, 1, 3, 5, 7, 9, 10]},
+    {label: 'Harmonic major (0 2 3 5 6 9 10)', keys: [0, 2, 3, 5, 6, 9, 10]},
+    {label: 'Bebop dominant (0 2 4 5 7 9 10 11)', keys: [0, 2, 4, 5, 7, 9, 10, 11]},
+    {label: 'Related blues (blues@7 = 2 4 7 9 10 11)', keys: [2, 4, 7, 9, 10, 11]},
+  ]}
+/>
 
 ### Junctions on the placement graph
 
