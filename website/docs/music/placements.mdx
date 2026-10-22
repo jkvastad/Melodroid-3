@@ -93,34 +93,34 @@ other placement of that shape realises the same relationship transposed.
 
 ```mermaid
 flowchart TD
-    S1["tonic · e.g. 1@0<br/>{0}"]
-    S2["dyad · e.g. 2@0<br/>{0 7}"]
-    S3["triad · e.g. 4@0<br/>{0 4 7}"]
-    S5["tetrad · e.g. 5@0<br/>{0 3 8 10}"]
-    S8["pentad · e.g. 8@0<br/>{0 2 4 7 11}"]
-    H18["hexad-A (18) · e.g. 18@0<br/>{0 2 5 7 9 10}"]
-    H20["hexad-B (20) · e.g. 20@0<br/>{0 3 4 7 8 10}"]
-    P15["heptad-A (15) · e.g. 15@0<br/>{0 1 3 5 8 9 10}"]
-    P24["heptad-B (24) · e.g. 24@0<br/>{0 2 4 5 7 9 11}"]
+    S0["1-note · e.g. 1@0<br/>{0}"]
+    S1["2-note · e.g. 2@0<br/>{0 5}"]
+    S2["3-note · e.g. 4@0<br/>{0 4 7}"]
+    S3["4-note · e.g. 5@0<br/>{0 2 4 7}"]
+    S4["5-note · e.g. 8@0<br/>{0 1 3 5 8}"]
+    S5["6-note · e.g. 18@0<br/>{0 2 4 5 7 9}"]
+    S6["6-note · e.g. 20@0<br/>{0 1 3 5 8 9}"]
+    S7["7-note · e.g. 15@0<br/>{0 1 2 4 5 7 9}"]
+    S8["7-note · e.g. 24@0<br/>{0 1 3 5 6 8 10}"]
 
-    S1 -- "1@0→2@0 (+7)" --> S2
-    S1 -- "1@0→2@5 (+5)" --> S2
-    S2 -- "2@0→3@7 (+4)" --> S3
-    S1 -- "1@0→3@3 (+3,8)" --> S3
-    S2 -- "2@0→5@9 (+5,9)" --> S5
-    S5 -- "5@0→8@8 (+7)" --> S8
-    S2 -- "2@0→8@8 (+3,8,10)" --> S8
-    S2 -- "2@0→18@5 (+2,3,5,10)" --> H18
-    S3 -- "3@0→5@9 (+7)" --> S5
-    S3 -- "3@0→8@10 (+2,10)" --> S8
-    S8 -- "8@0→20@4 (+8)" --> H20
-    S3 -- "3@0→20@5 (+1,3,8)" --> H20
-    S5 -- "5@0→18@3 (+1,5)" --> H18
-    S8 -- "8@0→18@2 (+9)" --> H18
-    H18 -- "18@0→15@9 (+6)" --> P15
-    H18 -- "18@0→24@5 (+4)" --> P24
-    H18 -- "18@0→24@10 (+3)" --> P24
-    H20 -- "20@0→15@7 (+5)" --> P15
+    S0 -- "1@0→2@0 (+7)" --> S1
+    S0 -- "1@0→2@5 (+5)" --> S1
+    S0 -- "1@0→4@8 (+3,8)" --> S2
+    S1 -- "2@0→4@0 (+4)" --> S2
+    S1 -- "2@0→5@9 (+5,9)" --> S3
+    S1 -- "2@0→8@8 (+3,8,10)" --> S4
+    S1 -- "2@0→18@5 (+2,3,5,10)" --> S5
+    S2 -- "4@0→5@4 (+2)" --> S3
+    S2 -- "4@0→8@5 (+5,9)" --> S4
+    S2 -- "4@0→20@0 (+3,8,10)" --> S6
+    S3 -- "5@0→8@8 (+7)" --> S4
+    S3 -- "5@0→18@3 (+1,5)" --> S5
+    S4 -- "8@0→18@2 (+9)" --> S5
+    S4 -- "8@0→20@4 (+8)" --> S6
+    S5 -- "18@0→15@9 (+6)" --> S7
+    S5 -- "18@0→24@5 (+4)" --> S8
+    S5 -- "18@0→24@10 (+3)" --> S8
+    S6 -- "20@0→15@7 (+5)" --> S7
 ```
 
 We can illustrate these 18 containments with placement graphs, one for each shape from the tonic upward.
@@ -132,81 +132,86 @@ For instance, the tonic placement graph is shown below:
 
 ```mermaid
 flowchart TD
-    T["1@0<br/>{0}"]
-    D0["2@0<br/>{0 7}"]
-    D5["2@5<br/>{0 5}"]
-    X["3@3 ≅ 4@8<br/>{0 3 8}"]
+    P0["1@0<br/>{0}"]
+    P12["2@0<br/>{0 7}"]
+    P17["2@5<br/>{0 5}"]
+    P32["4@8 ≅ 3@3<br/>{0 3 8}"]
 
-    T -- "+7" --> D0
-    T -- "+5" --> D5
-    T -- "+3,8" --> X
+    P0 -- "+7" --> P12
+    P0 -- "+5" --> P17
+    P0 -- "+3,8" --> P32
 ```
 
 The dyad `2@0` is shown below:
 
 ```mermaid
 flowchart TD
-    D0["2@0<br/>{0 7}"]
-    R["4@0<br/>{0 4 7}"]
-    N59["5@9<br/>{0 5 7 9}"]
-    E8["8@8<br/>{0 3 7 8 10}"]
-    N185["18@5<br/>{0 2 3 5 7 10}"]
+    P12["2@0<br/>{0 7}"]
+    P24["4@0<br/>{0 4 7}"]
+    P45["5@9<br/>{0 5 7 9}"]
+    P56["8@8<br/>{0 3 7 8 10}"]
+    P65["18@5<br/>{0 2 3 5 7 10}"]
 
-    D0 -- "+4" --> R
-    D0 -- "+5,9" --> N59
-    D0 -- "+3,8,10" --> E8
-    D0 -- "+2,3,5,10" --> N185
+    P12 -- "+4" --> P24
+    P12 -- "+5,9" --> P45
+    P12 -- "+3,8,10" --> P56
+    P12 -- "+2,3,5,10" --> P65
 ```
 
 Interestingly, the triad placement graph can be extended to include the higher order placement graphs:
 
 ```mermaid
 flowchart TD
-    M["4@0<br/>{0 4 7}"]
-    T54["5@4<br/>{0 2 4 7}"]
-    C8["8@5<br/>{0 4 5 7 9}"]
-    O20["20@0<br/>{0 3 4 7 8 10}"]
-    B8["8@0<br/>{0 2 4 7 11}"]
-    B18["18@7<br/>{0 2 4 5 7 9}"]
-    N209["20@9<br/>{0 1 4 5 7 9}"]
-    A18["18@2<br/>{0 2 4 7 9 11}"]
-    N204["20@4<br/>{0 2 4 7 8 11}"]
-    B15b["15@7<br/>{0 3 4 5 7 8 10}"]
-    B15["15@4<br/>{0 1 2 4 5 7 9}"]
-    B24["24@5<br/>{0 2 4 5 7 9 10}"]
-    A15["15@11<br/>{0 2 4 7 8 9 11}"]
-    C24["24@0<br/>{0 2 4 5 7 9 11}"]
-    A24["24@7<br/>{0 2 4 6 7 9 11}"]
+    P24["4@0<br/>{0 4 7}"]
+    P40["5@4<br/>{0 2 4 7}"]
+    P48["8@0<br/>{0 2 4 7 11}"]
+    P53["8@5<br/>{0 4 5 7 9}"]
+    P62["18@2<br/>{0 2 4 7 9 11}"]
+    P67["18@7<br/>{0 2 4 5 7 9}"]
+    P72["20@0<br/>{0 3 4 7 8 10}"]
+    P76["20@4<br/>{0 2 4 7 8 11}"]
+    P81["20@9<br/>{0 1 4 5 7 9}"]
+    P88["15@4<br/>{0 1 2 4 5 7 9}"]
+    P91["15@7<br/>{0 3 4 5 7 8 10}"]
+    P95["15@11<br/>{0 2 4 7 8 9 11}"]
+    P96["24@0<br/>{0 2 4 5 7 9 11}"]
+    P101["24@5<br/>{0 2 4 5 7 9 10}"]
+    P103["24@7<br/>{0 2 4 6 7 9 11}"]
 
-    M -- "+2" --> T54
-    M -- "+5,9" --> C8
-    M -- "+3,8,10" --> O20
-    T54 -- "+11" --> B8
-    T54 -- "+5,9" --> B18
-    C8 -- "+2" --> B18
-    C8 -- "+1" --> N209
-    O20 -- "+5" --> B15b
-    B8 -- "+9" --> A18
-    B8 -- "+8" --> N204
-    B18 -- "+1" --> B15
-    B18 -- "+10" --> B24
-    A18 -- "+8" --> A15
-    A18 -- "+5" --> C24
-    A18 -- "+6" --> A24
+    P24 -- "+2" --> P40
+    P24 -- "+5,9" --> P53
+    P24 -- "+3,8,10" --> P72
+    P40 -- "+11" --> P48
+    P40 -- "+5,9" --> P67
+    P48 -- "+9" --> P62
+    P48 -- "+8" --> P76
+    P53 -- "+2" --> P67
+    P53 -- "+1" --> P81
+    P62 -- "+8" --> P95
+    P62 -- "+5" --> P96
+    P62 -- "+6" --> P103
+    P67 -- "+1" --> P88
+    P67 -- "+11" --> P96
+    P67 -- "+10" --> P101
+    P72 -- "+5" --> P91
+    P76 -- "+9" --> P95
+    P81 -- "+2" --> P88
 ```
 
 This extended triad placement graph contains every relationship whose source is a triad
-or a larger shape (tetrad → pentad → hexad → heptad, and the lcm-20 branch), so no separate tetrad,
-pentad or hexad graph is needed.
+or a larger shape (tetrad → pentad → hexad → heptad, and the lcm-20 branch). Together with the tonic
+and dyad graphs above — which carry the three tonic→dyad/triad and four dyad→triad/tetrad/pentad/hexad
+relationships — these three graphs realise all 18 shape relationships, so no separate tetrad, pentad
+or hexad graph is needed.
 
 :::note Reproducing these graphs
 
-All of the graphs above are generated by `melodroid graph placement`: the shape graph with
+All of the graphs above are generated verbatim by `melodroid graph placement`: the shape graph with
 `--mode shape`, each single placement graph with `--mode placement --lcm <L> --at <k>` (the default
-root is `1@0`), and the extended triad graph with `--mode extended --lcm 4 --at 0`. The generated
-extended graph also surfaces a few hexad→heptad covers omitted from the hand-drawn figure above —
-any six-key placement contained in a seven-key one is directly adjacent, since nothing fits between
-them. See the [CLI reference](../cli/reference#placement).
+root is `1@0`), and the extended triad graph with `--mode extended --lcm 4 --at 0`. Because the graphs
+are derived from the key-set containment poset rather than hand-drawn, the extended graph draws every
+hexad→heptad cover — any six-key placement contained in a seven-key one is directly adjacent, since
+nothing fits between them. See the [CLI reference](../cli/reference#placement).
 
 :::
 

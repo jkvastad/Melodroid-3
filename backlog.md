@@ -17,6 +17,10 @@
 Could explain why key 3 sounds good with maj@7, since its basically moving up the circle of fifths to 24@7-24@0
 * Update placement page with new graph placement graphs, make sure subsequent pages use the new correct graphs, i.e. junction command and prose inferences.
 
+* mermaid graphs sometimes move lines through boxes, possible to avoid?
+
+* extended tonic graph with boxes showing the triad shapes
+
 ## Intro (intro.mdx)
 
 ## Theory
