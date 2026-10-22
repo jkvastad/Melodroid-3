@@ -85,11 +85,12 @@ As noted earlier there are 9 classes of lcm families.
 The 9 families correspond to shapes; a tonic (lcm 1), a dyad (lcm 2), a triad (lcm 3, 4), a tetrad (lcm 5, 6), the pentad (lcm 8, 9, 10, 12),
  two different hexads (lcm 18 and lcm 20), and two different heptads (lcm 15 and 24).
 
-This reduces the tonic superset structure to just 9 shapes and 18 distinct containment relationships between them.
+This reduces the tonic superset structure to just 9 shapes and 18 distinct containment relationships between them, which can be displayed in a **shape graph**.
 
-The following graph shows all 18 relationships at once, one per edge. Each node is a shape (with one
-example placement shown), each edge is labelled by a single representative placement pair, and every
-other placement of that shape realises the same relationship transposed.
+* A **shape graph** collapses every placement to its shape and shows all direct-adjacency relationships between shapes, with one representative placement pair labelling each edge; every other placement of that shape realises the same relationship but transposed.
+
+We can generate graphs with the `melodroid graph placement` command (See the [CLI reference](../cli/reference#placement)).
+Using the `--mode shape` we get the following shape graph with all 18 relationships at once, one per edge.
 
 ```mermaid
 flowchart TD
@@ -127,6 +128,9 @@ We can illustrate these 18 containments with placement graphs, one for each shap
 
 * A **placement graph** is a graph showing a placement and all of its directly adjacent placements.
 
+Placement graphs can be generated using the option `--mode placement --lcm <L> --at <k>` (the default
+root is `1@0`).
+
 Since shapes constitute classes of placements, we can choose a representative placement to illustrate a shape.
 For instance, the tonic placement graph is shown below:
 
@@ -158,7 +162,11 @@ flowchart TD
     P12 -- "+2,3,5,10" --> P65
 ```
 
-Interestingly, the triad placement graph can be extended to include the higher order placement graphs:
+Interestingly, the triad placement graph can be extended by recursively creating placement graphs to include the higher order placement graphs.
+
+* An **extended placement graph** of a root placement shows the root together with every placement that contains it (the root's *up-set* under key-set containment), drawn with all direct-adjacency relationships among them. Equivalently, it is the union of the root's placement graph and the placement graph of each placement above it — recursively following direct adjacency upward to the largest families.
+
+Extended placement graphs are generated with the option `--mode extended --lcm 4 --at 0`:
 
 ```mermaid
 flowchart TD
@@ -204,16 +212,5 @@ and dyad graphs above — which carry the three tonic→dyad/triad and four dyad
 relationships — these three graphs realise all 18 shape relationships, so no separate tetrad, pentad
 or hexad graph is needed.
 
-:::note Reproducing these graphs
-
-All of the graphs above are generated verbatim by `melodroid graph placement`: the shape graph with
-`--mode shape`, each single placement graph with `--mode placement --lcm <L> --at <k>` (the default
-root is `1@0`), and the extended triad graph with `--mode extended --lcm 4 --at 0`. Because the graphs
-are derived from the key-set containment poset rather than hand-drawn, the extended graph draws every
-hexad→heptad cover — any six-key placement contained in a seven-key one is directly adjacent, since
-nothing fits between them. See the [CLI reference](../cli/reference#placement).
-
-:::
-
 This tonic structure linking the different lcm placement shapes could be the foundation for scales and chord progressions.
-Indeed, it might be the foundation for perception of music, with the brain actively fitting sound onto placements.
+Indeed, it might be the foundation for the perception of music, with the brain actively fitting sound onto placements.
