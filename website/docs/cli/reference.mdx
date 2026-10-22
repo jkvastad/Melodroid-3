@@ -418,6 +418,37 @@ is written as `lcm-families-clustered.md` so it does not overwrite the exact gra
 edge in the default space: `18 → 24` via `16/9` (the `24@10` placement), where `27/16` clusters onto
 `5/3`. Remarkably, no other family gains a clustering-tolerant edge even at much larger `c`.
 
+### `placement`
+
+```bash
+melodroid graph placement [--mode placement|extended|shape] [--lcm 1] [--at 0] \
+  [--show-isomorphisms] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--ktet 12]
+```
+
+Writes a Mermaid **placement graph** to `output/graphs/`, built from the key-set containment poset of
+every placement (each LCM family swept over all `--ktet` anchors). Two placements are *adjacent* when
+the larger key set contains the smaller, and *directly adjacent* (a **cover**) when no third placement
+lies strictly between them; the edge label `+keys` gives the **distinguishing keys** the superset
+adds. Keyboard-coincident placements (identical key sets, e.g. `3@3` and `4@8`) fold to one node,
+keeping the power-of-2-preferred, then lowest-LCM, then lowest-anchor placement as representative. By
+default each node shows just that representative `L@a`; `--show-isomorphisms` appends the folded-in
+isomorphic placements with `≅` (e.g. `4@8 ≅ 3@3`). This flag affects `placement` / `extended` modes
+only — the shape graph never lists aliases.
+
+- `--mode placement` (default) — the `--lcm@--at` root (default `1@0`, the tonic) and its directly
+  adjacent supersets only. Reproduces the tonic/dyad placement graphs in
+  [Placements](../music/placements).
+- `--mode extended` — the root's full **up-set**: every placement containing it, with all cover edges
+  among them. `--lcm 4 --at 0` reproduces the extended triad placement graph.
+- `--mode shape` — collapses every placement to its transposition-class **shape** and emits all 9
+  shapes plus their 18 direct-adjacency relationships, each shown with one representative placement
+  pair (`--lcm`/`--at` are ignored).
+
+Because the graph is derived rather than hand-drawn, the generated extended triad graph includes a few
+hexad→heptad covers that the hand-authored doc figure omits (any 6-key ⊂ 7-key placement is a cover,
+since nothing fits between them). 12-tet is the intended keyboard; other `--ktet` values are allowed
+for exploration.
+
 ## Plots
 
 ### `lcm-families`

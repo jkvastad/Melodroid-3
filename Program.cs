@@ -1426,8 +1426,115 @@ class Program
             return 0;
         });
 
+        var placementGraphModeOption = new Option<string>("--mode")
+        {
+            Description = "Output mode: 'placement' (root placement + its directly adjacent supersets), 'extended' (the root's full up-set of containing placements), or 'shape' (all shapes and their 18 direct-adjacency relationships).",
+            DefaultValueFactory = _ => "placement",
+        };
+        placementGraphModeOption.AcceptOnlyFromAmong("placement", "extended", "shape");
+
+        var placementGraphLcmOption = new Option<int>("--lcm")
+        {
+            Description = "LCM of the root family for 'placement' / 'extended' modes (ignored in 'shape'). Default 1 (the tonic).",
+            DefaultValueFactory = _ => 1,
+        };
+        var placementGraphAtOption = new Option<int>("--at")
+        {
+            Description = "Anchor key of the root placement for 'placement' / 'extended' modes (ignored in 'shape'). Default 0.",
+            DefaultValueFactory = _ => 0,
+        };
+        var placementGraphShowIsomorphismsOption = new Option<bool>("--show-isomorphisms")
+        {
+            Description = "In 'placement' / 'extended' modes, append each node's keyboard-coincident (isomorphic) placements with `≅` (e.g. 4@8 ≅ 3@3). Default off — each node shows a single representative. Ignored in 'shape' mode.",
+        };
+
+        var graphPlacementCommand = new Command(
+            "placement",
+            "Emit a Mermaid placement graph: a placement and its directly adjacent placements (cover relation over k-tet key-set containment), the root's full up-set, or the shape-collapsed graph of all direct-adjacency relationships.");
+        graphPlacementCommand.Add(maxSizeOption);
+        graphPlacementCommand.Add(maxPrimeOption);
+        graphPlacementCommand.Add(maxLcmOption);
+        graphPlacementCommand.Add(ktetOption);
+        graphPlacementCommand.Add(placementGraphModeOption);
+        graphPlacementCommand.Add(placementGraphLcmOption);
+        graphPlacementCommand.Add(placementGraphAtOption);
+        graphPlacementCommand.Add(placementGraphShowIsomorphismsOption);
+        graphPlacementCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var k = parse.GetValue(ktetOption);
+            var mode = parse.GetValue(placementGraphModeOption) ?? "placement";
+            var lcm = parse.GetValue(placementGraphLcmOption);
+            var at = parse.GetValue(placementGraphAtOption);
+            var showIsomorphisms = parse.GetValue(placementGraphShowIsomorphismsOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k < 1) { AnsiConsole.MarkupLine("[red]--ktet must be ≥ 1.[/]"); return 1; }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var nodes = PlacementGraph.BuildUniverse(families, k);
+            var edges = PlacementGraph.CoverEdges(nodes);
+
+            string markdown;
+            string fileName;
+            if (mode == "shape")
+            {
+                var (shapes, shapeEdges) = PlacementGraph.ShapeGraph(nodes, edges, k);
+                markdown = PlacementGraphRenderer.RenderShapeGraph(shapes, shapeEdges, maxSize, maxPrime, maxLcm, k);
+                fileName = "placement-shape.md";
+            }
+            else
+            {
+                var rootFamily = families.FirstOrDefault(f => f.Lcm == lcm);
+                if (rootFamily.Fractions is null)
+                {
+                    AnsiConsole.MarkupLine($"[red]No LCM family {lcm} within --max-lcm {maxLcm}.[/]");
+                    return 1;
+                }
+                var normalizedAt = ((at % k) + k) % k;
+                var rootKeys = Placements.Compute(rootFamily, normalizedAt, k).Keys;
+                var rootIndex = PlacementGraph.FindNode(nodes, rootKeys);
+                if (rootIndex < 0)
+                {
+                    AnsiConsole.MarkupLine($"[red]Could not locate placement {lcm}@{normalizedAt} in the universe.[/]");
+                    return 1;
+                }
+
+                if (mode == "extended")
+                {
+                    var scope = PlacementGraph.UpSet(nodes, rootKeys);
+                    markdown = PlacementGraphRenderer.RenderScoped(
+                        $"Extended Placement Graph — {lcm}@{normalizedAt}",
+                        nodes, edges, scope, maxSize, maxPrime, maxLcm, k, showIsomorphisms);
+                    fileName = $"placement-extended-{lcm}@{normalizedAt}.md";
+                }
+                else
+                {
+                    var scope = PlacementGraph.PlacementScope(edges, rootIndex);
+                    markdown = PlacementGraphRenderer.RenderScoped(
+                        $"Placement Graph — {lcm}@{normalizedAt}",
+                        nodes, edges, scope, maxSize, maxPrime, maxLcm, k, showIsomorphisms);
+                    fileName = $"placement-{lcm}@{normalizedAt}.md";
+                }
+            }
+
+            var outputDir = Path.Combine("output", "graphs");
+            Directory.CreateDirectory(outputDir);
+            var outputPath = Path.Combine(outputDir, fileName);
+            File.WriteAllText(outputPath, markdown);
+
+            AnsiConsole.WriteLine(Path.GetFullPath(outputPath));
+            return 0;
+        });
+
         var graphCommand = new Command("graph", "Graph-output commands (Mermaid).");
         graphCommand.Add(graphLcmFamiliesCommand);
+        graphCommand.Add(graphPlacementCommand);
 
         var lcmOption = new Option<int>("--lcm")
         {
