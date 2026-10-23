@@ -234,13 +234,21 @@ Using the `progression` command we can enumerate all possible progressions betwe
 Let's use this to analyze some chord sequences.
 
 ### C F G
-A very common "[three chord song](https://en.wikipedia.org/wiki/Three-chord_song)", C F G
+A very common "[three chord song](https://en.wikipedia.org/wiki/Three-chord_song)", C F G is the I, IV, V progression of the major scale.
+
+Expressed in placements, using key 0 for key c, the major scale is 24@0 with C=4@0, F=4@5 and G=4@7. 
+Looking at the progressions between the chords we find:
+* C=`0 4 7` and F=`0 5 9` are both contained by 8@5.
+* F and G=`2 7 11` are contained by 24@0. (Interesting subsets include e.g. 8@5->4@0->8@0 and 18@7->24@0 which move between the 8@0 and 8@5 branch.)
+* G and C are in 8@0.
+
+Given these observations the main mechanism might be the superset principle within lcm 8 which contains two major triads, explaining the I->IV and V->I movement. 
+The IV->V is a larger move, either seen as a superset principle move withing 24@0 (which contains all the three chords), or as a subset principle move shifting the chords from the 8@5 branch to the 8@0 branch.
 
 TODO: chords to explain - 
 * C to Em - both sit in 8@0 but the minor has a very different feel from the major
 * C to B - related to C to Em via Em and 15@6
 * C to Cm - seems easier to go from C to Cm than Cm to C. C to Cm then likes to go to G (lcm 15) with a cadence feel, rather than the lcm 8s at G# or D#
-* C F G loop - the common three chord song
 * Cm to Bm - from Bowie's "Changes", three minors in a row with semitone displacement 
 * Em to A
 
