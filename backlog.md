@@ -2,24 +2,8 @@
 * Note that there is a high severity vulnerability in serialize-javascript <=7.0.4 which is a false alarm because the only input which could be rce is on build side. Just wait for docusaurus to patch it out. Do not npm audit fix --force, which would attempt a breaking major upgrade.
 
 * TODO: Are full matches every used in the docs? Seems like it's mostly clustering and renormalisations?
-* Lcm subset based progression algorithm which moves not only via shared lcm supersets but also shared lcm subsets e.g. 15/24 adjacency via lcm 18. Can this also explain blues and harmonic minor?
-* Add section on key sweeps of common chords e.g. major/minor/dim/aug and how their placements can be used with adjacency for progressions and scales such as 8, 24, blues and harm.
-* Add chord progression table
-* Add section on reverse movement e.g. if 0 4 7 played as 15@7 is adjacent to 24@8 then 0 4 7 with placements of 24@7 and 24@0 is also adjacent to 15@11 and 15@6,
- allowing e.g. progression 0 4 7(24@0) -> 4 8 11(15@11) and 0 4 7(24@7) -> 11 3 6(15@6)
-
 
 * Does preference for small primes tie in with musical neurodynamics?
-
-* update junction scales command default to use 3 note min notes for triads? 4 notes seems arbitrary to force a result (unless related to 4 note lcm 5 via preference and prime 5).
-* Add placement graphs to junction scales section to show junctions?
-* blues@7 as 24@5? related to a 24@0-24@5 junction, but with circle of fifths relationships it might be 24@10 with some subtle mechanism. 
-Could explain why key 3 sounds good with maj@7, since its basically moving up the circle of fifths to 24@7-24@0
-* Update placement page with new graph placement graphs, make sure subsequent pages use the new correct graphs, i.e. junction command and prose inferences.
-
-* mermaid graphs sometimes move lines through boxes, possible to avoid?
-
-* extended tonic graph with boxes showing the triad shapes
 
 ## Intro (intro.mdx)
 
@@ -37,8 +21,6 @@ Could explain why key 3 sounds good with maj@7, since its basically moving up th
 ### Placements (music/placements.mdx)
 ### Voicings (music/voicings.mdx)
 ### Listening to LCM Families (music/listening-to-lcm-families.mdx)
-TODO: compare LCMs with modes - e.g. playing Mixolydian C is just playing Major scale F but using the C note as tonic.
- * True tonic is perhaps the reference point and playing music as if another note is the reference point produces a certain feel (probably juking/jiving/feinting/unexpected feelings).
 
 ### On a Sour Note (music/on-a-sour-note.mdx)
 
