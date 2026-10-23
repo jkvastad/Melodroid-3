@@ -300,8 +300,11 @@ bridge `S`: every row collapses all origins that share the same bridge *and* the
 set, brace-listing both the origins and the targets (`{P_A, …} | S | {P_B, …}`). Each row is thus a
 full `Origins × {S} × Targets` rectangle; it is lossless because the two containing placements are
 always distinct (no origin can equal one of its own targets). Inside any brace list, placements that
-share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). The footer reports the derived
-category.
+share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a per-principle
+**placement summary** gives a quick read of the progression's topology — one anchor-compressed set
+of the superset placements, and the subset placements split by slot into **origins** (`P_A`),
+**bridges** (`S`), and **targets** (`P_B`); a principle's line is omitted when it has no triplets.
+The footer reports the derived category.
 
 **Convenience form** (`--target-keys` omitted) — enumerates every major/minor target triad rooted
 at each of the 12 keys (add `--include-dim` for the 12 diminished triads too) and tags each with a

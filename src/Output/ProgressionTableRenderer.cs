@@ -59,6 +59,8 @@ public static class ProgressionTableRenderer
             }
 
             console.Write(table);
+
+            RenderSummary(triplets, console);
         }
 
         console.MarkupLine(
@@ -66,6 +68,30 @@ public static class ProgressionTableRenderer
             $"minSubsetNotes={minSubsetNotes} · bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
     }
+
+    // Per-principle placement summary beneath the triplet table: a quick read of which placements
+    // participate overall. Superset collapses to one set (Origin = Bridge = Target); subset splits
+    // by slot into origins (P_A) / bridges (S) / targets (P_B). Each set is deduped and
+    // anchor-compressed. A principle's line is omitted when it has no triplets.
+    private static void RenderSummary(IReadOnlyList<ProgressionTriplet> triplets, IAnsiConsole console)
+    {
+        var supersets = triplets.Where(t => t.Principle == ProgressionPrinciple.Superset).ToList();
+        var subsets = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset).ToList();
+
+        console.MarkupLine("[grey]summary[/]");
+        if (supersets.Count > 0)
+            console.MarkupLine($"  [blue]superset[/]  {SummarizeSlot(supersets, t => t.Bridge)}");
+        if (subsets.Count > 0)
+            console.MarkupLine(
+                $"  [yellow]subset[/]   origins {SummarizeSlot(subsets, t => t.Origin)} · " +
+                $"bridges {SummarizeSlot(subsets, t => t.Bridge)} · " +
+                $"targets {SummarizeSlot(subsets, t => t.Target)}");
+    }
+
+    // Distinct placements in one triplet slot, anchor-compressed (CompressAnchors handles ordering).
+    private static string SummarizeSlot(
+        IEnumerable<ProgressionTriplet> triplets, Func<ProgressionTriplet, Placement> slot) =>
+        CompressAnchors(triplets.Select(t => Label(slot(t))).Distinct().ToList());
 
     // Convenience form: one table per triad quality, a row per candidate target root.
     public static void Render(
