@@ -293,18 +293,25 @@ target placement (contains the target chord), and a bridge placement fulfilling 
 
 The command has two forms (12-tet only):
 
-**Standard form** (`--target-keys` given) — prints every origin→target progression as explicit
-**Origin | Bridge | Target** triplet rows, superset rows first then subset. A superset row repeats
-the single containing placement in all three columns; a subset row is `P_A | S | P_B`. The footer
-reports the derived category.
+**Standard form** (`--target-keys` given) — prints every origin→target progression as
+**Origin | Bridge | Target** rows, superset rows first then subset. A superset row repeats the single
+containing placement in all three columns. Subset rows are factored **both ways** around their shared
+bridge `S`: every row collapses all origins that share the same bridge *and* the identical target
+set, brace-listing both the origins and the targets (`{P_A, …} | S | {P_B, …}`). Each row is thus a
+full `Origins × {S} × Targets` rectangle; it is lossless because the two containing placements are
+always distinct (no origin can equal one of its own targets). Inside any brace list, placements that
+share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). The footer reports the derived
+category.
 
 **Convenience form** (`--target-keys` omitted) — enumerates every major/minor target triad rooted
 at each of the 12 keys (add `--include-dim` for the 12 diminished triads too) and tags each with a
 **Category**, split into **one table per triad quality**; unreachable **neither** targets are still
-listed. The **Via** column shows the bridges: superset as `{Lcm}@{At}` labels, subset as `P_A·S·P_B`
+listed. The **Via** column shows the bridges: superset as an anchor-compressed brace list of
+`{Lcm}@{At}` labels, subset as `P_A·S·P_B`
 triples (capped at 6 per list, overflowing to `…(+M)`; `--all-bridges` disables the cap). Triples
 sharing a source placement `P_A` and shared subset `S` are factored by that prefix, brace-listing
-the varying target placements — `P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`).
+the varying target placements — `P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`);
+within the brace list, same-LCM placements compress their anchors (`24@0, 24@5` → `24@0,5`).
 
 Bridge/triplet lists are **raw by default** — plain `{Lcm}@{At}` labels, every containing placement
 and every triple. By default output is truncated, use option `--all-bridges` to show all progressions.

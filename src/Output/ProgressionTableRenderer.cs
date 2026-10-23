@@ -39,19 +39,23 @@ public static class ProgressionTableRenderer
                 .AddColumn("Bridge")
                 .AddColumn("Target");
 
-            var ordered = triplets
-                .OrderBy(t => t.Principle == ProgressionPrinciple.Superset ? 0 : 1)
-                .ThenBy(t => Key(t.Bridge))
+            // Superset rows first: one per containing placement (Origin = Bridge = Target, nothing to
+            // factor), ordered by bridge then origin then target.
+            var supersets = triplets
+                .Where(t => t.Principle == ProgressionPrinciple.Superset)
+                .OrderBy(t => Key(t.Bridge))
                 .ThenBy(t => Key(t.Origin))
                 .ThenBy(t => Key(t.Target));
-
-            foreach (var t in ordered)
+            foreach (var t in supersets)
             {
-                table.AddRow(
-                    t.Principle == ProgressionPrinciple.Superset ? "[blue]superset[/]" : "[yellow]subset[/]",
-                    Label(t.Origin),
-                    Label(t.Bridge),
-                    Label(t.Target));
+                table.AddRow("[blue]superset[/]", Label(t.Origin), Label(t.Bridge), Label(t.Target));
+            }
+
+            // Subset rows: factor both Origin and Target around a shared Bridge (see GroupSubsetPairs).
+            var subsets = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset);
+            foreach (var (origins, bridge, targets) in GroupSubsetPairs(subsets))
+            {
+                table.AddRow("[yellow]subset[/]", origins, bridge, targets);
             }
 
             console.Write(table);
@@ -92,7 +96,7 @@ public static class ProgressionTableRenderer
             foreach (var target in group)
             {
                 var via = new List<string>();
-                if (target.SupersetBridges.Count > 0) via.Add($"sup {Cap(target.SupersetBridges, allBridges)}");
+                if (target.SupersetBridges.Count > 0) via.Add($"sup {CapBraced(target.SupersetBridges, allBridges)}");
                 if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(GroupSubsetTriples(target.SubsetBridges), allBridges)}");
 
                 table.AddRow(
@@ -134,14 +138,69 @@ public static class ProgressionTableRenderer
         return order
             .OrderBy(prefix => SortKey(prefix.Split('·')[0]))
             .ThenBy(prefix => SortKey(prefix.Split('·')[1]))
-            .Select(prefix =>
-            {
-                var pbs = byPrefix[prefix].OrderBy(SortKey).ToList();
-                return pbs.Count == 1
-                    ? $"{prefix}·{pbs[0]}"
-                    : $"{prefix}·{{{string.Join(", ", pbs)}}}";
-            })
+            .Select(prefix => $"{prefix}·{CompressAnchors(byPrefix[prefix])}")
             .ToList();
+    }
+
+    // Factor subset triplets for the standard (--target-keys) table two ways around a shared bridge S:
+    // group origins that share the same bridge *and* the identical set of targets, then brace-list
+    // both the origins and the targets. Each emitted row is a full Origins × {Bridge} × Targets
+    // rectangle. This is lossless: SubsetTriplets excludes the diagonal P_A = P_B, so no origin can
+    // appear in its own target set; since grouped origins share one target set, none of them is in it,
+    // and every reconstructed cell is a real triple (never a same-placement progression).
+    private static IEnumerable<(string Origins, string Bridge, string Targets)> GroupSubsetPairs(
+        IEnumerable<ProgressionTriplet> subsetTriplets)
+    {
+        // (originLabel, bridgeLabel) → distinct target labels.
+        var targetsByOriginBridge = new Dictionary<(string Origin, string Bridge), HashSet<string>>();
+        foreach (var t in subsetTriplets)
+        {
+            var key = (Label(t.Origin), Label(t.Bridge));
+            if (!targetsByOriginBridge.TryGetValue(key, out var targets))
+            {
+                targets = new HashSet<string>();
+                targetsByOriginBridge[key] = targets;
+            }
+            targets.Add(Label(t.Target));
+        }
+
+        // Collapse (origin, bridge) entries sharing the same bridge and identical target set.
+        var byGroup = new Dictionary<(string Bridge, string TargetSig), (string Bridge, List<string> Origins, List<string> Targets)>();
+        foreach (var ((origin, bridge), targetSet) in targetsByOriginBridge)
+        {
+            var targets = targetSet.OrderBy(SortKey).ToList();
+            var gkey = (bridge, string.Join(",", targets));
+            if (!byGroup.TryGetValue(gkey, out var group))
+            {
+                group = (bridge, new List<string>(), targets);
+                byGroup[gkey] = group;
+            }
+            group.Origins.Add(origin);
+        }
+
+        return byGroup.Values
+            .OrderBy(g => SortKey(g.Bridge))
+            .ThenBy(g => g.Origins.Select(SortKey).Min())
+            .ThenBy(g => g.Targets.Select(SortKey).Min())
+            .Select(g => (CompressAnchors(g.Origins), g.Bridge, CompressAnchors(g.Targets)));
+    }
+
+    // Render a brace list of "{Lcm}@{At}" labels, merging same-LCM entries to "{Lcm}@a,b,…" (anchors
+    // ascending). A single label renders bare; two or more are wrapped in braces.
+    private static string CompressAnchors(IReadOnlyList<string> labels)
+    {
+        var byLcm = new List<(int Lcm, List<int> Ats)>();
+        foreach (var label in labels.OrderBy(SortKey))
+        {
+            var (lcm, at) = SortKey(label);
+            if (byLcm.Count > 0 && byLcm[^1].Lcm == lcm)
+                byLcm[^1].Ats.Add(at);
+            else
+                byLcm.Add((lcm, new List<int> { at }));
+        }
+
+        var joined = string.Join(", ", byLcm.Select(g => $"{g.Lcm}@{string.Join(",", g.Ats)}"));
+        return labels.Count > 1 ? "{" + joined + "}" : joined;
     }
 
     private static string Label(Placement p) => $"{p.Lcm}@{p.At}";
@@ -171,6 +230,16 @@ public static class ProgressionTableRenderer
         showAll || bridges.Count <= MaxBridges
             ? string.Join(" ", bridges)
             : string.Join(" ", bridges.Take(MaxBridges)) + $" …(+{bridges.Count - MaxBridges})";
+
+    // Cap a superset bridge list, then render the kept labels as one anchor-compressed brace list
+    // (CompressAnchors leaves a lone label bare). Overflow …(+M) trails outside the brace.
+    private static string CapBraced(IReadOnlyList<string> bridges, bool showAll)
+    {
+        var overflow = !showAll && bridges.Count > MaxBridges;
+        var kept = overflow ? bridges.Take(MaxBridges).ToList() : bridges;
+        var body = CompressAnchors(kept);
+        return overflow ? $"{body} …(+{bridges.Count - MaxBridges})" : body;
+    }
 
     private static string CategoryMarkup(ProgressionCategory category) => category switch
     {
