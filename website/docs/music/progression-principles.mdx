@@ -245,7 +245,17 @@ Looking at the progressions between the chords we find:
 Given these observations the main mechanism might be the superset principle within lcm 8 which contains two major triads, explaining the I->IV and V->I movement. 
 The IV->V is a larger move, either seen as a superset principle move withing 24@0 (which contains all the three chords), or as a subset principle move shifting the chords from the 8@5 branch to the 8@0 branch.
 
-TODO: rhythmplayer showing C (8@0) -> F(8@5) -> G(8@0) -> G(24@0) loop
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], lcm: 8, at: 0},    // C  · 8@0
+    {chord: [0, 5, 9], lcm: 8, at: 5},    // F  · 8@5
+    {chord: [2, 7, 11], lcm: 8, at: 0},   // G  · 8@0
+    {chord: [2, 7, 11], lcm: 24, at: 0},  // G  · 24@0
+  ]}
+/>
 
 ### C to Em
 C -> Em has both superset and subset progressions.
@@ -273,7 +283,17 @@ From this it looks like the progression could be a superset progression within 1
 Instead it looks like movement from 15@7 to 15@2 via 4@3, and indeed it does sound nice with a mel@0 (15@2 based) finish.
 This is similar to the intro example of C -> Eb (4@3) where we could use 15@7 as a superset bridge to land in 18@10.
 
-TODO: rhythmplayer showing C (8@5) -> Cm(mel@0) -> G(mel@0) -> G(mel@0) loop
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], lcm: 8, at: 5},                                 // C  · 8@5
+    {chord: [0, 3, 7], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'},  // Cm · mel@0
+    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'}, // G  · mel@0
+    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'}, // G  · mel@0
+  ]}
+/>
 
 ### Cm to Bm
 

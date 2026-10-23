@@ -77,6 +77,10 @@ export type RhythmPatternPlayerProps = {
   // entry's placement (melody drawn from it, opening key sounded first), and wanders to the next
   // chord via the current chord's stable melodic supersets. Vocabulary is major/minor/dim. Takes
   // precedence over `chordWalk` if both are set (this page only)
+  script?: ScriptStep[]; // script mode: a FIXED authored progression — one step per meter group,
+  // each a chord plus the placement its bar draws melody from. Unlike chordWalk / perceptionWalk the
+  // sequence is static (never re-rolls), looping verbatim. Takes precedence over chordWalk /
+  // perceptionWalk if set (this page only)
 };
 
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
@@ -119,6 +123,12 @@ export type ChordWalkSet = {origin: number[]; placements: PlacementPattern[]};
 // selects the chord-target rule (direct stable supersets, adjacency-derived 24 placements, or the
 // union); default 'supersets' keeps the existing behaviour.
 export type PerceptionWalkSet = {start?: number[]; strategy?: WalkStrategy};
+
+// A script-mode step: the chord's 12-tet pitch classes (sounded as the re-struck accompaniment)
+// and the placement its meter group draws melody from — either an `lcm@at` LCM family (resolved
+// via placementKeys) or an explicit folded key set (`keys`, for non-LCM scales like melodic minor).
+// `label` overrides the placement readout (e.g. 'mel@0'); otherwise it is shown as `lcm @ at`.
+export type ScriptStep = {chord: number[]; lcm?: number; at?: number; keys?: number[]; label?: string};
 
 // The baked per-group step shape the scheduler consumes, shared by chord-walk and perception-walk.
 // `openingKey` is only populated by perception-walk (chord-walk leaves it absent). `second` is set
@@ -771,6 +781,7 @@ export default function RhythmPatternPlayerClient({
   chordWalk,
   phraseBinds: phraseBindsProp = 'rhythm',
   perceptionWalk,
+  script,
 }: RhythmPatternPlayerProps) {
   // Guided chord mode: the chord and its melody sets come from `presets` (two linked
   // dropdowns) instead of a random roll. Still runs the full chord-mode engine, so it
@@ -791,6 +802,10 @@ export default function RhythmPatternPlayerClient({
   const perceptionWalkOn = perceptionWalk != null;
   const chordWalkOn =
     !perceptionWalkOn && chordWalk != null && chordWalk.placements.length > 0;
+  // Script mode: a FIXED authored progression baked straight into the walk scheduler as a static
+  // (never re-rolling) cycle. Reuses the chord-engine / walk plumbing; the only divergence is that
+  // its baked steps are the author's, not generated, and the per-loop re-roll is suppressed.
+  const scriptOn = script != null && script.length > 0;
   // Parse the author-supplied defaults once, falling back to a sane starter if the
   // MDX passes something malformed.
   const initial = useMemo(() => {
@@ -1074,9 +1089,22 @@ export default function RhythmPatternPlayerClient({
     return {steps: bakePerceptionSteps(steps, pitchHz), origin, unsatisfied};
   }, [perceptionWalkOn, pattern, perceptionWalk, seed, pitchHz, walkStrategy, perceptionBindings]);
   const perceptionWalkSteps = perceptionWalkRaw?.steps ?? null;
+  // Script mode: bake the authored steps directly into the walk-step shape, reusing the chord
+  // voicer and melody-pool helpers. Each step's melody pool is an explicit key set or the resolved
+  // `lcm@at` placement; its readout label defaults to `lcm @ at`. Null outside script mode.
+  const scriptSteps = useMemo<BakedWalkStep[] | null>(() => {
+    if (!scriptOn) return null;
+    return script!.map((s) => ({
+      triad: s.chord,
+      offsets: chordOffsets(s.chord, pitchHz),
+      melodyKeys: foldOctave(s.keys ?? placementKeys(s.lcm!, s.at!, 12)),
+      placementLabel: s.label ?? `${s.lcm} @ ${s.at}`,
+    }));
+  }, [scriptOn, script, pitchHz]);
   // The active walk's baked steps, whichever mode is on (mutually exclusive). Downstream melody /
   // scheduler code reads this rather than either mode's memo directly.
-  const walkSteps: BakedWalkStep[] | null = chordWalkSteps ?? perceptionWalkSteps;
+  const walkSteps: BakedWalkStep[] | null =
+    chordWalkSteps ?? perceptionWalkSteps ?? scriptSteps;
   // Reflect the active walk's first-cycle binding status into state for the inline note (setState in
   // an effect, not during render). Modes are mutually exclusive, so the inactive mode's raw is null.
   // The scheduler updates it again per re-rolled cycle (loop melody off).
@@ -1090,7 +1118,7 @@ export default function RhythmPatternPlayerClient({
   // mode it is the selected match's LCM family placement (a superset of the chord); in
   // melody mode it is the chosen intro-table family.
   const octaveKeys = useMemo(() => {
-    if (chordWalkOn || perceptionWalkOn) {
+    if (chordWalkOn || perceptionWalkOn || scriptOn) {
       // Walk modes: the melody pool changes per group; expose the first group's pool as the
       // representative so melodyOn / legend / spectrum colouring turn on. The scheduler and
       // bakedKeys pick the correct per-group pool.
@@ -1116,6 +1144,7 @@ export default function RhythmPatternPlayerClient({
   }, [
     chordWalkOn,
     perceptionWalkOn,
+    scriptOn,
     walkSteps,
     progressionOn,
     progression,
@@ -1150,7 +1179,7 @@ export default function RhythmPatternPlayerClient({
     // phrase modulates group-to-group. With melody binding on, a repeated group instead restates
     // the group it repeats's motif note-for-note (see bakeMelody); falls back to the representative
     // octaveKeys for any group whose bridging pool is empty (the origin-with-no-melody fallback).
-    if ((chordWalkOn || perceptionWalkOn) && walkSteps) {
+    if ((chordWalkOn || perceptionWalkOn || scriptOn) && walkSteps) {
       const rng = mulberry32(seed ^ 0x51ed270b); // salt distinct from the walk seed
       const firingPulseIdx = firingPulseIndices(pattern.pulses);
       const ranges = groupPulseRanges(pattern.meter, pattern.subdivisions);
@@ -1183,6 +1212,7 @@ export default function RhythmPatternPlayerClient({
     seed,
     chordWalkOn,
     perceptionWalkOn,
+    scriptOn,
     walkSteps,
     phraseRepeats,
     bindMelody,
@@ -1253,6 +1283,12 @@ export default function RhythmPatternPlayerClient({
   useEffect(() => {
     chordWalkStepsRef.current = chordWalkSteps;
   }, [chordWalkSteps]);
+  // Script mode: the fixed authored steps read by the scheduler. Never re-rolls (the re-roll guard
+  // excludes script), so the scheduler just reuses this every pass; re-bakes on prop/pitch change.
+  const scriptStepsRef = useRef(scriptSteps);
+  useEffect(() => {
+    scriptStepsRef.current = scriptSteps;
+  }, [scriptSteps]);
   // Perception-walk: the baked first cycle and its resolved loop origin, mirrored so the scheduler
   // re-loops around that origin (default) or, in free roam, wanders from a carry chord seeded at the
   // origin. Re-baked on Generate / pitch change.
@@ -1559,7 +1595,7 @@ export default function RhythmPatternPlayerClient({
     // Pick the active voices from the current instrument. Piano builds its samplers on first
     // use and fetches samples; gate playback on Tone.loaded() so the first note isn't silent.
     const usePiano = instrument === 'piano';
-    const chordEngine = chord || progressionOn || chordWalkOn || perceptionWalkOn;
+    const chordEngine = chord || progressionOn || chordWalkOn || perceptionWalkOn || scriptOn;
     if (usePiano) {
       getPianoMelody();
       if (chordEngine) getPianoChord();
@@ -1603,7 +1639,7 @@ export default function RhythmPatternPlayerClient({
     // melody pools); `cycleWalkPools` is the folded melody pool per meter group. Both are seeded with
     // the baked first cycle and refreshed at each full pass in pump(); `walkStarts` buckets an event
     // into its meter group. Precompute the meter length and origin for the per-cycle regeneration.
-    const walkOn = chordWalkOn || perceptionWalkOn;
+    const walkOn = chordWalkOn || perceptionWalkOn || scriptOn;
     const walkMeterLen = patternMeter.length;
     const originKeys = chordWalkOn
       ? foldOctave(chordWalk!.origin)
@@ -1612,7 +1648,9 @@ export default function RhythmPatternPlayerClient({
       ? perceptionWalkStepsRef.current
       : chordWalkOn
         ? chordWalkStepsRef.current
-        : null;
+        : scriptOn
+          ? scriptStepsRef.current
+          : null;
     let cycleWalkPools = cycleSteps?.map((s) => s.melodyKeys) ?? null;
     // Per-group second-half (B-part) melody pool for perception split (`Ba`) groups; null for
     // non-split groups and outside perception mode. Refreshed alongside cycleWalkPools each pass.
@@ -1678,7 +1716,9 @@ export default function RhythmPatternPlayerClient({
         // returns to origin) for an OPEN walk that continues from the previous pass's ending chord
         // (carryChord), so the harmony wanders indefinitely; loop melody still freezes, so roam has
         // no effect there. Both honor the phrase bindings and refresh the "binding can't close" note.
-        if (walkOn && walkMeterLen > 1 && i % N === 0) {
+        // Script mode is excluded here: its authored cycle must repeat verbatim, so it never
+        // re-rolls — `cycleSteps` stays the static baked steps seeded above.
+        if ((chordWalkOn || perceptionWalkOn) && walkMeterLen > 1 && i % N === 0) {
           if (perceptionWalkOn) {
             const roam = freeRoamRef.current && !loopMelodyRef.current;
             // Perception-walk: use the baked first cycle on pass 0 (seeded for Generate determinism)
@@ -2434,6 +2474,18 @@ export default function RhythmPatternPlayerClient({
             </span>
           </>
         )}
+        {scriptOn && (
+          <>
+            <span style={labelStyle}>
+              playing
+              <code>{currentChord ? currentChord.join(' ') : '—'}</code>
+            </span>
+            <span style={labelStyle}>
+              placement
+              <code>{currentPlacement ?? '—'}</code>
+            </span>
+          </>
+        )}
         {guided && (
           <>
             <label style={labelStyle}>
@@ -2500,7 +2552,7 @@ export default function RhythmPatternPlayerClient({
             )}
           </>
         )}
-        {(melody || chord || progressionOn || chordWalkOn || perceptionWalkOn) && (
+        {(melody || chord || progressionOn || chordWalkOn || perceptionWalkOn || scriptOn) && (
           <label style={labelStyle}>
             <input
               type="checkbox"
