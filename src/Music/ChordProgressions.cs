@@ -169,6 +169,29 @@ public static class ChordProgressions
             dropTarget, collapseIsomorphic, poolMaximal, canonical, ktet);
     }
 
+    // The bridging labels for one pair's triplets, split by principle: superset bridges as placement
+    // labels ("{Lcm}@{At}", sorted by LCM then anchor) and subset bridges as "P_A·S·P_B" triples.
+    // Shared by the convenience form (Compute) and callers that classify arbitrary key-set pairs
+    // (e.g. SongAnalysis.Bridges) so both render bridges identically.
+    public static (IReadOnlyList<string> Superset, IReadOnlyList<string> Subset) BridgeLabels(
+        IReadOnlyList<ProgressionTriplet> triplets)
+    {
+        var superset = triplets
+            .Where(t => t.Principle == ProgressionPrinciple.Superset)
+            .Select(t => Label(t.Bridge))
+            .Distinct()
+            .OrderBy(SortKey)
+            .ToList();
+
+        var subset = triplets
+            .Where(t => t.Principle == ProgressionPrinciple.Subset)
+            .Select(t => $"{Label(t.Origin)}·{Label(t.Bridge)}·{Label(t.Target)}")
+            .Distinct()
+            .ToList();
+
+        return (superset, subset);
+    }
+
     // Every candidate next chord for the given source chord keys, each tagged superset / subset /
     // both / neither per the two principles above. Sorted by root, then quality. Bridge lists are raw
     // unless collapseIsomorphic / poolMaximal declutter them.
@@ -196,18 +219,7 @@ public static class ChordProgressions
                 supA, keys, families, subsetCandidates, minSubsetNotes,
                 dropTarget, collapseIsomorphic, poolMaximal, canonical, ktet);
 
-            var supersetBridges = triplets
-                .Where(t => t.Principle == ProgressionPrinciple.Superset)
-                .Select(t => Label(t.Bridge))
-                .Distinct()
-                .OrderBy(SortKey)
-                .ToList();
-
-            var subsetBridges = triplets
-                .Where(t => t.Principle == ProgressionPrinciple.Subset)
-                .Select(t => $"{Label(t.Origin)}·{Label(t.Bridge)}·{Label(t.Target)}")
-                .Distinct()
-                .ToList();
+            var (supersetBridges, subsetBridges) = BridgeLabels(triplets);
 
             results.Add(new ProgressionTarget(keys, quality, root, category, supersetBridges, subsetBridges));
         }

@@ -1741,6 +1741,26 @@ class Program
             Description = "Abort if the discretization yields more than this many chunks (guards huge tables).",
             DefaultValueFactory = _ => 256,
         };
+        var analyzeBridgesOption = new Option<bool>("--bridges")
+        {
+            Description = "Also emit a chunk-bridges table: for each consecutive chunk pair, the progression category (superset / subset / both / neither) and bridges between their key-sets. Reading the Superset column top-to-bottom surfaces the progression loop a per-chunk list hides. Default off.",
+            DefaultValueFactory = _ => false,
+        };
+        var analyzeMinSubsetNotesOption = new Option<int>("--min-subset-notes")
+        {
+            Description = "Bridges only (--bridges): minimum keys a placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
+            DefaultValueFactory = _ => 2,
+        };
+        var analyzeCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
+        {
+            Description = "Bridges only (--bridges): declutter bridge labels by relabelling each placement to the representative of its key set (power-of-2 LCM preferred, then lowest LCM, then anchor) and deduping. Categories unaffected. Default off.",
+            DefaultValueFactory = _ => false,
+        };
+        var analyzePoolMaximalOption = new Option<bool>("--pool-maximal")
+        {
+            Description = "Bridges only (--bridges): declutter bridge labels by keeping only the maximal containing placements and maximal shared subsets. Lossless for existence, so categories unaffected. Default off.",
+            DefaultValueFactory = _ => false,
+        };
 
         var analyzeMidiCommand = new Command(
             "midi",
@@ -1749,6 +1769,10 @@ class Program
         analyzeMidiCommand.Add(analyzeSubdivisionOption);
         analyzeMidiCommand.Add(analyzeMergeRepeatsOption);
         analyzeMidiCommand.Add(analyzeMaxChunksOption);
+        analyzeMidiCommand.Add(analyzeBridgesOption);
+        analyzeMidiCommand.Add(analyzeMinSubsetNotesOption);
+        analyzeMidiCommand.Add(analyzeCollapseIsomorphicOption);
+        analyzeMidiCommand.Add(analyzePoolMaximalOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1759,6 +1783,10 @@ class Program
             var subdivision = parse.GetValue(analyzeSubdivisionOption);
             var mergeRepeats = parse.GetValue(analyzeMergeRepeatsOption);
             var maxChunks = parse.GetValue(analyzeMaxChunksOption);
+            var bridges = parse.GetValue(analyzeBridgesOption);
+            var minSubsetNotes = parse.GetValue(analyzeMinSubsetNotesOption);
+            var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
+            var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1770,6 +1798,7 @@ class Program
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
             if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (the named-scale catalog is a 12-tet concept).[/]"); return 1; }
 
             IReadOnlyList<NoteEvent> events;
@@ -1799,6 +1828,14 @@ class Program
             var analyses = SongAnalysis.Analyze(chunks, families, k);
 
             SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats);
+
+            if (bridges)
+            {
+                var chunkBridges = SongAnalysis.Bridges(
+                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, k);
+                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes);
+            }
+
             return 0;
         });
 

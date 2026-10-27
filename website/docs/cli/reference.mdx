@@ -503,6 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
+  [--bridges] [--min-subset-notes 2] [--collapse-isomorphic] [--pool-maximal] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -521,6 +522,17 @@ A chunk's harmonic identity is its key-set **plus these containments** — no tr
 (per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
 or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
 `--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
+
+The per-chunk lists treat each chunk **in isolation**, so a chord *progression* — which lives in the
+relationship between consecutive chunks — stays hidden. `--bridges` (default off) adds a second
+**chunk-bridges** table: for each consecutive chunk pair it runs the pair through
+[`progression`](#progression)'s classifier (`ChordProgressions.ComputePair`) and prints the category
+(superset / subset / both / neither) alongside the superset (`{Lcm}@{At}`) and subset (`P_A·S·P_B`)
+bridges between the two key-sets. Reading the **Superset** column top-to-bottom surfaces the
+progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads `8@5`, `24@0`, `8@0`. The
+bridge-only flags mirror `progression`: `--min-subset-notes` (default 2) is the subset-principle
+floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the bridge labels losslessly (neither
+changes the category).
 
 Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
 placements) is a planned follow-up; this first cut establishes the per-chunk mapping.

@@ -15,6 +15,19 @@ public readonly record struct ChunkAnalysis(
     IReadOnlyList<KeySupersetRow> Placements,
     IReadOnlyList<ScaleRow> Scales);
 
+// The progression bridge between two consecutive chunks: the ChordProgressions category for the
+// ordered key-set pair plus the superset ("{Lcm}@{At}") and subset ("P_A·S·P_B") bridge labels.
+// This is the cross-chunk structure a per-chunk containment list cannot show — e.g. a C→F→G→C loop
+// reads as superset bridges 8@5, 24@0, 8@0 down the successive pairs.
+public readonly record struct ChunkBridge(
+    int FromIndex,
+    int ToIndex,
+    IReadOnlyList<int> FromKeys,
+    IReadOnlyList<int> ToKeys,
+    ProgressionCategory Category,
+    IReadOnlyList<string> SupersetBridges,
+    IReadOnlyList<string> SubsetBridges);
+
 // Pure MIDI-song analysis: discretize note events onto an onset-quantized grid, then map each chunk's
 // key-set onto the derived LCM-family placements and named scales. No I/O — MidiFileReader supplies
 // the NoteEvent list; this stays trivially testable with synthetic events.
@@ -93,6 +106,34 @@ public static class SongAnalysis
             var placements = Placements.FindSupersets(chunk.Keys, families, ktet);
             var scales = NamedScales.ContainingChord(chunk.Keys, ktet);
             result.Add(new ChunkAnalysis(chunk, placements, scales));
+        }
+        return result;
+    }
+
+    // For each consecutive chunk pair, the progression bridge between their key-sets. Reuses
+    // ChordProgressions.ComputePair (which works on arbitrary key-sets, not just triads) to classify
+    // the pair and collect its triplets, then ChordProgressions.BridgeLabels to format them — so the
+    // labels match the `progression` command exactly. collapseIsomorphic / poolMaximal declutter the
+    // labels without changing the category (same semantics as `progression`).
+    public static IReadOnlyList<ChunkBridge> Bridges(
+        IReadOnlyList<SongChunk> chunks,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        int ktet)
+    {
+        var result = new List<ChunkBridge>(Math.Max(0, chunks.Count - 1));
+        for (var i = 0; i + 1 < chunks.Count; i++)
+        {
+            var from = chunks[i];
+            var to = chunks[i + 1];
+            var (category, triplets) = ChordProgressions.ComputePair(
+                from.Keys, to.Keys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                CollapseFilter.None, ktet);
+            var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+            result.Add(new ChunkBridge(
+                from.Index, to.Index, from.Keys, to.Keys, category, superset, subset));
         }
         return result;
     }

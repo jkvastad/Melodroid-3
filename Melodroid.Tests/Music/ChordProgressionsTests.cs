@@ -91,6 +91,23 @@ public class ChordProgressionsTests
     private static IEnumerable<string> AllLabels(ProgressionTarget t) =>
         t.SupersetBridges.Concat(t.SubsetBridges.SelectMany(triple => triple.Split('·')));
 
+    // BridgeLabels(triplets) must reproduce exactly the SupersetBridges / SubsetBridges strings the
+    // convenience form (Compute) attaches to the same target — the refactor that extracted the inline
+    // label logic out of Compute is behaviour-preserving. C → F major (both superset and subset paths).
+    [Fact]
+    public void BridgeLabels_matches_convenience_form_bridges_for_the_same_pair()
+    {
+        int[] origin = { 0, 4, 7 };
+        int[] target = { 0, 5, 9 };   // F major triad, root 5
+
+        var fromConvenience = Target(Compute(origin), target);
+        var (_, triplets) = ComputePair(origin, target);
+        var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+
+        superset.Should().Equal(fromConvenience.SupersetBridges);
+        subset.Should().Equal(fromConvenience.SubsetBridges);
+    }
+
     [Fact]
     public void Default_yields_major_and_minor_targets_only()
     {

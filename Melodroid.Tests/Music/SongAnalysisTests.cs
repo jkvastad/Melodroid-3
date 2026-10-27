@@ -108,4 +108,39 @@ public class SongAnalysisTests
         analysis.Placements.Should().OnlyContain(r => new HashSet<int> { 0, 4, 7 }.IsSubsetOf(r.Placement.Keys));
         analysis.Scales.Should().Contain(s => s.Name == "major" && s.Anchor == 0);
     }
+
+    // The C F G loop (C → F → G → C) is the motivating example: its superset bridges are 8@5, 24@0,
+    // 8@0 down the successive pairs — the loop a per-chunk containment list cannot show. See
+    // website/docs/music/progression-principles.mdx "C F G".
+    [Fact]
+    public void Bridges_CFG_loop_surfaces_the_superset_chain()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 4, 7 }),   // C
+            new SongChunk(1, 1, 2, new[] { 0, 5, 9 }),   // F
+            new SongChunk(2, 2, 3, new[] { 2, 7, 11 }),  // G
+            new SongChunk(3, 3, 4, new[] { 0, 4, 7 }),   // C
+        };
+
+        var bridges = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false, Ktet);
+
+        bridges.Should().HaveCount(3);
+        bridges[0].SupersetBridges.Should().Contain("8@5");   // C → F
+        bridges[1].SupersetBridges.Should().Contain("24@0");  // F → G
+        bridges[2].SupersetBridges.Should().Contain("8@0");   // G → C
+        bridges.Should().OnlyContain(b =>
+            b.Category == ProgressionCategory.Superset || b.Category == ProgressionCategory.Both);
+    }
+
+    [Fact]
+    public void Bridges_FewerThanTwoChunks_ReturnsEmpty()
+    {
+        var chunks = new[] { new SongChunk(0, 0, 1, new[] { 0, 4, 7 }) };
+
+        SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false, Ktet)
+            .Should().BeEmpty();
+    }
 }

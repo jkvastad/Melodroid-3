@@ -57,6 +57,40 @@ public static class SongAnalysisTableRenderer
         console.Write(table);
     }
 
+    // The cross-chunk progression bridges (opt-in, --bridges). One row per consecutive chunk pair;
+    // reading the Superset column top-to-bottom surfaces the progression loop a per-chunk containment
+    // list hides (e.g. 8@5, 24@0, 8@0 for a C→F→G→C loop).
+    public static void RenderBridges(
+        IReadOnlyList<ChunkBridge> bridges,
+        int minSubsetNotes,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var table = new Table()
+            .AddColumn(new TableColumn("Pair").RightAligned())
+            .AddColumn(new TableColumn("Move"))
+            .AddColumn(new TableColumn("Category"))
+            .AddColumn(new TableColumn("Superset"))
+            .AddColumn(new TableColumn("Subset"));
+
+        foreach (var b in bridges)
+        {
+            var move = $"{string.Join(" ", b.FromKeys)} → {string.Join(" ", b.ToKeys)}";
+            table.AddRow(
+                $"{b.FromIndex}→{b.ToIndex}",
+                move,
+                b.Category.ToString(),
+                Cap(b.SupersetBridges),
+                Cap(b.SubsetBridges));
+        }
+
+        table.Caption(
+            $"chunk bridges: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
+            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}");
+        console.Write(table);
+    }
+
     private static string Beat(double b) => b.ToString("0.##");
 
     private static string Cap(IReadOnlyList<string> items)
