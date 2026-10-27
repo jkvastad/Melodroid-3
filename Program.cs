@@ -805,6 +805,49 @@ class Program
             return 0;
         });
 
+        var scaleFingerprintChordKeysOption = new Option<int[]>("--chord-keys")
+        {
+            Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Duplicates are folded.",
+            Required = true,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var scaleFingerprintCommand = new Command(
+            "scale-fingerprint",
+            "Matrix view for playing melody with chords: rows are the six named scales (major, harmonic minor, melodic minor, bebop dominant, harmonic major, major blues) at each anchor whose key set contains the chord; columns are the 12 keys. Reading column K shows which scale rows survive playing key K as melody — i.e. which scale that note implies.");
+        scaleFingerprintCommand.Add(maxSizeOption);
+        scaleFingerprintCommand.Add(maxPrimeOption);
+        scaleFingerprintCommand.Add(maxLcmOption);
+        scaleFingerprintCommand.Add(scaleFingerprintChordKeysOption);
+        scaleFingerprintCommand.Add(ktetOption);
+        scaleFingerprintCommand.SetAction(parse =>
+        {
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var chordKeys = parse.GetValue(scaleFingerprintChordKeysOption) ?? Array.Empty<int>();
+            var k = parse.GetValue(ktetOption);
+
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (the named-scale catalog is a 12-tet concept).[/]"); return 1; }
+            if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
+            foreach (var key in chordKeys)
+            {
+                if (key < 0 || key >= k)
+                {
+                    AnsiConsole.MarkupLine($"[red]--chord-keys value {key} is outside [[0, {k - 1}]].[/]");
+                    return 1;
+                }
+            }
+
+            var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
+            var rows = NamedScales.ContainingChord(dedupChord, k);
+            ScaleFingerprintTableRenderer.Render(dedupChord, k, rows);
+            return 0;
+        });
+
         var progressionOriginKeysOption = new Option<int[]>("--origin-keys")
         {
             Description = "Origin-chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Any set of keys. Duplicates are folded.",
@@ -1343,6 +1386,7 @@ class Program
         tableCommand.Add(keySupersetsCommand);
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
+        tableCommand.Add(scaleFingerprintCommand);
         tableCommand.Add(progressionCommand);
         tableCommand.Add(junctionScalesCommand);
         tableCommand.Add(voicingsCommand);

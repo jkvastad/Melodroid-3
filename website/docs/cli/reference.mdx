@@ -222,6 +222,28 @@ collapsing key `(x+8) mod 12` is dropped from the row and the label becomes `15s
 full `0 1 3 4 6 8 11` becomes `15s@3` = `0 1 3 4 6 8`). 12-tet only. Combine with `--drop-collapsed`
 to first remove the rows that collapsed onto a chord key, then stabilise the survivors.
 
+### `scale-fingerprint`
+
+```bash
+melodroid table scale-fingerprint --chord-keys 0 4 7 \
+  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+Matrix for **playing melody with chords**. Rows are the six named scales — **major**,
+**harmonic minor**, **melodic minor**, **bebop dominant**, **harmonic major**, **major blues** —
+each transposed to every anchor (= root) whose key set fully **contains** the chord; columns are the
+12 keys; a cell marks whether the key is in that scale row. Reading column K shows which scale rows
+survive playing key K as melody over the chord — i.e. which scale that melody note implies.
+
+The scale names are empirical labels on results derived from the [subset principle](/docs/music/progression-principles#scales-from-the-subset-principle):
+the four minor/bebop/harmonic scales are [`junction-scales`](#junction-scales) outputs, the major
+scale is the `lcm-24` placement `24@k`, and major blues is the documented sub-selection of the bebop
+dominant union (`24@0 ∪ 24@5` with the `lcm-24` roots removed).
+
+12-tet only; `--chord-keys` is required. Chord keys are highlighted green; `●` marks membership. The
+good-fraction options (`--max-size`, `--max-prime`, `--max-lcm`) are accepted for consistency but the
+catalog is fixed.
+
 ### `chords`
 
 ```bash
