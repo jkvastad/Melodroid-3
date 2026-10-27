@@ -8,7 +8,8 @@ The program is exploratory — it produces artifacts you inspect, not a polished
 - **Mermaid graphs** — relation graphs between LCM families (literal subset / isomorphism / renormalized subset), written as `.md` for in-editor preview.
 - **PNG plots** — ScottPlot waveform plots of an LCM family's constituent sines and their superposition.
 - **Companion website** — a Docusaurus docs site under [website/](website/) that explains the theory, with interactive Tone.js audio (chords / voicings / families) and interactive wave plots. Deployed to GitHub Pages.
-- **MIDI files** *(planned, not yet implemented)* — for auditioning musical ideas. `Melanchall.DryWetMidi` will be added when the first MIDI writer lands.
+- **MIDI analysis** — `analyze midi` reads a MIDI file (via `Melanchall.DryWetMidi`), discretizes it onto an onset-quantized grid, and maps each chunk's sounding pitch-class key-set onto the derived LCM-family placements and named scales (console table).
+- **MIDI writing** *(planned, not yet implemented)* — generating MIDI for auditioning musical ideas. `Melanchall.DryWetMidi` is now installed (used today only for reading); the first MIDI *writer* and `output/midi/` land later.
 
 For the full theoretical premise (good fractions, wave pattern length, renormalization, isomorphism examples), see the docs under [website/docs/](website/docs/). CLAUDE.md is the operating manual; the website is the theory documents.
 
@@ -27,7 +28,7 @@ Add new packages on demand via `dotnet add package <Name>` — don't pre-install
 | Headless PNG plot generation | `ScottPlot` | installed |
 | Subcommand-style CLI parsing | `System.CommandLine` | installed (preview) |
 | Testing | `xUnit` + `FluentAssertions` | installed (in `Melodroid.Tests/`) |
-| MIDI read/write/generation | `Melanchall.DryWetMidi` | planned |
+| MIDI read / analysis (write/generation still planned) | `Melanchall.DryWetMidi` | installed |
 
 ### Website
 
@@ -46,7 +47,8 @@ Melodroid 3/
 │   ├── Music/                # Domain logic: Fraction, GoodFractions, LcmFamilies,
 │   │                         #   FamilyRelations, Renormalization; keyboard thrust:
 │   │                         #   BinOverlaps, KeysNeeded, OctaveSweep, KeySweep,
-│   │                         #   Placements, Voicings; shared math: IntegerMath, RatioMath
+│   │                         #   Placements, Voicings, SongAnalysis; shared math: IntegerMath, RatioMath
+│   ├── Input/                # I/O adapters for external files: MidiFileReader (DryWetMidi)
 │   └── Output/               # One renderer per table / graph / plot type
 ├── Melodroid.Tests/          # xUnit + FluentAssertions; mirrors src/ layout
 ├── website/                  # Docusaurus docs site (TypeScript)
@@ -60,7 +62,7 @@ Melodroid 3/
 
 ## CLI conventions
 
-Use `System.CommandLine` with subcommands grouped by output type. Each subcommand writes its result under `output/<category>/` and prints the path to stdout. Most commands share the good-fraction options (`--max-size` 24, `--max-prime` 5, `--max-lcm` 24, `--ktet` 12).
+Use `System.CommandLine` with subcommands grouped by output type (`table` / `graph` / `plot`); the file-producing groups write under `output/<category>/` and print the path to stdout. The `analyze` group is the exception — it is grouped by *input* (it reads an external file rather than generating from numeric parameters) and currently renders a console table. Most commands share the good-fraction options (`--max-size` 24, `--max-prime` 5, `--max-lcm` 24, `--ktet` 12).
 
 The shipped binary is invoked as `melodroid <subcommand>`; from a clone it's `dotnet run -- <subcommand>`. Command index (one line each):
 
@@ -86,6 +88,7 @@ table junction-scales   the subset principle read as a scale generator: catalog 
 graph lcm-families      Mermaid relation graph (--mode full|collapsed; full mode labels each renormalized-subset edge with every base at which the smaller family embeds; --cluster-tolerance c adds red-dashed clustering-tolerant edges where renormalized images snap to the nearest good fraction within bin radius c — c≥1/161 surfaces exactly 18→24 via 16/9)
 graph placement         Mermaid placement graph over the k-tet key-set containment poset. --mode placement (default) draws the --lcm@--at root (default 1@0) plus its directly adjacent supersets (cover relation: target ⊇ source adding exactly the labelled distinguishing keys, nothing strictly between); --mode extended draws the root's full up-set (every placement containing it); --mode shape collapses every placement to its transposition-class shape and emits all 9 shapes + their 18 direct-adjacency relationships (one representative placement pair per edge). Keyboard-coincident placements fold to one node, keeping the power-of-2-preferred, then lowest-LCM, then lowest-anchor representative; by default each node shows just that representative, --show-isomorphisms lists the folded-in isomorphic placements with ≅ (placement/extended modes only)
 plot  lcm-families      ScottPlot waveform (--mode all|sum|constituents|difference, --subset-lcm)
+analyze midi            read a MIDI file (--input) and discretize it onto an onset-quantized grid (--subdivision slots per quarter note, default 4 = sixteenths); per non-empty chunk list the LCM-family placements (FindSupersets, isomorphic-collapsed, capped) and named scales (ScaleFingerprint catalog) that contain the sounding pitch-class key-set — the chunk's harmonic identity is that key-set plus its containments, no traditional chord names. --merge-repeats (default on) folds runs of time-adjacent slots sharing an identical key-set into one chunk (light "where the harmony changes" preprocessing); --max-chunks (default 256) aborts on oversized tables. 12-tet only; pitch classes folded mod 12, reference-free (anchors swept)
 ```
 
 The authoritative full flag surface lives in [website/docs/cli/reference.mdx](website/docs/cli/reference.mdx) — keep it in sync when adding or changing commands.

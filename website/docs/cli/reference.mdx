@@ -492,3 +492,35 @@ melodroid plot lcm-families --lcm 6 [--mode all|sum|constituents|difference] \
 ```
 
 Writes a ScottPlot PNG of the family's sines and their superposition to `output/plots/`. See [Wave Pattern Plots](./wave-pattern-plots.mdx) for worked `plot lcm-families` examples with interactive plots.
+
+## Analyze
+
+Commands that read an **external input file** and analyze it against the derived theory (grouped by
+input rather than output type).
+
+### `midi`
+
+```bash
+melodroid analyze midi --input song.mid \
+  [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
+  [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
+```
+
+Reads a MIDI file and discretizes it onto an **onset-quantized grid** of `--subdivision` slots per
+quarter note (1 = quarters, 2 = eighths, 4 = sixteenths, …). Each non-empty slot's sounding notes are
+folded to pitch classes mod 12 into one key-set; `--merge-repeats` (default on) collapses runs of
+time-adjacent slots sharing an identical key-set into a single chunk (light "where the harmony
+changes" preprocessing). For every chunk the table lists:
+
+- the sorted pitch-class **key-set** and its size,
+- the [LCM-family placements](#placement) containing it ([`FindSupersets`](#key-supersets),
+  isomorphic-collapsed, capped), and
+- the named [scales](#scale-fingerprint) containing it.
+
+A chunk's harmonic identity is its key-set **plus these containments** — no traditional chord names
+(per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
+or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
+`--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
+
+Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
+placements) is a planned follow-up; this first cut establishes the per-chunk mapping.

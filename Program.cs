@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Melodroid_3.Input;
 using Melodroid_3.Music;
 using Melodroid_3.Output;
 using Spectre.Console;
@@ -1718,10 +1719,97 @@ class Program
         var plotCommand = new Command("plot", "Plot-output commands (PNG).");
         plotCommand.Add(plotLcmFamiliesCommand);
 
+        // analyze midi — discretize a MIDI file onto an onset-quantized grid and map each chunk's
+        // sounding pitch-class key-set onto the derived LCM-family placements and named scales.
+        var analyzeInputOption = new Option<string>("--input")
+        {
+            Description = "Path to the MIDI file to analyze.",
+            Required = true,
+        };
+        var analyzeSubdivisionOption = new Option<int>("--subdivision")
+        {
+            Description = "Grid slots per quarter note (1 = quarters, 2 = eighths, 4 = sixteenths, …).",
+            DefaultValueFactory = _ => 4,
+        };
+        var analyzeMergeRepeatsOption = new Option<bool>("--merge-repeats")
+        {
+            Description = "Fold runs of time-adjacent slots sharing an identical key-set into one chunk (where the harmony changes).",
+            DefaultValueFactory = _ => true,
+        };
+        var analyzeMaxChunksOption = new Option<int>("--max-chunks")
+        {
+            Description = "Abort if the discretization yields more than this many chunks (guards huge tables).",
+            DefaultValueFactory = _ => 256,
+        };
+
+        var analyzeMidiCommand = new Command(
+            "midi",
+            "Discretize a MIDI file onto an onset-quantized grid and, per chunk, list the LCM-family placements and named scales containing the sounding pitch-class key-set. A chunk's harmonic identity is its key-set plus those containments — no traditional chord names.");
+        analyzeMidiCommand.Add(analyzeInputOption);
+        analyzeMidiCommand.Add(analyzeSubdivisionOption);
+        analyzeMidiCommand.Add(analyzeMergeRepeatsOption);
+        analyzeMidiCommand.Add(analyzeMaxChunksOption);
+        analyzeMidiCommand.Add(maxSizeOption);
+        analyzeMidiCommand.Add(maxPrimeOption);
+        analyzeMidiCommand.Add(maxLcmOption);
+        analyzeMidiCommand.Add(ktetOption);
+        analyzeMidiCommand.SetAction(parse =>
+        {
+            var input = parse.GetValue(analyzeInputOption) ?? string.Empty;
+            var subdivision = parse.GetValue(analyzeSubdivisionOption);
+            var mergeRepeats = parse.GetValue(analyzeMergeRepeatsOption);
+            var maxChunks = parse.GetValue(analyzeMaxChunksOption);
+            var maxSize = parse.GetValue(maxSizeOption);
+            var maxPrime = parse.GetValue(maxPrimeOption);
+            var maxLcm = parse.GetValue(maxLcmOption);
+            var k = parse.GetValue(ktetOption);
+
+            if (!File.Exists(input)) { AnsiConsole.MarkupLine($"[red]Input file not found: {input}[/]"); return 1; }
+            if (subdivision < 1) { AnsiConsole.MarkupLine("[red]--subdivision must be ≥ 1.[/]"); return 1; }
+            if (maxChunks < 1) { AnsiConsole.MarkupLine("[red]--max-chunks must be ≥ 1.[/]"); return 1; }
+            if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
+            if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
+            if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
+            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (the named-scale catalog is a 12-tet concept).[/]"); return 1; }
+
+            IReadOnlyList<NoteEvent> events;
+            int ticksPerQuarter;
+            try
+            {
+                (events, ticksPerQuarter) = MidiFileReader.Read(input);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to read MIDI file: {Markup.Escape(ex.Message)}[/]");
+                return 1;
+            }
+
+            if (events.Count == 0) { AnsiConsole.MarkupLine("[red]No notes found in the MIDI file.[/]"); return 1; }
+
+            var chunks = SongAnalysis.Chunk(events, ticksPerQuarter, subdivision, mergeRepeats);
+            if (chunks.Count > maxChunks)
+            {
+                AnsiConsole.MarkupLine(
+                    $"[red]{chunks.Count} chunks exceeds --max-chunks ({maxChunks}). Try a coarser --subdivision, keep --merge-repeats on, raise --max-chunks, or use a smaller file.[/]");
+                return 1;
+            }
+
+            var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
+            var families = LcmFamilies.Compute(fractions, maxLcm);
+            var analyses = SongAnalysis.Analyze(chunks, families, k);
+
+            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats);
+            return 0;
+        });
+
+        var analyzeCommand = new Command("analyze", "Analyze external input files against the derived theory.");
+        analyzeCommand.Add(analyzeMidiCommand);
+
         var root = new RootCommand("Melodroid — music research from first principles.");
         root.Add(tableCommand);
         root.Add(graphCommand);
         root.Add(plotCommand);
+        root.Add(analyzeCommand);
 
         return root.Parse(args).Invoke();
     }
