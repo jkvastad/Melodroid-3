@@ -60,4 +60,26 @@ public static class NamedScales
 
         return rows;
     }
+
+    // The (Name, Anchor) of the catalog scale whose transposed necklace EXACTLY equals keys, or
+    // null when no catalog scale matches. Anchor is the root, per the "{Name} @anchor" convention.
+    // Distinct from ContainingChord, which tests subset containment; here the key set must coincide
+    // with the whole scale. Used to name a junction scale (the stable union of a subset bridge's two
+    // placements) when it lands on a known scale; the caller falls back to the raw key set otherwise.
+    public static (string Name, int Anchor)? Match(IReadOnlyCollection<int> keys, int ktet = 12)
+    {
+        var set = new HashSet<int>(keys.Select(k => ((k % ktet) + ktet) % ktet));
+
+        foreach (var scale in Catalog)
+        {
+            if (scale.Necklace.Count != set.Count) continue;
+            for (var anchor = 0; anchor < ktet; anchor++)
+            {
+                if (scale.Necklace.All(k => set.Contains((k + anchor) % ktet)))
+                    return (scale.Name, anchor);
+            }
+        }
+
+        return null;
+    }
 }

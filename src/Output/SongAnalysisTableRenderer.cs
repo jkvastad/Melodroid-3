@@ -63,6 +63,7 @@ public static class SongAnalysisTableRenderer
     public static void RenderBridges(
         IReadOnlyList<ChunkBridge> bridges,
         int minSubsetNotes,
+        bool nameJunctions = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -72,7 +73,7 @@ public static class SongAnalysisTableRenderer
             .AddColumn(new TableColumn("Move"))
             .AddColumn(new TableColumn("Category"))
             .AddColumn(new TableColumn("Superset"))
-            .AddColumn(new TableColumn("Subset"));
+            .AddColumn(new TableColumn(nameJunctions ? "Junction" : "Subset"));
 
         foreach (var b in bridges)
         {
@@ -85,9 +86,10 @@ public static class SongAnalysisTableRenderer
                 Cap(b.SubsetBridges));
         }
 
+        var subsetNote = nameJunctions ? ", junctions named" : ", raw triplets";
         table.Caption(
             $"chunk bridges: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
-            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}");
+            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}");
         console.Write(table);
     }
 

@@ -503,7 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
-  [--bridges] [--min-subset-notes 2] [--collapse-isomorphic] [--pool-maximal] \
+  [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -530,9 +530,17 @@ relationship between consecutive chunks — stays hidden. `--bridges` (default o
 (superset / subset / both / neither) alongside the superset (`{Lcm}@{At}`) and subset (`P_A·S·P_B`)
 bridges between the two key-sets. Reading the **Superset** column top-to-bottom surfaces the
 progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads `8@5`, `24@0`, `8@0`. The
-bridge-only flags mirror `progression`: `--min-subset-notes` (default 2) is the subset-principle
+bridge-only flags mirror `progression`: `--min-subset-notes` (default `4`, a substantial 18/8 parent
+as in [`junction-scales`](#junction-scales); lower to `2` for dyad bridges) is the subset-principle
 floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the bridge labels losslessly (neither
 changes the category).
+
+`--name-junctions` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
+*is* a [junction scale](#junction-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
+**Junction** and each bridge shows the named scale of that union (`{Name}@{Anchor}` via the named-scale
+catalog), falling back to the raw `{keys}` when the union lands on no catalog scale. Because the union
+ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
+junctions — the intended reading when the raw `P_A·S·P_B` list explodes.
 
 Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
 placements) is a planned follow-up; this first cut establishes the per-chunk mapping.

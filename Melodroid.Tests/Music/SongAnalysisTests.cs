@@ -124,7 +124,8 @@ public class SongAnalysisTests
         };
 
         var bridges = SongAnalysis.Bridges(
-            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false, Ktet);
+            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: false, Ktet);
 
         bridges.Should().HaveCount(3);
         bridges[0].SupersetBridges.Should().Contain("8@5");   // C → F
@@ -140,7 +141,43 @@ public class SongAnalysisTests
         var chunks = new[] { new SongChunk(0, 0, 1, new[] { 0, 4, 7 }) };
 
         SongAnalysis.Bridges(
-            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false, Ktet)
+            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: false, Ktet)
             .Should().BeEmpty();
+    }
+
+    // --name-junctions reframes the subset bridges as scales: each raw P_A·S·P_B triplet becomes the
+    // named junction scale of its (P_A, P_B) stable union. Driving the same chunk pair both ways, the
+    // naming must never change the category and must emit only "{name}@{anchor}" scale names or bare
+    // "{keys}" sets — never the "·"-joined triplets the default produces. (The deterministic
+    // "union is harmonic minor" path is covered in JunctionScalesTests + NamedScalesTests.)
+    [Fact]
+    public void Bridges_NameJunctions_ReformatsSubsetBridgesWithoutChangingCategory()
+    {
+        // Two major-scale-adjacent triads that share ≥4-key placement intersections, so the subset
+        // principle fires and there are bridges to reformat.
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 4, 7 }),   // C major
+            new SongChunk(1, 1, 2, new[] { 2, 7, 11 }),  // G major
+        };
+
+        var raw = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: false, Ktet)[0];
+        var named = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: true, Ktet)[0];
+
+        named.Category.Should().Be(raw.Category);                 // naming never reclassifies
+        named.SupersetBridges.Should().Equal(raw.SupersetBridges); // superset column untouched
+
+        // Raw subset labels are P_A·S·P_B triplets; named ones are scale names or bare key sets.
+        raw.SubsetBridges.Should().OnlyContain(s => s.Contains('·'));
+        named.SubsetBridges.Should().OnlyContain(s => !s.Contains('·'));
+        named.SubsetBridges.Should().OnlyContain(s => s.Contains('@') || s.StartsWith("{"));
+
+        // Naming collapses the many triplets to a smaller set (the union ignores which S was chosen).
+        named.SubsetBridges.Count.Should().BeLessThanOrEqualTo(raw.SubsetBridges.Count);
     }
 }

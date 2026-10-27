@@ -1748,8 +1748,8 @@ class Program
         };
         var analyzeMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
-            Description = "Bridges only (--bridges): minimum keys a placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
-            DefaultValueFactory = _ => 2,
+            Description = "Bridges only (--bridges): minimum keys a placement must have to serve as a shared subset S in the subset principle. Default 4 (a substantial 18/8 parent, matching table junction-scales); lower to 2 to allow dyad bridges.",
+            DefaultValueFactory = _ => 4,
         };
         var analyzeCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
         {
@@ -1759,6 +1759,11 @@ class Program
         var analyzePoolMaximalOption = new Option<bool>("--pool-maximal")
         {
             Description = "Bridges only (--bridges): declutter bridge labels by keeping only the maximal containing placements and maximal shared subsets. Lossless for existence, so categories unaffected. Default off.",
+            DefaultValueFactory = _ => false,
+        };
+        var analyzeNameJunctionsOption = new Option<bool>("--name-junctions")
+        {
+            Description = "Bridges only (--bridges): replace the raw P_A·S·P_B triplets in the Subset column with the named junction scale of each bridge — the stable union P_A ∪ P_B matched against the named-scale catalog ({Name}@{Anchor}), or its raw {keys} when unnamed. Collapses the dyad explosion (the union ignores which S was chosen). Default off (raw triplets).",
             DefaultValueFactory = _ => false,
         };
 
@@ -1773,6 +1778,7 @@ class Program
         analyzeMidiCommand.Add(analyzeMinSubsetNotesOption);
         analyzeMidiCommand.Add(analyzeCollapseIsomorphicOption);
         analyzeMidiCommand.Add(analyzePoolMaximalOption);
+        analyzeMidiCommand.Add(analyzeNameJunctionsOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1787,6 +1793,7 @@ class Program
             var minSubsetNotes = parse.GetValue(analyzeMinSubsetNotesOption);
             var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
+            var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1832,8 +1839,8 @@ class Program
             if (bridges)
             {
                 var chunkBridges = SongAnalysis.Bridges(
-                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, k);
-                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes);
+                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
+                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes, nameJunctions);
             }
 
             return 0;

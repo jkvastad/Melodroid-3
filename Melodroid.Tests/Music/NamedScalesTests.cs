@@ -146,4 +146,39 @@ public class NamedScalesTests
         minorRows.Should().Contain(r => r.Name == "harmonic minor" && r.Anchor == 0);
         minorRows.Should().Contain(r => r.Name == "melodic minor" && r.Anchor == 0);
     }
+
+    [Fact]
+    public void Match_ExactCatalogNecklace_ReturnsItsNameAndAnchor()
+    {
+        // The whole transposed necklace (not merely a subset) must coincide with the key set.
+        var harmAt9 = NamedScales.Catalog.Single(s => s.Name == "harmonic minor").Necklace
+            .Select(k => (k + 9) % Ktet).ToList();   // harm@9 = {0 2 3 5 7 8 11}
+
+        NamedScales.Match(harmAt9).Should().Be(("harmonic minor", 9));
+    }
+
+    [Fact]
+    public void Match_MajorScaleAtEveryAnchor_RoundTrips()
+    {
+        var major = NamedScales.Catalog.Single(s => s.Name == "major").Necklace;
+        for (var a = 0; a < Ktet; a++)
+        {
+            var keys = major.Select(k => (k + a) % Ktet).ToList();
+            NamedScales.Match(keys).Should().Be(("major", a));
+        }
+    }
+
+    [Fact]
+    public void Match_SubsetButNotWholeScale_ReturnsNull()
+    {
+        // A triad sits inside many scales (ContainingChord finds them) but equals none, so Match fails.
+        NamedScales.Match(new[] { 0, 4, 7 }).Should().BeNull();
+    }
+
+    [Fact]
+    public void Match_NonCatalogKeySet_ReturnsNull()
+    {
+        // The whole-tone hexad {0 2 4 6 8 10} is not in the catalog at any anchor.
+        NamedScales.Match(new[] { 0, 2, 4, 6, 8, 10 }).Should().BeNull();
+    }
 }

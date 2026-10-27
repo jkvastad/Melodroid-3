@@ -46,7 +46,7 @@ public static class JunctionScales
         {
             // (P_A,S,P_B) and (P_B,S,P_A) are the same junction; order the outer pair so they dedupe.
             var (pa, pb) = Order(t.Origin, t.Target);
-            var keys = JunctionKeys(pa, pb, stable, ktet);
+            var keys = UnionKeys(pa, pb, stable, ktet);
             var signature = $"{KeySig(keys)}|{Label(pa)}|{Label(t.Bridge)}|{Label(pb)}";
             if (seen.Add(signature))
                 scales.Add(new JunctionScale(keys, pa, t.Bridge, pb));
@@ -59,8 +59,10 @@ public static class JunctionScales
     }
 
     // The playable key set: union of the two constituents' (optionally stable) key sets, with each
-    // collapsing constituent's collapse key removed from the union.
-    private static IReadOnlyList<int> JunctionKeys(Placement pa, Placement pb, bool stable, int ktet)
+    // collapsing constituent's collapse key removed from the union. Public so callers that frame a
+    // subset bridge as a scale (e.g. SongAnalysis' --name-junctions) reuse the one stable-union rule
+    // rather than re-deriving it.
+    public static IReadOnlyList<int> UnionKeys(Placement pa, Placement pb, bool stable, int ktet)
     {
         var union = new HashSet<int>(stable ? StableKeys(pa, ktet) : pa.Keys);
         union.UnionWith(stable ? StableKeys(pb, ktet) : pb.Keys);

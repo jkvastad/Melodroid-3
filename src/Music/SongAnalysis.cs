@@ -115,12 +115,19 @@ public static class SongAnalysis
     // the pair and collect its triplets, then ChordProgressions.BridgeLabels to format them — so the
     // labels match the `progression` command exactly. collapseIsomorphic / poolMaximal declutter the
     // labels without changing the category (same semantics as `progression`).
+    //
+    // nameJunctions reframes the subset bridges as scales: each subset triplet's (Origin, Target)
+    // pair is a junction scale (the stable union P_A ∪ P_B), which often lands on a named scale. In
+    // that mode the Subset labels become those named junctions ("{Name}@{Anchor}", or the raw "{keys}"
+    // when the union matches no catalog scale), deduped — a far smaller list than the raw triplets,
+    // since the union ignores which S was chosen. Superset bridges are unaffected either way.
     public static IReadOnlyList<ChunkBridge> Bridges(
         IReadOnlyList<SongChunk> chunks,
         IReadOnlyList<LcmFamily> families,
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
+        bool nameJunctions,
         int ktet)
     {
         var result = new List<ChunkBridge>(Math.Max(0, chunks.Count - 1));
@@ -132,9 +139,43 @@ public static class SongAnalysis
                 from.Keys, to.Keys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
                 CollapseFilter.None, ktet);
             var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+            if (nameJunctions) subset = JunctionLabels(triplets, ktet);
             result.Add(new ChunkBridge(
                 from.Index, to.Index, from.Keys, to.Keys, category, superset, subset));
         }
         return result;
+    }
+
+    // The named junction scales of a pair's subset triplets: one label per distinct (Origin, Target)
+    // pair (the union ignores S, so the many triplets sharing a pair collapse to one), each the stable
+    // union P_A ∪ P_B named via NamedScales.Match, or its raw "{keys}" when unnamed. Sorted for stable
+    // display: named scales first (catalog order, then anchor), then unnamed key sets.
+    private static IReadOnlyList<string> JunctionLabels(
+        IReadOnlyList<ProgressionTriplet> triplets, int ktet)
+    {
+        var catalogOrder = NamedScales.Catalog
+            .Select((s, i) => (s.Name, i))
+            .ToDictionary(x => x.Name, x => x.i);
+
+        var labels = new Dictionary<string, (int Rank, int Anchor, string Label)>();
+        foreach (var t in triplets.Where(t => t.Principle == ProgressionPrinciple.Subset))
+        {
+            var key = $"{t.Origin.Lcm}@{t.Origin.At}|{t.Target.Lcm}@{t.Target.At}";
+            if (labels.ContainsKey(key)) continue;
+
+            var union = JunctionScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
+            if (NamedScales.Match(union, ktet) is (string name, int anchor))
+                labels[key] = (catalogOrder[name], anchor, $"{name}@{anchor}");
+            else
+                labels[key] = (catalogOrder.Count, 0, "{" + string.Join(" ", union) + "}");
+        }
+
+        return labels.Values
+            .Distinct()
+            .OrderBy(x => x.Rank)
+            .ThenBy(x => x.Anchor)
+            .ThenBy(x => x.Label, StringComparer.Ordinal)
+            .Select(x => x.Label)
+            .ToList();
     }
 }

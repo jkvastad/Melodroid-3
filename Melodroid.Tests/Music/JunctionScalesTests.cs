@@ -17,6 +17,9 @@ public class JunctionScalesTests
         return Placements.Compute(family, at, Ktet).Keys.OrderBy(k => k).ToList();
     }
 
+    private static Placement Placement(int lcm, int at) =>
+        Placements.Compute(Families().Single(f => f.Lcm == lcm), at, Ktet);
+
     // Independent oracle: are key sets a and b transpositions of one another (some shift maps a→b)?
     // Reimplemented from scratch rather than reusing Chords.Canonicalize (the production dedup key).
     private static bool AreTranspositions(IReadOnlyList<int> a, IReadOnlyList<int> b)
@@ -127,6 +130,24 @@ public class JunctionScalesTests
         var at2 = JunctionScales.Enumerate(Families(), minSubsetNotes: 2, dedupeTransposition: false);
         var at4 = JunctionScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
         at2.Count.Should().BeGreaterThan(at4.Count);
+    }
+
+    // The public UnionKeys is the single source of truth for a subset bridge's scale (reused by
+    // SongAnalysis' --name-junctions). It must reproduce the harmonic-minor stable union directly from
+    // the two placements — including dropping 15@11's collapse key 7 from the finished union, even
+    // though 24@0 independently carries it.
+    [Fact]
+    public void UnionKeys_StableHarmonicMinorPair_MatchesTheDerivedNecklace()
+    {
+        var stable = JunctionScales.UnionKeys(
+            Placement(15, 11), Placement(24, 0), stable: true, Ktet);
+        stable.Should().Equal(HarmKeys);
+        stable.Should().NotContain(7);
+
+        // Raw (non-stable) union is the plain set union, keeping 24@0's key 7.
+        var raw = JunctionScales.UnionKeys(
+            Placement(15, 11), Placement(24, 0), stable: false, Ktet);
+        raw.Should().Contain(7);
     }
 
     [Fact]
