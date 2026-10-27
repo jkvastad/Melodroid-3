@@ -5,6 +5,11 @@
 
 * Does preference for small primes tie in with musical neurodynamics?
 
+* Auto-analyzer for midi files, mapping every quantized pulse to a scale and possibly to a chord+melody fingerprint.
+
+* scale-fingerprints could perhaps be used with a programmable LED keyboard to show which scales are available from pressed keys. 
+As a POC we could have a virtual programmable LED keyboard which shows a piano roll on the screen, reads midi input and lights up keys, so the player can watch the screen while playing if there is no physical LED keyboard.
+
 ## Intro (intro.mdx)
 
 ## Theory
