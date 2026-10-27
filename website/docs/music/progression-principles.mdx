@@ -137,11 +137,13 @@ $$
 $$
 
 This necklace is the [**bebop dominant**](https://en.wikipedia.org/wiki/Bebop_scale#Bebop_dominant_scale) — a major scale with an added flat seventh.
+Similarly to harmonic minor and melodic minor, removing the fifth and root of 24@5 produces a traditional scale, namely the blues major scale:
 
-Blues itself does *not* come straight out of a union. Anchored to match the row above,
-`blues@7 = {2 4 7 9 10 11}` keeps *fewer* keys than the bebop-dominant union `{0 2 4 5 7 9 10 11}`:
-it drops keys `0` and `5`, the root notes of the constituent lcm families - 
-in particular the root notes of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
+$$
+24@0 \cup 24@5 \;\setminus\; {0\;5} = \{\;2\;4\;7\;9\;10\;11\} = \mathrm{blues}@7
+$$
+
+The removed root notes are also roots of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
 Perhaps this ambivalence between two closely adjacent lcm families is the source of the swingy sound.
 
 ### Harmonic major as a junction
@@ -178,8 +180,7 @@ harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-1
 Loosening the floor further to `--min-subset-notes 3` admits bare triad bridges, but these only
 generate 8-, 9- and 10-note chromatic clusters that aren't obvious traditional scales, so we leave them aside.
 
-Having derived all five scales, we can audition them. Pick a scale from the
-**set** dropdown, **Generate** a chord, and **Play** a melody drawn from it.
+Below you can listen to some simple random melodies based on the scales above.
 
 <RhythmPatternPlayer
   meter="4"
@@ -196,36 +197,75 @@ Having derived all five scales, we can audition them. Pick a scale from the
 
 ### Junctions on the placement graph
 
-Every junction above is two placements sharing a subset `S`, and `S` is exactly the node where the two
-meet walking *down* the [extended triad placement graph](/docs/music/placements) — the graph of which
-placements contain the central triad `4@0 = {0 4 7}`. Because that graph is drawn at one fixed
-anchoring, we transpose each junction by some offset `t` to land its constituents on graph nodes
-(recall `3 ≅ 4`, so a `3@k` bridge *is* the triad node `4@0`, and an `lcm-5` bridge is the tetrad node
-`5@4`). Sorted by how deep the shared bridge sits in the graph:
+Every junction above is two placements sharing a subset `S`, and `S` is exactly the node where the two meet walking down the [extended triad placement graph](/docs/music/placements). 
+Sorted by how deep the shared bridge sits in the graph:
 
-| Junction | transposed onto the graph | bridge node |
+| Scale | Junction | Bridge node |
 | --- | --- | --- |
 | harmonic minor | `15@11 · 18@2 · 24@0` | `18@2` hexad |
 | melodic minor | `15@11 · 18@2 · 24@7` | `18@2` hexad |
 | bebop dominant | `24@0 · 18@7 · 24@5` | `18@7` hexad |
 | harmonic major | `15@11 · 5@4 · 15@4` | `5@4` tetrad |
 
-The deeper the bridge, the less the two placements overlap and the larger, more chromatic their union.
-The three primary scales — harmonic minor, melodic minor and bebop dominant — all bridge on the
-**hexad** `18@2`/`18@7`, where the graph draws a direct edge from the hexad to each partner
-(`18@2 → 15@11`, `18@2 → 24@0`), so the union adds only a note or two. Harmonic major falls one level
-deeper, to the **tetrad** `5@4`, where `P_A` and `P_B` overlap less. Deeper still is the bare **triad**
-`4@0` at the bottom of the graph, where the two placements share almost nothing and the union balloons
-to the eight-, nine- and ten-note chromatic clusters we set aside.
+Notably harmonic and melodic minor, as well as the bebop dominant, are pairwise combinations of the leaf nodes of 18@2.
+Harmonic major instead mixes lcm 15 from two different lcm 18 nodes, requiring the deeper bridge of 5@4.
 
-This is the privilege we conjectured for the big bridging families back in
-[the principles](#the-principles-of-chord-progressions): restrict the shared subset to the `lcm-18`
-hexad (using `--min-subset-notes`) and only the three primary scales survive.
-With the tetrad comes harmonic major and with triads chromatic scales.
+Common to all of these is also a necessity for ambiguity by removing certain distinguishing notes:
 
-To trace any row yourself, pick its bridge node in the graph and walk up. For harmonic minor
-(`15@11 · 18@2 · 24@0`), start at the hexad `18@2` and climb its two direct edges — `18@2 → 15@11` on
-one side, `18@2 → 24@0` on the other — then union the two heptads and drop the collapse key.
+* Harmonic minor removes the fifth from 24@0, the distinguishing key between 1@0 and 2@0 and thus the earliest such key in the extended tonic placement graph.
+This is also another reason why lcm 15 collapses in addition to being expensive by containing prime 5 - 
+its key set is quite close to lcm 24 and the earliest branch in that subtree from the tonic is the dyad created with the perfect fifth.
+* Melodic minor removes the tonic from 24@7 while also stabilising 15@11
+* Bebop dominant sounds quite bluesy in and of itself, and especielly when omitting the lcm 24 roots 0 and 5, recovering the major blues scale.
+Notably the minor seven chord is present in bebop, and its strong pull to the perfect fourth (C7 -> F) could be due to the composition of the scale.
+* Harmonic major removes both collapsing keys from its lcm 15 constituents.
+
+### Pairwise unions of the leaf nodes
+
+The scales above are specific leaf pairs. 
+Walking the extended major-triad graph down through the two lcm 18 hexads a fifth apart — `18@2` and `18@7` — reaches five leaf placements:
+
+* `18@2` leaves: `15@11`, `24@0`, `24@7`
+* `18@7` leaves: `24@0`, `24@5`, `15@4`
+
+(five, not six, because `24@0` sits under both hexads). 
+Enumerating every pair of these five, taking the stable union each time and grouping by shared hexad:
+
+Within `18@2` (`15@11`, `24@0`, `24@7`):
+
+* $15@11 \cup 24@0 = \{0\;2\;4\;5\;8\;9\;11\} = \mathrm{harm}@9$ (harmonic minor)
+* $15@11 \cup 24@7 = \{0\;2\;4\;6\;8\;9\;11\} = \mathrm{mel}@9$ (melodic minor)
+* $24@0 \cup 24@7 = \{0\;2\;4\;5\;6\;7\;9\;11\} = \mathrm{bebop}@7$ (the dominant bebop again, rooted on 7)
+
+Within `18@7` (`24@0`, `24@5`, `15@4`) the same three scale types recur, transposed:
+
+* $15@4 \cup 24@5 = \{1\;2\;4\;5\;7\;9\;10\} = \mathrm{harm}@2$
+* $15@4 \cup 24@0 = \{1\;2\;4\;5\;7\;9\;11\} = \mathrm{mel}@2$
+* $24@0 \cup 24@5 = \{0\;2\;4\;5\;7\;9\;10\;11\} = \mathrm{bebop}@0$
+
+So each hexad hands us a harmonic minor and a melodic minor — its lcm 15 leaf against each of its two lcm 24 partners — and a bebop dominant from its two lcm 24 leaves.
+The two 24·24 fusions are the *same* bebop necklace at roots a fifth apart: `24@0` belongs to both hexads, so it bebops with `24@5` one way and with `24@7` the other.
+
+The remaining pairs cross the two hexads:
+
+* $15@11 \cup 15@4 = \{1\;2\;4\;5\;8\;9\;11\}$ is the **harmonic major** — the two lcm 15 leaves share no lcm 18 parent, meeting only at the deeper `5@4` tetrad.
+* $15@11 \cup 24@5 = \{0\;2\;4\;5\;8\;9\;10\;11\}$ — one key from harmonic minor: dropping key 10 gives $\mathrm{harm}@9$.
+* $24@7 \cup 15@4 = \{1\;2\;4\;5\;6\;7\;9\;11\}$ — 
+this is $24@2 \cup \mathrm{mel}@2$, D major and D melodic minor sharing every note but the third (key 6 vs 5). 
+Dropping key 5 gives the major scale $24@2$, dropping key 6 gives $\mathrm{mel}@2$, and it contains the major blues $\mathrm{blues}@2 = \{2\;4\;5\;6\;9\;11\}$ — the coexisting ♭3/♮3 is the blues-like ambiguity.
+* $24@7 \cup 24@5 = \{0\;2\;4\;5\;6\;7\;9\;10\;11\}$ — 
+the union of all three lcm 24 leaves $24@0 \cup 24@5 \cup 24@7$: 
+the C major scale $24@0$ plus both bebop passing tones (♯4 = 6, ♭7 = 10). 
+Dropping key 6 leaves $\mathrm{bebop}@0$, dropping key 10 leaves $\mathrm{bebop}@7$, dropping both recovers $24@0$.
+
+Apart from the harmonic major, perhaps the other cross-hexad scales get interpreted as single hexad junction scales but with bad notes, i.e. a preference for high-level junctions.
+
+One further leaf sits outside the two hexads: `15@7` = `{0 3 4 5 7 8 10}`, reached from the triad through the lcm 20 branch (via `20@0`) rather than an lcm 18 hexad.
+This ties in the with the triad at 4@8, connected to 4@0 via 1@0 and opens up for progressions between two triad graphs, but otherwise the analysis will be the same as for any extended placement triad graph.
+
+TODO: look at chords e.g. major chord and its melodic "fingerprints", similar to the chord melody command (which probably needs a rework or scrapping) -
+depending on which keys accompany the chord as melody, the perception likely falls into one scale or the other. 
+e.g. major@4 gives a very special feel when key 0 is played. Perhaps make a matrix for major chord with key columns, scale rows and cells note if the key is in that scale or not.
 
 Let's look at some more examples from traditional music.
 
