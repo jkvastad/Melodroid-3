@@ -17,6 +17,7 @@ public static class SongAnalysisTableRenderer
         int subdivisionsPerQuarter,
         bool mergeRepeats,
         bool showPlacements = false,
+        bool stablePlacements = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -44,16 +45,17 @@ public static class SongAnalysisTableRenderer
                 keys,
                 chunk.Keys.Count.ToString(),
             };
-            if (showPlacements) cells.Add(Cap(SongAnalysis.PlacementLabels(a)));
+            if (showPlacements) cells.Add(Cap(SongAnalysis.PlacementLabels(a, stablePlacements, ktet)));
             cells.Add(Cap(scaleLabels));
 
             table.AddRow(cells.ToArray());
         }
 
         var mergeNote = mergeRepeats ? ", repeats merged" : "";
+        var stableNote = showPlacements && stablePlacements ? ", stable placements only" : "";
         table.Caption(
             $"analyze midi: {analyses.Count} chunk{(analyses.Count == 1 ? "" : "s")} · " +
-            $"{subdivisionsPerQuarter}/quarter grid{mergeNote} · {ktet}-tet\n" +
+            $"{subdivisionsPerQuarter}/quarter grid{mergeNote}{stableNote} · {ktet}-tet\n" +
             $"scales: {NamedScales.Legend()}");
         console.Write(table);
     }

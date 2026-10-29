@@ -185,6 +185,33 @@ public class SongAnalysisTests
         named.SubsetBridges.Count.Should().BeLessThanOrEqualTo(raw.SubsetBridges.Count);
     }
 
+    private static KeySupersetRow Row(int lcm, int at, params int[] keys) =>
+        new(new Placement(lcm, at, keys), Array.Empty<Fraction>(), 0);
+
+    // --stable-placements drops an unstable lcm-15 / lcm-20 placement whose collapsing key is sounding
+    // in the chunk (the DropCollapsed rule) and relabels the survivors into stable form (15s@ / 20s@).
+    // For a {0,4,7} chunk, 15@4 collapses on key 0 (in the chunk) and disappears under stable, while
+    // 15@7 collapses on key 3 (not sounding) and survives — shown as 15s@7. A non-collapsing lcm-24
+    // placement keeps its plain label in both modes. Default (stable:false) lists everything plainly.
+    [Fact]
+    public void PlacementLabels_StableDropsCollapsedAndRelabelsSurvivors()
+    {
+        var chunk = new SongChunk(0, 0, 1, new[] { 0, 4, 7 });
+        var analysis = new ChunkAnalysis(chunk, new[]
+        {
+            Row(15, 4, 0, 2, 4, 7, 9),      // lcm-15, collapsing key 0 ∈ chunk → unstable
+            Row(15, 7, 0, 4, 6, 7, 9),      // lcm-15, collapsing key 3 ∉ chunk → stable
+            Row(20, 1, 0, 4, 7, 10),        // lcm-20, collapsing key 4 ∈ chunk → unstable
+            Row(20, 2, 0, 4, 7, 11),        // lcm-20, collapsing key 5 ∉ chunk → stable
+            Row(24, 0, 0, 2, 4, 5, 7, 9),   // no collapsing key → always plain
+        }, Array.Empty<ScaleRow>());
+
+        SongAnalysis.PlacementLabels(analysis, stable: false, Ktet)
+            .Should().BeEquivalentTo("15@4", "15@7", "20@1", "20@2", "24@0");
+        SongAnalysis.PlacementLabels(analysis, stable: true, Ktet)
+            .Should().BeEquivalentTo("15s@7", "20s@2", "24@0");
+    }
+
     // A placeholder chunk at timeline position i: Index/StartBeat/EndBeat come from the position,
     // Keys are irrelevant to GreedySegments (it works off the supplied label lists).
     private static SongChunk Slot(int i) => new(i, i, i + 1, Array.Empty<int>());

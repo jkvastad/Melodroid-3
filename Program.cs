@@ -1771,6 +1771,11 @@ class Program
             Description = "Also show the Placements column: the LCM-family placements containing each chunk's key-set (isomorphic-collapsed, capped). Default off — scales only.",
             DefaultValueFactory = _ => false,
         };
+        var analyzeStablePlacementsOption = new Option<bool>("--stable-placements")
+        {
+            Description = "Placements only (--placements / --segments / --reaper): show placements in stable form — drop an unstable lcm-15 / lcm-20 placement when its collapsing key is sounding in the chunk (it has collapsed onto a simpler lcm-24 pattern), and label the surviving lcm-15 / lcm-20 placements in stable form (15s@ / 20s@, as in table chord-melody --stable-15). Affects the Placements column, placement segments, and Reaper markers. Default off.",
+            DefaultValueFactory = _ => false,
+        };
         var analyzeSegmentsOption = new Option<bool>("--segments")
         {
             Description = "Also emit two fewest-contiguous-segments tables (one for scales, one for placements): greedily partition the chunk timeline into the fewest maximal runs each explainable by one shared scale/placement. The longest row is the longest unbroken chain of a single label; the row count is the minimum segmentation. Default off.",
@@ -1795,6 +1800,7 @@ class Program
         analyzeMidiCommand.Add(analyzePoolMaximalOption);
         analyzeMidiCommand.Add(analyzeNameJunctionsOption);
         analyzeMidiCommand.Add(analyzePlacementsOption);
+        analyzeMidiCommand.Add(analyzeStablePlacementsOption);
         analyzeMidiCommand.Add(analyzeSegmentsOption);
         analyzeMidiCommand.Add(analyzeReaperOption);
         analyzeMidiCommand.Add(maxSizeOption);
@@ -1813,6 +1819,7 @@ class Program
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
             var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
             var showPlacements = parse.GetValue(analyzePlacementsOption);
+            var stablePlacements = parse.GetValue(analyzeStablePlacementsOption);
             var showSegments = parse.GetValue(analyzeSegmentsOption);
             var writeReaper = parse.GetValue(analyzeReaperOption);
             var maxSize = parse.GetValue(maxSizeOption);
@@ -1856,12 +1863,12 @@ class Program
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var analyses = SongAnalysis.Analyze(chunks, families, k);
 
-            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements);
+            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements, stablePlacements);
 
             if (showSegments || writeReaper)
             {
                 var scaleLabels = analyses.Select(SongAnalysis.ScaleLabels).ToList();
-                var placementLabels = analyses.Select(SongAnalysis.PlacementLabels).ToList();
+                var placementLabels = analyses.Select(a => SongAnalysis.PlacementLabels(a, stablePlacements, k)).ToList();
                 var scaleSegments = SongAnalysis.GreedySegments(chunks, scaleLabels);
                 var placementSegments = SongAnalysis.GreedySegments(chunks, placementLabels);
 

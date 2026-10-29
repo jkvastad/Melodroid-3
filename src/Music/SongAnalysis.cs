@@ -198,10 +198,28 @@ public static class SongAnalysis
 
     // The LCM-family placement labels ("{Lcm}@{At}") containing a chunk's key-set, isomorphic-
     // collapsed to lowest-LCM representatives. Shared with the per-chunk table's Placements column.
-    public static IReadOnlyList<string> PlacementLabels(ChunkAnalysis a) =>
-        Placements.CollapseIsomorphic(a.Placements)
-            .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
+    // With `stable`: (1) drop unstable placements (lcm-15 / lcm-20) whose collapsing key is sounding
+    // in the chunk — they have collapsed onto a simpler lcm-24 pattern (the DropCollapsed rule used by
+    // `chord-melody` / `progression`); and (2) relabel the surviving collapsing-key placements into
+    // stable form "{Lcm}s@{At}" (15s@ / 20s@, the `chord-melody --stable-15` marker) — step 1 has
+    // already removed those whose collapsing key sounds, so every survivor with a collapsing key is
+    // legitimately the stable sub-pattern. Reuses Placements.CollapsingKey as the single source.
+    public static IReadOnlyList<string> PlacementLabels(ChunkAnalysis a, bool stable, int ktet)
+    {
+        var rows = a.Placements;
+        if (stable)
+        {
+            var chord = new HashSet<int>(a.Chunk.Keys);
+            rows = rows
+                .Where(r => Placements.CollapsingKey(r.Placement, ktet) is not int ck || !chord.Contains(ck))
+                .ToList();
+        }
+        return Placements.CollapseIsomorphic(rows)
+            .Select(r => stable && Placements.CollapsingKey(r.Placement, ktet) is not null
+                ? $"{r.Placement.Lcm}s@{r.Placement.At}"
+                : $"{r.Placement.Lcm}@{r.Placement.At}")
             .ToList();
+    }
 
     // Greedy minimum-count partition of the chunk timeline into contiguous segments, each sharing
     // ≥1 common label. Starting a segment at chunk i, extend while the running intersection of the

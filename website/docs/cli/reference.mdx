@@ -503,7 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
-  [--placements] [--segments] [--reaper] \
+  [--placements] [--stable-placements] [--segments] [--reaper] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -519,6 +519,16 @@ changes" preprocessing). For every chunk the table lists:
 - (with `--placements`, default off) a **Placements** column listing the
   [LCM-family placements](#placement) containing it ([`FindSupersets`](#key-supersets),
   isomorphic-collapsed, capped).
+
+`--stable-placements` (default off) shows placements in **stable form**. It (1) drops an unstable
+lcm-15 / lcm-20 placement whenever its collapsing key is one of the chunk's sounding keys — the chunk
+plays the very key that reinterprets the placement as a simpler lcm-24 pattern (the same
+[`DropCollapsed`](#chord-melody) rule `chord-melody` and `progression` use) — and (2) labels the
+surviving lcm-15 / lcm-20 placements in stable form, `15s@` / `20s@` (the `chord-melody --stable-15`
+marker), so the label itself signals the stable sub-pattern rather than the full unstable family.
+For a `{0,4,7}` chunk, `15@4` (collapsing key 0, sounding) is dropped while `15@7` (collapsing key 3,
+not sounding) survives as `15s@7`. The filter applies to the Placements column, the placement
+segments (`--segments`), and the Reaper placement markers (`--reaper`); scales are unaffected.
 
 A chunk's harmonic identity is its key-set **plus these containments** — no traditional chord names
 (per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
