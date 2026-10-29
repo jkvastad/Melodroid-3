@@ -171,10 +171,11 @@ This time however *both* sides are `lcm-15`, so *both* collapse keys drop — ke
 `15@5`:
 
 $$
-15@0 \cup 15@5 \;\setminus\; \{1,\;8\} \;=\; \{0\;2\;3\;5\;6\;9\;10\}
+15@0 \cup 15@5 \;\setminus\; \{1,\;8\} \;=\; \{0\;2\;3\;5\;6\;9\;10\} \;=\; \mathrm{hmaj}@10
 $$
 
-This necklace is **harmonic major**. 
+This necklace is **harmonic major**.
+We write `hmaj@x` for the harmonic major scale rooted on key `x`, i.e. the major scale `24@x` with a flattened sixth, so the union above is `hmaj@10`.
 Where harmonic minor drops a single collapse key from a one-sided collapse,
 harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-15` junction.
 
@@ -190,7 +191,7 @@ Below you can listen to some simple random melodies based on the scales above.
   progression={[
     {label: 'Harmonic minor (harm@10 = 0 1 3 5 6 9 10)', keys: [0, 1, 3, 5, 6, 9, 10]},
     {label: 'Melodic minor (0 1 3 5 7 9 10)', keys: [0, 1, 3, 5, 7, 9, 10]},
-    {label: 'Harmonic major (0 2 3 5 6 9 10)', keys: [0, 2, 3, 5, 6, 9, 10]},
+    {label: 'Harmonic major (hmaj@10 = 0 2 3 5 6 9 10)', keys: [0, 2, 3, 5, 6, 9, 10]},
     {label: 'Bebop dominant (0 2 4 5 7 9 10 11)', keys: [0, 2, 4, 5, 7, 9, 10, 11]},
     {label: 'Related blues (blues@7 = 2 4 7 9 10 11)', keys: [2, 4, 7, 9, 10, 11]},
   ]}
@@ -249,7 +250,7 @@ The two 24·24 fusions are the *same* bebop necklace at roots a fifth apart: `24
 
 The remaining pairs cross the two hexads:
 
-* $15@11 \cup 15@4 = \{1\;2\;4\;5\;8\;9\;11\}$ is the **harmonic major** — the two lcm 15 leaves share no lcm 18 parent, meeting only at the deeper `5@4` tetrad.
+* $15@11 \cup 15@4 = \{1\;2\;4\;5\;8\;9\;11\} = \mathrm{hmaj}@9$ is the **harmonic major** — the two lcm 15 leaves share no lcm 18 parent, meeting only at the deeper `5@4` tetrad.
 * $15@11 \cup 24@5 = \{0\;2\;4\;5\;8\;9\;10\;11\}$ — one key from harmonic minor: dropping key 10 gives $\mathrm{harm}@9$.
 * $24@7 \cup 15@4 = \{1\;2\;4\;5\;6\;7\;9\;11\}$ — 
 this is $24@2 \cup \mathrm{mel}@2$, D major and D melodic minor sharing every note but the third (key 6 vs 5). 
