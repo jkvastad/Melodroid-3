@@ -1766,6 +1766,11 @@ class Program
             Description = "Bridges only (--bridges): replace the raw P_A·S·P_B triplets in the Subset column with the named junction scale of each bridge — the stable union P_A ∪ P_B matched against the named-scale catalog ({Name}@{Anchor}), or its raw {keys} when unnamed. Collapses the dyad explosion (the union ignores which S was chosen). Default off (raw triplets).",
             DefaultValueFactory = _ => false,
         };
+        var analyzePlacementsOption = new Option<bool>("--placements")
+        {
+            Description = "Also show the Placements column: the LCM-family placements containing each chunk's key-set (isomorphic-collapsed, capped). Default off — scales only.",
+            DefaultValueFactory = _ => false,
+        };
 
         var analyzeMidiCommand = new Command(
             "midi",
@@ -1779,6 +1784,7 @@ class Program
         analyzeMidiCommand.Add(analyzeCollapseIsomorphicOption);
         analyzeMidiCommand.Add(analyzePoolMaximalOption);
         analyzeMidiCommand.Add(analyzeNameJunctionsOption);
+        analyzeMidiCommand.Add(analyzePlacementsOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1794,6 +1800,7 @@ class Program
             var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
             var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
+            var showPlacements = parse.GetValue(analyzePlacementsOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1834,7 +1841,7 @@ class Program
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var analyses = SongAnalysis.Analyze(chunks, families, k);
 
-            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats);
+            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements);
 
             if (bridges)
             {

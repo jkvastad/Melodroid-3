@@ -16,6 +16,7 @@ public static class SongAnalysisTableRenderer
         int ktet,
         int subdivisionsPerQuarter,
         bool mergeRepeats,
+        bool showPlacements = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -24,9 +25,9 @@ public static class SongAnalysisTableRenderer
             .AddColumn(new TableColumn("#").RightAligned())
             .AddColumn(new TableColumn("Beats").RightAligned())
             .AddColumn(new TableColumn("Keys"))
-            .AddColumn(new TableColumn("n").RightAligned())
-            .AddColumn(new TableColumn("Placements"))
-            .AddColumn(new TableColumn("Scales"));
+            .AddColumn(new TableColumn("n").RightAligned());
+        if (showPlacements) table.AddColumn(new TableColumn("Placements"));
+        table.AddColumn(new TableColumn("Scales"));
 
         foreach (var a in analyses)
         {
@@ -34,20 +35,27 @@ public static class SongAnalysisTableRenderer
             var keys = string.Join(" ", chunk.Keys);
             var beats = $"{Beat(chunk.StartBeat)}–{Beat(chunk.EndBeat)}";
 
-            var placementLabels = Placements.CollapseIsomorphic(a.Placements)
-                .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
-                .ToList();
             var scaleLabels = a.Scales
                 .Select(s => $"{NamedScales.Shorthand(s.Name)}@{s.Anchor}")
                 .ToList();
 
-            table.AddRow(
+            var cells = new List<string>
+            {
                 chunk.Index.ToString(),
                 beats,
                 keys,
                 chunk.Keys.Count.ToString(),
-                Cap(placementLabels),
-                Cap(scaleLabels));
+            };
+            if (showPlacements)
+            {
+                var placementLabels = Placements.CollapseIsomorphic(a.Placements)
+                    .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
+                    .ToList();
+                cells.Add(Cap(placementLabels));
+            }
+            cells.Add(Cap(scaleLabels));
+
+            table.AddRow(cells.ToArray());
         }
 
         var mergeNote = mergeRepeats ? ", repeats merged" : "";

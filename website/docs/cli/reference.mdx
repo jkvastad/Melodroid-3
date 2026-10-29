@@ -503,6 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
+  [--placements] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -514,9 +515,10 @@ time-adjacent slots sharing an identical key-set into a single chunk (light "whe
 changes" preprocessing). For every chunk the table lists:
 
 - the sorted pitch-class **key-set** and its size,
-- the [LCM-family placements](#placement) containing it ([`FindSupersets`](#key-supersets),
-  isomorphic-collapsed, capped), and
-- the named [scales](#scale-fingerprint) containing it.
+- the named [scales](#scale-fingerprint) containing it, and
+- (with `--placements`, default off) a **Placements** column listing the
+  [LCM-family placements](#placement) containing it ([`FindSupersets`](#key-supersets),
+  isomorphic-collapsed, capped).
 
 A chunk's harmonic identity is its key-set **plus these containments** — no traditional chord names
 (per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
