@@ -184,4 +184,94 @@ public class SongAnalysisTests
         // Naming collapses the many triplets to a smaller set (the union ignores which S was chosen).
         named.SubsetBridges.Count.Should().BeLessThanOrEqualTo(raw.SubsetBridges.Count);
     }
+
+    // A placeholder chunk at timeline position i: Index/StartBeat/EndBeat come from the position,
+    // Keys are irrelevant to GreedySegments (it works off the supplied label lists).
+    private static SongChunk Slot(int i) => new(i, i, i + 1, Array.Empty<int>());
+
+    [Fact]
+    public void GreedySegments_AllChunksShareOneLabel_SingleSegment()
+    {
+        var chunks = new[] { Slot(0), Slot(1), Slot(2) };
+        var labels = new IReadOnlyList<string>[]
+        {
+            new[] { "M@0", "M@5" },
+            new[] { "M@0", "hm@2" },
+            new[] { "M@0" },
+        };
+
+        var segments = SongAnalysis.GreedySegments(chunks, labels);
+
+        segments.Should().ContainSingle();
+        segments[0].FromIndex.Should().Be(0);
+        segments[0].ToIndex.Should().Be(2);
+        segments[0].Length.Should().Be(3);
+        segments[0].StartBeat.Should().Be(0);
+        segments[0].EndBeat.Should().Be(3);
+        // Only the label common to every chunk survives as a witness.
+        segments[0].Witnesses.Should().Equal("M@0");
+    }
+
+    [Fact]
+    public void GreedySegments_CutsWhereNoCommonLabelRemains_MinimumCount()
+    {
+        // chunk0 needs A, chunk2 needs B, chunk1 shares both: no single label spans all three, so the
+        // minimum is two segments. Greedy extends the first run through the ambiguous middle chunk.
+        var chunks = new[] { Slot(0), Slot(1), Slot(2) };
+        var labels = new IReadOnlyList<string>[]
+        {
+            new[] { "A" },
+            new[] { "A", "B" },
+            new[] { "B" },
+        };
+
+        var segments = SongAnalysis.GreedySegments(chunks, labels);
+
+        segments.Should().HaveCount(2);
+        segments[0].FromIndex.Should().Be(0);
+        segments[0].ToIndex.Should().Be(1);
+        segments[0].Witnesses.Should().Equal("A");
+        segments[1].FromIndex.Should().Be(2);
+        segments[1].ToIndex.Should().Be(2);
+        segments[1].Length.Should().Be(1);
+        segments[1].Witnesses.Should().Equal("B");
+    }
+
+    [Fact]
+    public void GreedySegments_EmptyLabelSet_IsAnUnexplainedSingleton()
+    {
+        var chunks = new[] { Slot(0), Slot(1), Slot(2) };
+        var labels = new IReadOnlyList<string>[]
+        {
+            new[] { "M@0" },
+            Array.Empty<string>(),   // no scale/placement contains this chunk
+            new[] { "M@0" },
+        };
+
+        var segments = SongAnalysis.GreedySegments(chunks, labels);
+
+        segments.Should().HaveCount(3);
+        segments[1].FromIndex.Should().Be(1);
+        segments[1].ToIndex.Should().Be(1);
+        segments[1].Witnesses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GreedySegments_WitnessesAreTheIntersectionAcrossTheWholeSegment()
+    {
+        // "hm@2" appears in chunks 0 and 1 but not 2; it must not survive as a witness of the segment.
+        var chunks = new[] { Slot(0), Slot(1), Slot(2) };
+        var labels = new IReadOnlyList<string>[]
+        {
+            new[] { "M@0", "hm@2" },
+            new[] { "M@0", "hm@2" },
+            new[] { "M@0" },
+        };
+
+        var segments = SongAnalysis.GreedySegments(chunks, labels);
+
+        segments.Should().ContainSingle();
+        segments[0].Witnesses.Should().Equal("M@0");
+        segments[0].Witnesses.Should().NotContain("hm@2");
+    }
 }

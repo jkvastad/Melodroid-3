@@ -1771,6 +1771,11 @@ class Program
             Description = "Also show the Placements column: the LCM-family placements containing each chunk's key-set (isomorphic-collapsed, capped). Default off — scales only.",
             DefaultValueFactory = _ => false,
         };
+        var analyzeSegmentsOption = new Option<bool>("--segments")
+        {
+            Description = "Also emit two fewest-contiguous-segments tables (one for scales, one for placements): greedily partition the chunk timeline into the fewest maximal runs each explainable by one shared scale/placement. The longest row is the longest unbroken chain of a single label; the row count is the minimum segmentation. Default off.",
+            DefaultValueFactory = _ => false,
+        };
 
         var analyzeMidiCommand = new Command(
             "midi",
@@ -1785,6 +1790,7 @@ class Program
         analyzeMidiCommand.Add(analyzePoolMaximalOption);
         analyzeMidiCommand.Add(analyzeNameJunctionsOption);
         analyzeMidiCommand.Add(analyzePlacementsOption);
+        analyzeMidiCommand.Add(analyzeSegmentsOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1801,6 +1807,7 @@ class Program
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
             var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
             var showPlacements = parse.GetValue(analyzePlacementsOption);
+            var showSegments = parse.GetValue(analyzeSegmentsOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1842,6 +1849,16 @@ class Program
             var analyses = SongAnalysis.Analyze(chunks, families, k);
 
             SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements);
+
+            if (showSegments)
+            {
+                var scaleLabels = analyses.Select(SongAnalysis.ScaleLabels).ToList();
+                var placementLabels = analyses.Select(SongAnalysis.PlacementLabels).ToList();
+                var scaleSegments = SongAnalysis.GreedySegments(chunks, scaleLabels);
+                var placementSegments = SongAnalysis.GreedySegments(chunks, placementLabels);
+                SongAnalysisTableRenderer.RenderSegments("scale segments", scaleSegments, chunks.Count);
+                SongAnalysisTableRenderer.RenderSegments("placement segments", placementSegments, chunks.Count);
+            }
 
             if (bridges)
             {

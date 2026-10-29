@@ -35,9 +35,7 @@ public static class SongAnalysisTableRenderer
             var keys = string.Join(" ", chunk.Keys);
             var beats = $"{Beat(chunk.StartBeat)}–{Beat(chunk.EndBeat)}";
 
-            var scaleLabels = a.Scales
-                .Select(s => $"{NamedScales.Shorthand(s.Name)}@{s.Anchor}")
-                .ToList();
+            var scaleLabels = SongAnalysis.ScaleLabels(a);
 
             var cells = new List<string>
             {
@@ -46,13 +44,7 @@ public static class SongAnalysisTableRenderer
                 keys,
                 chunk.Keys.Count.ToString(),
             };
-            if (showPlacements)
-            {
-                var placementLabels = Placements.CollapseIsomorphic(a.Placements)
-                    .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
-                    .ToList();
-                cells.Add(Cap(placementLabels));
-            }
+            if (showPlacements) cells.Add(Cap(SongAnalysis.PlacementLabels(a)));
             cells.Add(Cap(scaleLabels));
 
             table.AddRow(cells.ToArray());
@@ -100,6 +92,48 @@ public static class SongAnalysisTableRenderer
         table.Caption(
             $"chunk bridges: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
             $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}{legend}");
+        console.Write(table);
+    }
+
+    // A greedy fewest-contiguous-segments view (opt-in, --segments). Each row is a maximal run of
+    // consecutive chunks explainable by one shared scale/placement — so the longest row is the
+    // longest unbroken chain of a single label, and the row count is the minimum segmentation.
+    public static void RenderSegments(
+        string title,
+        IReadOnlyList<LabelSegment> segments,
+        int chunkCount,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var table = new Table()
+            .AddColumn(new TableColumn("#").RightAligned())
+            .AddColumn(new TableColumn("Beats").RightAligned())
+            .AddColumn(new TableColumn("Chunks").RightAligned())
+            .AddColumn(new TableColumn("Len").RightAligned())
+            .AddColumn(new TableColumn("Witnesses"));
+
+        var seg = 0;
+        foreach (var s in segments)
+        {
+            table.AddRow(
+                (seg++).ToString(),
+                $"{Beat(s.StartBeat)}–{Beat(s.EndBeat)}",
+                s.FromIndex == s.ToIndex ? s.FromIndex.ToString() : $"{s.FromIndex}–{s.ToIndex}",
+                s.Length.ToString(),
+                Cap(s.Witnesses));
+        }
+
+        LabelSegment? longest = segments.Count == 0
+            ? null
+            : segments.Aggregate((a, b) => b.Length > a.Length ? b : a);
+        var longestNote = longest is { } l
+            ? $" · longest chain {l.Length} chunk{(l.Length == 1 ? "" : "s")} " +
+              $"({(l.Witnesses.Count == 0 ? "—" : string.Join(", ", l.Witnesses.Take(MaxItems)))})"
+            : "";
+        table.Caption(
+            $"{title}: {segments.Count} segment{(segments.Count == 1 ? "" : "s")} over " +
+            $"{chunkCount} chunk{(chunkCount == 1 ? "" : "s")}{longestNote}");
         console.Write(table);
     }
 

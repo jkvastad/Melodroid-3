@@ -503,7 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
-  [--placements] \
+  [--placements] [--segments] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -524,6 +524,18 @@ A chunk's harmonic identity is its key-set **plus these containments** — no tr
 (per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
 or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
 `--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
+
+The per-chunk table lists *every* scale/placement containing a chunk, which for melody-heavy input
+grows wide and loses the temporal story. `--segments` (default off) answers the complementary
+question — how far a *single* label carries — with two **fewest-contiguous-segments** tables (one for
+scales, one for placements). It greedily partitions the chunk timeline into the fewest maximal runs
+each explainable by one shared label: starting a segment, it extends while the running intersection of
+the per-chunk label sets stays non-empty, then cuts. This minimizes the segment count, so each row is
+a maximal chain — the **longest row is the longest unbroken chain** of a single scale/placement (the
+`C→F→G→C` loop collapses to one placement segment whose witnesses include `24@0`) and the row count is
+the minimum segmentation. The **Witnesses** cell lists every label common to the whole run; an
+empty-witness row is a chunk no label contains. Independent of `--placements` (both segment tables
+always render under `--segments`).
 
 Scale names in the **Scales** column (and the `--name-junctions` **Junction** column below) are
 rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:

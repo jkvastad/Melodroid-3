@@ -15,6 +15,17 @@ public readonly record struct ChunkAnalysis(
     IReadOnlyList<KeySupersetRow> Placements,
     IReadOnlyList<ScaleRow> Scales);
 
+// A maximal run of consecutive chunks sharing ≥1 common label (scale or placement). The common
+// labels are the Witnesses; Length is the chain length in chunks. Empty Witnesses = a chunk no
+// label contains (singleton, unexplained). The span is [StartBeat, EndBeat) in quarter-note beats.
+public readonly record struct LabelSegment(
+    int FromIndex,
+    int ToIndex,
+    double StartBeat,
+    double EndBeat,
+    int Length,
+    IReadOnlyList<string> Witnesses);
+
 // The progression bridge between two consecutive chunks: the ChordProgressions category for the
 // ordered key-set pair plus the superset ("{Lcm}@{At}") and subset ("P_A·S·P_B") bridge labels.
 // This is the cross-chunk structure a per-chunk containment list cannot show — e.g. a C→F→G→C loop
@@ -177,5 +188,61 @@ public static class SongAnalysis
             .ThenBy(x => x.Label, StringComparer.Ordinal)
             .Select(x => x.Label)
             .ToList();
+    }
+
+    // The named-scale labels ("{Shorthand}@{Anchor}") containing a chunk's key-set, in
+    // ContainingChord order. Shared with the per-chunk table so both views label scales identically.
+    public static IReadOnlyList<string> ScaleLabels(ChunkAnalysis a) => a.Scales
+        .Select(s => $"{NamedScales.Shorthand(s.Name)}@{s.Anchor}")
+        .ToList();
+
+    // The LCM-family placement labels ("{Lcm}@{At}") containing a chunk's key-set, isomorphic-
+    // collapsed to lowest-LCM representatives. Shared with the per-chunk table's Placements column.
+    public static IReadOnlyList<string> PlacementLabels(ChunkAnalysis a) =>
+        Placements.CollapseIsomorphic(a.Placements)
+            .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
+            .ToList();
+
+    // Greedy minimum-count partition of the chunk timeline into contiguous segments, each sharing
+    // ≥1 common label. Starting a segment at chunk i, extend while the running intersection of the
+    // per-chunk label sets stays non-empty, then cut — this minimizes the number of segments and so
+    // the longest segment is the longest unbroken chain of a single label. A chunk whose label set
+    // is empty is its own singleton segment with no witness. Witnesses are ordered by first
+    // appearance (the starting chunk's order) for a deterministic, stable rendering.
+    public static IReadOnlyList<LabelSegment> GreedySegments(
+        IReadOnlyList<SongChunk> chunks,
+        IReadOnlyList<IReadOnlyList<string>> labelsPerChunk)
+    {
+        if (chunks.Count != labelsPerChunk.Count)
+            throw new ArgumentException("chunks and labelsPerChunk must align 1:1.");
+
+        var segments = new List<LabelSegment>();
+        var i = 0;
+        while (i < chunks.Count)
+        {
+            var common = new HashSet<string>(labelsPerChunk[i]);
+            var j = i;
+            while (common.Count > 0 && j + 1 < chunks.Count)
+            {
+                var next = new HashSet<string>(labelsPerChunk[j + 1]);
+                next.IntersectWith(common);
+                if (next.Count == 0) break;
+                common = next;
+                j++;
+            }
+
+            // Order surviving witnesses by their appearance in the starting chunk's label list.
+            var witnesses = labelsPerChunk[i].Where(common.Contains).ToList();
+            segments.Add(new LabelSegment(
+                chunks[i].Index,
+                chunks[j].Index,
+                chunks[i].StartBeat,
+                chunks[j].EndBeat,
+                j - i + 1,
+                witnesses));
+            i = j + 1;
+        }
+
+        return segments;
     }
 }
