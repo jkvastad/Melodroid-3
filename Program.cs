@@ -1776,6 +1776,11 @@ class Program
             Description = "Also emit two fewest-contiguous-segments tables (one for scales, one for placements): greedily partition the chunk timeline into the fewest maximal runs each explainable by one shared scale/placement. The longest row is the longest unbroken chain of a single label; the row count is the minimum segmentation. Default off.",
             DefaultValueFactory = _ => false,
         };
+        var analyzeReaperOption = new Option<bool>("--reaper")
+        {
+            Description = "Also write a Reaper region/marker CSV (scale segments as regions, placement segments as markers) to output/reaper/ and print the path; import it via Reaper's Region/Marker Manager (right-click → Import region/marker set…) to view the segments aligned to the MIDI notes. Default off.",
+            DefaultValueFactory = _ => false,
+        };
 
         var analyzeMidiCommand = new Command(
             "midi",
@@ -1791,6 +1796,7 @@ class Program
         analyzeMidiCommand.Add(analyzeNameJunctionsOption);
         analyzeMidiCommand.Add(analyzePlacementsOption);
         analyzeMidiCommand.Add(analyzeSegmentsOption);
+        analyzeMidiCommand.Add(analyzeReaperOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1808,6 +1814,7 @@ class Program
             var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
             var showPlacements = parse.GetValue(analyzePlacementsOption);
             var showSegments = parse.GetValue(analyzeSegmentsOption);
+            var writeReaper = parse.GetValue(analyzeReaperOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1824,9 +1831,10 @@ class Program
 
             IReadOnlyList<NoteEvent> events;
             int ticksPerQuarter;
+            IReadOnlyList<(long Tick, long MicrosecondsPerQuarter)> tempo;
             try
             {
-                (events, ticksPerQuarter) = MidiFileReader.Read(input);
+                (events, ticksPerQuarter, tempo) = MidiFileReader.Read(input);
             }
             catch (Exception ex)
             {
@@ -1850,14 +1858,27 @@ class Program
 
             SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements);
 
-            if (showSegments)
+            if (showSegments || writeReaper)
             {
                 var scaleLabels = analyses.Select(SongAnalysis.ScaleLabels).ToList();
                 var placementLabels = analyses.Select(SongAnalysis.PlacementLabels).ToList();
                 var scaleSegments = SongAnalysis.GreedySegments(chunks, scaleLabels);
                 var placementSegments = SongAnalysis.GreedySegments(chunks, placementLabels);
-                SongAnalysisTableRenderer.RenderSegments("scale segments", scaleSegments, chunks.Count);
-                SongAnalysisTableRenderer.RenderSegments("placement segments", placementSegments, chunks.Count);
+
+                if (showSegments)
+                {
+                    SongAnalysisTableRenderer.RenderSegments("scale segments", scaleSegments, chunks.Count);
+                    SongAnalysisTableRenderer.RenderSegments("placement segments", placementSegments, chunks.Count);
+                }
+
+                if (writeReaper)
+                {
+                    var stem = Path.GetFileNameWithoutExtension(input);
+                    var csvPath = Path.Combine("output", "reaper", $"{stem}-segments.csv");
+                    var csv = ReaperMarkerCsv.Build(scaleSegments, placementSegments, ticksPerQuarter, tempo);
+                    ReaperMarkerCsv.Write(csvPath, csv);
+                    AnsiConsole.MarkupLine($"[green]Wrote Reaper region/marker CSV:[/] {Markup.Escape(Path.GetFullPath(csvPath))}");
+                }
             }
 
             if (bridges)

@@ -503,7 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
-  [--placements] [--segments] \
+  [--placements] [--segments] [--reaper] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -536,6 +536,16 @@ a maximal chain — the **longest row is the longest unbroken chain** of a singl
 the minimum segmentation. The **Witnesses** cell lists every label common to the whole run; an
 empty-witness row is a chunk no label contains. Independent of `--placements` (both segment tables
 always render under `--segments`).
+
+`--reaper` (default off) exports those two segmentations to a [Reaper](https://www.reaper.fm/)
+region/marker CSV so you can see them lined up against the actual notes in a DAW. Scale segments
+become **regions** (named colored bars spanning their beat range) and placement segments become
+**markers** at each segment's start — kept distinct so they don't contend for Reaper's single region
+lane. Segment beats are converted to wall-clock seconds through the MIDI file's tempo map and written
+as `M:SS.mmm`, and the file lands at `output/reaper/<stem>-segments.csv` (the path is printed). Import
+it via Reaper's **Region/Marker Manager** → right-click → *Import region/marker set…*, after dragging
+the MIDI into an empty project (so the project adopts the file's tempo). `--reaper` computes the
+segments even when `--segments` is off.
 
 Scale names in the **Scales** column (and the `--name-junctions` **Junction** column below) are
 rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
