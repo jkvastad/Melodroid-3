@@ -523,6 +523,13 @@ A chunk's harmonic identity is its key-set **plus these containments** — no tr
 or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
 `--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
 
+Scale names in the **Scales** column (and the `--name-junctions` **Junction** column below) are
+rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
+
+| `M` | `hm` | `mm` | `hM` | `bb` | `b` |
+| --- | --- | --- | --- | --- | --- |
+| major | harmonic minor | melodic minor | harmonic major | bebop dominant | major blues |
+
 The per-chunk lists treat each chunk **in isolation**, so a chord *progression* — which lives in the
 relationship between consecutive chunks — stays hidden. `--bridges` (default off) adds a second
 **chunk-bridges** table: for each consecutive chunk pair it runs the pair through
@@ -537,8 +544,9 @@ changes the category).
 
 `--name-junctions` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
 *is* a [junction scale](#junction-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
-**Junction** and each bridge shows the named scale of that union (`{Name}@{Anchor}` via the named-scale
-catalog), falling back to the raw `{keys}` when the union lands on no catalog scale. Because the union
+**Junction** and each bridge shows the named scale of that union (`{Short}@{Anchor}` — the shorthand
+above, e.g. `hm@9` — via the named-scale catalog), falling back to the raw `{keys}` when the union
+lands on no catalog scale. Because the union
 ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
 junctions — the intended reading when the raw `P_A·S·P_B` list explodes.
 

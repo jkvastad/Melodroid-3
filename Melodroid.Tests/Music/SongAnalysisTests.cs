@@ -177,6 +177,10 @@ public class SongAnalysisTests
         named.SubsetBridges.Should().OnlyContain(s => !s.Contains('·'));
         named.SubsetBridges.Should().OnlyContain(s => s.Contains('@') || s.StartsWith("{"));
 
+        // Named scales use the compact shorthands, never the full catalog words.
+        named.SubsetBridges.Should().OnlyContain(s =>
+            !s.Contains("minor") && !s.Contains("major") && !s.Contains("bebop") && !s.Contains("blues"));
+
         // Naming collapses the many triplets to a smaller set (the union ignores which S was chosen).
         named.SubsetBridges.Count.Should().BeLessThanOrEqualTo(raw.SubsetBridges.Count);
     }

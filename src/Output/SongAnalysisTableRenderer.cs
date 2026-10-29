@@ -38,7 +38,7 @@ public static class SongAnalysisTableRenderer
                 .Select(r => $"{r.Placement.Lcm}@{r.Placement.At}")
                 .ToList();
             var scaleLabels = a.Scales
-                .Select(s => $"{s.Name}@{s.Anchor}")
+                .Select(s => $"{NamedScales.Shorthand(s.Name)}@{s.Anchor}")
                 .ToList();
 
             table.AddRow(
@@ -53,7 +53,8 @@ public static class SongAnalysisTableRenderer
         var mergeNote = mergeRepeats ? ", repeats merged" : "";
         table.Caption(
             $"analyze midi: {analyses.Count} chunk{(analyses.Count == 1 ? "" : "s")} · " +
-            $"{subdivisionsPerQuarter}/quarter grid{mergeNote} · {ktet}-tet");
+            $"{subdivisionsPerQuarter}/quarter grid{mergeNote} · {ktet}-tet\n" +
+            $"scales: {NamedScales.Legend()}");
         console.Write(table);
     }
 
@@ -87,9 +88,10 @@ public static class SongAnalysisTableRenderer
         }
 
         var subsetNote = nameJunctions ? ", junctions named" : ", raw triplets";
+        var legend = nameJunctions ? $"\nscales: {NamedScales.Legend()}" : "";
         table.Caption(
             $"chunk bridges: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
-            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}");
+            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}{legend}");
         console.Write(table);
     }
 

@@ -181,4 +181,36 @@ public class NamedScalesTests
         // The whole-tone hexad {0 2 4 6 8 10} is not in the catalog at any anchor.
         NamedScales.Match(new[] { 0, 2, 4, 6, 8, 10 }).Should().BeNull();
     }
+
+    [Theory]
+    [InlineData("major", "M")]
+    [InlineData("harmonic minor", "hm")]
+    [InlineData("melodic minor", "mm")]
+    [InlineData("bebop dominant", "bb")]
+    [InlineData("harmonic major", "hM")]
+    [InlineData("major blues", "b")]
+    public void Shorthand_MapsEachCatalogNameToItsCode(string name, string expected)
+    {
+        NamedScales.Shorthand(name).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Shorthand_CoversEveryCatalogScale_WithUniqueCaseSensitiveCodes()
+    {
+        var codes = NamedScales.Catalog.Select(s => NamedScales.Shorthand(s.Name)).ToList();
+
+        codes.Should().OnlyContain(c => !string.IsNullOrEmpty(c));  // every scale has a code
+        codes.Should().OnlyHaveUniqueItems();                        // no two scales collide
+
+        // hm and hM differ only by case — the uniqueness above must be case-sensitive.
+        codes.Should().Contain("hm").And.Contain("hM");
+    }
+
+    [Fact]
+    public void Legend_DecodesEveryShorthandToItsName()
+    {
+        var legend = NamedScales.Legend();
+        foreach (var scale in NamedScales.Catalog)
+            legend.Should().Contain($"{NamedScales.Shorthand(scale.Name)}={scale.Name}");
+    }
 }

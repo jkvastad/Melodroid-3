@@ -165,7 +165,7 @@ public static class SongAnalysis
 
             var union = JunctionScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
             if (NamedScales.Match(union, ktet) is (string name, int anchor))
-                labels[key] = (catalogOrder[name], anchor, $"{name}@{anchor}");
+                labels[key] = (catalogOrder[name], anchor, $"{NamedScales.Shorthand(name)}@{anchor}");
             else
                 labels[key] = (catalogOrder.Count, 0, "{" + string.Join(" ", union) + "}");
         }

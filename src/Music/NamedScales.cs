@@ -36,6 +36,22 @@ public static class NamedScales
         new NamedScale("major blues",    new[] { 0, 2, 3, 4, 7, 9 }),
     };
 
+    // Compact display codes for the catalog scales, case-sensitive (hm ≠ hM). Keyed by catalog Name.
+    // Used to keep the `analyze midi` Scales / Junction columns readable; the full names stay the
+    // source of truth (ScaleRow.Name, table scale-fingerprint) — this is a display concern only.
+    private static readonly IReadOnlyDictionary<string, string> Shorthands = new Dictionary<string, string>
+    {
+        ["major"] = "M", ["harmonic minor"] = "hm", ["melodic minor"] = "mm",
+        ["bebop dominant"] = "bb", ["harmonic major"] = "hM", ["major blues"] = "b",
+    };
+
+    public static string Shorthand(string name) => Shorthands[name];
+
+    // "M=major, hm=harmonic minor, …" built from the catalog so the legend can never drift out of
+    // sync with the shorthand map or the scale set.
+    public static string Legend() =>
+        string.Join(", ", Catalog.Select(s => $"{Shorthand(s.Name)}={s.Name}"));
+
     // One row per (scale, anchor) whose transposed key set fully contains chordKeys. Each catalog
     // necklace is shifted to all `ktet` anchors (necklace + anchor mod ktet); an anchor qualifies
     // iff its key set ⊇ the chord. Rows keep catalog order, then ascending anchor, for stable display.
