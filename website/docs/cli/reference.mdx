@@ -502,7 +502,7 @@ input rather than output type).
 
 ```bash
 melodroid analyze midi --input song.mid \
-  [--subdivision 4] [--merge-repeats] [--max-chunks 256] \
+  [--subdivision 4] [--merge-repeats] [--max-chunks 256] [--from 0] [--to -1] \
   [--placements] [--stable-placements] [--segments] [--reaper] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
@@ -534,6 +534,13 @@ A chunk's harmonic identity is its key-set **plus these containments** — no tr
 (per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
 or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
 `--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
+
+`--from` / `--to` window the output to an interval of chunks (0-based, inclusive, matching the `#`
+column; `--to -1`, the default, runs to the last chunk; values past the end clamp). Semantics are
+**window-local**: the chunk list is sliced first, so the main table, segments, and bridges are all
+computed over just chunks `--from…--to` (and `--max-chunks` is measured against the window, so a window
+of a huge file is viewable without raising it). Original chunk numbers are preserved, so `--from 100
+--to 149` shows rows numbered `100…149` — windows compose and stay stable to reference.
 
 The per-chunk table lists *every* scale/placement containing a chunk, which for melody-heavy input
 grows wide and loses the temporal story. `--segments` (default off) answers the complementary

@@ -1738,8 +1738,18 @@ class Program
         };
         var analyzeMaxChunksOption = new Option<int>("--max-chunks")
         {
-            Description = "Abort if the discretization yields more than this many chunks (guards huge tables).",
+            Description = "Abort if the discretization yields more than this many chunks (guards huge tables). Measured against the --from/--to window when one is given.",
             DefaultValueFactory = _ => 256,
+        };
+        var analyzeFromOption = new Option<int>("--from")
+        {
+            Description = "Window: first chunk to show (0-based, inclusive, matches the # column). Everything (main table, segments, bridges) is computed window-locally on chunks --from…--to. Default 0.",
+            DefaultValueFactory = _ => 0,
+        };
+        var analyzeToOption = new Option<int>("--to")
+        {
+            Description = "Window: last chunk to show (0-based, inclusive). -1 = run to the last chunk; values past the end clamp. Default -1. Original chunk numbers are preserved, so windows compose and are stable to reference.",
+            DefaultValueFactory = _ => -1,
         };
         var analyzeBridgesOption = new Option<bool>("--bridges")
         {
@@ -1794,6 +1804,8 @@ class Program
         analyzeMidiCommand.Add(analyzeSubdivisionOption);
         analyzeMidiCommand.Add(analyzeMergeRepeatsOption);
         analyzeMidiCommand.Add(analyzeMaxChunksOption);
+        analyzeMidiCommand.Add(analyzeFromOption);
+        analyzeMidiCommand.Add(analyzeToOption);
         analyzeMidiCommand.Add(analyzeBridgesOption);
         analyzeMidiCommand.Add(analyzeMinSubsetNotesOption);
         analyzeMidiCommand.Add(analyzeCollapseIsomorphicOption);
@@ -1813,6 +1825,8 @@ class Program
             var subdivision = parse.GetValue(analyzeSubdivisionOption);
             var mergeRepeats = parse.GetValue(analyzeMergeRepeatsOption);
             var maxChunks = parse.GetValue(analyzeMaxChunksOption);
+            var from = parse.GetValue(analyzeFromOption);
+            var to = parse.GetValue(analyzeToOption);
             var bridges = parse.GetValue(analyzeBridgesOption);
             var minSubsetNotes = parse.GetValue(analyzeMinSubsetNotesOption);
             var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
@@ -1830,6 +1844,8 @@ class Program
             if (!File.Exists(input)) { AnsiConsole.MarkupLine($"[red]Input file not found: {input}[/]"); return 1; }
             if (subdivision < 1) { AnsiConsole.MarkupLine("[red]--subdivision must be ≥ 1.[/]"); return 1; }
             if (maxChunks < 1) { AnsiConsole.MarkupLine("[red]--max-chunks must be ≥ 1.[/]"); return 1; }
+            if (from < 0) { AnsiConsole.MarkupLine("[red]--from must be ≥ 0.[/]"); return 1; }
+            if (to >= 0 && to < from) { AnsiConsole.MarkupLine("[red]--to must be ≥ --from (or -1 for the last chunk).[/]"); return 1; }
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
@@ -1852,6 +1868,20 @@ class Program
             if (events.Count == 0) { AnsiConsole.MarkupLine("[red]No notes found in the MIDI file.[/]"); return 1; }
 
             var chunks = SongAnalysis.Chunk(events, ticksPerQuarter, subdivision, mergeRepeats);
+
+            var totalChunks = chunks.Count;
+            if (from >= totalChunks)
+            {
+                AnsiConsole.MarkupLine($"[red]--from {from} is past the last chunk ({totalChunks - 1}).[/]");
+                return 1;
+            }
+            var windowEnd = to < 0 ? totalChunks - 1 : Math.Min(to, totalChunks - 1);
+            if (from > 0 || windowEnd < totalChunks - 1)
+            {
+                chunks = chunks.Skip(from).Take(windowEnd - from + 1).ToList();
+                AnsiConsole.MarkupLine($"Showing chunks {from}–{windowEnd} of {totalChunks}.");
+            }
+
             if (chunks.Count > maxChunks)
             {
                 AnsiConsole.MarkupLine(
