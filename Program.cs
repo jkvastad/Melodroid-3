@@ -1796,6 +1796,11 @@ class Program
             Description = "Also write a Reaper region/marker CSV (scale segments as regions, placement segments as markers) to output/reaper/ and print the path; import it via Reaper's Region/Marker Manager (right-click → Import region/marker set…) to view the segments aligned to the MIDI notes. Default off.",
             DefaultValueFactory = _ => false,
         };
+        var analyzeSegmentBridgesOption = new Option<bool>("--segment-bridges")
+        {
+            Description = "Also emit two segment-bridges tables (scale and placement): like --bridges but between consecutive segments, using each segment's union of sounding keys as its chord. Surfaces cross-segment loops a per-chunk list hides (e.g. an 8@4-segment ↔ 15@11-segment alternation). Honours --min-subset-notes / --collapse-isomorphic / --pool-maximal / --name-junctions. Default off.",
+            DefaultValueFactory = _ => false,
+        };
 
         var analyzeMidiCommand = new Command(
             "midi",
@@ -1815,6 +1820,7 @@ class Program
         analyzeMidiCommand.Add(analyzeStablePlacementsOption);
         analyzeMidiCommand.Add(analyzeSegmentsOption);
         analyzeMidiCommand.Add(analyzeReaperOption);
+        analyzeMidiCommand.Add(analyzeSegmentBridgesOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1836,6 +1842,7 @@ class Program
             var stablePlacements = parse.GetValue(analyzeStablePlacementsOption);
             var showSegments = parse.GetValue(analyzeSegmentsOption);
             var writeReaper = parse.GetValue(analyzeReaperOption);
+            var showSegmentBridges = parse.GetValue(analyzeSegmentBridgesOption);
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
@@ -1895,7 +1902,7 @@ class Program
 
             SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements, stablePlacements);
 
-            if (showSegments || writeReaper)
+            if (showSegments || writeReaper || showSegmentBridges)
             {
                 var scaleLabels = analyses.Select(SongAnalysis.ScaleLabels).ToList();
                 var placementLabels = analyses.Select(a => SongAnalysis.PlacementLabels(a, stablePlacements, k)).ToList();
@@ -1915,6 +1922,18 @@ class Program
                     var csv = ReaperMarkerCsv.Build(scaleSegments, placementSegments, ticksPerQuarter, tempo);
                     ReaperMarkerCsv.Write(csvPath, csv);
                     AnsiConsole.MarkupLine($"[green]Wrote Reaper region/marker CSV:[/] {Markup.Escape(Path.GetFullPath(csvPath))}");
+                }
+
+                if (showSegmentBridges)
+                {
+                    var scaleSegBridges = SongAnalysis.SegmentBridges(
+                        chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
+                    var placeSegBridges = SongAnalysis.SegmentBridges(
+                        chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
+                    SongAnalysisTableRenderer.RenderBridges(
+                        scaleSegBridges, minSubsetNotes, nameJunctions, title: "scale segment bridges", indexPrefix: "seg");
+                    SongAnalysisTableRenderer.RenderBridges(
+                        placeSegBridges, minSubsetNotes, nameJunctions, title: "placement segment bridges", indexPrefix: "seg");
                 }
             }
 

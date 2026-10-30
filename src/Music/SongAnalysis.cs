@@ -146,15 +146,71 @@ public static class SongAnalysis
         {
             var from = chunks[i];
             var to = chunks[i + 1];
-            var (category, triplets) = ChordProgressions.ComputePair(
-                from.Keys, to.Keys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
-                CollapseFilter.None, ktet);
-            var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
-            if (nameJunctions) subset = JunctionLabels(triplets, ktet);
-            result.Add(new ChunkBridge(
-                from.Index, to.Index, from.Keys, to.Keys, category, superset, subset));
+            result.Add(Pair(
+                from.Index, to.Index, from.Keys, to.Keys,
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
         }
         return result;
+    }
+
+    // The same progression bridges as Bridges, but between consecutive *segments* rather than chunks.
+    // Each segment's representative key-set is the union of its chunks' sounding keys (a 1-chunk
+    // segment reduces to that chunk's keys, so this generalizes Bridges); from there the machinery is
+    // identical (ChordProgressions.ComputePair → BridgeLabels, optional JunctionLabels). The emitted
+    // ChunkBridge records key FromIndex/ToIndex on the segment ordinal (0,1,2,…) and carry the two
+    // segment unions as From/ToKeys. Surfaces cross-segment loops a per-chunk bridges table hides —
+    // e.g. an 8@4-segment ↔ 15@11-segment alternation reads down the Superset column.
+    public static IReadOnlyList<ChunkBridge> SegmentBridges(
+        IReadOnlyList<SongChunk> chunks,
+        IReadOnlyList<LabelSegment> segments,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        bool nameJunctions,
+        int ktet)
+    {
+        var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
+        var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
+        for (var i = 0; i + 1 < segments.Count; i++)
+            result.Add(Pair(
+                i, i + 1, unions[i], unions[i + 1],
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+        return result;
+    }
+
+    // The union of sounding keys across a segment's chunks — distinct pitch classes, sorted ascending.
+    // Chunk .Index is monotonic and preserved under --from/--to, so [FromIndex, ToIndex] selects the
+    // segment's chunks.
+    private static IReadOnlyList<int> SegmentUnion(IReadOnlyList<SongChunk> chunks, LabelSegment segment)
+        => chunks
+            .Where(c => c.Index >= segment.FromIndex && c.Index <= segment.ToIndex)
+            .SelectMany(c => c.Keys)
+            .Distinct()
+            .OrderBy(k => k)
+            .ToList();
+
+    // Classify one ordered key-set pair into a progression bridge (shared by Bridges and
+    // SegmentBridges so both label bridges identically). fromIdx/toIdx are the display indices
+    // (chunk .Index for chunks, segment ordinal for segments).
+    private static ChunkBridge Pair(
+        int fromIdx,
+        int toIdx,
+        IReadOnlyList<int> fromKeys,
+        IReadOnlyList<int> toKeys,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        bool nameJunctions,
+        int ktet)
+    {
+        var (category, triplets) = ChordProgressions.ComputePair(
+            fromKeys, toKeys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
+            CollapseFilter.None, ktet);
+        var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+        if (nameJunctions) subset = JunctionLabels(triplets, ktet);
+        return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
     // The named junction scales of a pair's subset triplets: one label per distinct (Origin, Target)

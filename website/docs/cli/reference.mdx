@@ -503,7 +503,7 @@ input rather than output type).
 ```bash
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] [--from 0] [--to -1] \
-  [--placements] [--stable-placements] [--segments] [--reaper] \
+  [--placements] [--stable-placements] [--segments] [--reaper] [--segment-bridges] \
   [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -590,6 +590,15 @@ above, e.g. `hm@9` — via the named-scale catalog), falling back to the raw `{k
 lands on no catalog scale. Because the union
 ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
 junctions — the intended reading when the raw `P_A·S·P_B` list explodes.
+
+`--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
+bridges tables (scale and placement) classifying each consecutive *segment* pair. A segment's chord is
+the **union of its chunks' sounding keys** (a one-chunk segment reduces to that chunk's key-set, so
+this generalizes `--bridges`), and the pair runs through the same `ChordProgressions.ComputePair`
+classifier. Reading the **Superset** column top-to-bottom then surfaces a cross-*segment* loop the
+per-chunk bridges table hides — e.g. the Für-Elise `8@4`-segment ↔ `15s@11`-segment alternation. It
+honours the same `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-junctions`
+flags and computes the segmentation even when `--segments` is off.
 
 Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
 placements) is a planned follow-up; this first cut establishes the per-chunk mapping.

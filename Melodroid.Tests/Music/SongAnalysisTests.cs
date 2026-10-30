@@ -185,6 +185,76 @@ public class SongAnalysisTests
         named.SubsetBridges.Count.Should().BeLessThanOrEqualTo(raw.SubsetBridges.Count);
     }
 
+    // A segment spanning chunk .Index values [from, to]; beats/length/witnesses are irrelevant to
+    // SegmentBridges (it works off the chunk unions over the index range).
+    private static LabelSegment Seg(int from, int to) =>
+        new(from, to, from, to + 1, to - from + 1, Array.Empty<string>());
+
+    // A segment's chord is the union of its chunks' sounding keys: seg0 = chunks {0,4} ∪ {0,7} =
+    // {0,4,7} (C major), seg1 = chunks {0,5} ∪ {5,9} = {0,5,9} (F major). The bridge between them is
+    // therefore the same C → F the chunk bridges show: superset bridge 8@5.
+    [Fact]
+    public void SegmentBridges_UnionOfChunksIsTheBridgeKeySet()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 4 }),
+            new SongChunk(1, 1, 2, new[] { 0, 7 }),
+            new SongChunk(2, 2, 3, new[] { 0, 5 }),
+            new SongChunk(3, 3, 4, new[] { 5, 9 }),
+        };
+        var segments = new[] { Seg(0, 1), Seg(2, 3) };
+
+        var bridges = SongAnalysis.SegmentBridges(
+            chunks, segments, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet);
+
+        bridges.Should().ContainSingle();
+        bridges[0].FromIndex.Should().Be(0);   // segment ordinal, not chunk index
+        bridges[0].ToIndex.Should().Be(1);
+        bridges[0].FromKeys.Should().Equal(0, 4, 7);   // distinct, sorted union of seg0's chunks
+        bridges[0].ToKeys.Should().Equal(0, 5, 9);
+        bridges[0].SupersetBridges.Should().Contain("8@5");   // C → F, as in the chunk CFG loop
+    }
+
+    // A segmentation of one chunk per segment must reduce to the chunk bridges exactly: same ordered
+    // key-set pairs, so the same categories. This is the generalization property — SegmentBridges over
+    // singletons is Bridges.
+    [Fact]
+    public void SegmentBridges_SingletonSegments_MatchChunkBridges()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 4, 7 }),   // C
+            new SongChunk(1, 1, 2, new[] { 0, 5, 9 }),   // F
+            new SongChunk(2, 2, 3, new[] { 2, 7, 11 }),  // G
+            new SongChunk(3, 3, 4, new[] { 0, 4, 7 }),   // C
+        };
+        var singletons = new[] { Seg(0, 0), Seg(1, 1), Seg(2, 2), Seg(3, 3) };
+
+        var segBridges = SongAnalysis.SegmentBridges(
+            chunks, singletons, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet);
+        var chunkBridges = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: false, Ktet);
+
+        segBridges.Select(b => b.Category).Should().Equal(chunkBridges.Select(b => b.Category));
+        segBridges.Select(b => b.SupersetBridges).Should().BeEquivalentTo(
+            chunkBridges.Select(b => b.SupersetBridges));
+    }
+
+    [Fact]
+    public void SegmentBridges_FewerThanTwoSegments_ReturnsEmpty()
+    {
+        var chunks = new[] { new SongChunk(0, 0, 1, new[] { 0, 4, 7 }) };
+
+        SongAnalysis.SegmentBridges(
+            chunks, new[] { Seg(0, 0) }, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet)
+            .Should().BeEmpty();
+    }
+
     private static KeySupersetRow Row(int lcm, int at, params int[] keys) =>
         new(new Placement(lcm, at, keys), Array.Empty<Fraction>(), 0);
 
