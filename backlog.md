@@ -5,10 +5,12 @@
 
 * Does preference for small primes tie in with musical neurodynamics?
 
-* Auto-analyzer for midi files, mapping every quantized pulse to a scale and possibly to a chord+melody fingerprint.
+* Go through fur elise, investigate unclassified parts, e.g. scale region 23-24 where dim7 is active.
 
 * scale-fingerprints could perhaps be used with a programmable LED keyboard to show which scales are available from pressed keys. 
 As a POC we could have a virtual programmable LED keyboard which shows a piano roll on the screen, reads midi input and lights up keys, so the player can watch the screen while playing if there is no physical LED keyboard.
+
+* section on scale fingerprints for pragmatic music, what keys imply what perceptions based on current chord?
 
 ## Intro (intro.mdx)
 
