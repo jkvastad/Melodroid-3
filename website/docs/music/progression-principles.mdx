@@ -413,6 +413,22 @@ $$
 Unlike dim7 the aug chord does fit into placements: the collapse key of `15@k` is $(k+8)\bmod 12$, giving `{11, 3, 7}`, none of which lies in aug.
 Aug@0 then could function as a core for 15@3,7,11.
 
+Below we have Am (`15s@11`), aug@0 (`15s@11`), where Fm (`15s@7`),  C (`15s@7`), aug@0 (`15s@7`)
+
+<RhythmPatternPlayer
+  meter="4 4 4 2 2"
+  subdivisions="4"
+  bpm={102}
+  instrument="piano"
+  script={[
+    {chord: [0, 4, 9], keys: [0, 2, 4, 8, 9, 11], label: 'Am · 15s@11'},
+    {chord: [0, 4, 8], keys: [0, 2, 4, 8, 9, 11], label: 'aug@0 · 15s@11'},
+    {chord: [0, 5, 8], keys: [0, 4, 5, 7, 8, 10], label: 'Fm · 15s@7'},
+    {chord: [0, 4, 7], keys: [0, 4, 5, 7, 8, 10], label: 'C · 15s@7'},    
+    {chord: [0, 4, 8], keys: [0, 4, 5, 7, 8, 10], label: 'aug@0 · 15s@7'},
+  ]}
+/>
+
 ### Pentatonic major
 The major pentatonic pent@0 = `{0 2 4 7 9}` is not itself an lcm family, but unlike dim7 it full-matches several placements —
  where dim7 is contained by none, the pentatonic is contained by many. Using [`table supersets --keys 0 2 4 7 9`](/docs/cli/reference#supersets):
