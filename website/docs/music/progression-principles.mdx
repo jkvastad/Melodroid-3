@@ -348,13 +348,13 @@ TODO
 ### Em to A
 TODO
 
-## Symmetric chords and Scale Cores
+## Symmetric chords and scale cores
 So far we have looked into chord progressions as chords belonging to placements and either moving within a placement (superset principle) or between two junctioned placements (subset principle).
 Let's now look at the symmetric chords dim7@0 = `{0 3 6 9}` and aug@0 = `{0 4 8}`. 
 These equally divide the octave, providing no asymmetry for prefering a placement root.
 
 Where an ordinary chord collapses according to preference, a symmetric chord has no reason to collapse since every root is equally plausible.
-Perhaps this is why dim7 and aug have a dramtic or tense flavor, as they are in an indeterminate state.
+Perhaps this is why dim7 and aug have a dramatic or tense flavor, as they are in an indeterminate state.
 
 Dim7 is contained by no placement but is contained by harmonic minor and harmonic major, while aug lies in lcm 15 (and its lcm 20 subset).
 A similar situation occurs with the major pentatonic pent@0 = `{0 2 4 7 9}`, a traditional scale which is not a placement but is shared between 24@0,5,7.
@@ -363,17 +363,27 @@ Dim7, aug and pentatonic act as a core between these scales.
 ### Dim7
 Let's look at the first order subsets of dim7 using [`table subsets --keys 0 3 6 9`](/docs/cli/reference#subsets).
 
-TODO: insert table with fist order output
+```
+Triad    lcm 15   lcm 24
+0 3 6     15@3     24@1
+0 3 9     15@0     24@10
+0 6 9     15@9     24@7
+3 6 9     15@6     24@4
+```
 
 No lcm family full-matches dim7, but its four diminished-triad faces each match an lcm 15 and an lcm 24 placement (e.g. `{0 3 6}` is `15@3` and `24@1`).
-In addition, dim7@0 is part of harmonic minor and major at roots 1,4,7 and 10.
+Notably the lcm 15 anchors are the dim7 keys `{0 3 6 9}` themselves, while the lcm 24 anchors `{1 4 7 10}` are exactly the harmonic minor and major roots which contain dim7.
 
-An example from Beethoves Fur Elise which contains dim7@4, part of hm@2, can be used to draw random melody to a basic rhythm for a similar feel.
+Where a junction scale functions as a modulating set for two placements by bridging them, perhaps dim7 works as a core between the harmonic minor and major scales.
+The indeterminate state of the symmetric chord then is the bridge, allowing to modulate into a specific harmonic scale, which can then further be modulated between its placements.
+
+For example in Beethoven's Für Elise around the 1:25 mark there is a dim7@4 passage with melody and chords from the related hm@2. 
+Drawing random melody to a basic rhythm produces a similar feel.
 
 <RhythmPatternPlayer
   meter="4 4"
   subdivisions="4"
-  bpm={90}
+  bpm={110}
   instrument="piano"
   script={[
     {chord: [1, 4, 7, 10], keys: [1, 2, 4, 5, 7, 9, 10], label: 'dim7@4 → hm@2'},
@@ -381,16 +391,54 @@ An example from Beethoves Fur Elise which contains dim7@4, part of hm@2, can be 
   ]}
 />
 
-### Augmented
-Looking at the supersets of the augmented triad we find ...
+### Augmented triad
+Looking at the supersets of the augmented triad with [`table supersets --keys 0 4 8`](/docs/cli/reference#supersets) we find it sits inside six placements:
 
-TODO: supersets command reference, along with output showing the 15@3,7,11 containers:
+```
+LCM  Key  Keys (12-tet)
+ 20    0  0 3 4 7 8 10
+ 20    4  4 7 8 11 0 2
+ 20    8  8 11 0 3 4 6
+ 15    3  3 4 6 8 11 0 1
+ 15    7  7 8 10 0 3 4 5
+ 15   11  11 0 2 4 7 8 9
+```
+
+Dropping the lcm 20 rows (which collapse to lcm 15 via `20@k → 15@(k+7)`) leaves three lcm 15 containers, one per rotation of aug's 3-fold symmetry:
 
 $$
 \{0,4,8\} \subseteq 15@\{3,7,11\}
 $$
 
 Unlike dim7 the aug chord does fit into placements: the collapse key of `15@k` is $(k+8)\bmod 12$, giving `{11, 3, 7}`, none of which lies in aug.
+Aug@0 then could function as a core for 15@3,7,11.
 
-### Pentatonic Major
-TODO: similar section to the ones above, defining pent@0, showing how it is part of 24@0,5,7 and thus useful for modulating between these scales which are closely related via the 4@0 extended triad placement graph.
+### Pentatonic major
+The major pentatonic pent@0 = `{0 2 4 7 9}` is not itself an lcm family, but unlike dim7 it full-matches several placements —
+ where dim7 is contained by none, the pentatonic is contained by many. Using [`table supersets --keys 0 2 4 7 9`](/docs/cli/reference#supersets):
+
+```
+LCM  Key  Keys (12-tet)
+ 18    2  2 4 7 9 11 0
+ 18    7  7 9 0 2 4 5
+ 15    4  4 5 7 9 0 1 2
+ 15   11  11 0 2 4 7 8 9
+ 24    0  0 2 4 5 7 9 11
+ 24    5  5 7 9 10 0 2 4
+ 24    7  7 9 11 0 2 4 6
+```
+
+The three lcm 24 containers 24@0,5,7 are C, F and G major — the three major scales a fifth apart, adjacent through the 4@0 extended triad placement graph. 
+The pentatonic is their shared core, so a pentatonic melody stays consonant across all three and lets us modulate freely between them.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], keys: [0, 2, 4, 7, 9], label: 'C · pent@0'},
+    {chord: [5, 9, 0], keys: [0, 2, 4, 7, 9], label: 'F · pent@0'},
+    {chord: [7, 11, 2], keys: [0, 2, 4, 7, 9], label: 'G · pent@0'},
+    {chord: [0, 4, 7], keys: [0, 2, 4, 7, 9], label: 'C · pent@0'},
+  ]}
+/>
