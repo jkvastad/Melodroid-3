@@ -2,7 +2,7 @@
 // interpretations live in the browser instead of shelling out to the CLI. Mirrors
 // src/Music/RatioMath.cs, src/Music/KeysNeeded.cs and src/Music/Placements.cs. The C# code
 // stays the source of truth; verify parity against
-// `melodroid table key-supersets --keys ... --ktet 12`.
+// `melodroid table supersets --keys ... --ktet 12`.
 //
 // Reuses the fraction primitives already ported in lcmFamilies.ts (no math duplication).
 

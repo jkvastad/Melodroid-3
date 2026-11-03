@@ -30,7 +30,7 @@ for comparing isomorphic placements.
 A set of keys might overlap between lcm families. Running e.g.
 
 ```bash
-melodroid table key-supersets --keys 0 4 7 --ktet 12
+melodroid table supersets --keys 0 4 7 --ktet 12
 ```
 
 lists every placement whose keys contain the C major triad. The `Extra` column lists the keys a
@@ -55,7 +55,7 @@ Now that we have defined placements, we can express the lcm family graph from lc
 Given the tonic (key 0), we can list all placements which contain it by running
 
 ```bash
-melodroid table key-supersets --keys 0 --ktet 12 --collapse
+melodroid table supersets --keys 0 --ktet 12 --collapse
 ```
 
 The `--collapse` flag folds placements that cover the same keys, down from 63 placements to 41.

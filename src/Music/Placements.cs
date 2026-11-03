@@ -81,7 +81,7 @@ public static class Placements
 
     // Partition two superset result lists (from FindSupersets) by placement identity (Lcm, At):
     // Common = placements that are a superset of both key sets; OnlyA / OnlyB = placements unique
-    // to one. Incoming sort order (extra → lcm → at) is preserved. Used by `key-supersets --compare`.
+    // to one. Incoming sort order (extra → lcm → at) is preserved. Used by `supersets --compare`.
     public static (
         IReadOnlyList<KeySupersetRow> Common,
         IReadOnlyList<KeySupersetRow> OnlyA,

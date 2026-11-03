@@ -92,7 +92,7 @@ public static class ChordsTableRenderer
     // The containing LCM-family placements for one chord, tightest first (FindSupersets already
     // sorts by extra-keys count, then LCM, then anchor). Each token is "lcm@at" — the family LCM at
     // the anchor key where its 1/1 fundamental sits; any keys the placement carries beyond the chord
-    // are left implicit (inspect them via `key-supersets`). By default placements covering the same
+    // are left implicit (inspect them via `supersets`). By default placements covering the same
     // keys (isomorphic duplicates) are collapsed to their lowest LCM; --explicit-placements shows
     // them all. Empty for a chord that no family placement contains; overflow past the cap collapses
     // to " …(+M)".

@@ -141,10 +141,10 @@ melodroid table family-overlap --lcm-sweep 4 --lcm-ref 24 \
 
 Sweeps one LCM shape against a reference family; green rows sit wholly inside the reference.
 
-### `key-supersets`
+### `supersets`
 
 ```bash
-melodroid table key-supersets --keys 0 4 7 [--compare 0 3 7] [--collapse] \
+melodroid table supersets --keys 0 4 7 [--compare 0 3 7] [--collapse] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -159,7 +159,7 @@ melodroid table superpositions --keys 0 2 4 5 7 9 11 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `key-supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone. `--max-results` caps the listing.
+Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone. `--max-results` caps the listing.
 
 By default only **unique-reference** decompositions are listed: every piece shares one reference key (anchor), shown in the `Ref` column. The reference of a placement `L@a` is its anchor `a` — the key where the family's fundamental (`1/1`) sits — so a unique-reference cover roots the whole sound on a single fundamental. Isomorphic families are handled as aliases: the same keyboard key-set reachable by different families at shifted anchors (e.g. `4@0` and `3@7`, or `8@0` and `12@7`) lets a piece join whichever reference its partners share. With `--min-block-lcm 8 --max-block-lcm 12` this exposes the major scale as `8@0 + 12@0` (rooted on key 0, no extras) — the shared-reference alias of the cross-anchor `8@0 + 8@5`. Because the pieces share a fundamental, the whole superposition's wave pattern length is the `lcm` of their family LCMs, shown in the `LCM` column: for `8@0 + 12@0` that is `lcm(8, 12) = 24` — the very pattern of the single-piece `24@0` cover.
 
@@ -277,10 +277,10 @@ chord — the diminished triad `0 3 6`, the diminished seventh `0 3 6 9`, and th
 (shown in its compact necklace form `0 3 6 8`, which contains `0 3 6`); a chord with any
 unjustified tritone is still dropped. A final
 **Placements** column lists the LCM-family placements whose keys contain the chord — the inline
-form of feeding the chord's key set to [`key-supersets`](#key-supersets). They are shown tightest
+form of feeding the chord's key set to [`supersets`](#supersets). They are shown tightest
 (fewest extra keys) first, each as `lcm@at` (the family LCM at the anchor key where its `1/1`
 fundamental sits); any keys a placement carries beyond the chord are left implicit — inspect them
-with `key-supersets`. By default, placements that cover the **same keys** (isomorphic families
+with `supersets`. By default, placements that cover the **same keys** (isomorphic families
 sweep out identical key patterns, so their matching placements coincide — e.g. the major triad's
 `3@7` and `4@0` both land on `0 4 7`) are collapsed to the lowest LCM; `--explicit-placements`
 restores the full list. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
@@ -517,7 +517,7 @@ changes" preprocessing). For every chunk the table lists:
 - the sorted pitch-class **key-set** and its size,
 - the named [scales](#scale-fingerprint) containing it, and
 - (with `--placements`, default off) a **Placements** column listing the
-  [LCM-family placements](#placement) containing it ([`FindSupersets`](#key-supersets),
+  [LCM-family placements](#placement) containing it ([`FindSupersets`](#supersets),
   isomorphic-collapsed, capped).
 
 `--stable-placements` (default off) shows placements in **stable form**. It (1) drops an unstable

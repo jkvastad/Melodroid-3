@@ -76,7 +76,7 @@ table key-sweep         bin --keys / --ratios stepping through a k-tet tuning's 
 table placement         map an LCM family's fractions onto k-tet keys at a chosen anchor
 table renormalizations  renormalize one LCM family (--lcm) onto each of its members, showing the resulting (isomorphic) fraction sets (--approximate snaps non-good images to the nearest good fraction and reports the smallest bin radius, exact + %, that makes each renormalization all-good; --per-snap-c additionally annotates each snapped good value with the exact radius that individual snap required; --lcm-tradeoff adds a per-row LCM↔radius frontier — for each achievable wave-pattern length ≤ --max-lcm, the smallest bin radius within --max-c (default 0.05) needed to snap down to it, since a worse per-fraction snap can hold the overall LCM lower; --placements adds a Placement column re-expressing each rotation as a --ktet (default 12) placement — = L'@k for an exact isomorphism, ⊆ L'@k for a renormalised subset — for rotations reaching a good LCM within the syntonic comma c ≤ 1/161, else —)
 table family-overlap    sweep one family's placements against a reference family
-table key-supersets     placements whose keys are a superset of given --keys (--compare splits vs a second key set: common / only-A / only-B; --collapse folds placements covering the same keys to the lowest-LCM representative)
+table supersets         placements whose keys are a superset of given --keys (--compare splits vs a second key set: common / only-A / only-B; --collapse folds placements covering the same keys to the lowest-LCM representative)
 table superpositions    minimal ways to cover --keys as a union of LCM-family placements (shared reference by default; --any-reference allows mixed anchors; --collapse-aliases folds same-count isomorphic aliases to a lowest-LCM representative; --reference restricts to given anchor keys)
 table voicings          lowest-penalty ascending voicings (--lcm or --keys)
 table subsets           key-sweep every size-≥2 subset of a key set (--lcm@--at or --keys), listing the LCM families those subsets full-match
@@ -146,7 +146,7 @@ The *why*, so the codebase doesn't drift away from its research purpose.
 
 **Sweeps** — bin renormalized input ratios against the good fractions, either across a swept reference octave ([src/Music/OctaveSweep.cs](src/Music/OctaveSweep.cs)) or stepping through the *k* keys of a tuning ([src/Music/KeySweep.cs](src/Music/KeySweep.cs)); see docs `keyboard/key-sweep`.
 
-**Placements & voicings** — a **placement** maps an LCM family's fractions onto *k*-tet keys anchored on a chosen key ([src/Music/Placements.cs](src/Music/Placements.cs), used by `placement`, `family-overlap`, `key-supersets`, `chord-melody`). **Voicings** are ascending, semitone-avoiding orderings of a key set, lowest-penalty per root ([src/Music/Voicings.cs](src/Music/Voicings.cs)); see docs `music/placements` and `music/voicings`.
+**Placements & voicings** — a **placement** maps an LCM family's fractions onto *k*-tet keys anchored on a chosen key ([src/Music/Placements.cs](src/Music/Placements.cs), used by `placement`, `family-overlap`, `supersets`, `chord-melody`). **Voicings** are ascending, semitone-avoiding orderings of a key set, lowest-penalty per root ([src/Music/Voicings.cs](src/Music/Voicings.cs)); see docs `music/placements` and `music/voicings`.
 
 A good change usually:
 

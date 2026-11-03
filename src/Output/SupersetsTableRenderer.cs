@@ -3,7 +3,7 @@ using Spectre.Console;
 
 namespace Melodroid_3.Output;
 
-public static class KeySupersetsTableRenderer
+public static class SupersetsTableRenderer
 {
     public static void Render(
         IReadOnlyCollection<int> requestedKeys,
@@ -64,7 +64,7 @@ public static class KeySupersetsTableRenderer
                 extraStr);
         }
 
-        table.Caption($"key-supersets: {KeySetString(requestedKeys)} · {rows.Count} placement{(rows.Count == 1 ? "" : "s")} · {ktet}-tet");
+        table.Caption($"supersets: {KeySetString(requestedKeys)} · {rows.Count} placement{(rows.Count == 1 ? "" : "s")} · {ktet}-tet");
         return table;
     }
 

@@ -584,42 +584,42 @@ class Program
             return 0;
         });
 
-        var keySupersetsKeysOption = new Option<int[]>("--keys")
+        var supersetsKeysOption = new Option<int[]>("--keys")
         {
             Description = "Target key indices on a --ktet keyboard, space-separated. Any integer is accepted and octave-normalized into [0, ktet-1] (e.g. 14 → 2, -1 → ktet-1). Duplicates are folded.",
             Required = true,
             AllowMultipleArgumentsPerToken = true,
         };
 
-        var keySupersetsCompareOption = new Option<int[]>("--compare")
+        var supersetsCompareOption = new Option<int[]>("--compare")
         {
             Description = "Optional second key set to compare against --keys. When given, supersets are split into three tables: common to both, unique to --keys, and unique to --compare. Octave-normalized and folded like --keys.",
             AllowMultipleArgumentsPerToken = true,
         };
 
-        var keySupersetsCollapseOption = new Option<bool>("--collapse")
+        var supersetsCollapseOption = new Option<bool>("--collapse")
         {
             Description = "Collapse placements that cover the identical key set (isomorphic families sweep out the same keys) down to the lowest-LCM representative.",
         };
 
-        var keySupersetsCommand = new Command(
-            "key-supersets",
+        var supersetsCommand = new Command(
+            "supersets",
             "Enumerate every (lcm, at) placement whose k-tet keys are a superset of the given --keys; ranked by smallest extra-keys count. Pass --compare to split supersets against a second key set.");
-        keySupersetsCommand.Add(maxSizeOption);
-        keySupersetsCommand.Add(maxPrimeOption);
-        keySupersetsCommand.Add(maxLcmOption);
-        keySupersetsCommand.Add(keySupersetsKeysOption);
-        keySupersetsCommand.Add(keySupersetsCompareOption);
-        keySupersetsCommand.Add(keySupersetsCollapseOption);
-        keySupersetsCommand.Add(ktetOption);
-        keySupersetsCommand.SetAction(parse =>
+        supersetsCommand.Add(maxSizeOption);
+        supersetsCommand.Add(maxPrimeOption);
+        supersetsCommand.Add(maxLcmOption);
+        supersetsCommand.Add(supersetsKeysOption);
+        supersetsCommand.Add(supersetsCompareOption);
+        supersetsCommand.Add(supersetsCollapseOption);
+        supersetsCommand.Add(ktetOption);
+        supersetsCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
-            var keys = parse.GetValue(keySupersetsKeysOption) ?? Array.Empty<int>();
-            var compare = parse.GetValue(keySupersetsCompareOption) ?? Array.Empty<int>();
-            var collapse = parse.GetValue(keySupersetsCollapseOption);
+            var keys = parse.GetValue(supersetsKeysOption) ?? Array.Empty<int>();
+            var compare = parse.GetValue(supersetsCompareOption) ?? Array.Empty<int>();
+            var collapse = parse.GetValue(supersetsCollapseOption);
             var k = parse.GetValue(ktetOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -637,7 +637,7 @@ class Program
 
             if (compare.Length == 0)
             {
-                KeySupersetsTableRenderer.Render(dedupKeys, k, rows);
+                SupersetsTableRenderer.Render(dedupKeys, k, rows);
                 return 0;
             }
 
@@ -645,7 +645,7 @@ class Program
             var compareRows = Placements.FindSupersets(compareKeys, families, k);
             if (collapse) compareRows = Placements.CollapseIsomorphic(compareRows);
             var (common, onlyA, onlyB) = Placements.CompareSupersets(rows, compareRows);
-            KeySupersetsTableRenderer.RenderComparison(dedupKeys, compareKeys, k, common, onlyA, onlyB);
+            SupersetsTableRenderer.RenderComparison(dedupKeys, compareKeys, k, common, onlyA, onlyB);
             return 0;
         });
 
@@ -1384,7 +1384,7 @@ class Program
         tableCommand.Add(placementCommand);
         tableCommand.Add(renormalizationsCommand);
         tableCommand.Add(familyOverlapCommand);
-        tableCommand.Add(keySupersetsCommand);
+        tableCommand.Add(supersetsCommand);
         tableCommand.Add(superpositionsCommand);
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(scaleFingerprintCommand);
