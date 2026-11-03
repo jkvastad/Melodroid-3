@@ -50,6 +50,7 @@ export type RhythmPatternPlayerProps = {
   maxBpm?: number;
   syncopation?: number; // initial [0,1]; default 0
   resolution?: number; // initial [0,1]; default 1
+  instrument?: 'sine' | 'piano'; // initial instrument timbre; default 'sine'
   phrases?: boolean; // show the phrase-repetition control (opt-in); default false
   phrase?: string; // initial phrase scheme, e.g. 'ABAC' or 'A Ba A Ca'; default ''
   pitchHz?: number; // fixed blip pitch in Hz; default 165
@@ -769,6 +770,7 @@ export default function RhythmPatternPlayerClient({
   maxBpm = 240,
   syncopation: syncProp = 0,
   resolution: resProp = 1,
+  instrument: instrumentProp = 'sine',
   phrases = false,
   phrase: phraseProp = '',
   pitchHz = 196,
@@ -857,7 +859,7 @@ export default function RhythmPatternPlayerClient({
   // piano. Piano governs both the melody blips and (in chord mode) the chord accompaniment.
   // Read at Play time — changing it mid-playback applies on the next Play. `pianoLoading`
   // gates the first Play with Piano selected while the samples fetch.
-  const [instrument, setInstrument] = useState<'sine' | 'piano'>('sine');
+  const [instrument, setInstrument] = useState<'sine' | 'piano'>(instrumentProp);
   const [pianoLoading, setPianoLoading] = useState(false);
 
   // Melody (only surfaced when `melody`): which intro-table LCM family to draw pitches

@@ -348,10 +348,49 @@ TODO
 ### Em to A
 TODO
 
-## Symmetric chords
+## Symmetric chords and Scale Cores
 So far we have looked into chord progressions as chords belonging to placements and either moving within a placement (superset principle) or between two junctioned placements (subset principle).
-The symmetric chords dim7@0 = `{0 3 6 9}` and aug@0 = `0 4 8` are a bit special - 
-dim7 is not in placement but instead lies in harmonic minor and major, and while aug lies in lcm 15/20 it is still symmetric making it highly ambigous.
+Let's now look at the symmetric chords dim7@0 = `{0 3 6 9}` and aug@0 = `{0 4 8}`. 
+These equally divide the octave, providing no asymmetry for prefering a placement root.
+
+Where an ordinary chord collapses according to preference, a symmetric chord has no reason to collapse since every root is equally plausible.
+Perhaps this is why dim7 and aug have a dramtic or tense flavor, as they are in an indeterminate state.
+
+Dim7 is contained by no placement but is contained by harmonic minor and harmonic major, while aug lies in lcm 15 (and its lcm 20 subset).
+A similar situation occurs with the major pentatonic pent@0 = `{0 2 4 7 9}`, a traditional scale which is not a placement but is shared between 24@0,5,7.
+Dim7, aug and pentatonic act as a core between these scales.
 
 ### Dim7
-To understand where dim7 fits into the placement hierarchy let's look at its subsets:
+Let's look at the first order subsets of dim7 using [`table subsets --keys 0 3 6 9`](/docs/cli/reference#subsets).
+
+TODO: insert table with fist order output
+
+No lcm family full-matches dim7, but its four diminished-triad faces each match an lcm 15 and an lcm 24 placement (e.g. `{0 3 6}` is `15@3` and `24@1`).
+In addition, dim7@0 is part of harmonic minor and major at roots 1,4,7 and 10.
+
+An example from Beethoves Fur Elise which contains dim7@4, part of hm@2, can be used to draw random melody to a basic rhythm for a similar feel.
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={90}
+  instrument="piano"
+  script={[
+    {chord: [1, 4, 7, 10], keys: [1, 2, 4, 5, 7, 9, 10], label: 'dim7@4 → hm@2'},
+    {chord: [2, 5, 9], keys: [1, 2, 4, 5, 7, 9, 10], label: 'Dm · hm@2'},
+  ]}
+/>
+
+### Augmented
+Looking at the supersets of the augmented triad we find ...
+
+TODO: supersets command reference, along with output showing the 15@3,7,11 containers:
+
+$$
+\{0,4,8\} \subseteq 15@\{3,7,11\}
+$$
+
+Unlike dim7 the aug chord does fit into placements: the collapse key of `15@k` is $(k+8)\bmod 12$, giving `{11, 3, 7}`, none of which lies in aug.
+
+### Pentatonic Major
+TODO: similar section to the ones above, defining pent@0, showing how it is part of 24@0,5,7 and thus useful for modulating between these scales which are closely related via the 4@0 extended triad placement graph.
