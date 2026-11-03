@@ -1,6 +1,12 @@
 # Analyze MIDI
 ## Fur Elise segment analysis POC
-Mostly alternating between 8@4 and 15@11, sometimes moving into 24@0 and 24@5
+Mostly alternating between 8@4 and 15@11, sometimes moving into 24@0 and 24@5, tricky parts with dim7
+
+### Underlying theory
+* Dim7 as unstable glue? Shared between four harmonic minors. Similarly pentatonic major is stable glue between three lcm 24 placements.
+
+
+
 
 ### Segment faults
 * placements 18->19 has no junction (chunk 74.75-75). 
