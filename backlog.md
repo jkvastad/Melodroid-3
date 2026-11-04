@@ -4,19 +4,6 @@ Mostly alternating between 8@4 and 15@11, sometimes moving into 24@0 and 24@5, t
 
 ### Underlying theory
 
-Some fur elise chunks and placement vs scale vs dim 7 discussions, possibly useful:
-
-```
-  # │ keys       │ placements                        │ scales
-442 │ 2 5 8 11   │ —                                 │ hm@0 hm@3 hm@6 hm@9  hM@0 hM@3 hM@6 hM@9
-443 │ 0 4 9      │ 8@5 18@2 18@7 15s@11 24@0 24@5 24@7│ M@0 M@5 M@7 hm@1 hm@4 hm@9 …
-```
-
-Chunk 442 is G#dim7 `{2 5 8 11}`: its placement reading is empty (the hole), while its scale reading is precisely the symmetric glue bundle, printed in full.
-It resolves (chunk 443) onto the A-minor triad `{0 4 9}` — of the eight equal facets the context picks `hm@9`, G#→A breaking the symmetry.
-This is the vii°7→i cadence, recovered from first principles rather than assumed.
-
-
 ### Segment faults
 * placements 18->19 has no junction (chunk 74.75-75). 
 Semingly plays on the F7 chord, likely some sort of blues@0 going on with key 3 and 24@5 going into 24@0.
