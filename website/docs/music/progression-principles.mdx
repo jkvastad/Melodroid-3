@@ -18,31 +18,40 @@ explaining dissonance of lcm 15 and 20 as well as why the isomorphic lcm familie
 Thus far we have mostly been looking at static harmony, i.e. various block chords, with limited melody.
 Let's now turn to more dynamic harmony using series of chords, also known as chord progressions.
 
-While any two chords can be played one after another, some seem to fit better together -
-surely there are reasons for phenomena such as cadences, circle of fifths and 3-chord-songs (e.g. C, F, G). 
+While any two chords can be played one after another, some seem to fit better together.
+Surely there are reasons behind phenomena such as cadences, circles of fifths and 3-chord-songs (e.g. C, F, G). 
 If we can define principles based on physical features which recover popular progressions, 
 we might glean some insight into the inner workings of music and then extrapolate from those principles to aid in composition.
 
 ## The Principles of Chord Progressions
 
-We can define a chord progression as a triplet of placements. 
-Given an origin chord and a target chord, a progression is a triplet of placements consisting of origin-, bridge-, and target-placement:
-* The origin placement contains the origin chord.
-* The target placement contains the target chord.
-* The bridge placement fulfills some progression principle.
+We can define a chord progression as a triplet of key sets.
+Given an origin chord and a target chord, a progression is a triplet of key sets consisting of origin-, bridge-, and target:
+* The origin set contains the origin chord.
+* The target set contains the target chord.
+* The bridge set fulfills some progression principle.
 
-The extended placement graphs show that an important relationship between LCMs is not only shared lcm
+With such a general approach there are likely better and worse origin, target and bridge sets.
+In line with minimizing wpl and primes, perhaps there is some form of cost reduction guiding progressions.
+For instance, playing subsequent key sets which morph into each other while respecting placement relationships minimizes potential costs of context switching, as keys and reference points need not be completely re-parsed.
+
+The extended placement graphs then show that an important relationship between LCMs is not only shared lcm
 supersets (e.g. 8@0 contains 4@0 and 4@5) but also shared lcm subsets (e.g. 18@2 bridges 15@11 and 24@0,7). 
 This motivates two potential principles:
 
 * **Superset Principle** — Chord A can progress to chord B if A shares an lcm superset with B.
 * **Subset Principle** — Chord A can progress to chord B if A shares an lcm subset with B.
 
+Such movement within placement graphs is not the only way to morph.
+Non-lcm key sets such as dim7, aug, blues, harmonic minor and pentatonic major are useful because they are close to several placements.
+Of these dim7 is of special note as it has an interesting tense perception as a block chord without being overly dissonant, despite not being in any placement.
+This could even be a unique feature due to its symmetry and well spaced intervals.
+
+Further restrictions on chord progressions could include stability.
 We previously discussed stability of placements with lcm 15 collapsing to 24 as well as isomorphisms collapsing to representatives (and likely 20@k collapsing to 15@k+7).
 In the context of progressions, such stability may play a role - e.g. perhaps the target placement must be stable given the target chord, but the bridge and origin need not be.
 
-Regarding the subset principle, one wonders to what extent subsets are allowed, as a lot of dyads can serve as shared subsets but perhaps larger lcm families are privileged in this regard.
-
+### Examples
 A concrete example of the **superset** principle for the chord progression C to Eb (4@0 → 4@3):
 
 * C is part of 15@7 (4@0 ≅ 3@7), Eb = 4@3 is part of 18@10.
@@ -69,7 +78,7 @@ A concrete example of the **subset** principle for the chord progression C to Db
 * The subset principle thus allows a progression from 3@7 (15@7) to 4@1 (24@8) via the shared subset
   18@10.
 
-## Scales from the Subset Principle
+## Junction Scales
 In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce coherent melodies while being neither lcm sets nor subsets.
 Instead they appear to be composed of adjacent lcm scales, producing pragmatic key sets for rapid modulation of melody.
 
@@ -90,9 +99,7 @@ Scale                         Size  P_A·S·P_B
 ```
 
 Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` constituents that produced it. 
-The rows are specific anchorings; the same necklace recurs at other anchors and the default option `--dedupe-transposition` keeps one representative per necklace. 
-
-Another important default option is the `--stable` option which removes collapsing keys from the final sets. 
+The rows have also been stabilized with the `--stable` option which removes collapsing keys from the final sets.
 For example `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
 
 In the table we see two classical minor scales — **harmonic minor** and **melodic minor**.
@@ -110,19 +117,17 @@ $$
 15@0 \cup 24@1 = \{0\;1\;3\;5\;6\;8\;9\;10\}
 $$
 
-This however includes the collapse key `8` of `15@0`. Removing it produces
+This however includes the collapse key `8` of `15@0`. 
+Removing it produces harmonic minor with root 10:
 
 $$
 15@0 \cup 24@1 \;\setminus\; \{8\} \;=\; \{0\;1\;3\;5\;6\;9\;10\} \;=\; \mathrm{harm}@10.
 $$
 
-Because `24@1` also contains key `8` the drop has to apply to the finished union, not just to the
-`15@0` side, producing harmonic minor.
-
 ### Melodic minor as a junction
 
 From the extended triad placement graph we see that 15@k relates to 24@(k+1), 24@(k+8) and 18@(k+3).
-At `k = 0` this gives `15@0` *two* `lcm-24` partners sharing the same `18@3` parent. 
+At `k = 0` this gives `15@0` two `lcm-24` partners sharing the same `18@3` parent. 
 Harmonic minor used `24@1` (the `k+1` partner). The `k+8` partner `24@8` is the sibling junction:
 
 $$
@@ -148,6 +153,8 @@ $$
 24@0 \cup 24@5 \;\setminus\; {0\;5} = \{\;2\;4\;7\;9\;10\;11\} = \mathrm{blues}@7
 $$
 
+This echoes our subset inspections in the preference chapter, where blues@4 was closely tied to 24@9, and here we see blues@7 tied to 24@0, repeating the 5 key root difference.
+
 The removed root notes are also roots of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
 Perhaps this ambivalence between two closely adjacent lcm families is the source of the swingy sound.
 
@@ -171,7 +178,7 @@ $$
 This looks similar to the bebop dominant and the blues.
 Instead of mixing two lcm 24 placements from two different branches (8@0,5) we mix two lcm 15 placements from the same distinct branches but less directly since we come from the tetrad instead of the hexad.
 
-This time however *both* sides are `lcm-15`, so *both* collapse keys drop — key `8` from `15@0` and key `1` from
+This time however both sides are `lcm-15`, so both collapse keys drop — key `8` from `15@0` and key `1` from
 `15@5`:
 
 $$
@@ -225,60 +232,6 @@ its key set is quite close to lcm 24 and the earliest branch in that subtree fro
 * Bebop dominant sounds quite bluesy in and of itself, and especielly when omitting the lcm 24 roots 0 and 5, recovering the major blues scale.
 Notably the minor seven chord is present in bebop, and its strong pull to the perfect fourth (C7 -> F) could be due to the composition of the scale.
 * Harmonic major removes both collapsing keys from its lcm 15 constituents.
-
-### Pairwise unions of the leaf nodes
-
-The scales above are specific leaf pairs. 
-Walking the extended major-triad graph down through the two lcm 18 hexads a fifth apart — `18@2` and `18@7` — reaches five leaf placements:
-
-* `18@2` leaves: `15@11`, `24@0`, `24@7`
-* `18@7` leaves: `24@0`, `24@5`, `15@4`
-
-(five, not six, because `24@0` sits under both hexads). 
-Enumerating every pair of these five, taking the stable union each time and grouping by shared hexad:
-
-Within `18@2` (`15@11`, `24@0`, `24@7`):
-
-* $15@11 \cup 24@0 = \{0\;2\;4\;5\;8\;9\;11\} = \mathrm{harm}@9$ (harmonic minor)
-* $15@11 \cup 24@7 = \{0\;2\;4\;6\;8\;9\;11\} = \mathrm{mel}@9$ (melodic minor)
-* $24@0 \cup 24@7 = \{0\;2\;4\;5\;6\;7\;9\;11\} = \mathrm{bebop}@7$ (the dominant bebop again, rooted on 7)
-
-Within `18@7` (`24@0`, `24@5`, `15@4`) the same three scale types recur, transposed:
-
-* $15@4 \cup 24@5 = \{1\;2\;4\;5\;7\;9\;10\} = \mathrm{harm}@2$
-* $15@4 \cup 24@0 = \{1\;2\;4\;5\;7\;9\;11\} = \mathrm{mel}@2$
-* $24@0 \cup 24@5 = \{0\;2\;4\;5\;7\;9\;10\;11\} = \mathrm{bebop}@0$
-
-So each hexad hands us a harmonic minor and a melodic minor — its lcm 15 leaf against each of its two lcm 24 partners — and a bebop dominant from its two lcm 24 leaves.
-The two 24·24 fusions are the *same* bebop necklace at roots a fifth apart: `24@0` belongs to both hexads, so it bebops with `24@5` one way and with `24@7` the other.
-
-The remaining pairs cross the two hexads:
-
-* $15@11 \cup 15@4 = \{1\;2\;4\;5\;8\;9\;11\} = \mathrm{hmaj}@9$ is the **harmonic major** — the two lcm 15 leaves share no lcm 18 parent, meeting only at the deeper `5@4` tetrad.
-* $15@11 \cup 24@5 = \{0\;2\;4\;5\;8\;9\;10\;11\}$ — one key from harmonic minor: dropping key 10 gives $\mathrm{harm}@9$.
-* $24@7 \cup 15@4 = \{1\;2\;4\;5\;6\;7\;9\;11\}$ — 
-this is $24@2 \cup \mathrm{mel}@2$, D major and D melodic minor sharing every note but the third (key 6 vs 5). 
-Dropping key 5 gives the major scale $24@2$, dropping key 6 gives $\mathrm{mel}@2$, and it contains the major blues $\mathrm{blues}@2 = \{2\;4\;5\;6\;9\;11\}$ — the coexisting ♭3/♮3 is the blues-like ambiguity.
-* $24@7 \cup 24@5 = \{0\;2\;4\;5\;6\;7\;9\;10\;11\}$ — 
-the union of all three lcm 24 leaves $24@0 \cup 24@5 \cup 24@7$: 
-the C major scale $24@0$ plus both bebop passing tones (♯4 = 6, ♭7 = 10). 
-Dropping key 6 leaves $\mathrm{bebop}@0$, dropping key 10 leaves $\mathrm{bebop}@7$, dropping both recovers $24@0$.
-
-Apart from the harmonic major, perhaps the other cross-hexad scales get interpreted as single hexad junction scales but with bad notes, i.e. a preference for high-level junctions.
-
-One further leaf sits outside the two hexads: `15@7` = `{0 3 4 5 7 8 10}`, reached from the triad through the lcm 20 branch (via `20@0`) rather than an lcm 18 hexad.
-This ties in the with the triad at 4@8, connected to 4@0 via 1@0 and opens up for progressions between two triad graphs, but otherwise the analysis will be the same as for any extended placement triad graph.
-
-## Chords and scales
-TODO: 
-* discuss chord fingerprints for practical improv
-** show some examples from the scale-fingerprint command
-** compare different chords and their similarities e.g. major vs minor but also quite similar chords e.g. 0 4 7 vs 0 2 7
-** discuss resulting scales such as major pentatonic as the notes which are shared by the major scales 24@5,0,7 (circle of fifths resulting from extended tonic placement graph)
-* discuss rhythm, placements and scales - at each fastes pulse of a piece every sounding note is either part of a proper placement, or moving between them via a junction (thus scales), or part of a symmetric chord.
-** Symmetric chords (dim7, aug) need special treatment, most likely they are just special junction scales
-
-Let's look at some more examples from traditional music.
 
 ## Example Chord Progressions
 Using the `progression` command we can enumerate all possible progressions between two chords.
@@ -358,11 +311,11 @@ Let's now look at the symmetric chords dim7@0 = `{0 3 6 9}` and aug@0 = `{0 4 8}
 These equally divide the octave, providing no asymmetry for prefering a placement root.
 
 Where an ordinary chord collapses according to preference, a symmetric chord has no reason to collapse since every root is equally plausible.
-Perhaps this is why dim7 and aug have a dramatic or tense flavor, as they are in an indeterminate state.
+Perhaps this is why dim7 and aug have a dramatic or tense flavor, as if in an indeterminate state.
 
 Dim7 is contained by no placement but is contained by harmonic minor and harmonic major, while aug lies in lcm 15 (and its lcm 20 subset).
-A similar situation occurs with the major pentatonic pent@0 = `{0 2 4 7 9}`, a traditional scale which is not a placement but is shared between 24@0,5,7.
-Dim7, aug and pentatonic act as a core between these scales.
+A similar situation occurs with the major pentatonic pent@0 = `{0 2 4 7 9}`, a traditional scale which is not a placement but is shared between 24@0,5,7, and blues@0 = `{0 2 4 7 9}`, shared between 24@5,10.
+These all act as a core or pivot between these scales.
 
 ### Dim7
 Let's look at the first order subsets of dim7 using [`table subsets --keys 0 3 6 9`](/docs/cli/reference#subsets).
