@@ -90,16 +90,20 @@ export type RhythmPatternPlayerProps = {
 // placementKeys) or an explicit folded key set (for scales that are not a plain placement,
 // e.g. the harmonic minor `0 3 4 6 7 9 11`). `label` is what the dropdown shows.
 // An optional `sequence` overrides the random draw: a fixed, authored phrase of raw keys with
-// octave contour (values outside [0,12) move up/down octaves) plus `null` rests (silent onsets).
-// It cycles over the generated firing events (looping/cutting to fit), so meter/subdivision/tempo
-// still shape the rhythm while the melody is curated. `keys`/`lcm`/`at` still define the pool
-// (legend, melodyOn, spectrum colouring); the sequence just picks the actual pitches.
+// octave contour (values outside [0,12) move up/down octaves), `null` rests (silent onsets), and
+// `'-'` holds (HOLD) that tie the previous struck note across the slot — no new attack, the note
+// sustains instead. A `'-'` with no struck note to hold (a leading hold, or one right after a
+// `null`) degrades to a rest. It cycles over the generated firing events (looping/cutting to fit),
+// so meter/subdivision/tempo still shape the rhythm while the melody is curated. `keys`/`lcm`/`at`
+// still define the pool (legend, melodyOn, spectrum colouring); the sequence just picks the pitches.
+export const HOLD = '-';
+export type SeqToken = number | null | typeof HOLD;
 export type DuetMelody = {
   label: string;
   lcm?: number;
   at?: number;
   keys?: number[];
-  sequence?: (number | null)[];
+  sequence?: SeqToken[];
 };
 // A guided-mode chord: its 12-tet keys (sounded as the low, re-struck accompaniment) plus
 // the melody sets offered under it. Two of these (minor / major) drive the two dropdowns.
@@ -661,10 +665,79 @@ const spectrumHue = (key: number): number => ((((key % 12) + 12) % 12) / 12) * 2
 const pitchFill = (key: number): string => `hsla(${spectrumHue(key)}, 85%, 55%, 0.6)`;
 const pitchStroke = (key: number): string => `hsl(${spectrumHue(key)}, 85%, 45%)`;
 
+// A held (tied) slot's bar: the sustained note's spectrum hue, but faded — low-alpha fill and a
+// translucent stroke, drawn at HELD_HEIGHT_FACTOR of the slot's velocity (see the bar-data paths).
+// This reads as "the note continues here" without looking like a fresh re-strike.
+const HELD_HEIGHT_FACTOR = 0.4;
+const heldFill = (key: number): string => `hsla(${spectrumHue(key)}, 85%, 55%, 0.22)`;
+const heldStroke = (key: number): string => `hsla(${spectrumHue(key)}, 70%, 50%, 0.5)`;
+
+// Classify firing event `e` (absolute index, so the authored phrase cycles over the firing events)
+// against an authored sequence: a number is a struck note, `null` a rest, and `'-'` (HOLD) ties the
+// previous struck note — resolved by walking back within the current cycle to the nearest number,
+// stopping at a `null` (which breaks the tie). A hold with nothing to hold degrades to a rest.
+// Shared by the preview-colour path and the scheduler so both agree on which bars are holds/rests.
+type SeqRole =
+  | {kind: 'note'; key: number}
+  | {kind: 'hold'; key: number}
+  | {kind: 'rest'};
+function sequenceRole(seq: SeqToken[], e: number): SeqRole {
+  const len = seq.length;
+  const j = ((e % len) + len) % len;
+  const tok = seq[j];
+  if (typeof tok === 'number') return {kind: 'note', key: tok};
+  if (tok === null) return {kind: 'rest'};
+  // HOLD: find the note this slot sustains, within the current cycle (a null breaks the tie).
+  for (let k = j - 1; k >= 0; k--) {
+    const t = seq[k];
+    if (typeof t === 'number') return {kind: 'hold', key: t};
+    if (t === null) break;
+  }
+  return {kind: 'rest'};
+}
+
+// Build the bar plot's per-bar heights (`ys`) and spectrum fill/stroke arrays from an authored
+// sequence, so the preview and loop-on rendering match exactly what will play: a struck note gets
+// its velocity height + spectrum colour (via the caller's mark-aware fillFor/strokeFor), a hold gets
+// a reduced height + faded colour, and a rest is zeroed (empty). Shared by the baked-colours effect
+// (updates via setData) and the plot-creation effect (initial data), so both stay in lockstep.
+function seqBarData(
+  pulses: Pulse[],
+  firingPulseIdx: number[],
+  seq: SeqToken[],
+  fillFor: (k: number) => string,
+  strokeFor: (k: number) => string,
+  heldFillFor: (k: number) => string,
+  heldStrokeFor: (k: number) => string,
+): {ys: Float64Array; fills: string[]; strokes: string[]} {
+  const n = pulses.length;
+  const ys = Float64Array.from(pulses, (p) => p.velocity);
+  const fills = Array<string>(n).fill(BLUE_FILL);
+  const strokes = Array<string>(n).fill(BLUE_STROKE);
+  firingPulseIdx.forEach((pi, e) => {
+    const role = sequenceRole(seq, e);
+    if (role.kind === 'rest') {
+      ys[pi] = 0; // empty slot — no colour, no height
+    } else if (role.kind === 'note') {
+      fills[pi] = fillFor(role.key);
+      strokes[pi] = strokeFor(role.key);
+    } else {
+      fills[pi] = heldFillFor(role.key);
+      strokes[pi] = heldStrokeFor(role.key);
+      ys[pi] = pulses[pi].velocity * HELD_HEIGHT_FACTOR;
+    }
+  });
+  return {ys, fills, strokes};
+}
+
 // "Watched key" bar colours (see the markKeys prop): an opaque near-black that reads over the
 // amber playhead and both light/dark themes, standing clearly apart from the spectrum hues.
 const MARK_FILL = 'rgba(20,20,20,0.85)';
 const MARK_STROKE = '#000';
+// Faded near-black for a held (tied) slot whose sustained note is a watched key — the mark
+// analogue of heldFill/heldStroke, so a hold keeps its mark identity instead of reverting to a hue.
+const MARK_HELD_FILL = 'rgba(20,20,20,0.3)';
+const MARK_HELD_STROKE = 'rgba(0,0,0,0.5)';
 
 // The same red→violet ramp as the bars, as a CSS gradient for the plot's legend swatch:
 // one stop per pitch class 0…11 so the legend gradient matches the bar colours exactly.
@@ -994,6 +1067,11 @@ export default function RhythmPatternPlayerClient({
   const isMarked = (key: number) => markedKeys.has(((key % 12) + 12) % 12);
   const fillFor = (key: number) => (isMarked(key) ? MARK_FILL : pitchFill(key));
   const strokeFor = (key: number) => (isMarked(key) ? MARK_STROKE : pitchStroke(key));
+  // Faded held-slot colours, mark-aware like fillFor/strokeFor: a watched key keeps its (faded)
+  // mark colour across a tie instead of reverting to the spectrum hue.
+  const heldFillFor = (key: number) => (isMarked(key) ? MARK_HELD_FILL : heldFill(key));
+  const heldStrokeFor = (key: number) =>
+    isMarked(key) ? MARK_HELD_STROKE : heldStroke(key);
 
   // Sing-along playhead: the current bar's unitBeat (null when stopped), read by
   // playheadPlugin. playRunRef tags each play() run so scheduled callbacks left in flight
@@ -1387,20 +1465,45 @@ export default function RhythmPatternPlayerClient({
   // family (the non-melody player), leave the refs null so the bars stay flat blue.
   useEffect(() => {
     if (!pattern) return;
+    const {pulses} = pattern;
+    // Full-height data (velocity bars), used to restore heights whenever no authored sequence is
+    // zeroing/fading them. xs come from the pulse positions, matching the plot-creation effect.
+    const fullData = (): uPlot.AlignedData => [
+      Float64Array.from(pulses, (p) => p.unitBeat),
+      Float64Array.from(pulses, (p) => p.velocity),
+    ];
     if (!melodyOn || !bakedKeys) {
       fillColorsRef.current = null;
       strokeColorsRef.current = null;
+      plotRef.current?.setData(fullData());
+    } else if (melodySequence && melodySequence.length) {
+      // Authored phrase: colour AND size each firing bar from the sequence (struck note, faded
+      // hold, or empty rest) so the preview matches playback exactly rather than a random draw.
+      const idx = firingPulseIndices(pulses);
+      const {ys, fills, strokes} = seqBarData(
+        pulses,
+        idx,
+        melodySequence,
+        fillFor,
+        strokeFor,
+        heldFillFor,
+        heldStrokeFor,
+      );
+      fillColorsRef.current = fills;
+      strokeColorsRef.current = strokes;
+      plotRef.current?.setData([Float64Array.from(pulses, (p) => p.unitBeat), ys]);
     } else {
-      const n = pattern.pulses.length;
+      const n = pulses.length;
       const fills = Array<string>(n).fill(BLUE_FILL);
       const strokes = Array<string>(n).fill(BLUE_STROKE);
-      const idx = firingPulseIndices(pattern.pulses);
+      const idx = firingPulseIndices(pulses);
       bakedKeys.forEach((key, e) => {
         fills[idx[e]] = fillFor(key);
         strokes[idx[e]] = strokeFor(key);
       });
       fillColorsRef.current = fills;
       strokeColorsRef.current = strokes;
+      plotRef.current?.setData(fullData()); // restore heights a prior sequence may have altered
     }
     // redraw(true, …) rebuilds the bar paths so the disp colour callbacks are re-read; a
     // bare redraw(false, …) would only repaint cached paths and ignore the new colours.
@@ -1409,7 +1512,7 @@ export default function RhythmPatternPlayerClient({
     plotRef.current?.redraw(true, false);
     // loopMelody is a dep so flipping loop back on mid-play restores the baked colours the
     // live loop-off scheduler had overwritten (the body always paints the baked preview).
-  }, [pattern, melodyOn, octaveKeys, bakedKeys, loopMelody, markedKeys]);
+  }, [pattern, melodyOn, octaveKeys, bakedKeys, loopMelody, markedKeys, melodySequence]);
 
   // --- Parameter editing (does NOT regenerate the pattern; only Generate does) ---
 
@@ -1914,7 +2017,7 @@ export default function RhythmPatternPlayerClient({
           }
         }
         const vel = ev.velocity / 127;
-        const durSec = 0.03 + 0.12 * vel; // heavier accents are both louder and longer
+        let durSec = 0.03 + 0.12 * vel; // heavier accents are both louder and longer
         // Pitch: the fixed pitchHz unless a melody is active, in which case draw a key —
         // baked (a repeating phrase) or fresh per hit — placed above the root pitchHz
         // (key 0) via the 12-TET ratio 2^(key/12). A family draws a discrete key from its
@@ -1938,47 +2041,74 @@ export default function RhythmPatternPlayerClient({
         // Loop-off re-rolls each hit; capture that key so the Draw callback can light up this
         // bar's spectrum colour when it sounds (loop-on / non-melody leave colourKey null).
         let colourKey: number | null = null;
-        // A sequence step that is `null` is a rest: the onset fires no note (freq stays unused),
-        // the bar keeps its default fill, but the playhead still advances.
+        // A sequence step that is `null` is a rest (fires no note, playhead still advances); a `'-'`
+        // (HOLD) is a tied slot — it also fires nothing, but the note struck on an earlier onset is
+        // still ringing because that note's duration was extended to span the held slots below.
         let rest = false;
         if (melodyOnRef.current) {
           const seq = melodySequenceRef.current;
           const baked = bakedKeysRef.current;
           const loopOn = loopMelodyRef.current && baked;
-          // Authored phrase (if any) wins: play it in order over the firing events, cycling by the
-          // absolute event index so it loops continuously / cuts cleanly when it doesn't divide the
-          // pattern length. Else loop-on → the frozen baked phrase; else a bound cycle replays its
-          // motif; else re-roll a fresh pitch per hit.
-          let key: number | null = seq && seq.length
-            ? seq[i % seq.length]
-            : loopOn
-              ? baked![i % N]
-              : cycleMelody
-                ? cycleMelody[i % N]
-                : isRandomPitchRef.current
-                  ? Math.random() * 12
-                  : okeys![Math.floor(Math.random() * okeys!.length)];
-          // Perception-walk: if this event opens its meter group, sound the group's opening key
-          // (the note that selected the placement/perception) instead of a drawn pitch. Overrides
-          // every path — baked, bound, and live — so the perception is always articulated first.
-          // A split (`Ba`) group's second half likewise opens on its B-part opening key.
-          if (perceptionWalkOn && cycleSteps && walkStarts) {
-            const gi = groupIndexOf(ev.unitBeat, walkStarts);
-            if (groupFirstEvent.get(gi) === i % N) {
-              const ok = cycleSteps[gi]?.openingKey;
-              if (ok != null) key = ((ok % 12) + 12) % 12;
-            } else if (groupSecondHalfFirstEvent.get(gi) === i % N) {
-              const ok = cycleSteps[gi]?.second?.openingKey;
-              if (ok != null) key = ((ok % 12) + 12) % 12;
-            }
-          }
-          if (key == null) {
+          const seqActive = !!(seq && seq.length);
+          const token: SeqToken | undefined = seqActive ? seq![i % seq!.length] : undefined;
+          if (token === HOLD) {
+            // Tied slot: no new attack (the sustained note covers it). Leave colourKey null so the
+            // faded bar painted by the baked-colours effect persists; the playhead still advances.
             rest = true;
           } else {
-            freq = pitchHz * Math.pow(2, key / 12);
-            // An authored phrase is deterministic, so colour it live every hit (its length need
-            // not divide the bar count, which the baked loop-on colouring would mishandle).
-            if (!loopOn || (seq && seq.length)) colourKey = key;
+            // Authored phrase (if any) wins: play it in order over the firing events, cycling by the
+            // absolute event index so it loops continuously / cuts cleanly when it doesn't divide the
+            // pattern length. Else loop-on → the frozen baked phrase; else a bound cycle replays its
+            // motif; else re-roll a fresh pitch per hit.
+            let key: number | null = seqActive
+              ? (token as number | null)
+              : loopOn
+                ? baked![i % N]
+                : cycleMelody
+                  ? cycleMelody[i % N]
+                  : isRandomPitchRef.current
+                    ? Math.random() * 12
+                    : okeys![Math.floor(Math.random() * okeys!.length)];
+            // Perception-walk: if this event opens its meter group, sound the group's opening key
+            // (the note that selected the placement/perception) instead of a drawn pitch. Overrides
+            // every path — baked, bound, and live — so the perception is always articulated first.
+            // A split (`Ba`) group's second half likewise opens on its B-part opening key.
+            if (perceptionWalkOn && cycleSteps && walkStarts) {
+              const gi = groupIndexOf(ev.unitBeat, walkStarts);
+              if (groupFirstEvent.get(gi) === i % N) {
+                const ok = cycleSteps[gi]?.openingKey;
+                if (ok != null) key = ((ok % 12) + 12) % 12;
+              } else if (groupSecondHalfFirstEvent.get(gi) === i % N) {
+                const ok = cycleSteps[gi]?.second?.openingKey;
+                if (ok != null) key = ((ok % 12) + 12) % 12;
+              }
+            }
+            if (key == null) {
+              rest = true;
+            } else {
+              freq = pitchHz * Math.pow(2, key / 12);
+              // An authored phrase is deterministic, so colour it live every hit (its length need
+              // not divide the bar count, which the baked loop-on colouring would mishandle).
+              if (!loopOn || seqActive) colourKey = key;
+              // Long note: a struck sequence note sustains across any immediately-following `'-'`
+              // (HOLD) slots, so extend its duration to reach the next onset after them instead of
+              // the short blip. absBeat(j) = floor(j/N)*totalBeats + events[j%N].unitBeat; the 0.95
+              // leaves the same articulation gap the chord pad uses.
+              if (seqActive && typeof token === 'number') {
+                let holdCount = 0;
+                for (let s = 1; s < N; s++) {
+                  if (seq![(i + s) % seq!.length] === HOLD) holdCount++;
+                  else break;
+                }
+                if (holdCount > 0) {
+                  const endIdx = i + holdCount + 1;
+                  const absNow = Math.floor(i / N) * totalBeats + events[i % N].unitBeat;
+                  const absEnd =
+                    Math.floor(endIdx / N) * totalBeats + events[endIdx % N].unitBeat;
+                  durSec = Math.max(durSec, (absEnd - absNow) * sec * 0.95);
+                }
+              }
+            }
           }
         }
         // One Draw callback per onset, fired exactly when it sounds: move the sing-along
@@ -2062,7 +2192,23 @@ export default function RhythmPatternPlayerClient({
     if (!container || !pattern) return;
     const {pulses, totalBeats, meter: pm, subdivisions: ps} = pattern;
     const xs = Float64Array.from(pulses, (p) => p.unitBeat);
-    const ys = Float64Array.from(pulses, (p) => p.velocity);
+    // When an authored sequence is active, size the bars from it (empty rests, faded holds) so the
+    // initial plot matches playback — the baked-colours effect runs before this on mount, when
+    // plotRef is still null, so its setData is a no-op and the correct heights must be built here.
+    // (melodySequence is intentionally out of the deps so switching melody updates via setData
+    // rather than rebuilding the whole plot — matching the fixed-pattern contract below.)
+    const ys =
+      melodyOn && melodySequence && melodySequence.length
+        ? seqBarData(
+            pulses,
+            firingPulseIndices(pulses),
+            melodySequence,
+            fillFor,
+            strokeFor,
+            heldFillFor,
+            heldStrokeFor,
+          ).ys
+        : Float64Array.from(pulses, (p) => p.velocity);
     const lines = gridLines(pm, ps);
     const width = container.clientWidth || 700;
 
@@ -2125,6 +2271,9 @@ export default function RhythmPatternPlayerClient({
       u.destroy();
       plotRef.current = null;
     };
+    // The plot is rebuilt only on a new pattern/height; melody-source changes (melodySequence /
+    // fillFor / strokeFor / melodyOn) flow in through the baked-colours effect's setData instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pattern, height]);
 
   const maxSub = Math.max(1, ...subdivisions);

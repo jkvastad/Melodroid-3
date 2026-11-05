@@ -27,7 +27,7 @@ Faced with such a multitude of ambiguous interpretations of frequencies, the bra
 ## A principle of preference
 A possible heuristic for deciding which placement to perceive is to favour placements with small primes.
 This could be motivated by the brain favouring not just patterns with small WPL, but patterns with small subpatterns to chunk up.
-Such behaviour would be in line with having WPLs on the larger side, e.g. 15 and 24, as their constituent primes might be the bottleneck.
+Such behaviour would be in line with having WPLs on the larger side, e.g. 15 and 24, as their constituent primes might be the actual bottleneck.
 It would also explain why lcm 15 and 20 sound more dissonant than 24, since they carry the relatively large prime 5.
 
 Stating this as a principle for parsing sound for music:
@@ -82,12 +82,13 @@ The blues melody starts off like the others but then uses the blues exclusive ke
   subdivisions="4"
   bpm={90}
   chord
+  instrument="piano"
   markKeys={[7]}
   presets={[
     {label: 'Major 4 8 11', keys: [4, 8, 11], melodies: [
       {label: '15s@11 (no 7)', keys: [0, 2, 4, 8, 9, 11], sequence: [4,8,4,8, 9,11,12,14, 16,8,16,14, 12,8,12,11]},
       {label: '15@11', lcm: 15, at: 11, sequence: [7,8,7,8, 9,11,12,14, 16,7,16,14, 12,7,12,11]},
-      {label: 'blues@4', keys: [1, 4, 6, 7, 8, 11], sequence: [7,8,7,8, 13,4,null,6, 7,8,13,11, null,7,null,6]},
+      {label: 'blues@4', keys: [1, 4, 6, 7, 8, 11], sequence: [7,8,7,8, 13,4,'-',6, 7,8,13,11, '-',7,'-',6]},
       {label: 'harm@9', keys: [0, 2, 4, 5, 8, 9, 11], sequence: [4,8,5,8, 9,11,12,14, 16,8,17,14, 12,8,12,11]},
     ]},
     {label: 'Minor 9 0 4', keys: [9, 0, 4], melodies: [
