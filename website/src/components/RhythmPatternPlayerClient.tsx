@@ -82,6 +82,8 @@ export type RhythmPatternPlayerProps = {
   // each a chord plus the placement its bar draws melody from. Unlike chordWalk / perceptionWalk the
   // sequence is static (never re-rolls), looping verbatim. Takes precedence over chordWalk /
   // perceptionWalk if set (this page only)
+  progressionHeuristic?: HeuristicId; // initial `progression` dropdown selection; default
+  // 'tertian-triads'. Only meaningful in progression mode (this page only)
 };
 
 // A guided-mode melody source: either an `lcm@at` placement (resolved to keys via
@@ -109,7 +111,11 @@ export type DuetChord = {label: string; keys: number[]; melodies: DuetMelody[]};
 // Optional `chord` pins the per-group chord to that single voicing (heuristic-independent,
 // same chord every group) while the melody still draws from the full `keys` — for auditioning
 // a scale's characteristic chord against the random draws.
-export type ProgressionSet = {label: string; keys: number[]; chord?: number[]};
+// Optional `random` makes the MELODY draw a continuous, unquantized pitch in [0,12) (the
+// `∅ · Random Pitch` contrast of the LCM-family list) while the CHORD progression still draws
+// triads from `keys` as usual — give such an entry `keys: [0..11]` so the accompaniment is
+// all-12-key random triads.
+export type ProgressionSet = {label: string; keys: number[]; chord?: number[]; random?: boolean};
 
 // Chord-walk-mode authored config: the ORIGIN chord (its 12-tet pitch classes) and the curated
 // placement PATTERNS (each an lcm family like `{lcm: 8}` or an explicit key set like the stable-15
@@ -784,6 +790,7 @@ export default function RhythmPatternPlayerClient({
   phraseBinds: phraseBindsProp = 'rhythm',
   perceptionWalk,
   script,
+  progressionHeuristic,
 }: RhythmPatternPlayerProps) {
   // Guided chord mode: the chord and its melody sets come from `presets` (two linked
   // dropdowns) instead of a random roll. Still runs the full chord-mode engine, so it
@@ -905,7 +912,10 @@ export default function RhythmPatternPlayerClient({
   // Progression mode (only when `progression`): which source set (drawn from + voiced) and
   // which heuristic the two dropdowns have selected. Both re-bake the progression on change.
   const [selectedProgIdx, setSelectedProgIdx] = useState(0);
-  const [selectedHeuristicIdx, setSelectedHeuristicIdx] = useState(0);
+  const [selectedHeuristicIdx, setSelectedHeuristicIdx] = useState(() => {
+    const i = PROGRESSION_HEURISTICS.findIndex((h) => h.id === progressionHeuristic);
+    return i >= 0 ? i : 0;
+  });
 
   // Chord-walk mode (only when `chordWalk`): which chord-vocabulary heuristic the dropdown has
   // selected (reuses PROGRESSION_HEURISTICS). Changing it re-bakes the walk. The curated pool and
@@ -995,8 +1005,11 @@ export default function RhythmPatternPlayerClient({
   // --- Melody: pitch pool + per-event pitch assignment ---
 
   // Random Pitch draws a continuous key in [0,12) rather than a discrete family pool
-  // (never in chord mode, which always draws from a chord-matched family).
-  const isRandomPitch = !chord && selectedLcm === RANDOM_ID;
+  // (never in chord mode, which always draws from a chord-matched family). In progression mode
+  // it is a `random` set entry (the chord engine still draws triads from that entry's `keys`).
+  const isRandomPitch =
+    (!chord && selectedLcm === RANDOM_ID) ||
+    (progressionOn && !!progression![selectedProgIdx]?.random);
 
   // --- Chord-walk mode: curated pool → candidate chords → baked cyclic walk ---
   // (declared before octaveKeys because that memo reads the walk's first-group melody pool.)

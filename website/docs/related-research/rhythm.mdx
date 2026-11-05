@@ -4,6 +4,7 @@ description: Rhythm in related research.
 ---
 
 import SequencePlayer from '@site/src/components/SequencePlayer';
+import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 import {pulses, polyrhythm} from '@site/src/lib/rhythm';
 
 # Rhythm
@@ -133,6 +134,37 @@ In empirical studies microtiming turns out to be mostly detrimental to groove.[^
 Harmony refers to the interplay of sound frequencies. Low frequency amplitude seems beneficial to groove, with higher amplitudes eliciting more groove.[^duncan]
 Dissonant chords detract from groove, possibly by reducing the overall pleasure of the music.[^matthews] 
 A similar result occurs when looking at how happy or sad chord progressions, with happier progressions eliciting more groove than the sad ones.[^kawase]
+
+## Constructing Rhytmic Patterns
+Taking the above together we can create rhythmic patterns by:
+
+* Selecting a meter consisting of a series of integers, e.g. `{4}` or `{7,2,3}`. These numbers signify the heavy accents, or beats, in the reccuring pattern.
+* Selecting a tempo (beats per minute, bpm) by choosing the rate of the (possibly implicit) unit beat. 
+Since meters come in integer ratios there is always a unit beat e.g. `{4}={4,1}`.
+* Selecting a grid resolution or fastest pulse by choosing the largest division of the unit beat. 
+This subdivision is typically in the range of 1-8 since maximum groove is about 100-120bpm, producing a fastest pulse of 62.5ms. 
+Any faster and the pulse starts intruding on the pitch domain.
+* Accenting pulses (possibly silent) in the pattern. This decides long, heavy, light, short, moderate, etc., note amplitude and length.
+When accenting pulses a moderate deviation from the meter produces the highest groove.
+
+The above procedure produces an amplitude pattern consisting of meter and rhythm. 
+Try it below. Enter a **meter** (one number per accent
+group, e.g. `4` or `7 2 3`) and a **subdivision** (a single number for the whole meter,
+or one per group), then shape the pattern with two sliders:
+
+* **Resolution** — how much of the pulse grid is active. At the low end only the main
+beats fire; at the high end every subdivision does.
+* **Syncopation** — deviation from the meter. At zero the heavy accents sit exactly on
+the meter beats; as it rises the accents redistribute, drifting onto off-beat pulses
+while some meter beats drop to lighter accents.
+
+Press **Generate** to generate a concrete pattern from the current settings, and **Play** to loop it. The plot shows each pulse's velocity
+against its position in unit beats, with grid lines for the meter accents (bold), unit
+beats (medium), and the full pulse grid (faint). **Tempo** adjusts live while playing.
+
+<RhythmPatternPlayer meter="4 4 4 4" subdivisions="2" bpm={100}/>
+
+Such rhytmic patterns can then be decorated with pitch at active (non-silent) pulses.
 
 [^jacoby]: Jacoby, Nori, and Josh H. McDermott. "Integer ratio priors on musical rhythm revealed cross-culturally by iterated reproduction." Current Biology 27.3 (2017): 359-370.
 
