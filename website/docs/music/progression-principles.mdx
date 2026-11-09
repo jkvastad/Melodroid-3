@@ -29,23 +29,62 @@ We can define a chord progression as a triplet of key sets.
 Given an origin chord and a target chord, a progression is a triplet of key sets consisting of origin-, bridge-, and target:
 * The origin set contains the origin chord.
 * The target set contains the target chord.
-* The bridge set fulfills some progression principle.
+* The bridge set fulfills some progression principle connecting the origin and target.
 
 With such a general approach there are likely better and worse origin, target and bridge sets.
 In line with minimizing wpl and primes, perhaps there is some form of cost reduction guiding progressions.
 For instance, playing subsequent key sets which morph into each other while respecting placement relationships minimizes potential costs of context switching, as keys and reference points need not be completely re-parsed.
 
-The extended placement graphs then show that an important relationship between LCMs is not only shared lcm
-supersets (e.g. 8@0 contains 4@0 and 4@5) but also shared lcm subsets (e.g. 18@2 bridges 15@11 and 24@0,7). 
-This motivates two potential principles:
+If the quality of chord progressions is decided by how easily key sets morph into one another then there will be a hierarchy of costs and their different kinds of morphs.
+If morph cost is related to changing placements then the cheapest morph is not changing placement at all. This is achieved by moving within a placement.
+After this it becomes a question of the relative expense of changing root, cost of WPL size and cost of constituent primes.
 
-* **Superset Principle** — Chord A can progress to chord B if A shares an lcm superset with B.
-* **Subset Principle** — Chord A can progress to chord B if A shares an lcm subset with B.
+We earlier argued that e.g. 15@11 collapses to 24@1 with key 7, and that isomorphic families collapse to their lowest primes, also changing roots and increasing WPL.
+This implies reducing prime cost is more important than both root and WPL cost.
+The brain however is a black box and any cost rule could be highly context dependent.
+Perhaps the best approach is to simply iterate reasonable cost schemas and see what fits.
+
+The fitness of a schema could be evaluated by how well it tiles popular songs:
+Since we are reverse-engineering the brains musical black box, popular songs can be seen as having been empirically validated as good by many black boxes, giving some indication of how well the schema fits.
+A tiling refers to dividing a song into discrete pulses, and for each pulse classifying all sounding notes into the schema and producing an unbroken chain of progressions.
+Such a tiling will also need to handle dissonance, as in the example from cuisine with chili and bitterness, dissonance will likely play an important role in good music.
+
+The [tiling chapter](/docs/music/tiling) works this out as a concrete pipeline — chunks, segments and progression bridges — and shows how the placement moves below and the junction scales they name are two layers of one tiling.
+
+A first attempt at a progression schema could be based on the extended placement graphs, which function as incremental cost graphs.
+Each step in the graph is thus a minimal cost for adding/removing a key.
+This can then motivate a progression principle which places origin and target inside placements in the graph and then bridges them by walking the graph.
+When origin and target are in the same placement then the bridge might also be the same placement, producing e.g. three chord songs in the major scale.
+Some three chord songs such as C-F-G have an interesting quality where they start with small WPL e.g. 4@0, then increment it: 
+8@0 contains both F and C, and finally 24@0 contains C-F-G, a loop which pumps up WPL to 24 and then relaxes it back to 4 without ever changing root.
+
+Such a schema works well for chords beginning and ending in placements, but as we touched on in previous chapters there are some traditional chords and scales which are not contained by lcm placements.
+These were blues and harmonic minor, and for discussion we will also add in the symmetric dim7 chord.
+
+We will see how harmonic minor, and indeed harmonic major and melodic minor, are minimally connected leaf nodes in extended placement graphs.
+We will show that blues is a subset of yet another such a composite scale.
+
+Dim7 is more tricky as it consist of several dim triads, each related to an lcm 15 and 24 in the same extended triad placement graph, while also contained by four harmonic minor/major scales.
+Of special note is that dim7 works well as a tense block chord.
+
+Tiling with a placement graph schema must then handle a few specific cases for the notes related to a given pulse:
+
+* Notes are contained by a placement(s) - tile it as the smallest prime-then-WPL placement.
+* Notes not in placement:
+ * 
 
 Such movement within placement graphs is not the only way to morph.
 Non-lcm key sets such as dim7, aug, blues, harmonic minor and pentatonic major are useful because they are close to several placements.
 Of these dim7 is of special note as it has an interesting tense perception as a block chord without being overly dissonant, despite not being in any placement.
 This could even be a unique feature due to its symmetry and well spaced intervals.
+
+
+The extended placement graphs show two important relationships between LCMs: supersets (e.g. 8@0 contains 4@0 and 4@5) and lcm subsets (e.g. 18@2 bridges 15@11 and 24@0,7). 
+This motivates two potential principles:
+
+* **Superset Principle** — Chord A can progress to chord B if A shares an lcm superset with B.
+* **Subset Principle** — Chord A can progress to chord B if A shares an lcm subset with B.
+
 
 Further restrictions on chord progressions could include stability.
 We previously discussed stability of placements with lcm 15 collapsing to 24 as well as isomorphisms collapsing to representatives (and likely 20@k collapsing to 15@k+7).

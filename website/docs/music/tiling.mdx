@@ -1,0 +1,154 @@
+---
+sidebar_position: 8
+description: Tiling a song into chunks, segments and progression bridges across two dual layers — placements and junction scales.
+---
+
+# Tiling a Song
+
+The [progression principles](/docs/music/progression-principles) gave us legal moves between
+chords: the **superset** move (two chords share one placement) and the **subset** move (two
+placements are bridged by a shared subset). A *tiling* applies those moves to a whole piece:
+divide the song into discrete pulses, classify the notes sounding in each pulse, and read off an
+unbroken chain of progressions. Because popular music has been empirically validated as "good" by
+many listeners, how cleanly a schema tiles a real song is evidence for the schema.
+
+Let's look at Beethoven's *Für Elise*, as a POC, analysed with the
+[`analyze midi`](/docs/cli/reference) command:
+
+```
+analyze midi --input output/Fur-Elise-Simple.mid \
+  --collapse-isomorphic --pool-maximal --placements --stable-placements \
+  --segments --segment-bridges --name-junctions
+```
+
+## Chunks, segments, bridges
+
+The command builds three nested granularities.
+
+- **Chunks** — the song is quantised onto an onset grid; each non-empty slot is a chunk whose
+  harmonic identity is just the set of sounding pitch classes (reference-free, folded mod 12).
+  `--merge-repeats` folds time-adjacent slots with an identical key-set into one chunk, so a chunk
+  is "where the harmony changes".
+- **Segments** — a greedy partition of the chunk timeline into the *fewest* contiguous runs, each
+  explainable by one shared label. Extend a run while the running intersection of the per-chunk
+  label sets stays non-empty, then cut. A segment is therefore the longest unbroken stretch a
+  single label survives across.
+- **Bridges** — for each consecutive pair (of chunks, or of segments) the
+  [progression](/docs/music/progression-principles) category (superset / subset / both / neither)
+  and the bridges realising it.
+
+The label can be either a **placement** (`{Lcm}@{At}`) or a **named scale** (`hm@9` = harmonic
+minor anchored on key 9, etc.), giving two parallel tilings of the same song.
+
+## Two layers
+
+Those two labellings are not just two display options — they are two **layers** of the same
+harmony, and the whole point of a full tiling is how they fit together.
+
+- **Placement layer.** A state is a single placement. The moves are the two principles: a superset
+  move holds inside one placement, a subset move steps `P_A → S → P_B` through a shared subset.
+- **Scale layer.** A state is a *junction scale*. As derived in
+  [junction scales](/docs/music/progression-principles), a junction scale is nothing but the
+  key-union `P_A ∪ P_B` of a distinct placement pair joined through a shared subset `S`. The names
+  that fall out of this construction — major, harmonic minor, harmonic major, melodic minor, bebop
+  dominant, blues — are *derived* labels; their agreement with the traditional scale names is
+  corroboration, not the reason they appear.
+
+## The duality: a subset move *is* a junction scale
+
+The two layers are tied by one identity:
+
+> A **subset move** in the placement layer and a **junction scale** in the scale layer are the same
+> object seen two ways — motion (`P_A → S → P_B`) versus a frozen set (`P_A ∪ P_B`).
+
+The superset move is the degenerate case: both chords already live in one placement, so nothing is
+bridged and there is no scale to name — it is "stay". Every genuine change of state is a subset
+move, and every subset move names the junction scale you have modulated through. This is why a well
+tiled passage reads simultaneously as a walk in the placement graph and as a short list of scales:
+they are the same walk.
+
+## Escalation at the gaps
+
+Not every transition is a placement move. When neither principle applies — category **neither** —
+the placement graph has *no edge*: no placement contains both chords, and no distinct containing
+placements share a subset. These gaps are exactly where the tiling must **escalate** from the
+placement layer to the scale layer.
+
+The paradigm is the symmetric chord. As shown under
+[symmetric chords and scale cores](/docs/music/progression-principles), dim7 `{0 3 6 9}` is
+contained by *no* placement, yet it is the shared core of harmonic minor and harmonic major. At a
+dim7 pulse the placement layer is genuinely silent; the scale layer carries the modulation until a
+placement re-establishes. So a **neither** in the placement bridges is not a failure to report — it
+is the signal "a scale is required here", and the scale that contains the offending chord as a core
+*is* the bridge.
+
+## Reading Für Elise
+
+### Placement segments bridge cleanly, then stall on dim7
+
+The opening theme tiles into short placement segments that bridge almost entirely by the subset
+principle, naming a small vocabulary of junction scales:
+
+```
+seg → seg   Move                              Category  Junction
+seg2→seg3   0 2 4 8 9 11 → 2 3 4 11           Subset    hM@4
+seg5→seg6   0 2 4 8 9 11 → 0 2 4 5 7 9 11     Subset    hm@9
+seg6→seg7   0 2 4 5 7 9 11 → 2 3 4 11         Subset    {0 3 4 5 6 7 9 11}
+```
+
+The theme is a near-periodic shuttle between **hM@4** and **hm@9** junctions — the harmonic-major
+and harmonic-minor colours of the piece — exactly the alternation you hear.
+
+Around beats 123–157 the music reaches its agitated passage, and the placement bridges go dark:
+
+```
+seg → seg   Move                  Category  Junction
+seg33→seg34 0 2 4 5 9 11 → 0 3 6 9  Neither   —
+seg34→seg35 0 3 6 9 → 0 3 9         Neither   —
+```
+
+`0 3 6 9` is dim7 — contained by no placement, so the placement layer reports **neither** and the
+Junction column is blank. This is the escalation point. Reading the *scale* segmentation over the
+same beats, the passage is tiled by **hm@2** and **hm@9** — the harmonic-minor scales whose core is
+that dim7 (compare the `dim7@4 → hm@2` player in the
+[scale cores](/docs/music/progression-principles) section). The blank placement bridge and the
+harmonic-minor scale segment are the two faces of one escalation.
+
+### Scale-segment bridges are mostly empty — and why
+
+The scale-segment bridges, by contrast, come out mostly **neither**:
+
+```
+seg → seg   Move                              Category  Junction
+seg0→seg1   2 3 4 11 → 0 3 4 8 9 11           Neither   —
+seg1→seg2   0 3 4 8 9 11 → 0 2 4 8 9 11       Neither   —
+seg2→seg3   0 2 4 8 9 11 → 2 3 4 11           Subset    hM@4
+```
+
+This is an artefact, not a finding. A segment bridge currently computes the **union** of all the
+chunks in each segment and runs the progression test on those unions. A scale segment is *long*
+(the harmonic-major stretch above spans 21 chunks), so its union pools a whole phrase of melody
+into a chromatic blob such as `0 3 4 8 9 11` — clusters like `3 4` and `8 9 11` that no single
+placement can contain. Pooling destroys the very trajectory we want to read, and does so worse for
+scale segments precisely because they are the longest.
+
+## Target behaviour (not yet implemented)
+
+The duality tells us what the two unfinished edges of the tool *should* do; this is the target the
+current output does not yet produce.
+
+- **Scale-segment bridges via constituents, not unions.** A scale segment's witness is a junction
+  scale, which already carries its decomposition `(P_A, S, P_B)`. The bridge to the next scale
+  segment should be a placement-graph relation between the two scales' constituent placements
+  (shared pivot, or constituents joined by subset / superset), replacing the union-then-test path.
+  Then a move between two scale segments reads as a move in the placement graph between their
+  constituents — the natural dual of a placement bridge.
+- **Name the required scale at placement gaps.** Where a placement bridge is **neither**, the
+  blank should be replaced by the junction / harmonic scale that carries the move — the
+  symmetric-core → containing-scale mapping (`dim7@4 → hm@2`). The escalation then shows up
+  explicitly in the placement tiling instead of as a silent gap the reader has to cross-reference
+  against the scale tiling by hand.
+
+With both in place the two layers close into a single tiling: placements wherever the graph has an
+edge, escalating to a named scale exactly at the gaps, with every move legible in both layers at
+once.
