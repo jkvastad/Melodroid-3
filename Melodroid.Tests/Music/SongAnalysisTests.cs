@@ -255,6 +255,105 @@ public class SongAnalysisTests
             .Should().BeEmpty();
     }
 
+    // The headline of the constituent path: harmonic minor @9 = {0,2,4,5,8,9,11} is a junction scale,
+    // contained by NO single placement, so the union→ComputePair path (SegmentBridges) reads a
+    // hm@9→hm@9 move as Neither. Reading the move through the scale's constituent placements instead
+    // recovers it — the two segments share every constituent, a full pivot → Superset.
+    [Fact]
+    public void ScaleSegmentBridges_ConstituentsBridgeWhereTheUnionPathReadsNeither()
+    {
+        var hmNine = new[] { 0, 2, 4, 5, 8, 9, 11 };
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, hmNine),
+            new SongChunk(1, 1, 2, hmNine),
+        };
+        var segments = new[] { Seg(0, 0), Seg(1, 1) };
+
+        var union = SongAnalysis.SegmentBridges(
+            chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet)[0];
+        var cons = SongAnalysis.ScaleSegmentBridges(
+            chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet)[0];
+
+        union.Category.Should().Be(ProgressionCategory.Neither, "hm@9 sits in no single placement");
+        cons.Category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
+        cons.SupersetBridges.Should().NotBeEmpty("the two segments share their constituent placements");
+    }
+
+    // A scale segment whose union lands on no named scale (the whole-tone hexad) has no decomposable
+    // witness, so that pair falls back to the SegmentBridges union→ComputePair path unchanged.
+    [Fact]
+    public void ScaleSegmentBridges_SideWithNoWitnessScale_FallsBackToTheUnionPath()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 2, 4, 6, 8, 10 }),   // whole-tone hexad — in no named scale
+            new SongChunk(1, 1, 2, new[] { 0, 4, 7 }),             // C major triad
+        };
+        var segments = new[] { Seg(0, 0), Seg(1, 1) };
+
+        var cons = SongAnalysis.ScaleSegmentBridges(
+            chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet)[0];
+        var union = SongAnalysis.SegmentBridges(
+            chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
+            poolMaximal: false, nameJunctions: false, Ktet)[0];
+
+        cons.Category.Should().Be(union.Category);
+        cons.SupersetBridges.Should().Equal(union.SupersetBridges);
+        cons.SubsetBridges.Should().Equal(union.SubsetBridges);
+    }
+
+    // Escalation: a dim7 {0,3,6,9} is contained by no placement, so a dim7→face move is Neither — the
+    // placement graph has no edge. With --name-junctions the (otherwise empty) Junction column is
+    // filled with the scales that host the move, marked ↑ and leaving the category Neither. dim7 is the
+    // core of harmonic minor / major, so those are what it escalates to.
+    [Fact]
+    public void Bridges_NeitherDim7_EscalatesToItsCoreHarmonicScales_WhenNamed()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 3, 6, 9 }),   // dim7
+            new SongChunk(1, 1, 2, new[] { 0, 3, 9 }),      // a diminished-triad face of it
+        };
+
+        var raw = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: false, Ktet)[0];
+        var named = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: true, Ktet)[0];
+
+        raw.Category.Should().Be(ProgressionCategory.Neither);     // the placement graph has no edge
+        named.Category.Should().Be(ProgressionCategory.Neither);   // escalation never reclassifies
+        raw.SubsetBridges.Should().BeEmpty();                      // nothing to show without naming
+
+        named.SubsetBridges.Should().NotBeEmpty();
+        named.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
+        named.SubsetBridges.Should().Contain(s => s.StartsWith("↑hm@"));
+    }
+
+    // Escalation only fills Neither bridges — a genuine subset move (C → G, real junctions) must carry
+    // no ↑ marker.
+    [Fact]
+    public void Bridges_NameJunctions_NonNeitherBridgesCarryNoEscalationMarker()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 4, 7 }),   // C major
+            new SongChunk(1, 1, 2, new[] { 2, 7, 11 }),  // G major
+        };
+
+        var named = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: true, Ktet)[0];
+
+        named.Category.Should().NotBe(ProgressionCategory.Neither);
+        named.SubsetBridges.Should().OnlyContain(s => !s.StartsWith("↑"));
+    }
+
     private static KeySupersetRow Row(int lcm, int at, params int[] keys) =>
         new(new Placement(lcm, at, keys), Array.Empty<Fraction>(), 0);
 

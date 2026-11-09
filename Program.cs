@@ -1926,7 +1926,7 @@ class Program
 
                 if (showSegmentBridges)
                 {
-                    var scaleSegBridges = SongAnalysis.SegmentBridges(
+                    var scaleSegBridges = SongAnalysis.ScaleSegmentBridges(
                         chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
                     var placeSegBridges = SongAnalysis.SegmentBridges(
                         chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);

@@ -99,56 +99,48 @@ seg6→seg7   0 2 4 5 7 9 11 → 2 3 4 11         Subset    {0 3 4 5 6 7 9 11}
 The theme is a near-periodic shuttle between **hM@4** and **hm@9** junctions — the harmonic-major
 and harmonic-minor colours of the piece — exactly the alternation you hear.
 
-Around beats 123–157 the music reaches its agitated passage, and the placement bridges go dark:
+Around beats 123–157 the music reaches its agitated passage, and no placement bridges the move — so
+the placement layer **escalates** and names the scale that carries it (the `↑` mark; the category
+stays **neither** because the placement graph genuinely has no edge):
 
 ```
 seg → seg   Move                  Category  Junction
-seg33→seg34 0 2 4 5 9 11 → 0 3 6 9  Neither   —
-seg34→seg35 0 3 6 9 → 0 3 9         Neither   —
+seg33→seg34 0 2 4 5 9 11 → 0 3 6 9  Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, …
+seg34→seg35 0 3 6 9 → 0 3 9         Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, …
 ```
 
-`0 3 6 9` is dim7 — contained by no placement, so the placement layer reports **neither** and the
-Junction column is blank. This is the escalation point. Reading the *scale* segmentation over the
-same beats, the passage is tiled by **hm@2** and **hm@9** — the harmonic-minor scales whose core is
-that dim7 (compare the `dim7@4 → hm@2` player in the
-[scale cores](/docs/music/progression-principles) section). The blank placement bridge and the
-harmonic-minor scale segment are the two faces of one escalation.
+`0 3 6 9` is dim7 — contained by no placement, so the placement layer reports **neither**, but the
+Junction column now names the scales that host the move: all the harmonic minor / major scales dim7
+is the core of (its fourfold symmetry means all four roots `{1,4,7,10}` appear). Reading the *scale*
+segmentation over the same beats, the passage is indeed tiled by harmonic-minor scales — the blank
+is gone, and the escalation reads directly in the placement table (compare the `dim7@4 → hm@2`
+player in the [scale cores](/docs/music/progression-principles) section). The escalation rule prefers
+scales over the whole origin ∪ target, falling back to scales over the arrival when — as with the
+symmetric dim7 — nothing hosts both.
 
-### Scale-segment bridges are mostly empty — and why
+### Scale-segment bridges read through constituents
 
-The scale-segment bridges, by contrast, come out mostly **neither**:
+Unioning a whole (long) scale segment's chunks pools a phrase of melody into a chromatic blob no
+placement contains, so a naïve union-then-test reads almost every scale-segment pair as **neither**.
+Instead each segment's witness scale is decomposed into its constituent placements (`hm@9 =
+15@11·18@2·24@0`), and the bridge is a placement-graph relation between the two segments' pooled
+constituents — a shared placement (**pivot**, in the Superset column) and/or a subset-`S` join:
 
 ```
-seg → seg   Move                              Category  Junction
-seg0→seg1   2 3 4 11 → 0 3 4 8 9 11           Neither   —
-seg1→seg2   0 3 4 8 9 11 → 0 2 4 8 9 11       Neither   —
-seg2→seg3   0 2 4 8 9 11 → 2 3 4 11           Subset    hM@4
+seg → seg   Move                          Category  Superset          Junction
+seg17→seg18 0 3 4 8 9 11 → 0 2 4 8 9 11    Both      15@11             hm@4, hm@9, mm@9, hM@4
+seg18→seg19 0 2 4 8 9 11 → 0 2 4 5 7 9 11  Both      18@2, 24@0, 24@7  hm@9, mm@9, bb@0, bb@7
 ```
 
-This is an artefact, not a finding. A segment bridge currently computes the **union** of all the
-chunks in each segment and runs the progression test on those unions. A scale segment is *long*
-(the harmonic-major stretch above spans 21 chunks), so its union pools a whole phrase of melody
-into a chromatic blob such as `0 3 4 8 9 11` — clusters like `3 4` and `8 9 11` that no single
-placement can contain. Pooling destroys the very trajectory we want to read, and does so worse for
-scale segments precisely because they are the longest.
+A scale-to-scale move now reads as a move in the placement graph between the two scales'
+constituents — the natural dual of a placement bridge — with the shared pivot placement named
+explicitly. (The Junction column still lists the junction scales of the crossing constituent pairs;
+pairs whose union is no catalog scale fall back to a raw `{keys}` set.)
 
-## Target behaviour (not yet implemented)
+## The two layers, closed
 
-The duality tells us what the two unfinished edges of the tool *should* do; this is the target the
-current output does not yet produce.
-
-- **Scale-segment bridges via constituents, not unions.** A scale segment's witness is a junction
-  scale, which already carries its decomposition `(P_A, S, P_B)`. The bridge to the next scale
-  segment should be a placement-graph relation between the two scales' constituent placements
-  (shared pivot, or constituents joined by subset / superset), replacing the union-then-test path.
-  Then a move between two scale segments reads as a move in the placement graph between their
-  constituents — the natural dual of a placement bridge.
-- **Name the required scale at placement gaps.** Where a placement bridge is **neither**, the
-  blank should be replaced by the junction / harmonic scale that carries the move — the
-  symmetric-core → containing-scale mapping (`dim7@4 → hm@2`). The escalation then shows up
-  explicitly in the placement tiling instead of as a silent gap the reader has to cross-reference
-  against the scale tiling by hand.
-
-With both in place the two layers close into a single tiling: placements wherever the graph has an
-edge, escalating to a named scale exactly at the gaps, with every move legible in both layers at
-once.
+With both edges in place the two layers close into a single tiling: placements wherever the graph
+has an edge (superset = hold, subset = move named by its junction scale), escalating to a named
+scale exactly at the gaps (the symmetric cores dim7 / aug, and anything no placement covers), and —
+in the scale layer — every scale-to-scale move read back as a placement-graph move between
+constituents. Every move is legible in both layers at once.

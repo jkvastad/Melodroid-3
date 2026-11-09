@@ -93,9 +93,12 @@ public static class SongAnalysisTableRenderer
 
         var subsetNote = nameJunctions ? ", junctions named" : ", raw triplets";
         var legend = nameJunctions ? $"\nscales: {NamedScales.Legend()}" : "";
+        var escalation = nameJunctions
+            ? "\n↑ = required scale at a placement gap (escalation; category stays Neither)"
+            : "";
         table.Caption(
             $"{title}: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
-            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}{legend}");
+            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}{legend}{escalation}");
         console.Write(table);
     }
 

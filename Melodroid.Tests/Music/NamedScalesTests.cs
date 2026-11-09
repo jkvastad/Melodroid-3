@@ -213,4 +213,58 @@ public class NamedScalesTests
         foreach (var scale in NamedScales.Catalog)
             legend.Should().Contain($"{NamedScales.Shorthand(scale.Name)}={scale.Name}");
     }
+
+    [Fact]
+    public void Decompose_Major_IsASingleLcm24PlacementRootedOnTheAnchor()
+    {
+        for (var a = 0; a < Ktet; a++)
+        {
+            var c = NamedScales.Decompose("major", a, Families(), Ktet);
+            c.Should().NotBeNull();
+            c!.Value.S.Should().BeNull("major is a single 24 placement, not a junction pair");
+            c.Value.PB.Should().BeNull();
+            c.Value.PA.Should().NotBeNull();
+            c.Value.PA!.Value.Lcm.Should().Be(24);
+            c.Value.PA.Value.At.Should().Be(a);
+            c.Value.PA.Value.Keys.OrderBy(k => k).Should().Equal(PlacementKeys(24, a));
+        }
+    }
+
+    // First-principles guard: the provenance table is only allowed to claim a junction decomposition
+    // whose stable constituent union (JunctionScales.UnionKeys) IS the catalog scale at the requested
+    // anchor. Expected keys are built with the test's own `(k + a) % 12` oracle, not production
+    // transposition.
+    [Theory]
+    [InlineData("harmonic minor")]
+    [InlineData("melodic minor")]
+    [InlineData("bebop dominant")]
+    [InlineData("harmonic major")]
+    public void Decompose_JunctionScale_StableUnionEqualsTheCatalogNecklaceAtEveryAnchor(string name)
+    {
+        var necklace = NamedScales.Catalog.Single(s => s.Name == name).Necklace;
+
+        foreach (var a in new[] { 0, 1, 5, 9, 11 })
+        {
+            var c = NamedScales.Decompose(name, a, Families(), Ktet);
+            c.Should().NotBeNull();
+            c!.Value.PA.Should().NotBeNull();
+            c.Value.PB.Should().NotBeNull();
+
+            var union = JunctionScales.UnionKeys(c.Value.PA!.Value, c.Value.PB!.Value, stable: true, Ktet);
+            var expected = necklace.Select(k => (k + a) % Ktet).OrderBy(k => k).ToList();
+            union.Should().Equal(expected, $"{name} rooted on {a} is its stable constituent union");
+        }
+    }
+
+    [Fact]
+    public void Decompose_MajorBlues_HasNoCleanJunction_ReturnsNull()
+    {
+        NamedScales.Decompose("major blues", 0, Families(), Ktet).Should().BeNull();
+    }
+
+    [Fact]
+    public void Decompose_UnknownScaleName_ReturnsNull()
+    {
+        NamedScales.Decompose("whole tone", 0, Families(), Ktet).Should().BeNull();
+    }
 }

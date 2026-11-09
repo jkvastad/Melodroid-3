@@ -389,4 +389,61 @@ public class ChordProgressionsTests
             (triplets.Count == 0).Should().Be(category == ProgressionCategory.Neither);
         }
     }
+
+    private static Placement Place(int lcm, int at) =>
+        Placements.Compute(Families().Single(f => f.Lcm == lcm), at, Ktet);
+
+    // Independent oracle: do distinct placements a and b share a family placement S of ≥ min keys that
+    // is a subset of both? Reimplemented from Placements.Sweep rather than the production SubsetTriplets.
+    private static bool ShareSubsetOfSize(IReadOnlyCollection<int> a, IReadOnlyCollection<int> b, int min)
+    {
+        var inter = new HashSet<int>(a);
+        inter.IntersectWith(b);
+        if (inter.Count < min) return false;
+        return Families()
+            .SelectMany(f => Placements.Sweep(f, Ktet))
+            .Any(s => s.Keys.Count >= min && s.Keys.All(inter.Contains));
+    }
+
+    // SubsetTripletsBetween classifies two explicit placement lists by the subset principle; its
+    // existence must match the independent shared-subset oracle for each pair, and every emitted
+    // triplet is a subset triple.
+    [Theory]
+    [InlineData(15, 11, 24, 0)]   // harmonic-minor junction neighbours
+    [InlineData(24, 0, 24, 7)]    // two lcm-24 placements a fifth apart
+    [InlineData(4, 0, 4, 6)]      // tritone-apart major triads (empty intersection)
+    public void SubsetTripletsBetween_ExistenceMatchesSharedSubsetOracle(
+        int lcmA, int atA, int lcmB, int atB)
+    {
+        var a = new[] { Place(lcmA, atA) };
+        var b = new[] { Place(lcmB, atB) };
+
+        var triplets = ChordProgressions.SubsetTripletsBetween(a, b, Families(), minSubsetNotes: 4);
+
+        (triplets.Count > 0).Should().Be(ShareSubsetOfSize(a[0].Keys, b[0].Keys, 4));
+        triplets.Should().OnlyContain(t => t.Principle == ProgressionPrinciple.Subset);
+    }
+
+    [Fact]
+    public void SubsetTripletsBetween_RecoversAKnownJunctionPair_WithCorrectSlots()
+    {
+        // 24@0 and 24@5 are the bebop-dominant junction (they share 18@7), so the between-wrapper must
+        // find the triple with those exact P_A / P_B slots.
+        var a = new[] { Place(24, 0) };
+        var b = new[] { Place(24, 5) };
+
+        var triplets = ChordProgressions.SubsetTripletsBetween(a, b, Families(), minSubsetNotes: 4);
+
+        triplets.Should().NotBeEmpty();
+        triplets.Should().Contain(t =>
+            t.Origin.Lcm == 24 && t.Origin.At == 0 && t.Target.Lcm == 24 && t.Target.At == 5);
+    }
+
+    [Fact]
+    public void SubsetTripletsBetween_SamePlacementBothSides_IsEmpty()
+    {
+        // Distinctness: a placement cannot subset-bridge to itself (that is the superset principle).
+        var p = new[] { Place(15, 11) };
+        ChordProgressions.SubsetTripletsBetween(p, p, Families(), minSubsetNotes: 4).Should().BeEmpty();
+    }
 }

@@ -179,6 +179,108 @@ public static class SongAnalysis
         return result;
     }
 
+    // Bridges between consecutive *scale* segments, read through constituents rather than a pooled
+    // union. A scale segment is long, so unioning its chunks (SegmentBridges) pools a whole phrase of
+    // melody into a chromatic key-set no placement contains, collapsing almost every pair to Neither.
+    // Instead each segment's witness scales (a named scale witnesses the segment iff it contains the
+    // chunk-union, so ContainingChord recovers them) are decomposed into their constituent placements;
+    // the bridge is then a placement-graph relation between the two pooled constituent sets — a shared
+    // placement (pivot → superset) and/or a subset-S join (→ P_A·S·P_B) — the dual of a placement
+    // bridge. A side with no decomposable witness (empty-witness singleton, or a `major blues`-only
+    // segment) falls back to the SegmentBridges union→ComputePair path so output is never incoherent.
+    public static IReadOnlyList<ChunkBridge> ScaleSegmentBridges(
+        IReadOnlyList<SongChunk> chunks,
+        IReadOnlyList<LabelSegment> segments,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        bool nameJunctions,
+        int ktet)
+    {
+        var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
+        var constituents = unions.Select(u => Constituents(u, families, ktet)).ToList();
+
+        var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
+        for (var i = 0; i + 1 < segments.Count; i++)
+        {
+            var lset = constituents[i];
+            var rset = constituents[i + 1];
+            if (lset.Count == 0 || rset.Count == 0)
+            {
+                result.Add(Pair(
+                    i, i + 1, unions[i], unions[i + 1],
+                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+                continue;
+            }
+
+            result.Add(ConstituentBridge(
+                i, i + 1, unions[i], unions[i + 1], lset, rset,
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+        }
+        return result;
+    }
+
+    // The pooled constituent placements of every named scale witnessing a segment, deduped by
+    // (Lcm, At). Witnesses are recovered by containment on the union (a scale is common to the whole
+    // run iff it contains the union), so no LabelSegment.Witnesses string parsing is needed.
+    private static IReadOnlyList<Placement> Constituents(
+        IReadOnlyList<int> union, IReadOnlyList<LcmFamily> families, int ktet)
+    {
+        var pooled = new Dictionary<(int Lcm, int At), Placement>();
+        foreach (var witness in NamedScales.ContainingChord(union, ktet))
+        {
+            if (NamedScales.Decompose(witness.Name, witness.Anchor, families, ktet) is not { } c) continue;
+            foreach (var slot in new[] { c.PA, c.S, c.PB })
+                if (slot is { } placement) pooled[(placement.Lcm, placement.At)] = placement;
+        }
+        return pooled.Values.ToList();
+    }
+
+    // Classify a scale-segment pair by the placement-graph relation between the two pooled constituent
+    // sets: pivots are placements shared by both (a "stay" within a constituent → superset); subset
+    // triplets are distinct constituents joined by a shared subset S (→ P_A·S·P_B). Category follows
+    // the same (hasSuperset, hasSubset) → Neither/Superset/Subset/Both grid as ChordProgressions, and
+    // the subset labels honour nameJunctions exactly as the chunk/placement bridges do.
+    private static ChunkBridge ConstituentBridge(
+        int fromIdx,
+        int toIdx,
+        IReadOnlyList<int> fromKeys,
+        IReadOnlyList<int> toKeys,
+        IReadOnlyList<Placement> lset,
+        IReadOnlyList<Placement> rset,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        bool nameJunctions,
+        int ktet)
+    {
+        var rkeys = new HashSet<(int Lcm, int At)>(rset.Select(p => (p.Lcm, p.At)));
+        var pivots = lset
+            .Where(p => rkeys.Contains((p.Lcm, p.At)))
+            .OrderBy(p => p.Lcm)
+            .ThenBy(p => p.At)
+            .Select(p => $"{p.Lcm}@{p.At}")
+            .Distinct()
+            .ToList();
+
+        var triplets = ChordProgressions.SubsetTripletsBetween(
+            lset, rset, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var (_, subset) = ChordProgressions.BridgeLabels(triplets);
+        if (nameJunctions) subset = JunctionLabels(triplets, ktet);
+
+        var category = (pivots.Count > 0, triplets.Count > 0) switch
+        {
+            (true, true) => ProgressionCategory.Both,
+            (true, false) => ProgressionCategory.Superset,
+            (false, true) => ProgressionCategory.Subset,
+            _ => ProgressionCategory.Neither,
+        };
+
+        return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, pivots, subset);
+    }
+
     // The union of sounding keys across a segment's chunks — distinct pitch classes, sorted ascending.
     // Chunk .Index is monotonic and preserved under --from/--to, so [FromIndex, ToIndex] selects the
     // segment's chunks.
@@ -210,7 +312,39 @@ public static class SongAnalysis
             CollapseFilter.None, ktet);
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
         if (nameJunctions) subset = JunctionLabels(triplets, ktet);
+        // Escalation: when the placement graph has no edge (Neither) the move is carried by a scale,
+        // not a placement — name it in the (empty) Junction column so the gap is explicit while the
+        // category stays Neither.
+        if (nameJunctions && category == ProgressionCategory.Neither)
+            subset = EscalationLabels(fromKeys, toKeys, ktet);
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
+    }
+
+    // The escalation scales for a Neither bridge: named scales that can host the move when no placement
+    // contains both chords. Prefer scales over the whole origin ∪ target; if none (the dim7 case —
+    // {0 3 6 9} is in no placement but is the core of harmonic minor / major), fall back to scales over
+    // the target (the arrival). Labelled "↑{Short}@{Anchor}" so the escalation to the scale layer reads
+    // clearly against the still-Neither category. Sorted catalog-order then anchor, as JunctionLabels.
+    private static IReadOnlyList<string> EscalationLabels(
+        IReadOnlyList<int> fromKeys, IReadOnlyList<int> toKeys, int ktet)
+    {
+        var union = fromKeys.Concat(toKeys).Distinct().OrderBy(k => k).ToList();
+        var rows = NamedScales.ContainingChord(union, ktet);
+        if (rows.Count == 0) rows = NamedScales.ContainingChord(toKeys, ktet);
+
+        var catalogOrder = NamedScales.Catalog
+            .Select((s, i) => (s.Name, i))
+            .ToDictionary(x => x.Name, x => x.i);
+
+        return rows
+            .Select(r => (Rank: catalogOrder[r.Name], r.Anchor,
+                Label: $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}"))
+            .Distinct()
+            .OrderBy(x => x.Rank)
+            .ThenBy(x => x.Anchor)
+            .ThenBy(x => x.Label, StringComparer.Ordinal)
+            .Select(x => x.Label)
+            .ToList();
     }
 
     // The named junction scales of a pair's subset triplets: one label per distinct (Origin, Target)

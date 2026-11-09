@@ -251,6 +251,30 @@ public static class ChordProgressions
             .ToList();
     }
 
+    // Every (P_A, S, P_B) subset-principle triplet between two *explicit* placement lists: distinct
+    // P_A ∈ aPlacements, P_B ∈ bPlacements sharing a subset S ⊆ P_A ∩ P_B (|S| ≥ minSubsetNotes).
+    // Like SubsetPairs but over caller-supplied sides instead of the whole universe — used by
+    // SongAnalysis.ScaleSegmentBridges to bridge two scale segments through their witness scales'
+    // constituent placements rather than a pooled chord union. Shares SubsetTriplets so the subset
+    // rule (and its collapseIsomorphic / poolMaximal declutters) stays single-sourced.
+    public static IReadOnlyList<ProgressionTriplet> SubsetTripletsBetween(
+        IReadOnlyList<Placement> aPlacements,
+        IReadOnlyList<Placement> bPlacements,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic = false,
+        bool poolMaximal = false,
+        int ktet = 12)
+    {
+        var supA = aPlacements.Select(Wrap).ToList();
+        var supB = bPlacements.Select(Wrap).ToList();
+        var subsetCandidates = SubsetCandidates(families, minSubsetNotes, ktet);
+        var canonical = collapseIsomorphic ? BuildCanonicalMap(families, ktet) : null;
+        return SubsetTriplets(
+            supA, supB, subsetCandidates, minSubsetNotes, collapseIsomorphic, poolMaximal, canonical)
+            .ToList();
+    }
+
     // Raw placements containing the origin chord (drop-origin filtered when requested). Shared across
     // every candidate target in the convenience form, so computed once by the callers above.
     private static List<P> OriginSupersets(

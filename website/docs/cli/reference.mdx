@@ -235,7 +235,7 @@ each transposed to every anchor (= root) whose key set fully **contains** the ch
 12 keys; a cell marks whether the key is in that scale row. Reading column K shows which scale rows
 survive playing key K as melody over the chord — i.e. which scale that melody note implies.
 
-The scale names are empirical labels on results derived from the [subset principle](/docs/music/progression-principles#scales-from-the-subset-principle):
+The scale names are empirical labels on results derived from the [subset principle](/docs/music/progression-principles#junction-scales):
 the four minor/bebop/harmonic scales are [`junction-scales`](#junction-scales) outputs, the major
 scale is the `lcm-24` placement `24@k`, and major blues is the documented sub-selection of the bebop
 dominant union (`24@0 ∪ 24@5` with the `lcm-24` roots removed).
@@ -589,16 +589,30 @@ changes the category).
 above, e.g. `hm@9` — via the named-scale catalog), falling back to the raw `{keys}` when the union
 lands on no catalog scale. Because the union
 ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
-junctions — the intended reading when the raw `P_A·S·P_B` list explodes.
+junctions — the intended reading when the raw `P_A·S·P_B` list explodes. It also turns a **neither**
+bridge into an **escalation**: when no placement bridges the move (the canonical case is dim7
+`{0 3 6 9}`, in no placement but the core of harmonic minor / major), the otherwise-empty Junction
+column names the scales that can host the move, marked with a leading `↑` — scales over the whole
+origin ∪ target, falling back to scales over the arrival when nothing hosts both. The category stays
+**neither** (the placement graph truly has no edge); the `↑` marks that the move is carried by the
+scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
-bridges tables (scale and placement) classifying each consecutive *segment* pair. A segment's chord is
-the **union of its chunks' sounding keys** (a one-chunk segment reduces to that chunk's key-set, so
-this generalizes `--bridges`), and the pair runs through the same `ChordProgressions.ComputePair`
-classifier. Reading the **Superset** column top-to-bottom then surfaces a cross-*segment* loop the
-per-chunk bridges table hides — e.g. the Für-Elise `8@4`-segment ↔ `15s@11`-segment alternation. It
-honours the same `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-junctions`
-flags and computes the segmentation even when `--segments` is off.
+bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
+table takes a segment's chord to be the **union of its chunks' sounding keys** (a one-chunk segment
+reduces to that chunk's key-set, so this generalizes `--bridges`) and runs the pair through
+`ChordProgressions.ComputePair`. The **scale** table instead reads each segment through the
+**constituent placements** of its witness scales (a scale witnesses a segment iff it contains the
+chunk-union, so `ContainingChord` recovers the witnesses; each is decomposed as `hm@9 =
+15@11·18@2·24@0`), and bridges adjacent segments by a placement-graph relation between the two pooled
+constituent sets — a shared **pivot** placement (Superset column) and/or a subset-`S` join — rather
+than re-deriving supersets of the pooled chromatic union (which pools a long scale segment's melody
+into a key-set no placement contains, reading as `Neither`). A side whose union lands on no named
+scale falls back to the placement table's union path. Reading the **Superset** column top-to-bottom
+surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
+`--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-junctions` flags and
+compute the segmentation even when `--segments` is off.
 
 Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
-placements) is a planned follow-up; this first cut establishes the per-chunk mapping.
+placements) is developed in the [tiling chapter](/docs/music/tiling); this per-chunk mapping plus the
+segment bridges above are the current cut.
