@@ -18,7 +18,7 @@ Let's look at Beethoven's *Für Elise*, as a POC, analysed with the
 ```
 analyze midi --input output/Fur-Elise-Simple.mid \
   --collapse-isomorphic --pool-maximal --placements --stable-placements \
-  --segments --segment-bridges --name-junctions
+  --segments --segment-bridges --name-junctions --max-chunks 600
 ```
 
 ## Chunks, segments, bridges
@@ -91,13 +91,15 @@ principle, naming a small vocabulary of junction scales:
 
 ```
 seg → seg   Move                              Category  Junction
-seg2→seg3   0 2 4 8 9 11 → 2 3 4 11           Subset    hM@4
-seg5→seg6   0 2 4 8 9 11 → 0 2 4 5 7 9 11     Subset    hm@9
-seg6→seg7   0 2 4 5 7 9 11 → 2 3 4 11         Subset    {0 3 4 5 6 7 9 11}
+seg6→seg7   3 4 11 → 0 2 4 8 9 11             Subset    hM@4
+seg7→seg8   0 2 4 8 9 11 → 0 2 4 5 7 9 11     Subset    hm@9
+seg8→seg9   0 2 4 5 7 9 11 → 3 4 11           Subset    24@0·5@11·15@6
 ```
 
 The theme is a near-periodic shuttle between **hM@4** and **hm@9** junctions — the harmonic-major
-and harmonic-minor colours of the piece — exactly the alternation you hear.
+and harmonic-minor colours of the piece — exactly the alternation you hear. A junction whose union
+matches no catalog scale (the `seg8→seg9` row) keeps its full `P_A·S·P_B` constituents rather than a
+bare key set, so you can still read which placements it is made of.
 
 Around beats 123–157 the music reaches its agitated passage, and no placement bridges the move — so
 the placement layer **escalates** and names the scale that carries it (the `↑` mark; the category
@@ -105,18 +107,26 @@ stays **neither** because the placement graph genuinely has no edge):
 
 ```
 seg → seg   Move                  Category  Junction
-seg33→seg34 0 2 4 5 9 11 → 0 3 6 9  Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, …
-seg34→seg35 0 3 6 9 → 0 3 9         Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, …
+seg33→seg34 0 2 4 5 9 11 → 0 3 6 9  Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, ↑hM@4, ↑hM@7, ↑hM@10 …(+4)
+seg34→seg35 0 3 6 9 → 0 3 9         Neither   ↑hm@1, ↑hm@4, ↑hm@7, ↑hm@10, ↑hM@1, ↑hM@4, ↑hM@7, ↑hM@10 …(+4)
 ```
 
 `0 3 6 9` is dim7 — contained by no placement, so the placement layer reports **neither**, but the
 Junction column now names the scales that host the move: all the harmonic minor / major scales dim7
-is the core of (its fourfold symmetry means all four roots `{1,4,7,10}` appear). Reading the *scale*
-segmentation over the same beats, the passage is indeed tiled by harmonic-minor scales — the blank
-is gone, and the escalation reads directly in the placement table (compare the `dim7@4 → hm@2`
-player in the [scale cores](/docs/music/progression-principles) section). The escalation rule prefers
-scales over the whole origin ∪ target, falling back to scales over the arrival when — as with the
-symmetric dim7 — nothing hosts both.
+is the core of (its fourfold symmetry means all four roots `{1,4,7,10}` appear for both), with the
+`…(+4)` overflow folding in the remaining hosts. Reading the *scale* segmentation over the same
+beats, the passage is indeed tiled by harmonic-minor scales — the blank is gone, and the escalation
+reads directly in the placement table (compare the `dim7@4 → hm@2` player in the
+[scale cores](/docs/music/progression-principles) section). The escalation rule prefers hosts over
+the whole origin ∪ target, falling back to hosts over the arrival when — as with the symmetric dim7
+— nothing hosts both.
+
+Crucially, escalation draws from the **same** junction universe as the Junction column, not just the
+six named scales: a named host reads `↑{Short}@{Anchor}`, an unnamed one keeps its `↑P_A·S·P_B`
+constituents. A non-symmetric gap shows the mix directly — e.g. `seg35→seg36`
+(`0 3 9 → 0 2 4 8 9 11`, Neither) escalates to `↑hm@9, ↑mm@9, ↑15@11·5@11·24@2, ↑15@11·5@4·24@5,
+↑24@7·5@6·24@9`: two named harmonic scales followed by three unnamed junctions that equally host the
+move.
 
 ### Scale-segment bridges read through constituents
 
@@ -128,14 +138,14 @@ constituents — a shared placement (**pivot**, in the Superset column) and/or a
 
 ```
 seg → seg   Move                          Category  Superset          Junction
-seg17→seg18 0 3 4 8 9 11 → 0 2 4 8 9 11    Both      15@11             hm@4, hm@9, mm@9, hM@4
-seg18→seg19 0 2 4 8 9 11 → 0 2 4 5 7 9 11  Both      18@2, 24@0, 24@7  hm@9, mm@9, bb@0, bb@7
+seg17→seg18 0 3 4 8 9 11 → 0 2 4 8 9 11    Both      15@11             hm@4, hm@9, mm@9, hM@4, 15@6·5@11·24@0
+seg18→seg19 0 2 4 8 9 11 → 0 2 4 5 7 9 11  Both      18@2, 24@0, 24@7  hm@9, mm@9, bb@0, bb@7, 15@11·5@4·24@5, 24@7·5@4·24@5
 ```
 
 A scale-to-scale move now reads as a move in the placement graph between the two scales'
 constituents — the natural dual of a placement bridge — with the shared pivot placement named
 explicitly. (The Junction column still lists the junction scales of the crossing constituent pairs;
-pairs whose union is no catalog scale fall back to a raw `{keys}` set.)
+pairs whose union is no catalog scale keep their full `P_A·S·P_B` constituents.)
 
 ## The two layers, closed
 

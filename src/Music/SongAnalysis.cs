@@ -141,6 +141,7 @@ public static class SongAnalysis
         bool nameJunctions,
         int ktet)
     {
+        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var result = new List<ChunkBridge>(Math.Max(0, chunks.Count - 1));
         for (var i = 0; i + 1 < chunks.Count; i++)
         {
@@ -148,7 +149,7 @@ public static class SongAnalysis
             var to = chunks[i + 1];
             result.Add(Pair(
                 from.Index, to.Index, from.Keys, to.Keys,
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
         }
         return result;
     }
@@ -170,12 +171,13 @@ public static class SongAnalysis
         bool nameJunctions,
         int ktet)
     {
+        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
         for (var i = 0; i + 1 < segments.Count; i++)
             result.Add(Pair(
                 i, i + 1, unions[i], unions[i + 1],
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
         return result;
     }
 
@@ -198,6 +200,7 @@ public static class SongAnalysis
         bool nameJunctions,
         int ktet)
     {
+        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var constituents = unions.Select(u => Constituents(u, families, ktet)).ToList();
 
@@ -210,7 +213,7 @@ public static class SongAnalysis
             {
                 result.Add(Pair(
                     i, i + 1, unions[i], unions[i + 1],
-                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
                 continue;
             }
 
@@ -305,6 +308,7 @@ public static class SongAnalysis
         bool collapseIsomorphic,
         bool poolMaximal,
         bool nameJunctions,
+        IReadOnlyList<JunctionScale> junctionCatalog,
         int ktet)
     {
         var (category, triplets) = ChordProgressions.ComputePair(
@@ -312,45 +316,90 @@ public static class SongAnalysis
             CollapseFilter.None, ktet);
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
         if (nameJunctions) subset = JunctionLabels(triplets, ktet);
-        // Escalation: when the placement graph has no edge (Neither) the move is carried by a scale,
-        // not a placement — name it in the (empty) Junction column so the gap is explicit while the
-        // category stays Neither.
+        // Escalation: when the placement graph has no edge (Neither) the move is carried by a junction
+        // scale, not a placement — name it in the (empty) Junction column so the gap is explicit while
+        // the category stays Neither.
         if (nameJunctions && category == ProgressionCategory.Neither)
-            subset = EscalationLabels(fromKeys, toKeys, ktet);
+            subset = EscalationLabels(fromKeys, toKeys, junctionCatalog, ktet);
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
-    // The escalation scales for a Neither bridge: named scales that can host the move when no placement
-    // contains both chords. Prefer scales over the whole origin ∪ target; if none (the dim7 case —
-    // {0 3 6 9} is in no placement but is the core of harmonic minor / major), fall back to scales over
-    // the target (the arrival). Labelled "↑{Short}@{Anchor}" so the escalation to the scale layer reads
-    // clearly against the still-Neither category. Sorted catalog-order then anchor, as JunctionLabels.
+    // The escalation scales for a Neither bridge: the junction scales that can host the move when no
+    // placement contains both chords. Symmetric with JunctionLabels — it draws from the SAME junction
+    // universe, not just the named catalog: a named junction shows "↑{Short}@{Anchor}", an unnamed one
+    // keeps its "↑P_A·S·P_B" constituents. Named scales that are not junctions (major, major blues) are
+    // recovered via NamedScales.ContainingChord so those escalations survive too. Prefer hosts over the
+    // whole origin ∪ target; if nothing hosts both (the dim7 case — {0 3 6 9} is in no placement but is
+    // the core of harmonic minor / major), fall back to hosts over the target (the arrival). Sorted
+    // named-first (catalog order, then anchor), then unnamed triplets, as JunctionLabels.
     private static IReadOnlyList<string> EscalationLabels(
-        IReadOnlyList<int> fromKeys, IReadOnlyList<int> toKeys, int ktet)
+        IReadOnlyList<int> fromKeys,
+        IReadOnlyList<int> toKeys,
+        IReadOnlyList<JunctionScale> junctionCatalog,
+        int ktet)
     {
         var union = fromKeys.Concat(toKeys).Distinct().OrderBy(k => k).ToList();
-        var rows = NamedScales.ContainingChord(union, ktet);
-        if (rows.Count == 0) rows = NamedScales.ContainingChord(toKeys, ktet);
+        var hosts = HostsOver(union, junctionCatalog, ktet);
+        if (hosts.Count == 0) hosts = HostsOver(toKeys, junctionCatalog, ktet);
+        return hosts;
+    }
 
+    // Named-and-unnamed junction hosts of a key set: named scales containing it (via the catalog, so
+    // non-junction scales like major / major blues are included) plus unnamed junctions whose keys
+    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed, as JunctionLabels.
+    private static IReadOnlyList<string> HostsOver(
+        IReadOnlyList<int> keys, IReadOnlyList<JunctionScale> junctionCatalog, int ktet)
+    {
         var catalogOrder = NamedScales.Catalog
             .Select((s, i) => (s.Name, i))
             .ToDictionary(x => x.Name, x => x.i);
+        var target = new HashSet<int>(keys);
 
-        return rows
-            .Select(r => (Rank: catalogOrder[r.Name], r.Anchor,
-                Label: $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}"))
+        var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
+        foreach (var r in NamedScales.ContainingChord(keys, ktet))
+        {
+            var label = $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}";
+            labels[label] = (catalogOrder[r.Name], r.Anchor, 0, 0, 0, label);
+        }
+        foreach (var j in junctionCatalog)
+        {
+            if (!target.IsSubsetOf(j.Keys)) continue;
+            if (NamedScales.Match(j.Keys, ktet) is not null) continue; // named ones already covered
+            var label = "↑" + TripletLabel(new ProgressionTriplet(
+                j.PA, j.S, j.PB, ProgressionPrinciple.Subset));
+            labels[label] = (catalogOrder.Count, j.PA.Lcm, j.PA.At, j.PB.Lcm, j.PB.At, label);
+        }
+
+        return labels.Values
             .Distinct()
             .OrderBy(x => x.Rank)
-            .ThenBy(x => x.Anchor)
+            .ThenBy(x => x.A).ThenBy(x => x.B).ThenBy(x => x.C).ThenBy(x => x.D)
             .ThenBy(x => x.Label, StringComparer.Ordinal)
             .Select(x => x.Label)
             .ToList();
     }
 
-    // The named junction scales of a pair's subset triplets: one label per distinct (Origin, Target)
-    // pair (the union ignores S, so the many triplets sharing a pair collapse to one), each the stable
-    // union P_A ∪ P_B named via NamedScales.Match, or its raw "{keys}" when unnamed. Sorted for stable
-    // display: named scales first (catalog order, then anchor), then unnamed key sets.
+    // The anchored junction catalog used for escalation, computed once per bridges table (only when
+    // nameJunctions). dedupeTransposition:false keeps all 12 anchors so containment can be tested at
+    // any root; stable:true matches JunctionLabels' union rule.
+    private static IReadOnlyList<JunctionScale> JunctionCatalog(
+        bool nameJunctions,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        int ktet)
+        => nameJunctions
+            ? JunctionScales.Enumerate(families, minSubsetNotes, stable: true,
+                collapseIsomorphic, poolMaximal, dedupeTransposition: false, ktet)
+            : Array.Empty<JunctionScale>();
+
+    // The junction scales of a pair's subset triplets. A triplet whose stable union P_A ∪ P_B matches
+    // a catalog scale is named ("{Short}@{Anchor}"), deduped by the (Origin, Target) pair — the union
+    // ignores S, so the many triplets sharing a pair collapse to one. A triplet whose union matches no
+    // catalog scale keeps its full "P_A·S·P_B" constituents (as `table junction-scales` prints them),
+    // deduped by the whole triplet so distinct S survive. Sorted for stable display: named scales first
+    // (catalog order, then anchor), then unnamed triplets (by Origin/Target LCM then anchor).
     private static IReadOnlyList<string> JunctionLabels(
         IReadOnlyList<ProgressionTriplet> triplets, int ktet)
     {
@@ -358,27 +407,35 @@ public static class SongAnalysis
             .Select((s, i) => (s.Name, i))
             .ToDictionary(x => x.Name, x => x.i);
 
-        var labels = new Dictionary<string, (int Rank, int Anchor, string Label)>();
+        var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
         foreach (var t in triplets.Where(t => t.Principle == ProgressionPrinciple.Subset))
         {
-            var key = $"{t.Origin.Lcm}@{t.Origin.At}|{t.Target.Lcm}@{t.Target.At}";
-            if (labels.ContainsKey(key)) continue;
-
             var union = JunctionScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
             if (NamedScales.Match(union, ktet) is (string name, int anchor))
-                labels[key] = (catalogOrder[name], anchor, $"{NamedScales.Shorthand(name)}@{anchor}");
+            {
+                var key = $"{t.Origin.Lcm}@{t.Origin.At}|{t.Target.Lcm}@{t.Target.At}";
+                labels[key] = (catalogOrder[name], anchor, 0, 0, 0, $"{NamedScales.Shorthand(name)}@{anchor}");
+            }
             else
-                labels[key] = (catalogOrder.Count, 0, "{" + string.Join(" ", union) + "}");
+            {
+                var label = TripletLabel(t);
+                labels[label] = (catalogOrder.Count,
+                    t.Origin.Lcm, t.Origin.At, t.Target.Lcm, t.Target.At, label);
+            }
         }
 
         return labels.Values
             .Distinct()
             .OrderBy(x => x.Rank)
-            .ThenBy(x => x.Anchor)
+            .ThenBy(x => x.A).ThenBy(x => x.B).ThenBy(x => x.C).ThenBy(x => x.D)
             .ThenBy(x => x.Label, StringComparer.Ordinal)
             .Select(x => x.Label)
             .ToList();
     }
+
+    // "P_A·S·P_B" for a subset triplet, matching `table junction-scales`' constituent column.
+    private static string TripletLabel(ProgressionTriplet t) =>
+        $"{t.Origin.Lcm}@{t.Origin.At}·{t.Bridge.Lcm}@{t.Bridge.At}·{t.Target.Lcm}@{t.Target.At}";
 
     // The named-scale labels ("{Shorthand}@{Anchor}") containing a chunk's key-set, in
     // ContainingChord order. Shared with the per-chunk table so both views label scales identically.

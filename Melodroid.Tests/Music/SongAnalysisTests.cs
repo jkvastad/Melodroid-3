@@ -172,10 +172,12 @@ public class SongAnalysisTests
         named.Category.Should().Be(raw.Category);                 // naming never reclassifies
         named.SupersetBridges.Should().Equal(raw.SupersetBridges); // superset column untouched
 
-        // Raw subset labels are P_A·S·P_B triplets; named ones are scale names or bare key sets.
+        // Raw subset labels are P_A·S·P_B triplets. Named labels are either a scale name
+        // ("{Short}@{Anchor}", no '·') or — when the union matches no catalog scale — the same
+        // P_A·S·P_B constituents; never a bare "{keys}" set.
         raw.SubsetBridges.Should().OnlyContain(s => s.Contains('·'));
-        named.SubsetBridges.Should().OnlyContain(s => !s.Contains('·'));
-        named.SubsetBridges.Should().OnlyContain(s => s.Contains('@') || s.StartsWith("{"));
+        named.SubsetBridges.Should().OnlyContain(s => s.Contains('@'));
+        named.SubsetBridges.Should().NotContain(s => s.StartsWith("{"));
 
         // Named scales use the compact shorthands, never the full catalog words.
         named.SubsetBridges.Should().OnlyContain(s =>
@@ -352,6 +354,47 @@ public class SongAnalysisTests
 
         named.Category.Should().NotBe(ProgressionCategory.Neither);
         named.SubsetBridges.Should().OnlyContain(s => !s.StartsWith("↑"));
+    }
+
+    // A subset junction whose stable union matches no catalog scale keeps its full P_A·S·P_B
+    // constituents (as `table junction-scales` prints them) rather than collapsing to a bare "{keys}"
+    // set — so the reader can still see which placements the junction is made of.
+    [Fact]
+    public void Bridges_NameJunctions_UnnamedJunctionShowsFullTriplet()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 2, 4, 5, 7, 9, 11 }), // C major scale
+            new SongChunk(1, 1, 2, new[] { 3, 4 }),                 // reached by a non-scale junction
+        };
+
+        var named = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: true, Ktet)[0];
+
+        named.Category.Should().NotBe(ProgressionCategory.Neither);
+        named.SubsetBridges.Should().Contain(s => s.Contains('·')); // an unnamed junction, shown raw
+        named.SubsetBridges.Should().NotContain(s => s.StartsWith("{")); // never a bare key set
+    }
+
+    // Escalation is symmetric with the Junction column: it draws from the whole junction universe, not
+    // only the named catalog. A Neither move hosted by an unnamed junction keeps its ↑P_A·S·P_B
+    // constituents instead of being dropped for lack of a catalog name.
+    [Fact]
+    public void Bridges_NeitherMoveHostedByUnnamedJunction_EscalatesWithFullTriplet()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 2, 4, 5, 7, 9, 10 }), // no placement/subset bridge to…
+            new SongChunk(1, 1, 2, new[] { 3, 4, 9 }),              // …this arrival ⇒ Neither
+        };
+
+        var named = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameJunctions: true, Ktet)[0];
+
+        named.Category.Should().Be(ProgressionCategory.Neither);
+        named.SubsetBridges.Should().Contain(s => s.StartsWith("↑") && s.Contains('·'));
     }
 
     private static KeySupersetRow Row(int lcm, int at, params int[] keys) =>

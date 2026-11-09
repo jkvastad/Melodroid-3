@@ -586,16 +586,19 @@ changes the category).
 `--name-junctions` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
 *is* a [junction scale](#junction-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
 **Junction** and each bridge shows the named scale of that union (`{Short}@{Anchor}` — the shorthand
-above, e.g. `hm@9` — via the named-scale catalog), falling back to the raw `{keys}` when the union
-lands on no catalog scale. Because the union
-ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
-junctions — the intended reading when the raw `P_A·S·P_B` list explodes. It also turns a **neither**
-bridge into an **escalation**: when no placement bridges the move (the canonical case is dim7
-`{0 3 6 9}`, in no placement but the core of harmonic minor / major), the otherwise-empty Junction
-column names the scales that can host the move, marked with a leading `↑` — scales over the whole
-origin ∪ target, falling back to scales over the arrival when nothing hosts both. The category stays
-**neither** (the placement graph truly has no edge); the `↑` marks that the move is carried by the
-scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
+above, e.g. `hm@9` — via the named-scale catalog) when the union lands on a catalog scale. Because the
+union ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
+junctions — the intended reading when the raw `P_A·S·P_B` list explodes. When the union matches **no**
+catalog scale the junction keeps its full `P_A·S·P_B` constituents (as
+[`junction-scales`](#junction-scales) prints them), never a bare `{keys}` set. It also turns a
+**neither** bridge into an **escalation**: when no placement bridges the move (the canonical case is
+dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major), the otherwise-empty
+Junction column names the junction scales that can host the move, marked with a leading `↑`, drawn from
+the **same** junction universe as the Junction column — named hosts as `↑{Short}@{Anchor}`, unnamed
+ones as `↑P_A·S·P_B` (plus the non-junction named scales `major` / `major blues` via the catalog) —
+over the whole origin ∪ target, falling back to hosts over the arrival when nothing hosts both. The
+category stays **neither** (the placement graph truly has no edge); the `↑` marks that the move is
+carried by the scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
 bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
