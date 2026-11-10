@@ -1,19 +1,11 @@
 ---
 sidebar_position: 5
-description: The superset and subset progression principles, and how non-LCM scales (dim7, harmonic minor, blues) exploit double adjacency.
+description: How subsequent frequencies morph to produce progressions.
 ---
 
 import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 
 # Progression Principles
-
-TODO: progression principles as movement in the placement graph, which is an illustration of how perceptions (placements) morph.
-From this we se two different kinds of morphs - within placement (no morph but different frequencies) and between placements via a shared pivot subset
-Later we see a third option with scale cores where the shared pivot is not a placement.
-
-The [placements chapter](/docs/music/placements) laid out the relationships of placements from a given key.
-In the [preference chapter](/docs/music/preference) we proposed a principle of preference for small primes in the WPL, 
-explaining dissonance of lcm 15 and 20 as well as why the isomorphic lcm families sound similar regardless of voicing.
 
 Thus far we have mostly been looking at static harmony, i.e. various block chords, with limited melody.
 Let's now turn to more dynamic harmony using series of chords, also known as chord progressions.
@@ -23,79 +15,30 @@ Surely there are reasons behind phenomena such as cadences, circles of fifths an
 If we can define principles based on physical features which recover popular progressions, 
 we might glean some insight into the inner workings of music and then extrapolate from those principles to aid in composition.
 
-## The Principles of Chord Progressions
+## Placement Progressions
 
-We can define a chord progression as a triplet of key sets.
-Given an origin chord and a target chord, a progression is a triplet of key sets consisting of origin-, bridge-, and target:
-* The origin set contains the origin chord.
-* The target set contains the target chord.
-* The bridge set fulfills some progression principle connecting the origin and target.
+The concept of progression requires time, and time in music seems to consist of discrete pulses, as discussed in [related research on rhythm.](/docs/related-research/rhythm)
+Progressions in music then refer to the relationships of sets of notes at consecutive pulses, and various groupings thereof.
 
-With such a general approach there are likely better and worse origin, target and bridge sets.
-In line with minimizing wpl and primes, perhaps there is some form of cost reduction guiding progressions.
-For instance, playing subsequent key sets which morph into each other while respecting placement relationships minimizes potential costs of context switching, as keys and reference points need not be completely re-parsed.
+A natural relationship of consecutive notes is frequency invariance; notes can be completely random, or remain constant.
+In the middle of such a spectrum we have a morphing of notes where some notes stay the same while some change.
 
-If the quality of chord progressions is decided by how easily key sets morph into one another then there will be a hierarchy of costs and their different kinds of morphs.
-If morph cost is related to changing placements then the cheapest morph is not changing placement at all. This is achieved by moving within a placement.
-After this it becomes a question of the relative expense of changing root, cost of WPL size and cost of constituent primes.
+In HPT we can add further relationships based on harmonic patterns. Morphs can be illustrated as walks in a placement graph, showing how adding or removing a key affects the resulting placements.
+Such walks are most generally made in the global placement graph, consisting of all the twelve extended tonic placement graphs of 12-TETs, allowing walks between tonics.
 
-We earlier argued that e.g. 15@11 collapses to 24@1 with key 7, and that isomorphic families collapse to their lowest primes, also changing roots and increasing WPL.
-This implies reducing prime cost is more important than both root and WPL cost.
-The brain however is a black box and any cost rule could be highly context dependent.
-Perhaps the best approach is to simply iterate reasonable cost schemas and see what fits.
+* A **Placement Progression** maps the notes at one pulse to a placement A, the notes of a consecutive pulse to a placement B, and links them via notes in a placement S in the global placement graph.
 
-The fitness of a schema could be evaluated by how well it tiles popular songs:
-Since we are reverse-engineering the brains musical black box, popular songs can be seen as having been empirically validated as good by many black boxes, giving some indication of how well the schema fits.
-A tiling refers to dividing a song into discrete pulses, and for each pulse classifying all sounding notes into the schema and producing an unbroken chain of progressions.
-Such a tiling will also need to handle dissonance, as in the example from cuisine with chili and bitterness, dissonance will likely play an important role in good music.
-
-The [tiling chapter](/docs/music/tiling) works this out as a concrete pipeline — chunks, segments and progression bridges — and shows how the placement moves below and the junction scales they name are two layers of one tiling.
-
-A first attempt at a progression schema could be based on the extended placement graphs, which function as incremental cost graphs.
-Each step in the graph is thus a minimal cost for adding/removing a key.
-This can then motivate a progression principle which places origin and target inside placements in the graph and then bridges them by walking the graph.
-When origin and target are in the same placement then the bridge might also be the same placement, producing e.g. three chord songs in the major scale.
-Some three chord songs such as C-F-G have an interesting quality where they start with small WPL e.g. 4@0, then increment it: 
-8@0 contains both F and C, and finally 24@0 contains C-F-G, a loop which pumps up WPL to 24 and then relaxes it back to 4 without ever changing root.
-
-Such a schema works well for chords beginning and ending in placements, but as we touched on in previous chapters there are some traditional chords and scales which are not contained by lcm placements.
-These were blues and harmonic minor, and for discussion we will also add in the symmetric dim7 chord.
-
-We will see how harmonic minor, and indeed harmonic major and melodic minor, are minimally connected leaf nodes in extended placement graphs.
-We will show that blues is a subset of yet another such a composite scale.
-
-Dim7 is more tricky as it consist of several dim triads, each related to an lcm 15 and 24 in the same extended triad placement graph, while also contained by four harmonic minor/major scales.
-Of special note is that dim7 works well as a tense block chord.
-
-Tiling with a placement graph schema must then handle a few specific cases for the notes related to a given pulse:
-
-* Notes are contained by a placement(s) - tile it as the smallest prime-then-WPL placement.
-* Notes not in placement:
- * 
-
-Such movement within placement graphs is not the only way to morph.
-Non-lcm key sets such as dim7, aug, blues, harmonic minor and pentatonic major are useful because they are close to several placements.
-Of these dim7 is of special note as it has an interesting tense perception as a block chord without being overly dissonant, despite not being in any placement.
-This could even be a unique feature due to its symmetry and well spaced intervals.
-
-
-The extended placement graphs show two important relationships between LCMs: supersets (e.g. 8@0 contains 4@0 and 4@5) and lcm subsets (e.g. 18@2 bridges 15@11 and 24@0,7). 
-This motivates two potential principles:
-
-* **Superset Principle** — Chord A can progress to chord B if A shares an lcm superset with B.
-* **Subset Principle** — Chord A can progress to chord B if A shares an lcm subset with B.
-
-
-Further restrictions on chord progressions could include stability.
-We previously discussed stability of placements with lcm 15 collapsing to 24 as well as isomorphisms collapsing to representatives (and likely 20@k collapsing to 15@k+7).
-In the context of progressions, such stability may play a role - e.g. perhaps the target placement must be stable given the target chord, but the bridge and origin need not be.
+Thus a placement progression can be written as a triplet consisting of the origin, bridge and target placements containing the notes of two successive pulses.
 
 ### Examples
-A concrete example of the **superset** principle for the chord progression C to Eb (4@0 → 4@3):
+
+TODO: rephrase both examples  to highlight walks in a placement graph.
+
+Chord progression C to Eb (4@0 → 4@3):
 
 * C is part of 15@7 (4@0 ≅ 3@7), Eb = 4@3 is part of 18@10.
 * Placement 15@7 is an lcm superset of 18@10.
-* Both C and Eb then share the superset 15@7 and the superset principle thus allows this progression.
+* Both C and Eb then share the superset 15@7.
 
 In this way, although `{0 4 7}` (3@7) is not a subset of `{0 3 5 7 8 10}` (18@10) since they do not
 share key 4, it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
@@ -110,25 +53,23 @@ While not useful for sustaining melody or chords, perhaps the collapsing key sti
 
 There are also subset motivations for 4@0 -> 4@3 such as 15@7->4@3->15@10 where the target chord is also used as the bridge, contained by both 15@7 and 15@10.
 
-A concrete example of the **subset** principle for the chord progression C to Db (4@0 → 4@1):
+Chord progression C to Db (4@0 → 4@1):
 
 * C is part of 15@7 (4@0 ≅ 3@7), Db = 4@1 is part of 24@8.
 * Placements 15@7 and 24@8 are both lcm supersets of 18@10.
-* The subset principle thus allows a progression from 3@7 (15@7) to 4@1 (24@8) via the shared subset
-  18@10.
+* This is a progression from 3@7 (15@7) to 4@1 (24@8) via the shared subset 18@10.
 
-## Junction Scales
+## Composite Scales
+
+TODO: Rename junction scales and all related junction terminology to composite scales, highlighting that these scales are composed of more than one placement
+TODO: Discuss dim7 and pentatonic as composite scales - pentatonic composed of 24@0,5,7. Dim7 as a subset of four harmonic minors/majors, or four dim triads dim@k each placed in 24@k+1, 15@k+3.
+
 In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce coherent melodies while being neither lcm sets nor subsets.
 Instead they appear to be composed of adjacent lcm scales, producing pragmatic key sets for rapid modulation of melody.
 
-We can make this precise with the subset principle.
-Given two placements `P_A`, `P_B` sharing a subset `S ⊆ P_A ∩ P_B`, we can define a scale `P_A ∪ P_B`. 
-We can call this a **junction scale** — a pitch set sitting at the junction of two placements that the subset principle bridges.
+Using the [`table junction-scales`](/docs/cli/reference#junction-scales) command we can enumerate composite scales.
 
-Using the [`table junction-scales`](/docs/cli/reference#junction-scales) command we can enumerate junction scales.
-However, not every shared subset is equally interesting. 
-A dyad or triad bridge is satisfied by almost any pair of placements, so the union balloons into a chromatic cluster. 
-Looking instead at large shared subsets with the `--min-subset-notes 6` option yields:
+Looking at large shared subsets with the `--min-subset-notes 6` option yields some familiar scales:
 
 ```
 Scale                         Size  P_A·S·P_B
@@ -138,7 +79,7 @@ Scale                         Size  P_A·S·P_B
 ```
 
 Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` constituents that produced it. 
-The rows have also been stabilized with the `--stable` option which removes collapsing keys from the final sets.
+The rows have been stabilized with the `--stable` option which removes collapsing keys from the final sets.
 For example `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
 
 In the table we see two classical minor scales — **harmonic minor** and **melodic minor**.
@@ -247,9 +188,9 @@ Below you can listen to some simple random melodies based on the scales above.
   ]}
 />
 
-### Junctions on the placement graph
+### Composite scales on the placement graph
 
-Every junction above is two placements sharing a subset `S`, and `S` is exactly the node where the two meet walking down the [extended triad placement graph](/docs/music/placements). 
+Every composite scale above is two placements sharing a subset `S`, and `S` is exactly the node where the two meet walking down the [extended triad placement graph](/docs/music/placements). 
 Sorted by how deep the shared bridge sits in the graph:
 
 | Scale | Junction | Bridge node |
@@ -271,6 +212,14 @@ its key set is quite close to lcm 24 and the earliest branch in that subtree fro
 * Bebop dominant sounds quite bluesy in and of itself, and especielly when omitting the lcm 24 roots 0 and 5, recovering the major blues scale.
 Notably the minor seven chord is present in bebop, and its strong pull to the perfect fourth (C7 -> F) could be due to the composition of the scale.
 * Harmonic major removes both collapsing keys from its lcm 15 constituents.
+
+## Composite Chords
+TODO: generalised progression, see e.g. analyze midi and junction bridges
+
+From harmonic major and minor we saw the symmetric chord dim7@0 = `{0 3 6 9}`. 
+This chords is of special interest due to its perfect symmetry, and its popular usage despite not being contained by any placement.
+
+The composite scales in general allow key sets not strictly in placements, but instead residing in composite scales.
 
 ## Example Chord Progressions
 Using the `progression` command we can enumerate all possible progressions between two chords.
@@ -308,6 +257,13 @@ C -> Em has both superset and subset progressions.
 The simplest reading is the superset principle within lcm 8, exactly as for the major triads in C F G. 
 The difference in feel could be that where C is the triad 4@0, Em=`4 7 11` is not itself a small LCM family (subset of 8@0 / 24@0) so the minor chord has no fundamental of its own within the shared pattern.
 
+### C to E
+TODO
+Notably goes well with melody on f and playing a note set e.g. 4 8 11 5 sounds good despite:
+
+* only containing top level lcm is 15 which collapses on 8
+* alternatively contained by harm@9
+
 ### C to B
 C -> B has only subset progressions.
 * The pragmatic path is C's 24@7 to B's 15@6 through the shared bridge 18@9 (24@7->18@9->15@6). This is the harmonic minor move.
@@ -343,114 +299,3 @@ TODO
 
 ### Em to A
 TODO
-
-## Symmetric chords and scale cores
-So far we have looked into chord progressions as chords belonging to placements and either moving within a placement (superset principle) or between two junctioned placements (subset principle).
-Let's now look at the symmetric chords dim7@0 = `{0 3 6 9}` and aug@0 = `{0 4 8}`. 
-These equally divide the octave, providing no asymmetry for prefering a placement root.
-
-Where an ordinary chord collapses according to preference, a symmetric chord has no reason to collapse since every root is equally plausible.
-Perhaps this is why dim7 and aug have a dramatic or tense flavor, as if in an indeterminate state.
-
-Dim7 is contained by no placement but is contained by harmonic minor and harmonic major, while aug lies in lcm 15 (and its lcm 20 subset).
-A similar situation occurs with the major pentatonic pent@0 = `{0 2 4 7 9}`, a traditional scale which is not a placement but is shared between 24@0,5,7, and blues@0 = `{0 2 4 7 9}`, shared between 24@5,10.
-These all act as a core or pivot between these scales.
-
-### Dim7
-Let's look at the first order subsets of dim7 using [`table subsets --keys 0 3 6 9`](/docs/cli/reference#subsets).
-
-```
-Triad    lcm 15   lcm 24
-0 3 6     15@3     24@1
-0 3 9     15@0     24@10
-0 6 9     15@9     24@7
-3 6 9     15@6     24@4
-```
-
-No lcm family full-matches dim7, but its four diminished-triad faces each match an lcm 15 and an lcm 24 placement (e.g. `{0 3 6}` is `15@3` and `24@1`).
-Notably the lcm 15 anchors are the dim7 keys `{0 3 6 9}` themselves, while the lcm 24 anchors `{1 4 7 10}` are exactly the harmonic minor and major roots which contain dim7.
-
-Where a junction scale functions as a modulating set for two placements by bridging them, perhaps dim7 works as a core between the harmonic minor and major scales.
-The indeterminate state of the symmetric chord then is the bridge, allowing to modulate into a specific harmonic scale, which can then further be modulated between its placements.
-
-For example in Beethoven's Für Elise around the 1:25 mark there is a dim7@4 passage with melody and chords from the related hm@2. 
-Drawing random melody to a basic rhythm produces a similar feel.
-
-<RhythmPatternPlayer
-  meter="4 4"
-  subdivisions="4"
-  bpm={110}
-  instrument="piano"
-  script={[
-    {chord: [1, 4, 7, 10], keys: [1, 2, 4, 5, 7, 9, 10], label: 'dim7@4 → hm@2'},
-    {chord: [2, 5, 9], keys: [1, 2, 4, 5, 7, 9, 10], label: 'Dm · hm@2'},
-  ]}
-/>
-
-### Augmented triad
-Looking at the supersets of the augmented triad with [`table supersets --keys 0 4 8`](/docs/cli/reference#supersets) we find it sits inside six placements:
-
-```
-LCM  Key  Keys (12-tet)
- 20    0  0 3 4 7 8 10
- 20    4  4 7 8 11 0 2
- 20    8  8 11 0 3 4 6
- 15    3  3 4 6 8 11 0 1
- 15    7  7 8 10 0 3 4 5
- 15   11  11 0 2 4 7 8 9
-```
-
-Dropping the lcm 20 rows (which collapse to lcm 15 via `20@k → 15@(k+7)`) leaves three lcm 15 containers, one per rotation of aug's 3-fold symmetry:
-
-$$
-\{0,4,8\} \subseteq 15@\{3,7,11\}
-$$
-
-Unlike dim7 the aug chord does fit into placements: the collapse key of `15@k` is $(k+8)\bmod 12$, giving `{11, 3, 7}`, none of which lies in aug.
-Aug@0 then could function as a core for 15@3,7,11.
-
-Below we have Am (`15s@11`), aug@0 (`15s@11`), where Fm (`15s@7`),  C (`15s@7`), aug@0 (`15s@7`)
-
-<RhythmPatternPlayer
-  meter="4 4 4 2 2"
-  subdivisions="4"
-  bpm={102}
-  instrument="piano"
-  script={[
-    {chord: [0, 4, 9], keys: [0, 2, 4, 8, 9, 11], label: 'Am · 15s@11'},
-    {chord: [0, 4, 8], keys: [0, 2, 4, 8, 9, 11], label: 'aug@0 · 15s@11'},
-    {chord: [0, 5, 8], keys: [0, 4, 5, 7, 8, 10], label: 'Fm · 15s@7'},
-    {chord: [0, 4, 7], keys: [0, 4, 5, 7, 8, 10], label: 'C · 15s@7'},    
-    {chord: [0, 4, 8], keys: [0, 4, 5, 7, 8, 10], label: 'aug@0 · 15s@7'},
-  ]}
-/>
-
-### Pentatonic major
-The major pentatonic pent@0 = `{0 2 4 7 9}` is not itself an lcm family, but unlike dim7 it full-matches several placements —
- where dim7 is contained by none, the pentatonic is contained by many. Using [`table supersets --keys 0 2 4 7 9`](/docs/cli/reference#supersets):
-
-```
-LCM  Key  Keys (12-tet)
- 18    2  2 4 7 9 11 0
- 18    7  7 9 0 2 4 5
- 15    4  4 5 7 9 0 1 2
- 15   11  11 0 2 4 7 8 9
- 24    0  0 2 4 5 7 9 11
- 24    5  5 7 9 10 0 2 4
- 24    7  7 9 11 0 2 4 6
-```
-
-The three lcm 24 containers 24@0,5,7 are C, F and G major — the three major scales a fifth apart, adjacent through the 4@0 extended triad placement graph. 
-The pentatonic is their shared core, so a pentatonic melody stays consonant across all three and lets us modulate freely between them.
-
-<RhythmPatternPlayer
-  meter="4 4 4 4"
-  subdivisions="4"
-  bpm={100}
-  script={[
-    {chord: [0, 4, 7], keys: [0, 2, 4, 7, 9], label: 'C · pent@0'},
-    {chord: [5, 9, 0], keys: [0, 2, 4, 7, 9], label: 'F · pent@0'},
-    {chord: [7, 11, 2], keys: [0, 2, 4, 7, 9], label: 'G · pent@0'},
-    {chord: [0, 4, 7], keys: [0, 2, 4, 7, 9], label: 'C · pent@0'},
-  ]}
-/>
