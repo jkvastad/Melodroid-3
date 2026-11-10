@@ -3,7 +3,7 @@ using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
 
-public class JunctionScalesTests
+public class CompositeScalesTests
 {
     private const int Ktet = 12;
 
@@ -48,7 +48,7 @@ public class JunctionScalesTests
             .ToList();
         expected.Should().Equal(HarmKeys); // two independent oracles agree
 
-        var scales = JunctionScales.Enumerate(
+        var scales = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, stable: true, dedupeTransposition: false);
 
         // Order() sorts the outer pair by (Lcm, At), so 15@11 is P_A and 24@0 is P_B.
@@ -62,12 +62,12 @@ public class JunctionScalesTests
     [Fact]
     public void StableForm_DropsTheCollapseKeyFromTheUnion_RawKeepsIt()
     {
-        bool IsHarmPair(JunctionScale s) =>
+        bool IsHarmPair(CompositeScale s) =>
             s.PA.Lcm == 15 && s.PA.At == 11 && s.PB.Lcm == 24 && s.PB.At == 0;
 
-        var stable = JunctionScales.Enumerate(
+        var stable = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, stable: true, dedupeTransposition: false);
-        var raw = JunctionScales.Enumerate(
+        var raw = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, stable: false, dedupeTransposition: false);
 
         // Key 7 is 15@11's collapsing key. Stable form removes it; raw form (= plain union) keeps it.
@@ -87,7 +87,7 @@ public class JunctionScalesTests
             .OrderBy(k => k)
             .ToList();
 
-        var scales = JunctionScales.Enumerate(
+        var scales = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, stable: true, dedupeTransposition: false);
 
         scales.Should().Contain(s =>
@@ -102,7 +102,7 @@ public class JunctionScalesTests
     [Fact]
     public void DedupeTransposition_KeepsOneRepresentativePerNecklace()
     {
-        var deduped = JunctionScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: true);
+        var deduped = CompositeScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: true);
 
         // No two distinct deduped scales are transpositions of one another.
         for (var i = 0; i < deduped.Count; i++)
@@ -113,7 +113,7 @@ public class JunctionScalesTests
         deduped.Should().Contain(s => AreTranspositions(s.Keys, HarmKeys));
 
         // Without dedupe the harm necklace recurs across anchors.
-        var raw = JunctionScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
+        var raw = CompositeScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
         raw.Count(s => AreTranspositions(s.Keys, HarmKeys)).Should().BeGreaterThan(1);
     }
 
@@ -122,30 +122,30 @@ public class JunctionScalesTests
     {
         // harm's bridge S = 18@2 has 6 keys, so requiring 7 removes it. (NotContain takes an
         // Expression predicate, so the 15@11/24@0 test is inlined rather than a local function.)
-        var at7 = JunctionScales.Enumerate(Families(), minSubsetNotes: 7, dedupeTransposition: false);
+        var at7 = CompositeScales.Enumerate(Families(), minSubsetNotes: 7, dedupeTransposition: false);
         at7.Should().NotContain(s =>
             s.PA.Lcm == 15 && s.PA.At == 11 && s.PB.Lcm == 24 && s.PB.At == 0);
 
         // Lowering the bar admits more bridges, so strictly more scale rows.
-        var at2 = JunctionScales.Enumerate(Families(), minSubsetNotes: 2, dedupeTransposition: false);
-        var at4 = JunctionScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
+        var at2 = CompositeScales.Enumerate(Families(), minSubsetNotes: 2, dedupeTransposition: false);
+        var at4 = CompositeScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
         at2.Count.Should().BeGreaterThan(at4.Count);
     }
 
     // The public UnionKeys is the single source of truth for a subset bridge's scale (reused by
-    // SongAnalysis' --name-junctions). It must reproduce the harmonic-minor stable union directly from
+    // SongAnalysis' --name-composites). It must reproduce the harmonic-minor stable union directly from
     // the two placements — including dropping 15@11's collapse key 7 from the finished union, even
     // though 24@0 independently carries it.
     [Fact]
     public void UnionKeys_StableHarmonicMinorPair_MatchesTheDerivedNecklace()
     {
-        var stable = JunctionScales.UnionKeys(
+        var stable = CompositeScales.UnionKeys(
             Placement(15, 11), Placement(24, 0), stable: true, Ktet);
         stable.Should().Equal(HarmKeys);
         stable.Should().NotContain(7);
 
         // Raw (non-stable) union is the plain set union, keeping 24@0's key 7.
-        var raw = JunctionScales.UnionKeys(
+        var raw = CompositeScales.UnionKeys(
             Placement(15, 11), Placement(24, 0), stable: false, Ktet);
         raw.Should().Contain(7);
     }
@@ -153,10 +153,10 @@ public class JunctionScalesTests
     [Fact]
     public void Declutters_ShrinkTheLabelSpace_WithoutRemovingTheHarmScale()
     {
-        var raw = JunctionScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
-        var pooled = JunctionScales.Enumerate(
+        var raw = CompositeScales.Enumerate(Families(), minSubsetNotes: 4, dedupeTransposition: false);
+        var pooled = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, poolMaximal: true, dedupeTransposition: false);
-        var collapsed = JunctionScales.Enumerate(
+        var collapsed = CompositeScales.Enumerate(
             Families(), minSubsetNotes: 4, collapseIsomorphic: true, dedupeTransposition: false);
 
         pooled.Count.Should().BeLessThan(raw.Count);

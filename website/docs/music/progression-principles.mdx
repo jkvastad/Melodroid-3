@@ -7,10 +7,10 @@ import RhythmPatternPlayer from '@site/src/components/RhythmPatternPlayer';
 
 # Progression Principles
 
-Thus far we have mostly been looking at static harmony, i.e. various block chords, with limited melody.
-Let's now turn to more dynamic harmony using series of chords, also known as chord progressions.
+Thus far we have focused on static harmony, i.e. various block chords, with limited melody.
+Let's now turn to more dynamic harmony using sequences of notes such as chord progressions.
 
-While any two chords can be played one after another, some seem to fit better together.
+While any two sets of notes can be played one after another, some seem to fit better together.
 Surely there are reasons behind phenomena such as cadences, circles of fifths and 3-chord-songs (e.g. C, F, G). 
 If we can define principles based on physical features which recover popular progressions, 
 we might glean some insight into the inner workings of music and then extrapolate from those principles to aid in composition.
@@ -23,7 +23,9 @@ Progressions in music then refer to the relationships of sets of notes at consec
 A natural relationship of consecutive notes is frequency invariance; notes can be completely random, or remain constant.
 In the middle of such a spectrum we have a morphing of notes where some notes stay the same while some change.
 
-In HPT we can add further relationships based on harmonic patterns. Morphs can be illustrated as walks in a placement graph, showing how adding or removing a key affects the resulting placements.
+In HPT we can add further relationships based on harmonic patterns. 
+Some sets of keys map to nice patterns (full matches). 
+Changing or morphing such a key set can be illustrated as walks in a placement graph - adding or removing a key affects the resulting placements.
 Such walks are most generally made in the global placement graph, consisting of all the twelve extended tonic placement graphs of 12-TETs, allowing walks between tonics.
 
 * A **Placement Progression** maps the notes at one pulse to a placement A, the notes of a consecutive pulse to a placement B, and links them via notes in a placement S in the global placement graph.
@@ -31,12 +33,10 @@ Such walks are most generally made in the global placement graph, consisting of 
 Thus a placement progression can be written as a triplet consisting of the origin, bridge and target placements containing the notes of two successive pulses.
 
 ### Examples
+**C to Eb (4@0 → 4@3)**
 
-TODO: rephrase both examples  to highlight walks in a placement graph.
-
-Chord progression C to Eb (4@0 → 4@3):
-
-* C is part of 15@7 (4@0 ≅ 3@7), Eb = 4@3 is part of 18@10.
+* C is part of 15@7 (4@0 ≅ 3@7)
+* Eb = 4@3 is part of 18@10
 * Placement 15@7 is an lcm superset of 18@10.
 * Both C and Eb then share the superset 15@7.
 
@@ -44,16 +44,11 @@ In this way, although `{0 4 7}` (3@7) is not a subset of `{0 3 5 7 8 10}` (18@10
 share key 4, it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
 
 Notably 4@3 is also part of 15@7, but since key 4 collapses 15@7 it is not a stable target.
-An alternative explanation for 4@0 → 4@3 is that both are part of 20@0. 
-However, lcm 20 seems quite unstable and likely collapses to its superset 15@7.
-This in turn collapses with key 4, part of the target chord, making this progression seem unlikely.
 
 Of further interest here is that the root key for Eb, key 3, is the collapsing key for 15@7.
 While not useful for sustaining melody or chords, perhaps the collapsing key still allows us to go to 18@10 when progressing chords.
 
-There are also subset motivations for 4@0 -> 4@3 such as 15@7->4@3->15@10 where the target chord is also used as the bridge, contained by both 15@7 and 15@10.
-
-Chord progression C to Db (4@0 → 4@1):
+**C to Db (4@0 → 4@1)**
 
 * C is part of 15@7 (4@0 ≅ 3@7), Db = 4@1 is part of 24@8.
 * Placements 15@7 and 24@8 are both lcm supersets of 18@10.
@@ -61,13 +56,11 @@ Chord progression C to Db (4@0 → 4@1):
 
 ## Composite Scales
 
-TODO: Rename junction scales and all related junction terminology to composite scales, highlighting that these scales are composed of more than one placement
-TODO: Discuss dim7 and pentatonic as composite scales - pentatonic composed of 24@0,5,7. Dim7 as a subset of four harmonic minors/majors, or four dim triads dim@k each placed in 24@k+1, 15@k+3.
+In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce
+coherent melodies while being neither lcm sets nor subsets. 
+As we shall see these turn out to be composite scales — ambigous unions of adjacent placements.
 
-In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce coherent melodies while being neither lcm sets nor subsets.
-Instead they appear to be composed of adjacent lcm scales, producing pragmatic key sets for rapid modulation of melody.
-
-Using the [`table junction-scales`](/docs/cli/reference#junction-scales) command we can enumerate composite scales.
+Using the [`table composite-scales`](/docs/cli/reference#composite-scales) command we can enumerate composite scales.
 
 Looking at large shared subsets with the `--min-subset-notes 6` option yields some familiar scales:
 
@@ -88,7 +81,7 @@ We also see the **bebop dominant** scale, which contains blues as a subset.
 Investigating smaller bridges produces the harmonic major at `--min-subset-notes 4`. 
 Going lower still produces no obvious traditional scales.
 
-### Harmonic minor as a junction
+### Harmonic minor as a composite scale
 Looking at the first row of the intro table we have: `P_A = 15@0 = {0 1 3 5 8 9 10}` and
 `P_B = 24@1 = {0 1 3 5 6 8 10}`. They share the subset `S = 18@3 = {0 1 3 5 8 10}` — their common
 parent. Their union is
@@ -104,11 +97,11 @@ $$
 15@0 \cup 24@1 \;\setminus\; \{8\} \;=\; \{0\;1\;3\;5\;6\;9\;10\} \;=\; \mathrm{harm}@10.
 $$
 
-### Melodic minor as a junction
+### Melodic minor as a composite scale
 
 From the extended triad placement graph we see that 15@k relates to 24@(k+1), 24@(k+8) and 18@(k+3).
 At `k = 0` this gives `15@0` two `lcm-24` partners sharing the same `18@3` parent. 
-Harmonic minor used `24@1` (the `k+1` partner). The `k+8` partner `24@8` is the sibling junction:
+Harmonic minor used `24@1` (the `k+1` partner). The `k+8` partner `24@8` is the sibling composite scale:
 
 $$
 15@0 \cup 24@8 \;\setminus\; \{8\} \;=\; \{0\;1\;3\;5\;7\;9\;10\} =\mathrm{mel}@10
@@ -125,20 +118,19 @@ $$
 24@0 \cup 24@5 = \{0\;2\;4\;5\;7\;9\;10\;11\} = \mathrm{bebop}@0
 $$
 
-This necklace is the [**bebop dominant**](https://en.wikipedia.org/wiki/Bebop_scale#Bebop_dominant_scale) — a major scale with an added flat seventh.
-We write `bebop@x` for the bebop dominant scale rooted on key `x`, i.e. the major scale `24@x` plus a flat seventh, so the union above is `bebop@0`.
+This is the [**bebop dominant**](https://en.wikipedia.org/wiki/Bebop_scale#Bebop_dominant_scale) — a major scale with an added flat seventh.
 Similarly to harmonic minor and melodic minor, removing the fifth and root of 24@5 produces a traditional scale, namely the blues major scale:
 
 $$
 24@0 \cup 24@5 \;\setminus\; {0\;5} = \{\;2\;4\;7\;9\;10\;11\} = \mathrm{blues}@7
 $$
 
-This echoes our subset inspections in the preference chapter, where blues@4 was closely tied to 24@9, and here we see blues@7 tied to 24@0, repeating the 5 key root difference.
+This echoes our subset inspections in the preference chapter, where blues@4 was closely tied to 24@9, and here we see blues@7 tied to 24@0, repeating the pattern of a 5 key root difference.
 
 The removed root notes are also roots of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
 Perhaps this ambivalence between two closely adjacent lcm families is the source of the swingy sound.
 
-### Harmonic major as a junction
+### Harmonic major as a composite scale
 
 When allowing smaller bridges with `--min-subset-notes 4` we find the **harmonic major**. 
 
@@ -165,10 +157,8 @@ $$
 15@0 \cup 15@5 \;\setminus\; \{1,\;8\} \;=\; \{0\;2\;3\;5\;6\;9\;10\} \;=\; \mathrm{hmaj}@10
 $$
 
-This necklace is **harmonic major**.
-We write `hmaj@x` for the harmonic major scale rooted on key `x`, i.e. the major scale `24@x` with a flattened sixth, so the union above is `hmaj@10`.
 Where harmonic minor drops a single collapse key from a one-sided collapse,
-harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-15` junction.
+harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-15` composite scale.
 
 Loosening the floor further to `--min-subset-notes 3` admits bare triad bridges, but these only
 generate 8-, 9- and 10-note chromatic clusters that aren't obvious traditional scales, so we leave them aside.
@@ -193,7 +183,7 @@ Below you can listen to some simple random melodies based on the scales above.
 Every composite scale above is two placements sharing a subset `S`, and `S` is exactly the node where the two meet walking down the [extended triad placement graph](/docs/music/placements). 
 Sorted by how deep the shared bridge sits in the graph:
 
-| Scale | Junction | Bridge node |
+| Scale | Constituents | Bridge node |
 | --- | --- | --- |
 | harmonic minor | `15@11 · 18@2 · 24@0` | `18@2` hexad |
 | melodic minor | `15@11 · 18@2 · 24@7` | `18@2` hexad |
@@ -214,12 +204,25 @@ Notably the minor seven chord is present in bebop, and its strong pull to the pe
 * Harmonic major removes both collapsing keys from its lcm 15 constituents.
 
 ## Composite Chords
-TODO: generalised progression, see e.g. analyze midi and junction bridges
-
 From harmonic major and minor we saw the symmetric chord dim7@0 = `{0 3 6 9}`. 
 This chords is of special interest due to its perfect symmetry, and its popular usage despite not being contained by any placement.
 
-The composite scales in general allow key sets not strictly in placements, but instead residing in composite scales.
+Composite scales in general host key sets that lie in no placement at all, but are useful in composition.
+This requires an expansion of the placement progression principle to include composite key sets.
+
+## Composite Placement Progression
+
+The placement progression principle handles note sets which are contained by placements. 
+Having discussed composite scales and chords, which are not necessarily in the global placement graph, we need a generalised principle for describing composite progressions.
+
+* A **Composite Placement Progression** maps the notes at one pulse to a composite scale, the notes of a
+  consecutive pulse to another composite scale, and links them by a *placement progression between
+  their constituent placements*.
+
+Progression between composite scales is therefore also a walk in the global placement graph, but
+run between two composite note sets constituents rather than between two proper placements. 
+The plain placement progression is the degenerate case where each composite is a single placement — a one-constituent
+composite scale.
 
 ## Example Chord Progressions
 Using the `progression` command we can enumerate all possible progressions between two chords.
@@ -258,9 +261,7 @@ The simplest reading is the superset principle within lcm 8, exactly as for the 
 The difference in feel could be that where C is the triad 4@0, Em=`4 7 11` is not itself a small LCM family (subset of 8@0 / 24@0) so the minor chord has no fundamental of its own within the shared pattern.
 
 ### C to E
-TODO
-Notably goes well with melody on f and playing a note set e.g. 4 8 11 5 sounds good despite:
-
+TODO: Notably goes well with melody on f and playing a note set e.g. 4 8 11 5 sounds good despite:
 * only containing top level lcm is 15 which collapses on 8
 * alternatively contained by harm@9
 

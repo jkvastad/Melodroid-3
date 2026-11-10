@@ -987,57 +987,57 @@ class Program
             return 0;
         });
 
-        var junctionScalesMinSubsetNotesOption = new Option<int>("--min-subset-notes")
+        var compositeScalesMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
             Description = "Minimum number of keys the shared subset S (a good-LCM family placement bridging the pair) must have. Default 4, so S is a substantial 18/8 parent (harm's S=18 has 6 keys); lower to admit smaller bridges and more scales.",
             DefaultValueFactory = _ => 4,
         };
 
-        var junctionScalesStableOption = new Option<bool>("--stable")
+        var compositeScalesStableOption = new Option<bool>("--stable")
         {
             Description = "Use the stable form of any collapsing (prime-5: lcm-15/20) constituent and drop its collapse key from the union. Default on; harm@9 = 15@11·18@2·24@0 requires it. --stable false emits the raw unions (harm will not appear).",
             DefaultValueFactory = _ => true,
         };
 
-        var junctionScalesCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
+        var compositeScalesCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
         {
             Description = "Declutter: relabel each constituent placement to the representative of its key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Default off (raw labels).",
             DefaultValueFactory = _ => false,
         };
 
-        var junctionScalesPoolMaximalOption = new Option<bool>("--pool-maximal")
+        var compositeScalesPoolMaximalOption = new Option<bool>("--pool-maximal")
         {
             Description = "Declutter: keep only the maximal containing placements P_A/P_B (by key-set inclusion) and the maximal shared subsets S. Default off (raw).",
             DefaultValueFactory = _ => false,
         };
 
-        var junctionScalesDedupeTranspositionOption = new Option<bool>("--dedupe-transposition")
+        var compositeScalesDedupeTranspositionOption = new Option<bool>("--dedupe-transposition")
         {
             Description = "Fold the 12 transpositions of each scale to one representative (lowest constituent LCMs/anchors). Default on; turn off to list every anchored instance.",
             DefaultValueFactory = _ => true,
         };
 
-        var junctionScalesCommand = new Command(
-            "junction-scales",
-            "Catalog non-LCM \"junction\" scales: each is the key-union of a distinct placement pair (P_A, P_B) sharing an LCM-family subset S of ≥ --min-subset-notes keys (the subset principle read as a scale). Emits the concrete 12-tet key set to play plus the P_A·S·P_B constituents. --stable (default) uses collapsing placements' stable form and drops their collapse keys from the union (harm@9 = 15@11·18@2·24@0 requires it). --dedupe-transposition (default) keeps one anchor per necklace; --collapse-isomorphic / --pool-maximal declutter labels. 12-tet only.");
-        junctionScalesCommand.Add(maxSizeOption);
-        junctionScalesCommand.Add(maxPrimeOption);
-        junctionScalesCommand.Add(maxLcmOption);
-        junctionScalesCommand.Add(junctionScalesMinSubsetNotesOption);
-        junctionScalesCommand.Add(junctionScalesStableOption);
-        junctionScalesCommand.Add(junctionScalesCollapseIsomorphicOption);
-        junctionScalesCommand.Add(junctionScalesPoolMaximalOption);
-        junctionScalesCommand.Add(junctionScalesDedupeTranspositionOption);
-        junctionScalesCommand.SetAction(parse =>
+        var compositeScalesCommand = new Command(
+            "composite-scales",
+            "Catalog non-LCM \"composite\" scales: each is the key-union of a distinct placement pair (P_A, P_B) sharing an LCM-family subset S of ≥ --min-subset-notes keys (a bridged placement walk read as a frozen scale). Emits the concrete 12-tet key set to play plus the P_A·S·P_B constituents it is composed of. --stable (default) uses collapsing placements' stable form and drops their collapse keys from the union (harm@9 = 15@11·18@2·24@0 requires it). --dedupe-transposition (default) keeps one anchor per necklace; --collapse-isomorphic / --pool-maximal declutter labels. 12-tet only.");
+        compositeScalesCommand.Add(maxSizeOption);
+        compositeScalesCommand.Add(maxPrimeOption);
+        compositeScalesCommand.Add(maxLcmOption);
+        compositeScalesCommand.Add(compositeScalesMinSubsetNotesOption);
+        compositeScalesCommand.Add(compositeScalesStableOption);
+        compositeScalesCommand.Add(compositeScalesCollapseIsomorphicOption);
+        compositeScalesCommand.Add(compositeScalesPoolMaximalOption);
+        compositeScalesCommand.Add(compositeScalesDedupeTranspositionOption);
+        compositeScalesCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
-            var minSubsetNotes = parse.GetValue(junctionScalesMinSubsetNotesOption);
-            var stable = parse.GetValue(junctionScalesStableOption);
-            var collapseIsomorphic = parse.GetValue(junctionScalesCollapseIsomorphicOption);
-            var poolMaximal = parse.GetValue(junctionScalesPoolMaximalOption);
-            var dedupeTransposition = parse.GetValue(junctionScalesDedupeTranspositionOption);
+            var minSubsetNotes = parse.GetValue(compositeScalesMinSubsetNotesOption);
+            var stable = parse.GetValue(compositeScalesStableOption);
+            var collapseIsomorphic = parse.GetValue(compositeScalesCollapseIsomorphicOption);
+            var poolMaximal = parse.GetValue(compositeScalesPoolMaximalOption);
+            var dedupeTransposition = parse.GetValue(compositeScalesDedupeTranspositionOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -1046,9 +1046,9 @@ class Program
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var scales = JunctionScales.Enumerate(
+            var scales = CompositeScales.Enumerate(
                 families, minSubsetNotes, stable, collapseIsomorphic, poolMaximal, dedupeTransposition);
-            JunctionScaleTableRenderer.Render(
+            CompositeScaleTableRenderer.Render(
                 scales, minSubsetNotes, stable, collapseIsomorphic, poolMaximal, dedupeTransposition);
             return 0;
         });
@@ -1389,7 +1389,7 @@ class Program
         tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(scaleFingerprintCommand);
         tableCommand.Add(progressionCommand);
-        tableCommand.Add(junctionScalesCommand);
+        tableCommand.Add(compositeScalesCommand);
         tableCommand.Add(voicingsCommand);
         tableCommand.Add(subsetsCommand);
         tableCommand.Add(chordsCommand);
@@ -1758,7 +1758,7 @@ class Program
         };
         var analyzeMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
-            Description = "Bridges only (--bridges): minimum keys a placement must have to serve as a shared subset S in the subset principle. Default 4 (a substantial 18/8 parent, matching table junction-scales); lower to 2 to allow dyad bridges.",
+            Description = "Bridges only (--bridges): minimum keys a placement must have to serve as a shared bridge subset S in a placement walk. Default 4 (a substantial 18/8 parent, matching table composite-scales); lower to 2 to allow dyad bridges.",
             DefaultValueFactory = _ => 4,
         };
         var analyzeCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
@@ -1771,9 +1771,9 @@ class Program
             Description = "Bridges only (--bridges): declutter bridge labels by keeping only the maximal containing placements and maximal shared subsets. Lossless for existence, so categories unaffected. Default off.",
             DefaultValueFactory = _ => false,
         };
-        var analyzeNameJunctionsOption = new Option<bool>("--name-junctions")
+        var analyzeNameCompositesOption = new Option<bool>("--name-composites")
         {
-            Description = "Bridges only (--bridges): replace the raw P_A·S·P_B triplets in the Subset column with the named junction scale of each bridge — the stable union P_A ∪ P_B matched against the named-scale catalog ({Name}@{Anchor}), or its raw {keys} when unnamed. Collapses the dyad explosion (the union ignores which S was chosen). Default off (raw triplets).",
+            Description = "Bridges only (--bridges): replace the raw P_A·S·P_B triplets in the Composite column with the named composite scale of each bridge — the stable union P_A ∪ P_B matched against the named-scale catalog ({Name}@{Anchor}), or its raw {keys} when unnamed. Collapses the dyad explosion (the union ignores which S was chosen). Default off (raw triplets).",
             DefaultValueFactory = _ => false,
         };
         var analyzePlacementsOption = new Option<bool>("--placements")
@@ -1798,7 +1798,7 @@ class Program
         };
         var analyzeSegmentBridgesOption = new Option<bool>("--segment-bridges")
         {
-            Description = "Also emit two segment-bridges tables (scale and placement): like --bridges but between consecutive segments, using each segment's union of sounding keys as its chord. Surfaces cross-segment loops a per-chunk list hides (e.g. an 8@4-segment ↔ 15@11-segment alternation). Honours --min-subset-notes / --collapse-isomorphic / --pool-maximal / --name-junctions. Default off.",
+            Description = "Also emit two segment-bridges tables (scale and placement): like --bridges but between consecutive segments, using each segment's union of sounding keys as its chord. Surfaces cross-segment loops a per-chunk list hides (e.g. an 8@4-segment ↔ 15@11-segment alternation). Honours --min-subset-notes / --collapse-isomorphic / --pool-maximal / --name-composites. Default off.",
             DefaultValueFactory = _ => false,
         };
 
@@ -1815,7 +1815,7 @@ class Program
         analyzeMidiCommand.Add(analyzeMinSubsetNotesOption);
         analyzeMidiCommand.Add(analyzeCollapseIsomorphicOption);
         analyzeMidiCommand.Add(analyzePoolMaximalOption);
-        analyzeMidiCommand.Add(analyzeNameJunctionsOption);
+        analyzeMidiCommand.Add(analyzeNameCompositesOption);
         analyzeMidiCommand.Add(analyzePlacementsOption);
         analyzeMidiCommand.Add(analyzeStablePlacementsOption);
         analyzeMidiCommand.Add(analyzeSegmentsOption);
@@ -1837,7 +1837,7 @@ class Program
             var minSubsetNotes = parse.GetValue(analyzeMinSubsetNotesOption);
             var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
-            var nameJunctions = parse.GetValue(analyzeNameJunctionsOption);
+            var nameComposites = parse.GetValue(analyzeNameCompositesOption);
             var showPlacements = parse.GetValue(analyzePlacementsOption);
             var stablePlacements = parse.GetValue(analyzeStablePlacementsOption);
             var showSegments = parse.GetValue(analyzeSegmentsOption);
@@ -1927,21 +1927,21 @@ class Program
                 if (showSegmentBridges)
                 {
                     var scaleSegBridges = SongAnalysis.ScaleSegmentBridges(
-                        chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
+                        chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
                     var placeSegBridges = SongAnalysis.SegmentBridges(
-                        chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
+                        chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
                     SongAnalysisTableRenderer.RenderBridges(
-                        scaleSegBridges, minSubsetNotes, nameJunctions, title: "scale segment bridges", indexPrefix: "seg");
+                        scaleSegBridges, minSubsetNotes, nameComposites, title: "scale segment bridges", indexPrefix: "seg");
                     SongAnalysisTableRenderer.RenderBridges(
-                        placeSegBridges, minSubsetNotes, nameJunctions, title: "placement segment bridges", indexPrefix: "seg");
+                        placeSegBridges, minSubsetNotes, nameComposites, title: "placement segment bridges", indexPrefix: "seg");
                 }
             }
 
             if (bridges)
             {
                 var chunkBridges = SongAnalysis.Bridges(
-                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, k);
-                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes, nameJunctions);
+                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
+                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes, nameComposites);
             }
 
             return 0;

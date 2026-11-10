@@ -1,10 +1,10 @@
 namespace Melodroid_3.Music;
 
-// A junction scale: a useful non-LCM scale formed by reading the subset principle
-// (website/docs/music/progression-principles.mdx) as a scale rather than a chord progression. Two
-// distinct placements P_A, P_B that share a common LCM-family subset S (|S| ≥ minSubsetNotes) are
-// unioned into a playable key set. Keys is the concrete 12-tet key set to play; PA, S, PB are the
-// constituents it was generated from.
+// A composite scale: a useful non-LCM scale composed of more than one placement — the frozen form
+// of a bridged placement walk (website/docs/music/progression-principles.mdx). Two distinct
+// placements P_A, P_B that share a common LCM-family subset S (|S| ≥ minSubsetNotes) are unioned
+// into a playable key set. Keys is the concrete 12-tet key set to play; PA, S, PB are the
+// constituent placements it is composed of.
 //
 // The union uses the *stable* form of any collapsing (prime-5: lcm-15/20) constituent and then drops
 // every collapsing constituent's collapse key from the union — not merely from that constituent's
@@ -15,20 +15,20 @@ namespace Melodroid_3.Music;
 // whereas blues@4 = {1 4 6 7 8 11} keeps strictly fewer keys (neither 24 collapses, so no rule drops
 // 2 and 9). The command emits the union (a superset of blues); blues is a manual sub-selection.
 //
-// 12-tet by construction (the subset principle and collapse keys are defined mod 12).
-public readonly record struct JunctionScale(
+// 12-tet by construction (the bridge walk and collapse keys are defined mod 12).
+public readonly record struct CompositeScale(
     IReadOnlyList<int> Keys, Placement PA, Placement S, Placement PB);
 
-public static class JunctionScales
+public static class CompositeScales
 {
-    // Enumerate every junction scale over the given families and all anchors.
+    // Enumerate every composite scale over the given families and all anchors.
     //   minSubsetNotes      — |S| lower bound (default 4, so S is a substantial 18/8 parent; harm's
     //                         S=18 has 6 keys, blues' shared subset has 4).
     //   stable              — use collapsing constituents' stable form and subtract their collapse
     //                         keys from the union (default true; harm@9 requires it).
     //   collapseIsomorphic / poolMaximal — mirror ChordProgressions.SubsetPairs' label declutters.
     //   dedupeTransposition — fold the 12 transpositions of a scale to one representative (default on).
-    public static IReadOnlyList<JunctionScale> Enumerate(
+    public static IReadOnlyList<CompositeScale> Enumerate(
         IReadOnlyList<LcmFamily> families,
         int minSubsetNotes = 4,
         bool stable = true,
@@ -40,27 +40,27 @@ public static class JunctionScales
         var triplets = ChordProgressions.SubsetPairs(
             families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
 
-        var scales = new List<JunctionScale>();
+        var scales = new List<CompositeScale>();
         var seen = new HashSet<string>();
         foreach (var t in triplets)
         {
-            // (P_A,S,P_B) and (P_B,S,P_A) are the same junction; order the outer pair so they dedupe.
+            // (P_A,S,P_B) and (P_B,S,P_A) are the same composite; order the outer pair so they dedupe.
             var (pa, pb) = Order(t.Origin, t.Target);
             var keys = UnionKeys(pa, pb, stable, ktet);
             var signature = $"{KeySig(keys)}|{Label(pa)}|{Label(t.Bridge)}|{Label(pb)}";
             if (seen.Add(signature))
-                scales.Add(new JunctionScale(keys, pa, t.Bridge, pb));
+                scales.Add(new CompositeScale(keys, pa, t.Bridge, pb));
         }
 
         var result = dedupeTransposition ? DedupeTransposition(scales, ktet) : scales;
         result = result.ToList();
-        ((List<JunctionScale>)result).Sort(Compare);
+        ((List<CompositeScale>)result).Sort(Compare);
         return result;
     }
 
     // The playable key set: union of the two constituents' (optionally stable) key sets, with each
     // collapsing constituent's collapse key removed from the union. Public so callers that frame a
-    // subset bridge as a scale (e.g. SongAnalysis' --name-junctions) reuse the one stable-union rule
+    // subset bridge as a scale (e.g. SongAnalysis' --name-composites) reuse the one stable-union rule
     // rather than re-deriving it.
     public static IReadOnlyList<int> UnionKeys(Placement pa, Placement pb, bool stable, int ktet)
     {
@@ -88,10 +88,10 @@ public static class JunctionScales
 
     // Keep one representative per transposition class (necklace), chosen by lowest constituent LCMs/
     // anchors, then the largest bridge. The representative's concrete anchored Keys are emitted as-is.
-    private static IReadOnlyList<JunctionScale> DedupeTransposition(
-        IReadOnlyList<JunctionScale> scales, int ktet)
+    private static IReadOnlyList<CompositeScale> DedupeTransposition(
+        IReadOnlyList<CompositeScale> scales, int ktet)
     {
-        var best = new Dictionary<string, JunctionScale>();
+        var best = new Dictionary<string, CompositeScale>();
         foreach (var s in scales)
         {
             var necklace = KeySig(Chords.Canonicalize(s.Keys, ktet).Keys);
@@ -104,10 +104,10 @@ public static class JunctionScales
     private static (Placement, Placement) Order(Placement a, Placement b) =>
         (a.Lcm, a.At).CompareTo((b.Lcm, b.At)) <= 0 ? (a, b) : (b, a);
 
-    private static (int, int, int, int, int) RepRank(JunctionScale s) =>
+    private static (int, int, int, int, int) RepRank(CompositeScale s) =>
         (s.PA.Lcm, s.PA.At, s.PB.Lcm, s.PB.At, -s.S.Keys.Count);
 
-    private static int Compare(JunctionScale a, JunctionScale b)
+    private static int Compare(CompositeScale a, CompositeScale b)
     {
         if (a.Keys.Count != b.Keys.Count) return a.Keys.Count.CompareTo(b.Keys.Count);
         for (var i = 0; i < a.Keys.Count; i++)

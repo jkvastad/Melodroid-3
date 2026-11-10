@@ -127,9 +127,9 @@ public static class SongAnalysis
     // labels match the `progression` command exactly. collapseIsomorphic / poolMaximal declutter the
     // labels without changing the category (same semantics as `progression`).
     //
-    // nameJunctions reframes the subset bridges as scales: each subset triplet's (Origin, Target)
-    // pair is a junction scale (the stable union P_A ∪ P_B), which often lands on a named scale. In
-    // that mode the Subset labels become those named junctions ("{Name}@{Anchor}", or the raw "{keys}"
+    // nameComposites reframes the subset bridges as scales: each subset triplet's (Origin, Target)
+    // pair is a composite scale (the stable union P_A ∪ P_B), which often lands on a named scale. In
+    // that mode the Subset labels become those named composites ("{Name}@{Anchor}", or the raw "{keys}"
     // when the union matches no catalog scale), deduped — a far smaller list than the raw triplets,
     // since the union ignores which S was chosen. Superset bridges are unaffected either way.
     public static IReadOnlyList<ChunkBridge> Bridges(
@@ -138,10 +138,10 @@ public static class SongAnalysis
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
-        bool nameJunctions,
+        bool nameComposites,
         int ktet)
     {
-        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(nameComposites, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var result = new List<ChunkBridge>(Math.Max(0, chunks.Count - 1));
         for (var i = 0; i + 1 < chunks.Count; i++)
         {
@@ -149,7 +149,7 @@ public static class SongAnalysis
             var to = chunks[i + 1];
             result.Add(Pair(
                 from.Index, to.Index, from.Keys, to.Keys,
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
         }
         return result;
     }
@@ -157,7 +157,7 @@ public static class SongAnalysis
     // The same progression bridges as Bridges, but between consecutive *segments* rather than chunks.
     // Each segment's representative key-set is the union of its chunks' sounding keys (a 1-chunk
     // segment reduces to that chunk's keys, so this generalizes Bridges); from there the machinery is
-    // identical (ChordProgressions.ComputePair → BridgeLabels, optional JunctionLabels). The emitted
+    // identical (ChordProgressions.ComputePair → BridgeLabels, optional CompositeLabels). The emitted
     // ChunkBridge records key FromIndex/ToIndex on the segment ordinal (0,1,2,…) and carry the two
     // segment unions as From/ToKeys. Surfaces cross-segment loops a per-chunk bridges table hides —
     // e.g. an 8@4-segment ↔ 15@11-segment alternation reads down the Superset column.
@@ -168,16 +168,16 @@ public static class SongAnalysis
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
-        bool nameJunctions,
+        bool nameComposites,
         int ktet)
     {
-        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(nameComposites, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
         for (var i = 0; i + 1 < segments.Count; i++)
             result.Add(Pair(
                 i, i + 1, unions[i], unions[i + 1],
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
         return result;
     }
 
@@ -197,10 +197,10 @@ public static class SongAnalysis
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
-        bool nameJunctions,
+        bool nameComposites,
         int ktet)
     {
-        var catalog = JunctionCatalog(nameJunctions, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(nameComposites, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var constituents = unions.Select(u => Constituents(u, families, ktet)).ToList();
 
@@ -213,13 +213,13 @@ public static class SongAnalysis
             {
                 result.Add(Pair(
                     i, i + 1, unions[i], unions[i + 1],
-                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, catalog, ktet));
+                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
                 continue;
             }
 
             result.Add(ConstituentBridge(
                 i, i + 1, unions[i], unions[i + 1], lset, rset,
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameJunctions, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, ktet));
         }
         return result;
     }
@@ -244,7 +244,7 @@ public static class SongAnalysis
     // sets: pivots are placements shared by both (a "stay" within a constituent → superset); subset
     // triplets are distinct constituents joined by a shared subset S (→ P_A·S·P_B). Category follows
     // the same (hasSuperset, hasSubset) → Neither/Superset/Subset/Both grid as ChordProgressions, and
-    // the subset labels honour nameJunctions exactly as the chunk/placement bridges do.
+    // the subset labels honour nameComposites exactly as the chunk/placement bridges do.
     private static ChunkBridge ConstituentBridge(
         int fromIdx,
         int toIdx,
@@ -256,7 +256,7 @@ public static class SongAnalysis
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
-        bool nameJunctions,
+        bool nameComposites,
         int ktet)
     {
         var rkeys = new HashSet<(int Lcm, int At)>(rset.Select(p => (p.Lcm, p.At)));
@@ -271,7 +271,7 @@ public static class SongAnalysis
         var triplets = ChordProgressions.SubsetTripletsBetween(
             lset, rset, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var (_, subset) = ChordProgressions.BridgeLabels(triplets);
-        if (nameJunctions) subset = JunctionLabels(triplets, ktet);
+        if (nameComposites) subset = CompositeLabels(triplets, ktet);
 
         var category = (pivots.Count > 0, triplets.Count > 0) switch
         {
@@ -307,48 +307,48 @@ public static class SongAnalysis
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
-        bool nameJunctions,
-        IReadOnlyList<JunctionScale> junctionCatalog,
+        bool nameComposites,
+        IReadOnlyList<CompositeScale> compositeCatalog,
         int ktet)
     {
         var (category, triplets) = ChordProgressions.ComputePair(
             fromKeys, toKeys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
             CollapseFilter.None, ktet);
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
-        if (nameJunctions) subset = JunctionLabels(triplets, ktet);
-        // Escalation: when the placement graph has no edge (Neither) the move is carried by a junction
-        // scale, not a placement — name it in the (empty) Junction column so the gap is explicit while
+        if (nameComposites) subset = CompositeLabels(triplets, ktet);
+        // Escalation: when the placement graph has no edge (Neither) the move is carried by a composite
+        // scale, not a placement — name it in the (empty) Composite column so the gap is explicit while
         // the category stays Neither.
-        if (nameJunctions && category == ProgressionCategory.Neither)
-            subset = EscalationLabels(fromKeys, toKeys, junctionCatalog, ktet);
+        if (nameComposites && category == ProgressionCategory.Neither)
+            subset = EscalationLabels(fromKeys, toKeys, compositeCatalog, ktet);
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
-    // The escalation scales for a Neither bridge: the junction scales that can host the move when no
-    // placement contains both chords. Symmetric with JunctionLabels — it draws from the SAME junction
-    // universe, not just the named catalog: a named junction shows "↑{Short}@{Anchor}", an unnamed one
-    // keeps its "↑P_A·S·P_B" constituents. Named scales that are not junctions (major, major blues) are
+    // The escalation scales for a Neither bridge: the composite scales that can host the move when no
+    // placement contains both chords. Symmetric with CompositeLabels — it draws from the SAME composite
+    // universe, not just the named catalog: a named composite shows "↑{Short}@{Anchor}", an unnamed one
+    // keeps its "↑P_A·S·P_B" constituents. Named scales that are not composites (major, major blues) are
     // recovered via NamedScales.ContainingChord so those escalations survive too. Prefer hosts over the
     // whole origin ∪ target; if nothing hosts both (the dim7 case — {0 3 6 9} is in no placement but is
     // the core of harmonic minor / major), fall back to hosts over the target (the arrival). Sorted
-    // named-first (catalog order, then anchor), then unnamed triplets, as JunctionLabels.
+    // named-first (catalog order, then anchor), then unnamed triplets, as CompositeLabels.
     private static IReadOnlyList<string> EscalationLabels(
         IReadOnlyList<int> fromKeys,
         IReadOnlyList<int> toKeys,
-        IReadOnlyList<JunctionScale> junctionCatalog,
+        IReadOnlyList<CompositeScale> compositeCatalog,
         int ktet)
     {
         var union = fromKeys.Concat(toKeys).Distinct().OrderBy(k => k).ToList();
-        var hosts = HostsOver(union, junctionCatalog, ktet);
-        if (hosts.Count == 0) hosts = HostsOver(toKeys, junctionCatalog, ktet);
+        var hosts = HostsOver(union, compositeCatalog, ktet);
+        if (hosts.Count == 0) hosts = HostsOver(toKeys, compositeCatalog, ktet);
         return hosts;
     }
 
-    // Named-and-unnamed junction hosts of a key set: named scales containing it (via the catalog, so
-    // non-junction scales like major / major blues are included) plus unnamed junctions whose keys
-    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed, as JunctionLabels.
+    // Named-and-unnamed composite hosts of a key set: named scales containing it (via the catalog, so
+    // non-composite scales like major / major blues are included) plus unnamed composites whose keys
+    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed, as CompositeLabels.
     private static IReadOnlyList<string> HostsOver(
-        IReadOnlyList<int> keys, IReadOnlyList<JunctionScale> junctionCatalog, int ktet)
+        IReadOnlyList<int> keys, IReadOnlyList<CompositeScale> compositeCatalog, int ktet)
     {
         var catalogOrder = NamedScales.Catalog
             .Select((s, i) => (s.Name, i))
@@ -361,7 +361,7 @@ public static class SongAnalysis
             var label = $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}";
             labels[label] = (catalogOrder[r.Name], r.Anchor, 0, 0, 0, label);
         }
-        foreach (var j in junctionCatalog)
+        foreach (var j in compositeCatalog)
         {
             if (!target.IsSubsetOf(j.Keys)) continue;
             if (NamedScales.Match(j.Keys, ktet) is not null) continue; // named ones already covered
@@ -379,28 +379,28 @@ public static class SongAnalysis
             .ToList();
     }
 
-    // The anchored junction catalog used for escalation, computed once per bridges table (only when
-    // nameJunctions). dedupeTransposition:false keeps all 12 anchors so containment can be tested at
-    // any root; stable:true matches JunctionLabels' union rule.
-    private static IReadOnlyList<JunctionScale> JunctionCatalog(
-        bool nameJunctions,
+    // The anchored composite catalog used for escalation, computed once per bridges table (only when
+    // nameComposites). dedupeTransposition:false keeps all 12 anchors so containment can be tested at
+    // any root; stable:true matches CompositeLabels' union rule.
+    private static IReadOnlyList<CompositeScale> CompositeCatalog(
+        bool nameComposites,
         IReadOnlyList<LcmFamily> families,
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
         int ktet)
-        => nameJunctions
-            ? JunctionScales.Enumerate(families, minSubsetNotes, stable: true,
+        => nameComposites
+            ? CompositeScales.Enumerate(families, minSubsetNotes, stable: true,
                 collapseIsomorphic, poolMaximal, dedupeTransposition: false, ktet)
-            : Array.Empty<JunctionScale>();
+            : Array.Empty<CompositeScale>();
 
-    // The junction scales of a pair's subset triplets. A triplet whose stable union P_A ∪ P_B matches
+    // The composite scales of a pair's subset triplets. A triplet whose stable union P_A ∪ P_B matches
     // a catalog scale is named ("{Short}@{Anchor}"), deduped by the (Origin, Target) pair — the union
     // ignores S, so the many triplets sharing a pair collapse to one. A triplet whose union matches no
-    // catalog scale keeps its full "P_A·S·P_B" constituents (as `table junction-scales` prints them),
+    // catalog scale keeps its full "P_A·S·P_B" constituents (as `table composite-scales` prints them),
     // deduped by the whole triplet so distinct S survive. Sorted for stable display: named scales first
     // (catalog order, then anchor), then unnamed triplets (by Origin/Target LCM then anchor).
-    private static IReadOnlyList<string> JunctionLabels(
+    private static IReadOnlyList<string> CompositeLabels(
         IReadOnlyList<ProgressionTriplet> triplets, int ktet)
     {
         var catalogOrder = NamedScales.Catalog
@@ -410,7 +410,7 @@ public static class SongAnalysis
         var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
         foreach (var t in triplets.Where(t => t.Principle == ProgressionPrinciple.Subset))
         {
-            var union = JunctionScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
+            var union = CompositeScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
             if (NamedScales.Match(union, ktet) is (string name, int anchor))
             {
                 var key = $"{t.Origin.Lcm}@{t.Origin.At}|{t.Target.Lcm}@{t.Target.At}";
@@ -433,7 +433,7 @@ public static class SongAnalysis
             .ToList();
     }
 
-    // "P_A·S·P_B" for a subset triplet, matching `table junction-scales`' constituent column.
+    // "P_A·S·P_B" for a subset triplet, matching `table composite-scales`' constituent column.
     private static string TripletLabel(ProgressionTriplet t) =>
         $"{t.Origin.Lcm}@{t.Origin.At}·{t.Bridge.Lcm}@{t.Bridge.At}·{t.Target.Lcm}@{t.Target.At}";
 

@@ -235,8 +235,8 @@ each transposed to every anchor (= root) whose key set fully **contains** the ch
 12 keys; a cell marks whether the key is in that scale row. Reading column K shows which scale rows
 survive playing key K as melody over the chord — i.e. which scale that melody note implies.
 
-The scale names are empirical labels on results derived from the [subset principle](/docs/music/progression-principles#junction-scales):
-the four minor/bebop/harmonic scales are [`junction-scales`](#junction-scales) outputs, the major
+The scale names are empirical labels on results derived from [composite scales](/docs/music/progression-principles#composite-scales):
+the four minor/bebop/harmonic scales are [`composite-scales`](#composite-scales) outputs, the major
 scale is the `lcm-24` placement `24@k`, and major blues is the documented sub-selection of the bebop
 dominant union (`24@0 ∪ 24@5` with the `lcm-24` roots removed).
 
@@ -375,21 +375,21 @@ untouched.
 The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
 generated.
 
-### `junction-scales`
+### `composite-scales`
 
 ```bash
-melodroid table junction-scales \
+melodroid table composite-scales \
   [--min-subset-notes 4] [--stable] \
   [--collapse-isomorphic] [--pool-maximal] [--dedupe-transposition] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-The **subset principle read as a scale generator**. The
-[progression principles doc](/docs/music/progression-principles) defines the subset principle for
-chord *progressions* — two placements `P_A`, `P_B` bridged by a shared LCM-family subset `S`. Read the
-same structure as a *scale* and you get a **junction scale**: the key-union `P_A ∪ P_B`. This
-recovers the useful non-LCM scales the [preference chapter](/docs/music/preference#blues-and-harmonic-minor)
-decomposes by hand.
+A **bridged placement walk read as a scale generator**. The
+[progression principles doc](/docs/music/progression-principles) defines a bridged walk between
+chords — two placements `P_A`, `P_B` joined by a shared LCM-family subset `S`. Freeze that same
+structure into a *scale* and you get a **composite scale**: the key-union `P_A ∪ P_B`, so named
+because it is composed of more than one placement. This recovers the useful non-LCM scales the
+[preference chapter](/docs/music/preference#blues-and-harmonic-minor) decomposes by hand.
 
 The command sweeps every distinct placement pair over all anchors that share a subset `S` of
 `≥ --min-subset-notes` keys and prints one row per scale (12-tet only):
@@ -504,7 +504,7 @@ input rather than output type).
 melodroid analyze midi --input song.mid \
   [--subdivision 4] [--merge-repeats] [--max-chunks 256] [--from 0] [--to -1] \
   [--placements] [--stable-placements] [--segments] [--reaper] [--segment-bridges] \
-  [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-junctions] \
+  [--bridges] [--min-subset-notes 4] [--collapse-isomorphic] [--pool-maximal] [--name-composites] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -564,7 +564,7 @@ it via Reaper's **Region/Marker Manager** → right-click → *Import region/mar
 the MIDI into an empty project (so the project adopts the file's tempo). `--reaper` computes the
 segments even when `--segments` is off.
 
-Scale names in the **Scales** column (and the `--name-junctions` **Junction** column below) are
+Scale names in the **Scales** column (and the `--name-composites` **Composite** column below) are
 rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
 
 | `M` | `hm` | `mm` | `hM` | `bb` | `b` |
@@ -579,23 +579,23 @@ relationship between consecutive chunks — stays hidden. `--bridges` (default o
 bridges between the two key-sets. Reading the **Superset** column top-to-bottom surfaces the
 progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads `8@5`, `24@0`, `8@0`. The
 bridge-only flags mirror `progression`: `--min-subset-notes` (default `4`, a substantial 18/8 parent
-as in [`junction-scales`](#junction-scales); lower to `2` for dyad bridges) is the subset-principle
+as in [`composite-scales`](#composite-scales); lower to `2` for dyad bridges) is the bridge-subset
 floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the bridge labels losslessly (neither
 changes the category).
 
-`--name-junctions` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
-*is* a [junction scale](#junction-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
-**Junction** and each bridge shows the named scale of that union (`{Short}@{Anchor}` — the shorthand
+`--name-composites` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
+*is* a [composite scale](#composite-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
+**Composite** and each bridge shows the named scale of that union (`{Short}@{Anchor}` — the shorthand
 above, e.g. `hm@9` — via the named-scale catalog) when the union lands on a catalog scale. Because the
 union ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
-junctions — the intended reading when the raw `P_A·S·P_B` list explodes. When the union matches **no**
-catalog scale the junction keeps its full `P_A·S·P_B` constituents (as
-[`junction-scales`](#junction-scales) prints them), never a bare `{keys}` set. It also turns a
+composites — the intended reading when the raw `P_A·S·P_B` list explodes. When the union matches **no**
+catalog scale the composite keeps its full `P_A·S·P_B` constituents (as
+[`composite-scales`](#composite-scales) prints them), never a bare `{keys}` set. It also turns a
 **neither** bridge into an **escalation**: when no placement bridges the move (the canonical case is
 dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major), the otherwise-empty
-Junction column names the junction scales that can host the move, marked with a leading `↑`, drawn from
-the **same** junction universe as the Junction column — named hosts as `↑{Short}@{Anchor}`, unnamed
-ones as `↑P_A·S·P_B` (plus the non-junction named scales `major` / `major blues` via the catalog) —
+Composite column names the composite scales that can host the move, marked with a leading `↑`, drawn from
+the **same** composite universe as the Composite column — named hosts as `↑{Short}@{Anchor}`, unnamed
+ones as `↑P_A·S·P_B` (plus the non-composite named scales `major` / `major blues` via the catalog) —
 over the whole origin ∪ target, falling back to hosts over the arrival when nothing hosts both. The
 category stays **neither** (the placement graph truly has no edge); the `↑` marks that the move is
 carried by the scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
@@ -613,7 +613,7 @@ than re-deriving supersets of the pooled chromatic union (which pools a long sca
 into a key-set no placement contains, reading as `Neither`). A side whose union lands on no named
 scale falls back to the placement table's union path. Reading the **Superset** column top-to-bottom
 surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
-`--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-junctions` flags and
+`--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-composites` flags and
 compute the segmentation even when `--segments` is off.
 
 Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between

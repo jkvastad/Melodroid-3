@@ -409,7 +409,7 @@ public class ChordProgressionsTests
     // existence must match the independent shared-subset oracle for each pair, and every emitted
     // triplet is a subset triple.
     [Theory]
-    [InlineData(15, 11, 24, 0)]   // harmonic-minor junction neighbours
+    [InlineData(15, 11, 24, 0)]   // harmonic-minor composite neighbours
     [InlineData(24, 0, 24, 7)]    // two lcm-24 placements a fifth apart
     [InlineData(4, 0, 4, 6)]      // tritone-apart major triads (empty intersection)
     public void SubsetTripletsBetween_ExistenceMatchesSharedSubsetOracle(
@@ -425,9 +425,9 @@ public class ChordProgressionsTests
     }
 
     [Fact]
-    public void SubsetTripletsBetween_RecoversAKnownJunctionPair_WithCorrectSlots()
+    public void SubsetTripletsBetween_RecoversAKnownCompositePair_WithCorrectSlots()
     {
-        // 24@0 and 24@5 are the bebop-dominant junction (they share 18@7), so the between-wrapper must
+        // 24@0 and 24@5 are the bebop-dominant composite (they share 18@7), so the between-wrapper must
         // find the triple with those exact P_A / P_B slots.
         var a = new[] { Place(24, 0) };
         var b = new[] { Place(24, 5) };

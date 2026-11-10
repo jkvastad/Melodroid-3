@@ -5,12 +5,12 @@ Mostly alternating between 8@4 and 15@11, sometimes moving into 24@0 and 24@5, t
 ### Underlying theory
 
 ### Segment faults
-* placements 18->19 has no junction (chunk 74.75-75). 
+* placements 18->19 has no composite (chunk 74.75-75). 
 Semingly plays on the F7 chord, likely some sort of blues@0 going on with key 3 and 24@5 going into 24@0.
 
-* placements 29->45 mostly lack junctions.
+* placements 29->45 mostly lack composites.
 Heavy use of dim7, which along with aug is not yet covered. 
-Likely som sort of superposition similar to junction scales. Perhaps composed of more than two placements, or simply close to several placements e.g. via first order subset analysis.
+Likely som sort of superposition similar to composite scales. Perhaps composed of more than two placements, or simply close to several placements e.g. via first order subset analysis.
 
 # Docs
 * Note that there is a high severity vulnerability in serialize-javascript <=7.0.4 which is a false alarm because the only input which could be rce is on build side. Just wait for docusaurus to patch it out. Do not npm audit fix --force, which would attempt a breaking major upgrade.

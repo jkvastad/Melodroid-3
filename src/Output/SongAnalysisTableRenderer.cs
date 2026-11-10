@@ -66,7 +66,7 @@ public static class SongAnalysisTableRenderer
     public static void RenderBridges(
         IReadOnlyList<ChunkBridge> bridges,
         int minSubsetNotes,
-        bool nameJunctions = false,
+        bool nameComposites = false,
         string title = "chunk bridges",
         string indexPrefix = "",
         IAnsiConsole? console = null)
@@ -78,7 +78,7 @@ public static class SongAnalysisTableRenderer
             .AddColumn(new TableColumn("Move"))
             .AddColumn(new TableColumn("Category"))
             .AddColumn(new TableColumn("Superset"))
-            .AddColumn(new TableColumn(nameJunctions ? "Junction" : "Subset"));
+            .AddColumn(new TableColumn(nameComposites ? "Composite" : "Subset"));
 
         foreach (var b in bridges)
         {
@@ -91,9 +91,9 @@ public static class SongAnalysisTableRenderer
                 Cap(b.SubsetBridges));
         }
 
-        var subsetNote = nameJunctions ? ", junctions named" : ", raw triplets";
-        var legend = nameJunctions ? $"\nscales: {NamedScales.Legend()}" : "";
-        var escalation = nameJunctions
+        var subsetNote = nameComposites ? ", composites named" : ", raw triplets";
+        var legend = nameComposites ? $"\nscales: {NamedScales.Legend()}" : "";
+        var escalation = nameComposites
             ? "\n↑ = required scale at a placement gap (escalation; category stays Neither)"
             : "";
         table.Caption(

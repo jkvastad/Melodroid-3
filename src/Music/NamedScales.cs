@@ -11,9 +11,9 @@ public readonly record struct NamedScale(string Name, IReadOnlyList<int> Necklac
 public readonly record struct ScaleRow(string Name, int Anchor, IReadOnlyList<int> Keys);
 
 // The subset-principle decomposition of a catalog scale into its constituent LCM-family placements,
-// transposed to a concrete anchor. For a junction scale PA/S/PB are the P_A · S · P_B of the subset
+// transposed to a concrete anchor. For a composite scale PA/S/PB are the P_A · S · P_B of the subset
 // bridge whose stable union is the scale (NamedScales.Decompose). `major` has a single placement
-// (24@anchor) with S/PB null; scales with no clean junction (`major blues`) are not decomposable.
+// (24@anchor) with S/PB null; scales with no clean composite (`major blues`) are not decomposable.
 public readonly record struct ScaleConstituents(string Name, Placement? PA, Placement? S, Placement? PB);
 
 // The fixed catalog of named scales used by `table scale-fingerprint`, and the row-builder that
@@ -22,13 +22,13 @@ public readonly record struct ScaleConstituents(string Name, Placement? PA, Plac
 // The names are empirical labels on results derived from the subset principle, NOT the derivation
 // (per the "first principles, not tradition" anchor). Provenance of each necklace:
 //   - major         {0 2 4 5 7 9 11}    = the lcm-24 placement 24@0.
-//   - harmonic minor{0 2 3 5 7 8 11}    = junction 15@11·18@2·24@0 (stable), as harmonic minor rooted on 0.
-//   - melodic minor {0 2 3 5 7 9 11}    = junction 15@11·18@2·24@7 (stable), as melodic minor rooted on 0.
-//   - bebop dominant{0 2 4 5 7 9 10 11} = junction 24@0·18@7·24@5 (= bebop@0).
-//   - harmonic major{0 2 4 5 7 8 11}    = junction 15@11·5@4·15@4 (stable), as harmonic major rooted on 0.
+//   - harmonic minor{0 2 3 5 7 8 11}    = composite 15@11·18@2·24@0 (stable), as harmonic minor rooted on 0.
+//   - melodic minor {0 2 3 5 7 9 11}    = composite 15@11·18@2·24@7 (stable), as melodic minor rooted on 0.
+//   - bebop dominant{0 2 4 5 7 9 10 11} = composite 24@0·18@7·24@5 (= bebop@0).
+//   - harmonic major{0 2 4 5 7 8 11}    = composite 15@11·5@4·15@4 (stable), as harmonic major rooted on 0.
 //   - major blues   {0 2 3 4 7 9}       = the documented sub-selection of the bebop dominant union
 //                                         (24@0 ∪ 24@5 minus the lcm-24 roots), as major blues rooted on 0.
-// NamedScalesTests asserts the four junction necklaces are transposition classes of JunctionScales
+// NamedScalesTests asserts the four composite necklaces are transposition classes of CompositeScales
 // outputs, major equals the 24@0 placement, and major blues is a sub-selection of a bebop necklace.
 public static class NamedScales
 {
@@ -43,7 +43,7 @@ public static class NamedScales
     };
 
     // Compact display codes for the catalog scales, case-sensitive (hm ≠ hM). Keyed by catalog Name.
-    // Used to keep the `analyze midi` Scales / Junction columns readable; the full names stay the
+    // Used to keep the `analyze midi` Scales / Composite columns readable; the full names stay the
     // source of truth (ScaleRow.Name, table scale-fingerprint) — this is a display concern only.
     private static readonly IReadOnlyDictionary<string, string> Shorthands = new Dictionary<string, string>
     {
@@ -86,7 +86,7 @@ public static class NamedScales
     // The (Name, Anchor) of the catalog scale whose transposed necklace EXACTLY equals keys, or
     // null when no catalog scale matches. Anchor is the root, per the "{Name} @anchor" convention.
     // Distinct from ContainingChord, which tests subset containment; here the key set must coincide
-    // with the whole scale. Used to name a junction scale (the stable union of a subset bridge's two
+    // with the whole scale. Used to name a composite scale (the stable union of a subset bridge's two
     // placements) when it lands on a known scale; the caller falls back to the raw key set otherwise.
     public static (string Name, int Anchor)? Match(IReadOnlyCollection<int> keys, int ktet = 12)
     {
@@ -106,12 +106,12 @@ public static class NamedScales
     }
 
     // Subset-principle provenance of each catalog scale as (Lcm, At) per constituent slot (P_A, S, P_B)
-    // — the junction decompositions documented in the catalog comments above, at *some* base rooting
+    // — the composite decompositions documented in the catalog comments above, at *some* base rooting
     // (the stable union need not sit on root 0: 15@11·18@2·24@0 is harmonic minor rooted on 9).
     // Decompose finds the actual root via Match and re-anchors, so these base values only have to
     // define the right scale, not a specific root. `major` is a lone 24@0 placement (S/P_B absent);
-    // `major blues` has no clean junction and is omitted, so Decompose returns null for it.
-    // NamedScalesTests asserts each decomposition's stable union (JunctionScales.UnionKeys) equals the
+    // `major blues` has no clean composite and is omitted, so Decompose returns null for it.
+    // NamedScalesTests asserts each decomposition's stable union (CompositeScales.UnionKeys) equals the
     // catalog necklace at the requested anchor, pinning this table to first principles.
     private static readonly IReadOnlyDictionary<string, (int Lcm, int At)?[]> Provenance =
         new Dictionary<string, (int Lcm, int At)?[]>
@@ -146,7 +146,7 @@ public static class NamedScales
         if (pa0 is null) return null;
         var pb0 = Build(slots[2], 0);
         var union0 = pb0 is { } b0
-            ? JunctionScales.UnionKeys(pa0.Value, b0, stable: true, ktet)
+            ? CompositeScales.UnionKeys(pa0.Value, b0, stable: true, ktet)
             : pa0.Value.Keys;
         if (Match(union0, ktet) is not { } m) return null;
         var shift = (((anchor - m.Anchor) % ktet) + ktet) % ktet;

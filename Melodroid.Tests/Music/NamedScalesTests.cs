@@ -70,12 +70,12 @@ public class NamedScalesTests
     }
 
     [Fact]
-    public void JunctionScales_AppearAsTranspositionClassesOfProductionOutputs()
+    public void CompositeScales_AppearAsTranspositionClassesOfProductionOutputs()
     {
         // The four non-major, non-blues scales are genuine subset-principle outputs (first-principles
-        // provenance guard): each is a transposition class among JunctionScales.Enumerate at the
+        // provenance guard): each is a transposition class among CompositeScales.Enumerate at the
         // --min-subset-notes 4 floor the doc uses.
-        var produced = JunctionScales
+        var produced = CompositeScales
             .Enumerate(Families(), minSubsetNotes: 4, stable: true, dedupeTransposition: false)
             .Select(s => s.Keys)
             .ToList();
@@ -84,7 +84,7 @@ public class NamedScalesTests
         {
             var necklace = NamedScales.Catalog.Single(s => s.Name == name).Necklace;
             produced.Should().Contain(keys => AreTranspositions(keys, necklace),
-                $"{name} should be derivable as a junction scale");
+                $"{name} should be derivable as a composite scale");
         }
     }
 
@@ -221,7 +221,7 @@ public class NamedScalesTests
         {
             var c = NamedScales.Decompose("major", a, Families(), Ktet);
             c.Should().NotBeNull();
-            c!.Value.S.Should().BeNull("major is a single 24 placement, not a junction pair");
+            c!.Value.S.Should().BeNull("major is a single 24 placement, not a composite pair");
             c.Value.PB.Should().BeNull();
             c.Value.PA.Should().NotBeNull();
             c.Value.PA!.Value.Lcm.Should().Be(24);
@@ -230,8 +230,8 @@ public class NamedScalesTests
         }
     }
 
-    // First-principles guard: the provenance table is only allowed to claim a junction decomposition
-    // whose stable constituent union (JunctionScales.UnionKeys) IS the catalog scale at the requested
+    // First-principles guard: the provenance table is only allowed to claim a composite decomposition
+    // whose stable constituent union (CompositeScales.UnionKeys) IS the catalog scale at the requested
     // anchor. Expected keys are built with the test's own `(k + a) % 12` oracle, not production
     // transposition.
     [Theory]
@@ -239,7 +239,7 @@ public class NamedScalesTests
     [InlineData("melodic minor")]
     [InlineData("bebop dominant")]
     [InlineData("harmonic major")]
-    public void Decompose_JunctionScale_StableUnionEqualsTheCatalogNecklaceAtEveryAnchor(string name)
+    public void Decompose_CompositeScale_StableUnionEqualsTheCatalogNecklaceAtEveryAnchor(string name)
     {
         var necklace = NamedScales.Catalog.Single(s => s.Name == name).Necklace;
 
@@ -250,14 +250,14 @@ public class NamedScalesTests
             c!.Value.PA.Should().NotBeNull();
             c.Value.PB.Should().NotBeNull();
 
-            var union = JunctionScales.UnionKeys(c.Value.PA!.Value, c.Value.PB!.Value, stable: true, Ktet);
+            var union = CompositeScales.UnionKeys(c.Value.PA!.Value, c.Value.PB!.Value, stable: true, Ktet);
             var expected = necklace.Select(k => (k + a) % Ktet).OrderBy(k => k).ToList();
             union.Should().Equal(expected, $"{name} rooted on {a} is its stable constituent union");
         }
     }
 
     [Fact]
-    public void Decompose_MajorBlues_HasNoCleanJunction_ReturnsNull()
+    public void Decompose_MajorBlues_HasNoCleanComposite_ReturnsNull()
     {
         NamedScales.Decompose("major blues", 0, Families(), Ktet).Should().BeNull();
     }

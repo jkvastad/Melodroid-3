@@ -3,13 +3,13 @@ using Spectre.Console;
 
 namespace Melodroid_3.Output;
 
-public static class JunctionScaleTableRenderer
+public static class CompositeScaleTableRenderer
 {
-    // One table: each junction scale as a concrete 12-tet key set, its size, and the P_A·S·P_B
-    // constituents it was generated from. Scales arrive pre-sorted (size, then keys, then
-    // constituents) from JunctionScales.Enumerate.
+    // One table: each composite scale as a concrete 12-tet key set, its size, and the P_A·S·P_B
+    // constituent placements it is composed of. Scales arrive pre-sorted (size, then keys, then
+    // constituents) from CompositeScales.Enumerate.
     public static void Render(
-        IReadOnlyList<JunctionScale> scales,
+        IReadOnlyList<CompositeScale> scales,
         int minSubsetNotes,
         bool stable,
         bool collapseIsomorphic,
@@ -21,7 +21,7 @@ public static class JunctionScaleTableRenderer
 
         if (scales.Count == 0)
         {
-            console.MarkupLine("[grey]junction-scales: none found[/]");
+            console.MarkupLine("[grey]composite-scales: none found[/]");
         }
         else
         {
@@ -42,7 +42,7 @@ public static class JunctionScaleTableRenderer
         }
 
         console.MarkupLine(
-            $"[grey]junction-scales: {scales.Count} scale{(scales.Count == 1 ? "" : "s")} · " +
+            $"[grey]composite-scales: {scales.Count} scale{(scales.Count == 1 ? "" : "s")} · " +
             $"minSubsetNotes={minSubsetNotes} · stable={BoolText(stable)} · " +
             $"bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
             $"dedupe-transposition={BoolText(dedupeTransposition)} · 12-tet[/]");

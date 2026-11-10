@@ -234,7 +234,7 @@ public static class ChordProgressions
     // anchoring: distinct placements P_A, P_B sharing a subset S ⊆ P_A ∩ P_B (|S| ≥ minSubsetNotes).
     // Reuses the chord-anchored SubsetTriplets by passing every family placement as both sides — that
     // method makes no assumption that the two lists came from a chord's supersets. Used by
-    // JunctionScales to read each triplet as a scale (the key-union of P_A and P_B). Both orderings
+    // CompositeScales to read each triplet as a scale (the key-union of P_A and P_B). Both orderings
     // (P_A,S,P_B) and (P_B,S,P_A) are produced; callers that treat the pair as unordered dedupe.
     public static IReadOnlyList<ProgressionTriplet> SubsetPairs(
         IReadOnlyList<LcmFamily> families,
