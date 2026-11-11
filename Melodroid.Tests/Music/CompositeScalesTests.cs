@@ -150,6 +150,22 @@ public class CompositeScalesTests
         raw.Should().Contain(7);
     }
 
+    // The base (non-stable) case is a plain union that drops nothing — even the collapse key of a
+    // collapsing constituent survives when the other constituent carries it. 15@0's collapse key is
+    // (0+8) mod 12 = 8, and 24@8 is rooted on key 8, so the raw union keeps 8; only --stable removes
+    // it. Pins the melodic-minor pair reported as the `--stable` default should be opt-in, not on.
+    [Fact]
+    public void UnionKeys_RawMelodicMinorPair_KeepsTheCollapseKey_StableDropsIt()
+    {
+        var raw = CompositeScales.UnionKeys(
+            Placement(15, 0), Placement(24, 8), stable: false, Ktet);
+        raw.Should().Contain(8); // 24@8's root survives the plain union
+
+        var stable = CompositeScales.UnionKeys(
+            Placement(15, 0), Placement(24, 8), stable: true, Ktet);
+        stable.Should().NotContain(8); // --stable subtracts 15@0's collapse key from the whole union
+    }
+
     [Fact]
     public void Declutters_ShrinkTheLabelSpace_WithoutRemovingTheHarmScale()
     {

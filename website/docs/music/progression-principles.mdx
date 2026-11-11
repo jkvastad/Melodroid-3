@@ -80,13 +80,36 @@ While not useful for sustaining melody or chords, the collapsing key still allow
 
 ## Composite Scales
 
-In the preference chapter we touched on the non-lcm scales of blues and harmonic minor, which produce
-coherent melodies while being neither lcm sets nor subsets. 
+In the preference chapter we touched on the non-lcm scales of blues and harmonic minor,
+which produce coherent melodies while being neither lcm sets nor subsets.
 As we shall see these turn out to be composite scales — ambigous unions of adjacent placements.
 
-Using the [`table composite-scales`](/docs/cli/reference#composite-scales) command we can enumerate composite scales.
+This moves us into the field of Auditory Scene Analysis. 
+ASA relates to problems of decomposing multiple sounds into a scene of origins for those sounds.
+A characteristic such phenomena is the [Cocktail Party Effect](https://en.wikipedia.org/wiki/Cocktail_party_effect) where humans can focus on one voice among many.
 
-Looking at large shared subsets with the `--min-subset-notes 6` option yields some familiar scales:
+A similar problem appears in HPT when a set of frequencies has several competing interpretations.
+The brain might try to handle such a situation as separate streams or voices, producing composite scales.
+
+While any two (or more) placements could be used to construct composite scales, motivated by frequency invariance as the guiding principle of progression,
+we will focus on composites which adhere to the placement progression rule: instead of two consecutive placements, we will look at the union of two placements at a given time.
+
+Using the [`table composite-scales`](/docs/cli/reference#composite-scales) command we can enumerate such composite scales.
+Starting with the largest shared subsets, `--min-subset-notes 6` yields:
+
+```
+Scale                         Size  P_A·S·P_B
+{0, 1, 3, 5, 8, 9, 10}          7   15@0·18@3·18@3     = 15@0
+{0, 2, 4, 5, 7, 9, 10}          7   18@0·18@0·24@5     = 24@5
+{0, 1, 3, 5, 6, 8, 9, 10}       8   15@0·18@3·24@1     ⊃ harmonic minor
+{0, 1, 3, 5, 7, 8, 9, 10}       8   15@0·18@3·24@8     ⊃ melodic minor
+{0, 2, 4, 5, 7, 9, 10, 11}      8   24@0·18@7·24@5     ← bebop dominant (contains blues)
+```
+
+Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` placement progression constituents that produced it.
+
+The two top rows are simply 15@0 and 24@5, but the bottom three are more interesting.
+Removing the collapsing keys of the constituents from the union using the `--stable` option and excluding the proper placements yields:
 
 ```
 Scale                         Size  P_A·S·P_B
@@ -95,18 +118,14 @@ Scale                         Size  P_A·S·P_B
 {0, 2, 4, 5, 7, 9, 10, 11}      8   24@0·18@7·24@5     ← bebop dominant (contains blues)
 ```
 
-Each row is a concrete 12-tet key set with its size and the `P_A·S·P_B` constituents that produced it. 
-The rows have been stabilized with the `--stable` option which removes collapsing keys from the final sets.
-For example `15@0·18@3·24@8` contains no key 8 because it collapses the constituent `15@0`.
+Here we see two classical minor scales, **harmonic minor** `{0, 1, 3, 5, 6, 9, 10}` and **melodic minor** `{0, 1, 3, 5, 7, 9, 10}`, 
+as well as the **bebop dominant** scale, which contains blues as a subset.
 
-In the table we see two classical minor scales — **harmonic minor** and **melodic minor**.
-We also see the **bebop dominant** scale, which contains blues as a subset.
-
-Investigating smaller bridges produces the harmonic major at `--min-subset-notes 4`. 
+Investigating smaller bridges similarly produces the harmonic major at `--min-subset-notes 4`. 
 Going lower still produces no obvious traditional scales.
 
 ### Harmonic minor as a composite scale
-Looking at the first row of the intro table we have: `P_A = 15@0 = {0 1 3 5 8 9 10}` and
+Looking at the harmonic minor row of the intro table we have: `P_A = 15@0 = {0 1 3 5 8 9 10}` and
 `P_B = 24@1 = {0 1 3 5 6 8 10}`. They share the subset `S = 18@3 = {0 1 3 5 8 10}` — their common
 parent. Their union is
 

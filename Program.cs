@@ -995,8 +995,8 @@ class Program
 
         var compositeScalesStableOption = new Option<bool>("--stable")
         {
-            Description = "Use the stable form of any collapsing (prime-5: lcm-15/20) constituent and drop its collapse key from the union. Default on; harm@9 = 15@11·18@2·24@0 requires it. --stable false emits the raw unions (harm will not appear).",
-            DefaultValueFactory = _ => true,
+            Description = "Opt-in: use the stable form of any collapsing (prime-5: lcm-15/20) constituent and drop its collapse key from the whole union. Default off — the base case emits every composite scale's raw union (nothing dropped). Pass --stable to recover the stabilized scales (harm@9 = 15@11·18@2·24@0 requires it; without --stable the raw union keeps the collapse key).",
+            DefaultValueFactory = _ => false,
         };
 
         var compositeScalesCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
@@ -1019,7 +1019,7 @@ class Program
 
         var compositeScalesCommand = new Command(
             "composite-scales",
-            "Catalog non-LCM \"composite\" scales: each is the key-union of a distinct placement pair (P_A, P_B) sharing an LCM-family subset S of ≥ --min-subset-notes keys (a bridged placement walk read as a frozen scale). Emits the concrete 12-tet key set to play plus the P_A·S·P_B constituents it is composed of. --stable (default) uses collapsing placements' stable form and drops their collapse keys from the union (harm@9 = 15@11·18@2·24@0 requires it). --dedupe-transposition (default) keeps one anchor per necklace; --collapse-isomorphic / --pool-maximal declutter labels. 12-tet only.");
+            "Catalog non-LCM \"composite\" scales: each is the key-union of a distinct placement pair (P_A, P_B) sharing an LCM-family subset S of ≥ --min-subset-notes keys (a bridged placement walk read as a frozen scale). Emits the concrete 12-tet key set to play plus the P_A·S·P_B constituents it is composed of. --stable removes collapse keys of collapsing placements from the union; off by default so the base case emits every composite scale's raw union (pass --stable to recover the stabilized scales — harm@9 = 15@11·18@2·24@0 requires it). --dedupe-transposition (default) keeps one anchor per necklace; --collapse-isomorphic / --pool-maximal declutter labels. 12-tet only.");
         compositeScalesCommand.Add(maxSizeOption);
         compositeScalesCommand.Add(maxPrimeOption);
         compositeScalesCommand.Add(maxLcmOption);

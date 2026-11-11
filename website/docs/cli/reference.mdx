@@ -398,9 +398,11 @@ The command sweeps every distinct placement pair over all anchors that share a s
 - **Size** — number of keys.
 - **P_A·S·P_B** — the constituents the scale was generated from.
 
-**Stable form (`--stable`, default on).** A collapsing (prime-5: `lcm-15`/`lcm-20`) constituent
-contributes its *stable* key set (collapse key dropped), and every collapsing constituent's collapse
-key is then subtracted from the whole union. This is what makes **harmonic minor** fall out cleanly:
+**Stable form (`--stable`, default off).** The base case emits the **raw union** `P_A ∪ P_B` of every
+composite scale, dropping nothing. Pass `--stable` to stabilize: each collapsing (prime-5:
+`lcm-15`/`lcm-20`) constituent contributes its *stable* key set (collapse key dropped), and every
+collapsing constituent's collapse key is then subtracted from the whole union. This is what makes
+**harmonic minor** fall out cleanly:
 
 - `15@11 = {0 2 4 7 8 9 11}` (collapse key `(11+8) mod 12 = 7`), stable form `{0 2 4 8 9 11}`.
 - `24@0 = {0 2 4 5 7 9 11}` — but `24@0` *independently* carries key 7, so it must be dropped from
@@ -408,8 +410,8 @@ key is then subtracted from the whole union. This is what makes **harmonic minor
 - Result `({0 2 4 8 9 11} ∪ {0 2 4 5 7 9 11}) \ {7} = {0 2 4 5 8 9 11}` = `harm@9`, generated as
   `15@11·18@2·24@0`.
 
-With `--stable false` the raw unions are emitted and harmonic minor no longer appears (the union keeps
-key 7).
+Without `--stable` (the default) the raw unions are emitted and harmonic minor no longer appears (the
+union keeps key 7).
 
 **Blues is a looser member and is *not* a union output.** `24@9 ∪ 24@2 = {1 2 4 6 7 8 9 11}`, whereas
 `blues@4 = {1 4 6 7 8 11}` keeps strictly fewer keys — neither `lcm-24` collapses, so no rule drops
