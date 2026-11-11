@@ -24,7 +24,15 @@ Likely som sort of superposition similar to composite scales. Perhaps composed o
 * scale-fingerprints could perhaps be used with a programmable LED keyboard to show which scales are available from pressed keys. 
 As a POC we could have a virtual programmable LED keyboard which shows a piano roll on the screen, reads midi input and lights up keys, so the player can watch the screen while playing if there is no physical LED keyboard.
 
-* section on scale fingerprints for pragmatic music, what keys imply what perceptions based on current chord?
+* section on scale fingerprints for pragmatic music, what keys imply what perceptions based on current chord? Deprecate chord melody or subsume its name (scale fingerprints is a bit opaque)
+
+* subset/superset principle deprecated in favor of placement progressions and composite progressions. Update relevant commands e.g. analyze midi and table progression.
+
+* Rename Progressions Principles chapter to Progressions?
+
+* Update backlog Docs headers
+
+* Redo Tiling chapter (currently is slop)
 
 ## Intro (intro.mdx)
 

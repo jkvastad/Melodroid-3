@@ -20,17 +20,20 @@ we might glean some insight into the inner workings of music and then extrapolat
 The concept of progression requires time, and time in music seems to consist of discrete pulses, as discussed in [related research on rhythm.](/docs/related-research/rhythm)
 Progressions in music then refer to the relationships of sets of notes at consecutive pulses, and various groupings thereof.
 
-A natural relationship of consecutive notes is frequency invariance; notes can be completely random, or remain constant.
+A natural relationship of consecutive notes is frequency invariance: notes can be completely random or remain constant.
 In the middle of such a spectrum we have a morphing of notes where some notes stay the same while some change.
 
-In HPT we can add further relationships based on harmonic patterns. 
-Some sets of keys map to nice patterns (full matches). 
-Changing or morphing such a key set can be illustrated as walks in a placement graph - adding or removing a key affects the resulting placements.
-Such walks are most generally made in the global placement graph, consisting of all the twelve extended tonic placement graphs of 12-TETs, allowing walks between tonics.
+In HPT we discuss relationships based on harmonic patterns. 
+Some sets of keys map to small repeating patterns (full matches with low WPL). 
+Changing or morphing such a key set can be illustrated as walks in a placement graph (adding or removing a key from a placement is a step in the graph).
+Such walks are most generally made in the global placement graph. 
+The global placement graph consists of all the twelve extended tonic placement graphs of 12-TET, allowing walks between any two placements.
+Any such walk where origin and target shares at least one key is a placement progression:
 
-* A **Placement Progression** maps the notes at one pulse to a placement A, the notes of a consecutive pulse to a placement B, and links them via notes in a placement S in the global placement graph.
+* A **Placement Progression** maps the notes at one pulse to a placement A, the notes of a consecutive pulse to a placement B, and bridges them via a placement S in the global placement graph.
 
 Thus a placement progression can be written as a triplet consisting of the origin, bridge and target placements containing the notes of two successive pulses.
+Note that origin, bridge and target can all be the same placement, e.g. three chord song C F G can be seen as movements entirely within 24@0.
 
 ### Examples
 **C to Eb (4@0 → 4@3)**
