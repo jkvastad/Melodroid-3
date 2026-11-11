@@ -60,9 +60,14 @@ public static class SongAnalysisTableRenderer
         console.Write(table);
     }
 
-    // The cross-chunk progression bridges (opt-in, --bridges). One row per consecutive chunk pair;
-    // reading the Superset column top-to-bottom surfaces the progression loop a per-chunk containment
-    // list hides (e.g. 8@5, 24@0, 8@0 for a C→F→G→C loop).
+    // The cross-chunk progression bridges (opt-in, --bridges). One row per consecutive chunk pair.
+    // The single Bridge column is "the state of the bridge between the pair": what connects origin →
+    // target, as one of three layered forms — a placement (single placement containing both, a
+    // degenerate one-constituent composite), a composite scale (bridges via a shared subset), or an
+    // escalation (↑, carried by a hosting composite scale when no placement bridges). Reading the Bridge
+    // column top-to-bottom surfaces the progression loop a per-chunk containment list hides (e.g. 8@5,
+    // 24@0, 8@0 for a C→F→G→C loop). The superset-first ordering keeps the degenerate placements ahead
+    // of multi-constituent composites / escalations.
     public static void RenderBridges(
         IReadOnlyList<ChunkBridge> bridges,
         int minSubsetNotes,
@@ -76,29 +81,27 @@ public static class SongAnalysisTableRenderer
         var table = new Table()
             .AddColumn(new TableColumn("Pair").RightAligned())
             .AddColumn(new TableColumn("Move"))
-            .AddColumn(new TableColumn("Category"))
-            .AddColumn(new TableColumn("Superset"))
-            .AddColumn(new TableColumn(nameComposites ? "Composite" : "Subset"));
+            .AddColumn(new TableColumn("Bridge"));
 
         foreach (var b in bridges)
         {
             var move = $"{string.Join(" ", b.FromKeys)} → {string.Join(" ", b.ToKeys)}";
+            var bridge = b.SupersetBridges.Concat(b.SubsetBridges).Distinct().ToList();
             table.AddRow(
                 $"{indexPrefix}{b.FromIndex}→{indexPrefix}{b.ToIndex}",
                 move,
-                b.Category.ToString(),
-                Cap(b.SupersetBridges),
-                Cap(b.SubsetBridges));
+                Cap(bridge));
         }
 
-        var subsetNote = nameComposites ? ", composites named" : ", raw triplets";
+        var namingNote = nameComposites ? ", composites named" : ", raw constituents";
         var legend = nameComposites ? $"\nscales: {NamedScales.Legend()}" : "";
         var escalation = nameComposites
-            ? "\n↑ = required scale at a placement gap (escalation; category stays Neither)"
+            ? "\n↑ = escalation: carried by the scale layer when no placement bridges the move"
             : "";
         table.Caption(
             $"{title}: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
-            $"subset principle ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{subsetNote}{legend}{escalation}");
+            $"bridge state — placement · composite · ↑escalation · " +
+            $"shared-subset ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{namingNote}{legend}{escalation}");
         console.Write(table);
     }
 

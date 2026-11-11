@@ -564,7 +564,7 @@ it via Reaper's **Region/Marker Manager** → right-click → *Import region/mar
 the MIDI into an empty project (so the project adopts the file's tempo). `--reaper` computes the
 segments even when `--segments` is off.
 
-Scale names in the **Scales** column (and the `--name-composites` **Composite** column below) are
+Scale names in the **Scales** column (and the `--name-composites` **Bridge** column below) are
 rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
 
 | `M` | `hm` | `mm` | `hM` | `bb` | `b` |
@@ -574,31 +574,32 @@ rendered with compact, case-sensitive shorthands, decoded in a legend in the tab
 The per-chunk lists treat each chunk **in isolation**, so a chord *progression* — which lives in the
 relationship between consecutive chunks — stays hidden. `--bridges` (default off) adds a second
 **chunk-bridges** table: for each consecutive chunk pair it runs the pair through
-[`progression`](#progression)'s classifier (`ChordProgressions.ComputePair`) and prints the category
-(superset / subset / both / neither) alongside the superset (`{Lcm}@{At}`) and subset (`P_A·S·P_B`)
-bridges between the two key-sets. Reading the **Superset** column top-to-bottom surfaces the
-progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads `8@5`, `24@0`, `8@0`. The
-bridge-only flags mirror `progression`: `--min-subset-notes` (default `4`, a substantial 18/8 parent
-as in [`composite-scales`](#composite-scales); lower to `2` for dyad bridges) is the bridge-subset
-floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the bridge labels losslessly (neither
-changes the category).
+[`progression`](#progression)'s classifier (`ChordProgressions.ComputePair`) and prints a single
+**Bridge** column — the state of the bridge between the pair, i.e. what connects the two key-sets: a
+**placement** (`{Lcm}@{At}`, a single placement containing both — the degenerate one-constituent
+composite), a **composite scale** (`P_A·S·P_B`, bridging via a shared subset), or an **↑escalation**
+(the connection living one layer up, in a hosting composite scale). Reading the **Bridge** column
+top-to-bottom surfaces the progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads
+`8@5`, `24@0`, `8@0`. The bridge-only flags mirror `progression`: `--min-subset-notes` (default `4`, a
+substantial 18/8 parent as in [`composite-scales`](#composite-scales); lower to `2` for dyad bridges)
+is the composite shared-subset floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the
+bridge labels losslessly.
 
-`--name-composites` (default off) reframes the **Subset** column as scales: a subset bridge `P_A·S·P_B`
-*is* a [composite scale](#composite-scales) — the stable union `P_A ∪ P_B` — so the column is renamed
-**Composite** and each bridge shows the named scale of that union (`{Short}@{Anchor}` — the shorthand
-above, e.g. `hm@9` — via the named-scale catalog) when the union lands on a catalog scale. Because the
-union ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
+`--name-composites` (default off) names the **composite-scale** bridges in the Bridge column: a
+composite bridge `P_A·S·P_B` *is* a [composite scale](#composite-scales) — the stable union
+`P_A ∪ P_B` — so each shows the named scale of that union (`{Short}@{Anchor}` — the shorthand above,
+e.g. `hm@9` — via the named-scale catalog) when the union lands on a catalog scale. Because the union
+ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
 composites — the intended reading when the raw `P_A·S·P_B` list explodes. When the union matches **no**
 catalog scale the composite keeps its full `P_A·S·P_B` constituents (as
-[`composite-scales`](#composite-scales) prints them), never a bare `{keys}` set. It also turns a
-**neither** bridge into an **escalation**: when no placement bridges the move (the canonical case is
-dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major), the otherwise-empty
-Composite column names the composite scales that can host the move, marked with a leading `↑`, drawn from
-the **same** composite universe as the Composite column — named hosts as `↑{Short}@{Anchor}`, unnamed
-ones as `↑P_A·S·P_B` (plus the non-composite named scales `major` / `major blues` via the catalog) —
-over the whole origin ∪ target, falling back to hosts over the arrival when nothing hosts both. The
-category stays **neither** (the placement graph truly has no edge); the `↑` marks that the move is
-carried by the scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
+[`composite-scales`](#composite-scales) prints them), never a bare `{keys}` set. It also names the
+**escalation**: when no placement bridges the move (the canonical case is dim7 `{0 3 6 9}`, in no
+placement but the core of harmonic minor / major), the Bridge column names the composite scales that
+can host the move, marked with a leading `↑`, drawn from the **same** composite universe — named hosts
+as `↑{Short}@{Anchor}`, unnamed ones as `↑P_A·S·P_B` (plus the non-composite named scales `major` /
+`major blues` via the catalog) — over the whole origin ∪ target, falling back to hosts over the
+arrival when nothing hosts both. The `↑` marks that no placement bridges the move, so it is carried by
+the scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
 bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
@@ -608,11 +609,11 @@ reduces to that chunk's key-set, so this generalizes `--bridges`) and runs the p
 **constituent placements** of its witness scales (a scale witnesses a segment iff it contains the
 chunk-union, so `ContainingChord` recovers the witnesses; each is decomposed as `hm@9 =
 15@11·18@2·24@0`), and bridges adjacent segments by a placement-graph relation between the two pooled
-constituent sets — a shared **pivot** placement (Superset column) and/or a subset-`S` join — rather
-than re-deriving supersets of the pooled chromatic union (which pools a long scale segment's melody
-into a key-set no placement contains, reading as `Neither`). A side whose union lands on no named
-scale falls back to the placement table's union path. Reading the **Superset** column top-to-bottom
-surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
+constituent sets — a shared **pivot** placement and/or a subset-`S` join, both surfaced in the
+**Bridge** column — rather than re-deriving supersets of the pooled chromatic union (which pools a long
+scale segment's melody into a key-set no placement contains, so nothing bridges it). A side whose union
+lands on no named scale falls back to the placement table's union path. Reading the **Bridge** column
+top-to-bottom surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
 `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-composites` flags and
 compute the segmentation even when `--segments` is off.
 
