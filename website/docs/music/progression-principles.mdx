@@ -162,13 +162,17 @@ $$
 $$
 
 This is the [**bebop dominant**](https://en.wikipedia.org/wiki/Bebop_scale#Bebop_dominant_scale) — a major scale with an added flat seventh.
-Similarly to harmonic minor and melodic minor, removing the fifth and root of 24@5 produces a traditional scale, namely the blues major scale:
+
+To produce harmonic minor and melodic minor we removed their collapse keys from the unions.
+The collapse key is the root or perfect fifth of the lcm 15's adjacent lcm 24s.
+Similarly, removing the roots of 24@0,5 produces the traditional blues major scale:
 
 $$
 24@0 \cup 24@5 \;\setminus\; {0\;5} = \{\;2\;4\;7\;9\;10\;11\} = \mathrm{blues}@7
 $$
 
-This echoes our subset inspections in the preference chapter, where blues@4 was closely tied to 24@9, and here we see blues@7 tied to 24@0, repeating the pattern of a 5 key root difference.
+This echoes our subset inspections in the preference chapter, where blues@4 was closely tied to 24@9. 
+Here we see blues@7 tied to 24@0, repeating the pattern of a 5 key root difference.
 
 The removed root notes are also roots of 8@0,5 which sit as branching points for two sub trees with a shared leaf node of 24@0.
 Perhaps this ambivalence between two closely adjacent lcm families is the source of the swingy sound.
@@ -190,18 +194,15 @@ $$
 15@0 \cup 15@5 = \{0\;1\;2\;3\;5\;6\;8\;9\;10\}
 $$
 
-This looks similar to the bebop dominant and the blues.
-Instead of mixing two lcm 24 placements from two different branches (8@0,5) we mix two lcm 15 placements from the same distinct branches but less directly since we come from the tetrad instead of the hexad.
+This looks similar to the bebop dominant and the blues. 
+The bebop mixed two lcm-24 placements from two different branches (`8@0` and `8@5`), meeting at the `18@7` hexad.
+Here we again combine two placements from different branches, but they are lcm-15 rather than lcm-24, sharing the `5@5` tetrad instead of a hexad.
 
-This time however both sides are `lcm-15`, so both collapse keys drop — key `8` from `15@0` and key `1` from
-`15@5`:
+This time both sides are `lcm-15`. Dropping both collapse keys gives us harmonic major:
 
 $$
 15@0 \cup 15@5 \;\setminus\; \{1,\;8\} \;=\; \{0\;2\;3\;5\;6\;9\;10\} \;=\; \mathrm{hmaj}@10
 $$
-
-Where harmonic minor drops a single collapse key from a one-sided collapse,
-harmonic major drops one from each side of a symmetric `lcm-15 · lcm-5 · lcm-15` composite scale.
 
 Loosening the floor further to `--min-subset-notes 3` admits bare triad bridges, but these only
 generate 8-, 9- and 10-note chromatic clusters that aren't obvious traditional scales, so we leave them aside.
@@ -221,51 +222,19 @@ Below you can listen to some simple random melodies based on the scales above.
   ]}
 />
 
-### Composite scales on the placement graph
-
-Every composite scale above is two placements sharing a subset `S`, and `S` is exactly the node where the two meet walking down the [extended triad placement graph](/docs/music/placements). 
-Sorted by how deep the shared bridge sits in the graph:
-
-| Scale | Constituents | Bridge node |
-| --- | --- | --- |
-| harmonic minor | `15@11 · 18@2 · 24@0` | `18@2` hexad |
-| melodic minor | `15@11 · 18@2 · 24@7` | `18@2` hexad |
-| bebop dominant | `24@0 · 18@7 · 24@5` | `18@7` hexad |
-| harmonic major | `15@11 · 5@4 · 15@4` | `5@4` tetrad |
-
-Notably harmonic and melodic minor, as well as the bebop dominant, are pairwise combinations of the leaf nodes of 18@2.
-Harmonic major instead mixes lcm 15 from two different lcm 18 nodes, requiring the deeper bridge of 5@4.
-
-Common to all of these is also a necessity for ambiguity by removing certain distinguishing notes:
-
-* Harmonic minor removes the fifth from 24@0, the distinguishing key between 1@0 and 2@0 and thus the earliest such key in the extended tonic placement graph.
-This is also another reason why lcm 15 collapses in addition to being expensive by containing prime 5 - 
-its key set is quite close to lcm 24 and the earliest branch in that subtree from the tonic is the dyad created with the perfect fifth.
-* Melodic minor removes the tonic from 24@7 while also stabilising 15@11
-* Bebop dominant sounds quite bluesy in and of itself, and especielly when omitting the lcm 24 roots 0 and 5, recovering the major blues scale.
-Notably the minor seven chord is present in bebop, and its strong pull to the perfect fourth (C7 -> F) could be due to the composition of the scale.
-* Harmonic major removes both collapsing keys from its lcm 15 constituents.
-
-## Composite Chords
-From harmonic major and minor we saw the symmetric chord dim7@0 = `{0 3 6 9}`. 
-This chords is of special interest due to its perfect symmetry, and its popular usage despite not being contained by any placement.
-
-Composite scales in general host key sets that lie in no placement at all, but are useful in composition.
-This requires an expansion of the placement progression principle to include composite key sets.
-
 ## Composite Placement Progression
 
-The placement progression principle handles note sets which are contained by placements. 
-Having discussed composite scales and chords, which are not necessarily in the global placement graph, we need a generalised principle for describing composite progressions.
+The placement progression principle handles key sets which are contained by placements. 
+Composite scales and their related key sets are not necessarily in the global placement graph. 
+This requires a generalised principle for describing composite progressions.
 
 * A **Composite Placement Progression** maps the notes at one pulse to a composite scale, the notes of a
   consecutive pulse to another composite scale, and links them by a *placement progression between
   their constituent placements*.
 
-Progression between composite scales is therefore also a walk in the global placement graph, but
-run between two composite note sets constituents rather than between two proper placements. 
-The plain placement progression is the degenerate case where each composite is a single placement — a one-constituent
-composite scale.
+Progression between composite scales is therefore also a walk in the global placement graph, 
+but run between two composite note sets constituents rather than between two proper placements. 
+The plain placement progression is the special case where each composite is a single placement.
 
 ## Example Chord Progressions
 Using the `progression` command we can enumerate all possible progressions between two chords.
