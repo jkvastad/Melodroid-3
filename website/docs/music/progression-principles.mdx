@@ -28,7 +28,7 @@ Some sets of keys map to small repeating patterns (full matches with low WPL).
 Changing or morphing such a key set can be illustrated as walks in a placement graph (adding or removing a key from a placement is a step in the graph).
 Such walks are most generally made in the global placement graph. 
 The global placement graph consists of all the twelve extended tonic placement graphs of 12-TET, allowing walks between any two placements.
-Any such walk where origin and target shares at least one key is a placement progression:
+Such a walk where origin and target shares at least one key motivates the idea of a placement progression:
 
 * A **Placement Progression** maps the notes at one pulse to a placement A, the notes of a consecutive pulse to a placement B, and bridges them via a placement S in the global placement graph.
 
@@ -41,21 +41,20 @@ Note that origin, bridge and target can all be the same placement, e.g. three ch
 * C is part of 15@7 (4@0 ≅ 3@7)
 * Eb = 4@3 is part of 18@10
 * Placement 15@7 is an lcm superset of 18@10.
-* Both C and Eb then share the superset 15@7.
+* C -> Eb is then the triplet 15@7 -> 18@10 -> 18@10, where the bridge is also the target.
 
 In this way, although `{0 4 7}` (3@7) is not a subset of `{0 3 5 7 8 10}` (18@10) since they do not
-share key 4, it is still possible to move to 18@10 since 3@7 is part of its superset lcm family 15@7.
+share key 4, it is still possible to move to 18@10 since 15@7 is a superset of 18@10.
 
-Notably 4@3 is also part of 15@7, but since key 4 collapses 15@7 it is not a stable target.
-
-Of further interest here is that the root key for Eb, key 3, is the collapsing key for 15@7.
-While not useful for sustaining melody or chords, perhaps the collapsing key still allows us to go to 18@10 when progressing chords.
+Notably 4@3 is also part of 15@7, but since key 3 collapses 15@7 it is not a stable target.
+While not useful for sustaining melody or chords, the collapsing key still allows us to go to 18@10 when progressing chords.
 
 **C to Db (4@0 → 4@1)**
 
-* C is part of 15@7 (4@0 ≅ 3@7), Db = 4@1 is part of 24@8.
+* C is part of 15@7 (4@0 ≅ 3@7)
+* Db = 4@1 is part of 24@8.
 * Placements 15@7 and 24@8 are both lcm supersets of 18@10.
-* This is a progression from 3@7 (15@7) to 4@1 (24@8) via the shared subset 18@10.
+* C -> Db is then the triplet 15@7 -> 18@10 -> 24@8.
 
 ## Composite Scales
 
