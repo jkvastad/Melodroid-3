@@ -49,12 +49,34 @@ share key 4, it is still possible to move to 18@10 since 15@7 is a superset of 1
 Notably 4@3 is also part of 15@7, but since key 3 collapses 15@7 it is not a stable target.
 While not useful for sustaining melody or chords, the collapsing key still allows us to go to 18@10 when progressing chords.
 
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  instrument="piano"
+  script={[
+    {chord: [0, 4, 7], keys: [0, 4, 5, 7, 8, 10], label: '15s@7'}, // C  · 15s@7
+    {chord: [3, 7, 10], lcm: 18, at: 10},                          // Eb · 18@10
+  ]}
+/>
+
 **C to Db (4@0 → 4@1)**
 
 * C is part of 15@7 (4@0 ≅ 3@7)
 * Db = 4@1 is part of 24@8.
 * Placements 15@7 and 24@8 are both lcm supersets of 18@10.
 * C -> Db is then the triplet 15@7 -> 18@10 -> 24@8.
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  instrument="piano"
+  script={[
+    {chord: [0, 4, 7], keys: [0, 4, 5, 7, 8, 10], label: '15s@7'}, // C  · 15s@7
+    {chord: [1, 5, 8], lcm: 24, at: 8},                            // Db · 24@8
+  ]}
+/>
 
 ## Composite Scales
 
