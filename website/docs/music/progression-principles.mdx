@@ -241,20 +241,25 @@ but run between two composite note sets constituents rather than between two pro
 The plain placement progression is the special case where each composite is a single placement.
 
 ## Example Chord Progressions
-Using the `progression` command we can enumerate all possible progressions between two chords.
-Let's use this to analyze some chord sequences.
+The `progression` command enumerates the placement progressions between two chords.
+
+We can say that a progression is **single-placement** when one placement holds both chords (origin = bridge = target),
+and **bridged** when distinct placements P_A ⊇ origin, P_B ⊇ target meet at a shared subset S (P_A·S·P_B).
+
+If a target state would be unstable due to the target chord we can drop it from possible progressions using `--drop-collapsed target`.
+Origin and bridge placements can perhaps function in a progression even if unstable since we do not necessarily perceive those placements directly, but rather a progression is a perception of a relationship to them.
+
+Let's analyze some chord sequences.
 
 ### C F G
-A very common "[three chord song](https://en.wikipedia.org/wiki/Three-chord_song)", C F G is the I, IV, V progression of the major scale.
+A very common "[three chord song](https://en.wikipedia.org/wiki/Three-chord_song)", C F G is the I, IV, V of the major scale.
+Using key 0 for c, all three triads live in 24@0: C=4@0, F=4@5, G=4@7.
 
-Expressed in placements, using key 0 for key c, the major scale is 24@0 with C=4@0, F=4@5 and G=4@7. 
-Looking at the progressions between the chords we find:
-* C=`0 4 7` and F=`0 5 9` are both contained by 8@5.
-* F and G=`2 7 11` are contained by 24@0. (Interesting subsets include e.g. 8@5->4@0->8@0 and 18@7->24@0 which move between the 8@0 and 8@5 branch.)
-* G and C are in 8@0.
+* C=`0 4 7` → F=`0 5 9`: single-placement in 8@5.
+* G=`2 7 11` → C: single-placement in 8@0.
+* F → G: only 24@0 holds both — the branch-crossing IV→V. As a bridged move it steps from the 8@5 branch to the 8@0 branch (e.g. 8@5·4@0·8@0).
 
-Given these observations the main mechanism might be the superset principle within lcm 8 which contains two major triads, explaining the I->IV and V->I movement. 
-The IV->V is a larger move, either seen as a superset principle move withing 24@0 (which contains all the three chords), or as a subset principle move shifting the chords from the 8@5 branch to the 8@0 branch.
+So the two cadential moves collapse into a single lcm-8 placement each, while IV→V is the wider move needing the whole 24@0 scale or a branch-crossing bridge.
 
 <RhythmPatternPlayer
   meter="4 4 4 4"
@@ -268,51 +273,107 @@ The IV->V is a larger move, either seen as a superset principle move withing 24@
   ]}
 />
 
-### C to Em
-C -> Em has both superset and subset progressions.
-* C=`0 4 7` and Em=`4 7 11` are both contained by 8@0 (and by its supersets 24@0 and 24@7), so the superset principle applies.
-* As a subset move, C's 24@7 and Em's 15@6 share the bridge 18@9 (24@7->18@9->15@6).
+### C Em
+Single-placement in 8@0 (also 24@0, 24@7, 15@11), or bridged to 15@6:
 
-The simplest reading is the superset principle within lcm 8, exactly as for the major triads in C F G. 
-The difference in feel could be that where C is the triad 4@0, Em=`4 7 11` is not itself a small LCM family (subset of 8@0 / 24@0) so the minor chord has no fundamental of its own within the shared pattern.
+* C→Em: 24@7 · 18@9 · 15@6
 
-### C to E
-TODO: Notably goes well with melody on f and playing a note set e.g. 4 8 11 5 sounds good despite:
-* only containing top level lcm is 15 which collapses on 8
-* alternatively contained by harm@9
+Em is not itself a small LCM family, so the minor chord has no fundamental of its own inside the shared 8@0 pattern.
 
-### C to B
-C -> B has only subset progressions.
-* The pragmatic path is C's 24@7 to B's 15@6 through the shared bridge 18@9 (24@7->18@9->15@6). This is the harmonic minor move.
-* C is also contained by 15@11, sharing 5@11 with 15@6, but key 7 of C is the collapsing key of 15@11 so it is unclear if this path is actually used - i.e. does the brain infer progressions using unstable placements?
+### C E
+Several possible moves are available. For instance:
 
-15@6 also contains Em=`4 7 11`, so B lands on the very placement we reached for C→Em — B is the minor-flavoured chord of that same 15@6 branch.
-
-### C to Cm
-C -> Cm has only subset progressions.
-* Among the origins we see 8@5, 15@4,7, 18@7, 24@0,5 - this is basically the 8@5 extended placement graph with 8@5, 15@4, 18@7, 24@0,5. 
-The exception is 15@7 belonging to 8@8 - if 15@7 was stable with key 3 then this progression would be a superset progression.
-* Among the targets we see 8@8, 15@2, 18@5,10, 24@3,8,10 - this is basically the 8@8 extended placement graph with 8@8, 18@10, 24@3,8.
-The exception is 15@2, 18@5 and 24@10 belonging to the @3 branch above 4@3.
-
-From this it looks like the progression could be a superset progression within 15@7, but is blocked by the unstable target placement.
-Instead it looks like movement from 15@7 to 15@2 via 4@3, and indeed it does sound nice with a mel@0 (15@2 based) finish.
-This is similar to the intro example of C -> Eb (4@3) where we could use 15@7 as a superset bridge to land in 18@10.
+* C→E: 24@0 · 18@2 · 15@11
 
 <RhythmPatternPlayer
   meter="4 4 4 4"
   subdivisions="4"
   bpm={100}
   script={[
-    {chord: [0, 4, 7], lcm: 8, at: 5},                                 // C  · 8@5
-    {chord: [0, 3, 7], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'},  // Cm · mel@0
-    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'}, // G  · mel@0
-    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 9, 11], label: 'mel@0'}, // G  · mel@0
+    {chord: [0, 4, 7], lcm: 24, at: 0},                              // C · 24@0
+    {chord: [4, 8, 11], keys: [0, 2, 4, 8, 9, 11], label: '15s@11'},  // E · 15s@11    
   ]}
 />
 
-### Cm to Bm
-TODO
+### C B
+No placement holds both — bridged only (the harmonic-minor move):
 
-### Em to A
-TODO
+* C→B: 24@7 · 18@9 · 15@6
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], lcm: 24, at: 7},                            // C · 24@7
+    {chord: [3, 6, 11], keys: [3, 4, 6, 7, 9, 11], label: '15s@6'}, // B · 15s@6
+  ]}
+/>
+
+### C Cm G
+
+* C→Cm: 15@7 · 5@7 · 15@2
+* Cm→G: 15@2
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], keys: [0, 4, 5, 7, 8, 10], label: '15s@7'},  // C  · 15s@7
+    {chord: [0, 3, 7], keys: [0, 2, 3, 5, 7, 11], label: '15s@2'},  // Cm · 15s@2
+    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 11], label: '15s@2'}, // G  · 15s@2
+    {chord: [2, 7, 11], keys: [0, 2, 3, 5, 7, 11], label: '15s@2'}, // G  · 15s@2
+  ]}
+/>
+
+For contrast the same chords can also use lcm 24 walks:
+
+* C→Cm: 24@5 · 18@0 · 24@10
+* Cm→G: 24@10 · 5@9 · 24@0
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], lcm: 24, at: 5},   // C  · 24@5
+    {chord: [0, 3, 7], lcm: 24, at: 10},  // Cm · 24@10
+    {chord: [2, 7, 11], lcm: 24, at: 0},  // G  · 24@0
+    {chord: [2, 7, 11], lcm: 24, at: 0},  // G  · 24@0
+  ]}
+/>
+
+### Cm Bm
+Preferring the largest bridge, 4@7 (the G triad `2 7 11`):
+
+* Cm→Bm: 15@2 · 4@7 · 24@7
+
+Cm sits in 15@2, Bm in G major 24@7. A smaller all-lcm-24 bridge also works: 24@3 · 2@0 · 24@7 (Cm in E♭ major).
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 3, 7], keys: [0, 2, 3, 5, 7, 11], label: '15s@2'},  // Cm · 15s@2
+    {chord: [2, 6, 11], lcm: 24, at: 7},                            // Bm · 24@7
+  ]}
+/>
+
+### Em A
+Single-placement — the D major scale 24@2 holds both (ii→V in D):
+
+* Em→A: 24@2
+
+<RhythmPatternPlayer
+  meter="4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [4, 7, 11], lcm: 24, at: 2},  // Em · 24@2
+    {chord: [1, 4, 9], lcm: 24, at: 2},   // A  · 24@2
+  ]}
+/>
+
+### C C#dim D B
