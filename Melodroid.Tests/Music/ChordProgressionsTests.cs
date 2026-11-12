@@ -124,23 +124,25 @@ public class ChordProgressionsTests
         targets.Count(t => t.Quality == TriadQuality.Diminished).Should().Be(12);
     }
 
+    // A single-placement progression (SupersetBridges non-empty) exists for A→B exactly when some
+    // placement contains the union A ∪ B — the independent union oracle.
     [Theory]
     [InlineData(0, 4, 7)] // major
     [InlineData(0, 3, 7)] // minor
-    public void Superset_flag_matches_the_union_oracle(int k0, int k1, int k2)
+    public void Single_placement_progression_matches_the_union_oracle(int k0, int k1, int k2)
     {
         var source = new[] { k0, k1, k2 };
         foreach (var target in Compute(source))
         {
-            var hasSuperset = target.Category is ProgressionCategory.Superset or ProgressionCategory.Both;
-            hasSuperset.Should().Be(SharesSuperset(source, target.Keys.ToArray()));
+            var holdsBoth = target.SupersetBridges.Count > 0;
+            holdsBoth.Should().Be(SharesSuperset(source, target.Keys.ToArray()));
         }
     }
 
-    // Category is derived from the raw placements, so it must be identical whether the displayed
-    // bridges are the raw triples or the decluttered (isomorphism-collapsed + pooled) default.
+    // Reach is derived from the raw placements, so it must be identical whether the displayed bridges
+    // are the raw triples or the decluttered (isomorphism-collapsed + pooled) default.
     [Fact]
-    public void Category_is_invariant_between_raw_and_pooled_bridges()
+    public void Reach_is_invariant_between_raw_and_pooled_bridges()
     {
         var pooled = Compute(new[] { 0, 4, 7 }, includeDim: true, collapseIsomorphic: true, poolMaximal: true);
         var raw = Compute(new[] { 0, 4, 7 }, includeDim: true);
@@ -148,25 +150,25 @@ public class ChordProgressionsTests
         foreach (var p in pooled)
         {
             var r = Target(raw, p.Keys.ToArray());
-            p.Category.Should().Be(r.Category);
+            p.Reach.Should().Be(r.Reach);
         }
     }
 
-    // With the raw bridge lists the category is exactly the (superset-nonempty, subset-nonempty)
-    // pair — the un-pooled lists carry every witness.
+    // Reach is exactly: Placement when a placement progression exists (either bridge list non-empty),
+    // else Composite when a composite scale hosts the move (CompositeBridges non-empty), else
+    // Unreachable. CompositeBridges are populated only in the Composite tier.
     [Fact]
-    public void Raw_category_is_consistent_with_the_bridge_lists()
+    public void Raw_reach_is_consistent_with_the_bridge_lists()
     {
         foreach (var t in Compute(new[] { 0, 4, 7 }, includeDim: true))
         {
-            var expected = (t.SupersetBridges.Count > 0, t.SubsetBridges.Count > 0) switch
-            {
-                (true, true) => ProgressionCategory.Both,
-                (true, false) => ProgressionCategory.Superset,
-                (false, true) => ProgressionCategory.Subset,
-                _ => ProgressionCategory.Neither,
-            };
-            t.Category.Should().Be(expected);
+            var hasPlacement = t.SupersetBridges.Count > 0 || t.SubsetBridges.Count > 0;
+            var expected = hasPlacement
+                ? ProgressionReach.Placement
+                : t.CompositeBridges.Count > 0 ? ProgressionReach.Composite : ProgressionReach.Unreachable;
+            t.Reach.Should().Be(expected);
+
+            if (hasPlacement) t.CompositeBridges.Should().BeEmpty();
         }
     }
 
@@ -210,27 +212,26 @@ public class ChordProgressionsTests
         }
     }
 
-    // Doc example (progression-principles.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8}
-    // is reachable by the subset principle (via a shared subset) but the two chords share no single
-    // containing placement — so subset, not superset.
+    // Doc example (progression-principles.mdx): from C = {0 4 7}, Db = 4@1 = {1 5 8} is reachable by a
+    // bridged placement progression (via a shared subset) but the two chords share no single containing
+    // placement — so bridged only, no single-placement bridge. Either way the reach is Placement.
     [Fact]
-    public void C_to_Db_is_subset_only()
+    public void C_to_Db_is_bridged_only()
     {
         var db = Target(Compute(new[] { 0, 4, 7 }), 1, 5, 8);
-        db.Category.Should().Be(ProgressionCategory.Subset);
+        db.Reach.Should().Be(ProgressionReach.Placement);
         db.SupersetBridges.Should().BeEmpty();
         db.SubsetBridges.Should().NotBeEmpty();
     }
 
-    // Doc example: from C, Eb = 4@3 = {3 7 10} is reachable by the superset principle (both under
-    // 15@7). With any-family subset bridges it also picks up subset bridges, so the category is Both;
-    // the salient assertion is that the superset bridge is present.
+    // Doc example: from C, Eb = 4@3 = {3 7 10} is held by a single placement (both under 15@7), so a
+    // single-placement progression exists and the reach is Placement.
     [Fact]
-    public void C_to_Eb_shares_a_superset()
+    public void C_to_Eb_has_a_single_placement_progression()
     {
         var eb = Target(Compute(new[] { 0, 4, 7 }), 3, 7, 10);
         eb.SupersetBridges.Should().NotBeEmpty();
-        eb.Category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
+        eb.Reach.Should().Be(ProgressionReach.Placement);
     }
 
     // --drop-collapsed defaults to None, so an explicit None must reproduce the default behaviour
@@ -244,9 +245,10 @@ public class ChordProgressionsTests
         foreach (var t in none)
         {
             var d = Target(@default, t.Keys.ToArray());
-            t.Category.Should().Be(d.Category);
+            t.Reach.Should().Be(d.Reach);
             t.SupersetBridges.Should().Equal(d.SupersetBridges);
             t.SubsetBridges.Should().Equal(d.SubsetBridges);
+            t.CompositeBridges.Should().Equal(d.CompositeBridges);
         }
     }
 
@@ -376,8 +378,10 @@ public class ChordProgressionsTests
         }
     }
 
-    // ComputePair is the per-pair core of the convenience enumeration: for every enumerated target it
-    // must agree on the category, and the raw triplet list is non-empty exactly when reachable.
+    // ComputePair is the per-pair core of the convenience enumeration: its placement-progression
+    // category maps to the target's reachability tier — a non-Neither category is a Placement reach;
+    // a Neither category escalates to Composite (a host exists) or Unreachable. The raw triplet list is
+    // non-empty exactly when a placement progression exists.
     [Fact]
     public void ComputePair_agrees_with_Compute_per_target()
     {
@@ -385,9 +389,51 @@ public class ChordProgressionsTests
         foreach (var t in Compute(origin, includeDim: true))
         {
             var (category, triplets) = ComputePair(origin, t.Keys.ToArray());
-            category.Should().Be(t.Category);
+            var expectedReach = category == ProgressionCategory.Neither
+                ? (t.CompositeBridges.Count > 0 ? ProgressionReach.Composite : ProgressionReach.Unreachable)
+                : ProgressionReach.Placement;
+            t.Reach.Should().Be(expectedReach);
             (triplets.Count == 0).Should().Be(category == ProgressionCategory.Neither);
         }
+    }
+
+    // When a placement progression exists, ComputePairReach reports Placement with its triplets and no
+    // composite hosts (composites are the no-placement-progression fallback). C → F at the default
+    // minimum is placement-reachable.
+    [Fact]
+    public void ComputePairReach_placement_tier_has_triplets_and_no_composites()
+    {
+        var (reach, triplets, composites) = ChordProgressions.ComputePairReach(
+            new[] { 0, 4, 7 }, new[] { 0, 5, 9 }, Families(), minSubsetNotes: 2);
+
+        reach.Should().Be(ProgressionReach.Placement);
+        triplets.Should().NotBeEmpty();
+        composites.Should().BeEmpty();
+    }
+
+    // Starving placement progressions (a large shared-bridge floor) escalates a reachable move to a
+    // composite placement progression: C → C#m = {1 4 8} has no size-6 bridged placement progression,
+    // so it is hosted by composite scales (harmonic minor at anchor 5 among them). Independent oracle:
+    // no placement progression exists (ComputePair is Neither), yet a named scale hosts the move.
+    [Fact]
+    public void ComputePairReach_escalates_to_composite_hosts_when_no_placement_progression()
+    {
+        var origin = new[] { 0, 4, 7 };
+        var target = new[] { 1, 4, 8 };
+
+        var (category, _) = ComputePair(origin, target, minSubsetNotes: 6);
+        category.Should().Be(ProgressionCategory.Neither);
+        NamedScales.ContainingChord(origin.Concat(target).Distinct().ToArray(), Ktet)
+            .Should().NotBeEmpty(); // a scale hosts the move → Composite, not Unreachable
+
+        var (reach, triplets, composites) = ChordProgressions.ComputePairReach(
+            origin, target, Families(), minSubsetNotes: 6);
+
+        reach.Should().Be(ProgressionReach.Composite);
+        triplets.Should().BeEmpty();
+        composites.Should().NotBeEmpty();
+        composites.Should().OnlyContain(c => c.StartsWith("↑"));
+        composites.Should().Contain("↑hm@5"); // the harmonic-minor host from the doc's C→minor discussion
     }
 
     private static Placement Place(int lcm, int at) =>

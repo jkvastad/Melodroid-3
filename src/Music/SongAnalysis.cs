@@ -271,7 +271,7 @@ public static class SongAnalysis
         var triplets = ChordProgressions.SubsetTripletsBetween(
             lset, rset, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var (_, subset) = ChordProgressions.BridgeLabels(triplets);
-        if (nameComposites) subset = CompositeLabels(triplets, ktet);
+        if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
 
         var category = (pivots.Count > 0, triplets.Count > 0) switch
         {
@@ -315,73 +315,18 @@ public static class SongAnalysis
             fromKeys, toKeys, families, minSubsetNotes, collapseIsomorphic, poolMaximal,
             CollapseFilter.None, ktet);
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
-        if (nameComposites) subset = CompositeLabels(triplets, ktet);
+        if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
         // Escalation: when the placement graph has no edge (Neither) the move is carried by a composite
         // scale, not a placement — name it in the (empty) Composite column so the gap is explicit while
         // the category stays Neither.
         if (nameComposites && category == ProgressionCategory.Neither)
-            subset = EscalationLabels(fromKeys, toKeys, compositeCatalog, ktet);
+            subset = CompositeProgressions.Escalation(fromKeys, toKeys, compositeCatalog, ktet);
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
-    // The escalation scales for a Neither bridge: the composite scales that can host the move when no
-    // placement contains both chords. Symmetric with CompositeLabels — it draws from the SAME composite
-    // universe, not just the named catalog: a named composite shows "↑{Short}@{Anchor}", an unnamed one
-    // keeps its "↑P_A·S·P_B" constituents. Named scales that are not composites (major, major blues) are
-    // recovered via NamedScales.ContainingChord so those escalations survive too. Prefer hosts over the
-    // whole origin ∪ target; if nothing hosts both (the dim7 case — {0 3 6 9} is in no placement but is
-    // the core of harmonic minor / major), fall back to hosts over the target (the arrival). Sorted
-    // named-first (catalog order, then anchor), then unnamed triplets, as CompositeLabels.
-    private static IReadOnlyList<string> EscalationLabels(
-        IReadOnlyList<int> fromKeys,
-        IReadOnlyList<int> toKeys,
-        IReadOnlyList<CompositeScale> compositeCatalog,
-        int ktet)
-    {
-        var union = fromKeys.Concat(toKeys).Distinct().OrderBy(k => k).ToList();
-        var hosts = HostsOver(union, compositeCatalog, ktet);
-        if (hosts.Count == 0) hosts = HostsOver(toKeys, compositeCatalog, ktet);
-        return hosts;
-    }
-
-    // Named-and-unnamed composite hosts of a key set: named scales containing it (via the catalog, so
-    // non-composite scales like major / major blues are included) plus unnamed composites whose keys
-    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed, as CompositeLabels.
-    private static IReadOnlyList<string> HostsOver(
-        IReadOnlyList<int> keys, IReadOnlyList<CompositeScale> compositeCatalog, int ktet)
-    {
-        var catalogOrder = NamedScales.Catalog
-            .Select((s, i) => (s.Name, i))
-            .ToDictionary(x => x.Name, x => x.i);
-        var target = new HashSet<int>(keys);
-
-        var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
-        foreach (var r in NamedScales.ContainingChord(keys, ktet))
-        {
-            var label = $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}";
-            labels[label] = (catalogOrder[r.Name], r.Anchor, 0, 0, 0, label);
-        }
-        foreach (var j in compositeCatalog)
-        {
-            if (!target.IsSubsetOf(j.Keys)) continue;
-            if (NamedScales.Match(j.Keys, ktet) is not null) continue; // named ones already covered
-            var label = "↑" + TripletLabel(new ProgressionTriplet(
-                j.PA, j.S, j.PB, ProgressionPrinciple.Subset));
-            labels[label] = (catalogOrder.Count, j.PA.Lcm, j.PA.At, j.PB.Lcm, j.PB.At, label);
-        }
-
-        return labels.Values
-            .Distinct()
-            .OrderBy(x => x.Rank)
-            .ThenBy(x => x.A).ThenBy(x => x.B).ThenBy(x => x.C).ThenBy(x => x.D)
-            .ThenBy(x => x.Label, StringComparer.Ordinal)
-            .Select(x => x.Label)
-            .ToList();
-    }
-
     // The anchored composite catalog used for escalation, computed once per bridges table (only when
-    // nameComposites). dedupeTransposition:false keeps all 12 anchors so containment can be tested at
-    // any root; stable:true matches CompositeLabels' union rule.
+    // nameComposites). Delegates to CompositeProgressions.Catalog so the Enumerate parameters stay
+    // single-sourced with `table progression`.
     private static IReadOnlyList<CompositeScale> CompositeCatalog(
         bool nameComposites,
         IReadOnlyList<LcmFamily> families,
@@ -390,52 +335,8 @@ public static class SongAnalysis
         bool poolMaximal,
         int ktet)
         => nameComposites
-            ? CompositeScales.Enumerate(families, minSubsetNotes, stable: true,
-                collapseIsomorphic, poolMaximal, dedupeTransposition: false, ktet)
+            ? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet)
             : Array.Empty<CompositeScale>();
-
-    // The composite scales of a pair's subset triplets. A triplet whose stable union P_A ∪ P_B matches
-    // a catalog scale is named ("{Short}@{Anchor}"), deduped by the (Origin, Target) pair — the union
-    // ignores S, so the many triplets sharing a pair collapse to one. A triplet whose union matches no
-    // catalog scale keeps its full "P_A·S·P_B" constituents (as `table composite-scales` prints them),
-    // deduped by the whole triplet so distinct S survive. Sorted for stable display: named scales first
-    // (catalog order, then anchor), then unnamed triplets (by Origin/Target LCM then anchor).
-    private static IReadOnlyList<string> CompositeLabels(
-        IReadOnlyList<ProgressionTriplet> triplets, int ktet)
-    {
-        var catalogOrder = NamedScales.Catalog
-            .Select((s, i) => (s.Name, i))
-            .ToDictionary(x => x.Name, x => x.i);
-
-        var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
-        foreach (var t in triplets.Where(t => t.Principle == ProgressionPrinciple.Subset))
-        {
-            var union = CompositeScales.UnionKeys(t.Origin, t.Target, stable: true, ktet);
-            if (NamedScales.Match(union, ktet) is (string name, int anchor))
-            {
-                var key = $"{t.Origin.Lcm}@{t.Origin.At}|{t.Target.Lcm}@{t.Target.At}";
-                labels[key] = (catalogOrder[name], anchor, 0, 0, 0, $"{NamedScales.Shorthand(name)}@{anchor}");
-            }
-            else
-            {
-                var label = TripletLabel(t);
-                labels[label] = (catalogOrder.Count,
-                    t.Origin.Lcm, t.Origin.At, t.Target.Lcm, t.Target.At, label);
-            }
-        }
-
-        return labels.Values
-            .Distinct()
-            .OrderBy(x => x.Rank)
-            .ThenBy(x => x.A).ThenBy(x => x.B).ThenBy(x => x.C).ThenBy(x => x.D)
-            .ThenBy(x => x.Label, StringComparer.Ordinal)
-            .Select(x => x.Label)
-            .ToList();
-    }
-
-    // "P_A·S·P_B" for a subset triplet, matching `table composite-scales`' constituent column.
-    private static string TripletLabel(ProgressionTriplet t) =>
-        $"{t.Origin.Lcm}@{t.Origin.At}·{t.Bridge.Lcm}@{t.Bridge.At}·{t.Target.Lcm}@{t.Target.At}";
 
     // The named-scale labels ("{Shorthand}@{Anchor}") containing a chunk's key-set, in
     // ContainingChord order. Shared with the per-chunk table so both views label scales identically.

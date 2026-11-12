@@ -864,7 +864,7 @@ class Program
 
         var progressionMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
-            Description = "Minimum number of keys a good-LCM family placement must have to serve as a shared subset S in the subset principle. Default 2 (dyads allowed); raise to restrict to larger bridging families.",
+            Description = "Minimum number of keys a good-LCM family placement must have to serve as the shared bridge S of a bridged placement progression (and of a composite scale's constituents). Default 2 (dyads allowed); raise to restrict to larger bridging families.",
             DefaultValueFactory = _ => 2,
         };
 
@@ -876,13 +876,13 @@ class Program
 
         var progressionCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
         {
-            Description = "Declutter: relabel each placement to the representative of its key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Categories are unaffected. Default off (raw labels).",
+            Description = "Declutter: relabel each placement to the representative of its key set, preferring a power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Reachability is unaffected. Default off (raw labels).",
             DefaultValueFactory = _ => false,
         };
 
         var progressionPoolMaximalOption = new Option<bool>("--pool-maximal")
         {
-            Description = "Declutter: keep only the maximal containing placements P_A/P_B (by key-set inclusion) and the maximal shared subsets S. Lossless for existence, so categories are unaffected. Default off (raw).",
+            Description = "Declutter: keep only the maximal containing placements P_A/P_B (by key-set inclusion) and the maximal shared subsets S. Lossless for existence, so reachability is unaffected. Default off (raw).",
             DefaultValueFactory = _ => false,
         };
 
@@ -894,13 +894,13 @@ class Program
 
         var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
         {
-            Description = "Disqualify unstable placements collapsed by their respective chord (collapsing key is a chord key) — lcm-15 (key (At+8) mod 12) and lcm-20 (key (At+3) mod 12) — so they no longer count toward categories or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
+            Description = "Disqualify unstable placements collapsed by their respective chord (collapsing key is a chord key) — lcm-15 (key (At+8) mod 12) and lcm-20 (key (At+3) mod 12) — so they no longer count toward reachability or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
             DefaultValueFactory = _ => "none",
         };
 
         var progressionCommand = new Command(
             "progression",
-            "Formalise the two progression principles for 12-tet chords. With --target-keys: print every origin→target progression as explicit origin/bridge/target placement triplets (superset = one good-LCM placement holds both chords; subset = P_A·S·P_B via a shared subset family S of ≥ --min-subset-notes keys). Without --target-keys: enumerate every major/minor (+ --include-dim) triad as a candidate target and categorise each as superset / subset / both / neither. Bridge lists are raw by default; --collapse-isomorphic and --pool-maximal declutter them without changing categories. 12-tet only.");
+            "Placement progressions and composite placement progressions for 12-tet chords. A placement progression connects two chords through a triplet of LCM-family placements (origin placement → bridge → target placement), in two shapes: one placement holds both chords (origin = bridge = target), or two placements P_A ⊇ origin, P_B ⊇ target are bridged by a shared subset family S of ≥ --min-subset-notes keys (P_A·S·P_B). When no placement progression exists, a composite placement progression may still host the move — a composite scale (the key-union of two bridged placements) containing it. With --target-keys: print the pair's placement-progression triplets as unified origin/bridge/target rows, or its composite-scale hosts. Without --target-keys: enumerate every major/minor (+ --include-dim) triad as a candidate target and tag each by reachability — placement / composite / unreachable. Bridge lists are raw by default; --collapse-isomorphic and --pool-maximal declutter them without changing reachability. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
@@ -969,12 +969,12 @@ class Program
             if (targetKeys.Length > 0)
             {
                 var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
-                var (category, triplets) = ChordProgressions.ComputePair(
+                var (reach, triplets, compositeBridges) = ChordProgressions.ComputePairReach(
                     dedupOrigin, dedupTarget, families, minSubsetNotes,
                     collapseIsomorphic, poolMaximal, dropCollapsed.Value);
                 ProgressionTableRenderer.RenderPair(
                     dedupOrigin, dedupTarget, minSubsetNotes, collapseIsomorphic, poolMaximal,
-                    dropCollapsed.Value, category, triplets);
+                    dropCollapsed.Value, reach, triplets, compositeBridges);
                 return 0;
             }
 

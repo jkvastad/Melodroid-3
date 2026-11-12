@@ -305,42 +305,56 @@ melodroid table progression --origin-keys 0 4 7 \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-A command based on the two progression principles from the
-[progression principles doc](/docs/music/progression-principles) ("Progression principles"). A
-progression is a **triplet of placements** — an origin placement (contains the origin chord), a
-target placement (contains the target chord), and a bridge placement fulfilling a principle:
+A command for the **placement progressions** and **composite placement progressions** from the
+[progression principles doc](/docs/music/progression-principles). A placement progression connects
+two chords through a triplet of placements — an origin placement (contains the origin chord), a
+bridge placement, and a target placement (contains the target chord), read as a walk in the global
+placement graph. It has two structural shapes:
 
-- **superset** — some single LCM family placement contains both origin and target chords.
-- **subset** — the chords origin and target placements share an lcm subset (e.g. C→Db: `15@7` and `24@8` both contain `18@10`).
+- **single-placement** — one LCM family placement contains both chords, so origin = bridge = target
+  (e.g. C→Eb: both sit under `15@7`).
+- **bridged** — two distinct placements `P_A ⊇ origin`, `P_B ⊇ target` are joined by a shared LCM
+  subset family `S` of ≥ `--min-subset-notes` keys, giving the triplet `P_A·S·P_B` (e.g. C→Db: `15@7`
+  and `24@8` both contain `18@10`).
+
+When no placement progression connects two chords, a composite placement progression may still host the move:
+a composite scale (the key-union of two bridged placements — see [`composite-scales`](#composite-scales)) that contains
+it. Each chord pair is therefore tagged by a single **reachability** axis:
+
+- **placement** — a placement progression exists.
+- **composite** — no placement progression, but a composite scale hosts the move.
+- **unreachable** — neither.
 
 The command has two forms (12-tet only):
 
-**Standard form** (`--target-keys` given) — prints every origin→target progression as
-**Origin | Bridge | Target** rows, superset rows first then subset. A superset row repeats the single
-containing placement in all three columns. Subset rows are factored **both ways** around their shared
-bridge `S`: every row collapses all origins that share the same bridge *and* the identical target
-set, brace-listing both the origins and the targets (`{P_A, …} | S | {P_B, …}`). Each row is thus a
-full `Origins × {S} × Targets` rectangle; it is lossless because the two containing placements are
-always distinct (no origin can equal one of its own targets). Inside any brace list, placements that
-share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a per-principle
-**placement summary** gives a quick read of the progression's topology — one anchor-compressed set
-of the superset placements, and the subset placements split by slot into **origins** (`P_A`),
-**bridges** (`S`), and **targets** (`P_B`); a principle's line is omitted when it has no triplets.
-The footer reports the derived category.
+**Standard form** (`--target-keys` given) — when the pair is **placement**-reachable, prints its
+placement-progression triplets as unified **Origin | Bridge | Target** rows — single-placement rows
+first (the one holding placement repeated across all three columns), then bridged rows. Bridged rows
+are factored **both ways** around their shared bridge `S`: every row collapses all origins that share
+the same bridge *and* the identical target set, brace-listing both (`{P_A, …} | S | {P_B, …}`). Each
+row is thus a full `Origins × {S} × Targets` rectangle; it is lossless because the two containing
+placements are always distinct (no origin can equal one of its own targets). Inside any brace list,
+placements that share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a
+**placement summary** gives a quick read of the topology — one anchor-compressed set of the
+single-placement holders, and the bridged progressions split by slot into **origins** (`P_A`),
+**bridges** (`S`), and **targets** (`P_B`); a shape's line is omitted when it has no triplets. When
+the pair is **composite**-reachable instead, prints the hosting composite scales (`↑{Short}@{Anchor}`
+for named scales, `↑P_A·S·P_B` otherwise); when **unreachable**, says so. The footer reports the reach.
 
 **Convenience form** (`--target-keys` omitted) — enumerates every major/minor target triad rooted
-at each of the 12 keys (add `--include-dim` for the 12 diminished triads too) and tags each with a
-**Category**, split into **one table per triad quality**; unreachable **neither** targets are still
-listed. The **Via** column shows the bridges: superset as an anchor-compressed brace list of
-`{Lcm}@{At}` labels, subset as `P_A·S·P_B`
-triples (capped at 6 per list, overflowing to `…(+M)`; `--all-bridges` disables the cap). Triples
-sharing a source placement `P_A` and shared subset `S` are factored by that prefix, brace-listing
-the varying target placements — `P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`);
-within the brace list, same-LCM placements compress their anchors (`24@0, 24@5` → `24@0,5`).
+at each of the 12 keys (add `--include-dim` for the 12 diminished triads too) and tags each with its
+**Reach**, split into **one table per triad quality**; **unreachable** targets are still listed. The
+**Via** column shows the bridges: placement progressions as an anchor-compressed brace list of
+`{Lcm}@{At}` labels (single-placement) and `P_A·S·P_B` triples (bridged); composite hosts as
+`↑{Short}@{Anchor}` / `↑P_A·S·P_B` for the composite tier (capped at 6 per list, overflowing to
+`…(+M)`; `--all-bridges` disables the cap). Bridged triples sharing a source placement `P_A` and
+shared subset `S` are factored by that prefix, brace-listing the varying target placements —
+`P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`); within the brace list, same-LCM
+placements compress their anchors (`24@0, 24@5` → `24@0,5`).
 
 Bridge/triplet lists are **raw by default** — plain `{Lcm}@{At}` labels, every containing placement
 and every triple. By default output is truncated, use option `--all-bridges` to show all progressions.
-Two independent, opt-in declutters shrink them **without changing any category**, exploiting the LCM-family lattice:
+Two independent, opt-in declutters shrink them **without changing reachability**, exploiting the LCM-family lattice:
 
 - `--collapse-isomorphic` — isomorphic families share a key set at shifted anchors (`3@7` and `4@0`
   are both `{0 4 7}`), so every placement is relabelled to its key set's representative, preferring a
@@ -353,14 +367,15 @@ Two independent, opt-in declutters shrink them **without changing any category**
   `15@7·S·P_B`) — intentional and lossless.
 
 Pooling is lossless for reachability (if `S ⊆ P_A ∩ P_B` and `P_A ⊆ P_A'` then `S ⊆ P_A' ∩ P_B'`),
-and the categories are computed from the **raw** placements regardless, so the category is identical
-with or without decluttering.
+and the reach is computed from the **raw** placements regardless, so it is identical with or without
+decluttering.
 
-`--min-subset-notes` (default `2`, dyads allowed) sets the minimum size of a bridging family `S` — raise it to tame the
-"lots of dyads bridge everything" effect the doc warns about (at the default almost every target is
-subset-reachable). The two containing placements in the subset test must be **distinct**: a single
-placement holding both chords is classified as *superset*, so the subset principle fires only for
-chords in different placements bridged by a shared subset.
+`--min-subset-notes` (default `2`, dyads allowed) sets the minimum size of a bridging family `S` (and
+of a composite scale's shared subset) — raise it to tame the "lots of dyads bridge everything" effect
+the doc warns about (at the default almost every target is placement-reachable). As the floor rises and
+placement progressions vanish, previously-reachable moves **escalate** to the composite tier. The two
+containing placements in the bridged shape must be **distinct**: a single placement holding both chords
+is the single-placement shape, so the bridged shape fires only for chords in different placements.
 
 `--drop-collapsed` (default `none`) disqualifies an unstable placement whose collapsing key is one
 of the keys of the chord it contains — under the [preference principle](/docs/music/preference) such
@@ -368,7 +383,7 @@ a placement has already collapsed onto a smaller pattern and is not a valid brid
 unstable: `lcm-15` (collapsing key `(At+8) mod 12`, collapsing onto an adjacent `lcm-24`) and
 `lcm-20` (collapsing key `(At+3) mod 12`, since `20@At` is the subset of `15@(At+7)` and collapses to
 it). `origin` applies the filter to the origin chord's containing placements `P_A`, `target` to the
-target side `P_B`, and `both` to both sides. Because the categories and the triplets both derive from
+target side `P_B`, and `both` to both sides. Because the reach and the triplets both derive from
 these placements, a disqualified placement is removed from each. 12-tet only; other families are
 untouched.
 

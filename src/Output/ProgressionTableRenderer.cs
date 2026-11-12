@@ -8,8 +8,9 @@ public static class ProgressionTableRenderer
     // Cap the convenience-table bridge lists so a "Via" cell stays readable; overflow is …(+M).
     private const int MaxBridges = 6;
 
-    // Standard form: one ordered chord pair rendered as explicit origin/bridge/target triplet rows,
-    // superset rows first, then subset — each sorted by bridge, then origin, then target.
+    // Standard form: one ordered chord pair rendered as its placement-progression triplets (unified
+    // origin/bridge/target rows — single-placement progressions first, then bridged, each sorted by
+    // bridge/origin/target), or — when no placement progression exists — its composite-scale hosts.
     public static void RenderPair(
         IReadOnlyCollection<int> origin,
         IReadOnlyCollection<int> target,
@@ -17,8 +18,9 @@ public static class ProgressionTableRenderer
         bool collapseIsomorphic,
         bool poolMaximal,
         CollapseFilter dropCollapsed,
-        ProgressionCategory category,
+        ProgressionReach reach,
         IReadOnlyList<ProgressionTriplet> triplets,
+        IReadOnlyList<string> compositeBridges,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -26,66 +28,70 @@ public static class ProgressionTableRenderer
         var originStr = KeySet(origin);
         var targetStr = KeySet(target);
 
-        if (triplets.Count == 0)
-        {
-            console.MarkupLine($"{originStr} → {targetStr}: [grey]neither — no progression found[/]");
-        }
-        else
+        if (triplets.Count > 0)
         {
             var table = new Table()
                 .Title($"{originStr} → {targetStr}")
-                .AddColumn("Principle")
                 .AddColumn("Origin")
                 .AddColumn("Bridge")
                 .AddColumn("Target");
 
-            // Superset rows first: one per containing placement (Origin = Bridge = Target, nothing to
-            // factor), ordered by bridge then origin then target.
-            var supersets = triplets
+            // Single-placement progressions first: one per placement holding both chords
+            // (Origin = Bridge = Target, nothing to factor), ordered by bridge then origin then target.
+            var single = triplets
                 .Where(t => t.Principle == ProgressionPrinciple.Superset)
                 .OrderBy(t => Key(t.Bridge))
                 .ThenBy(t => Key(t.Origin))
                 .ThenBy(t => Key(t.Target));
-            foreach (var t in supersets)
+            foreach (var t in single)
             {
-                table.AddRow("[blue]superset[/]", Label(t.Origin), Label(t.Bridge), Label(t.Target));
+                table.AddRow(Label(t.Origin), Label(t.Bridge), Label(t.Target));
             }
 
-            // Subset rows: factor both Origin and Target around a shared Bridge (see GroupSubsetPairs).
-            var subsets = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset);
-            foreach (var (origins, bridge, targets) in GroupSubsetPairs(subsets))
+            // Bridged progressions: factor both Origin and Target around a shared Bridge (GroupSubsetPairs).
+            var bridged = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset);
+            foreach (var (origins, bridge, targets) in GroupSubsetPairs(bridged))
             {
-                table.AddRow("[yellow]subset[/]", origins, bridge, targets);
+                table.AddRow(origins, bridge, targets);
             }
 
             console.Write(table);
 
             RenderSummary(triplets, console);
         }
+        else if (compositeBridges.Count > 0)
+        {
+            console.MarkupLine(
+                $"{originStr} → {targetStr}: [yellow]composite[/] — hosted by {string.Join(", ", compositeBridges)}");
+        }
+        else
+        {
+            console.MarkupLine($"{originStr} → {targetStr}: [grey]unreachable — no progression found[/]");
+        }
 
         console.MarkupLine(
-            $"[grey]progression: {originStr} → {targetStr} · {category.ToString().ToLowerInvariant()} · " +
+            $"[grey]progression: {originStr} → {targetStr} · {reach.ToString().ToLowerInvariant()} · " +
             $"minSubsetNotes={minSubsetNotes} · bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
     }
 
-    // Per-principle placement summary beneath the triplet table: a quick read of which placements
-    // participate overall. Superset collapses to one set (Origin = Bridge = Target); subset splits
-    // by slot into origins (P_A) / bridges (S) / targets (P_B). Each set is deduped and
-    // anchor-compressed. A principle's line is omitted when it has no triplets.
+    // Placement summary beneath the triplet table: a quick read of which placements participate overall.
+    // Single-placement progressions collapse to one set (Origin = Bridge = Target); bridged progressions
+    // split by slot into origins (P_A) / bridges (S) / targets (P_B). Each set is deduped and
+    // anchor-compressed. A shape's line is omitted when it has no triplets.
     private static void RenderSummary(IReadOnlyList<ProgressionTriplet> triplets, IAnsiConsole console)
     {
-        var supersets = triplets.Where(t => t.Principle == ProgressionPrinciple.Superset).ToList();
-        var subsets = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset).ToList();
+        var single = triplets.Where(t => t.Principle == ProgressionPrinciple.Superset).ToList();
+        var bridged = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset).ToList();
 
         console.MarkupLine("[grey]summary[/]");
-        if (supersets.Count > 0)
-            console.MarkupLine($"  [blue]superset[/]  {SummarizeSlot(supersets, t => t.Bridge)}");
-        if (subsets.Count > 0)
+        if (single.Count > 0)
+            console.MarkupLine($"  [green]holds both[/]  {SummarizeSlot(single, t => t.Bridge)}");
+        if (bridged.Count > 0)
             console.MarkupLine(
-                $"  [yellow]subset[/]   origins {SummarizeSlot(subsets, t => t.Origin)} · " +
-                $"bridges {SummarizeSlot(subsets, t => t.Bridge)} · " +
-                $"targets {SummarizeSlot(subsets, t => t.Target)}");
+                $"  [yellow]bridged[/]     origins {SummarizeSlot(bridged, t => t.Origin)} · " +
+                $"bridges {SummarizeSlot(bridged, t => t.Bridge)} · " +
+                $"targets {SummarizeSlot(bridged, t => t.Target)}");
     }
 
     // Distinct placements in one triplet slot, anchor-compressed (CompressAnchors handles ordering).
@@ -116,18 +122,21 @@ public static class ProgressionTableRenderer
             var table = new Table()
                 .Title(QualityName(quality))
                 .AddColumn(new TableColumn("Root").RightAligned())
-                .AddColumn(new TableColumn("Category"))
+                .AddColumn(new TableColumn("Reach"))
                 .AddColumn(new TableColumn("Via"));
 
             foreach (var target in group)
             {
+                // Placement progressions (single-placement + bridged) render together as the walk; the
+                // Composite tier instead lists the composite-scale hosts.
                 var via = new List<string>();
-                if (target.SupersetBridges.Count > 0) via.Add($"sup {CapBraced(target.SupersetBridges, allBridges)}");
-                if (target.SubsetBridges.Count > 0) via.Add($"sub {Cap(GroupSubsetTriples(target.SubsetBridges), allBridges)}");
+                if (target.SupersetBridges.Count > 0) via.Add(CapBraced(target.SupersetBridges, allBridges));
+                if (target.SubsetBridges.Count > 0) via.Add(Cap(GroupSubsetTriples(target.SubsetBridges), allBridges));
+                if (target.CompositeBridges.Count > 0) via.Add(Cap(target.CompositeBridges, allBridges));
 
                 table.AddRow(
                     target.Root.ToString(),
-                    CategoryMarkup(target.Category),
+                    ReachMarkup(target.Reach),
                     string.Join(" · ", via));
             }
 
@@ -267,12 +276,11 @@ public static class ProgressionTableRenderer
         return overflow ? $"{body} …(+{bridges.Count - MaxBridges})" : body;
     }
 
-    private static string CategoryMarkup(ProgressionCategory category) => category switch
+    private static string ReachMarkup(ProgressionReach reach) => reach switch
     {
-        ProgressionCategory.Both => "[green]both[/]",
-        ProgressionCategory.Superset => "[blue]superset[/]",
-        ProgressionCategory.Subset => "[yellow]subset[/]",
-        _ => "[grey]neither[/]",
+        ProgressionReach.Placement => "[green]placement[/]",
+        ProgressionReach.Composite => "[yellow]composite[/]",
+        _ => "[grey]unreachable[/]",
     };
 
     private static string QualityName(TriadQuality quality) => quality switch

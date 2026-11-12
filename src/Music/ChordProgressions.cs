@@ -1,36 +1,38 @@
 namespace Melodroid_3.Music;
 
-// General formalisation of the two chord-progression principles from
-// website/docs/music/progression-principles.mdx ("Progression Principles"):
+// Placement progressions and composite placement progressions from
+// website/docs/music/progression-principles.mdx.
 //
-//   * Superset principle — chord A may progress to chord B when a single good-LCM family placement
-//     contains both (e.g. C→Eb: both sit under 15@7).
-//   * Subset principle  — A's containing placement P_A and B's containing placement P_B share a
-//     common subset family S (e.g. C→Db: 15@7 and 24@8 both contain 18@10).
+// A **placement progression** connects chord A to chord B through a triplet of LCM-family placements
+// (ProgressionTriplet) — an origin placement containing A, a target placement containing B, and a
+// bridge placement — read as a walk in the global placement graph. It has two structural shapes:
+//   * single-placement — one placement contains both chords, so origin = bridge = target
+//     (e.g. C→Eb: both sit under 15@7);
+//   * bridged — two distinct placements P_A ⊇ A, P_B ⊇ B share a common subset family S (|S| ≥ min),
+//     giving the triplet P_A · S · P_B (e.g. C→Db: 15@7 and 24@8 both contain 18@10).
+// These are two shapes of one walk, not two competing principles; ProgressionPrinciple is the internal
+// discriminator between them (it is no longer surfaced to the user).
 //
-// A progression is modelled as a triplet of placements (ProgressionTriplet): an origin placement
-// containing the origin chord, a target placement containing the target chord, and a bridge
-// placement fulfilling a principle. Under the superset principle a single placement contains both
-// chords, so origin = bridge = target; under the subset principle the triplet is P_A · S · P_B.
+// When no placement progression connects A and B, the move may still be carried by a **composite
+// placement progression** — a composite scale (the union of two bridged placements, CompositeScales)
+// that hosts the move (CompositeProgressions.Escalation). `table progression` reports this as a single
+// reachability axis (ProgressionReach): Placement (a placement progression exists), Composite (only a
+// composite placement progression does), or Unreachable (neither).
 //
-// ComputePair(origin, target, …) yields the category and the full triplet list for one ordered pair
-// (the standard form). Compute(origin, …) enumerates every major/minor (+ optional dim) triad as a
-// candidate target and returns a ProgressionTarget per row (the convenience form); its category is
-// identical to ComputePair's for the same pair.
+// ComputePair(origin, target, …) yields the placement-progression category and triplet list for one
+// ordered pair; ComputePairReach adds the reachability tier + composite hosts (the standard form).
+// Compute(origin, …) enumerates every major/minor (+ optional dim) triad as a candidate target and
+// returns a ProgressionTarget per row (the convenience form).
 //
-// Modeling note — the two containing placements in the subset test must be *distinct*. If P_A = P_B
-// were allowed, that single placement already contains both chords (the superset condition) and a
-// shared subset S ⊆ P_A trivially exists, so superset would always imply subset and "superset-only"
-// could never occur. Requiring distinctness classifies the single-placement case as superset and
-// reserves the subset principle for chords sitting in different placements bridged by a shared
-// subset. The categories are not mutually exclusive: a pair is `Both` when the superset condition
-// holds *and* a distinct pair independently shares a subset.
+// Modeling note — the two containing placements in the bridged shape must be *distinct*. If P_A = P_B
+// were allowed, that single placement already contains both chords (the single-placement shape) and a
+// shared subset S ⊆ P_A trivially exists, so the bridged shape would be redundant. Requiring
+// distinctness reserves it for chords sitting in different placements bridged by a shared subset.
 //
-// Categories are always computed from the *raw* placements (the rows of Placements.FindSupersets,
-// after any --drop-collapsed filtering, which is semantic), so the displayed triplets never affect
-// the category. By default the triplet lists are raw too (every containing placement; every
-// P_A·S·P_B triple with plain {Lcm}@{At} labels). Two opt-in, independent declutters shrink them
-// losslessly for existence:
+// The reachability tier is computed from the *raw* placements (the rows of Placements.FindSupersets,
+// after any --drop-collapsed filtering, which is semantic), so the displayed triplets never affect it.
+// By default the triplet lists are raw too (every containing placement; every P_A·S·P_B triple with
+// plain {Lcm}@{At} labels). Two opt-in, independent declutters shrink them losslessly for existence:
 //   * poolMaximal — keep only *maximal* containing placements P_A/P_B (by key-set inclusion) and the
 //     *maximal* shared subsets S. (If S ⊆ P_A ∩ P_B and P_A ⊆ P_A', then S ⊆ P_A' ∩ P_B' too.)
 //   * collapseIsomorphic — relabel each placement to the representative of its key set, preferring a
@@ -41,8 +43,22 @@ namespace Melodroid_3.Music;
 
 public enum TriadQuality { Major, Minor, Diminished }
 
+// Internal reachability discriminator used to build the user-facing ProgressionReach and to classify
+// `analyze midi` bridges. Not surfaced by `table progression` (which presents ProgressionReach).
 public enum ProgressionCategory { Neither, Superset, Subset, Both }
 
+// How a target chord is reached from the origin chord, the single axis `table progression` reports:
+//   * Placement   — a placement progression connects them (a triplet of LCM-family placements: either
+//                   one placement holds both chords, or two placements bridged by a shared subset S).
+//   * Composite   — no placement progression connects them, but a composite placement progression does
+//                   (a composite scale — the union of two bridged placements — hosts the move).
+//   * Unreachable — neither.
+public enum ProgressionReach { Unreachable, Placement, Composite }
+
+// Internal structural shape of a placement-progression triplet: a single placement holding both chords
+// (Superset: Origin = Bridge = Target) versus two placements bridged by a shared subset S
+// (Subset: P_A · S · P_B). Kept as an internal discriminator for rendering and composite naming — it is
+// no longer surfaced as a user-facing "principle".
 public enum ProgressionPrinciple { Superset, Subset }
 
 // Which side's collapsed unstable placements (lcm-15 / lcm-20) to disqualify as bridges: none
@@ -57,16 +73,19 @@ public readonly record struct ProgressionTriplet(
     Placement Origin, Placement Bridge, Placement Target, ProgressionPrinciple Principle);
 
 // One candidate next chord and how it is (or is not) reachable: the absolute folded key set +
-// quality/root, the derived category, and the bridging labels under each principle. Superset
-// bridges are placement labels ("{Lcm}@{At}") containing both chords; subset bridges are
-// "P_A·S·P_B" triples. Either list may be empty.
+// quality/root, the reachability tier, and the bridging labels. The placement-progression bridges come
+// in two shapes — single-placement labels ("{Lcm}@{At}") holding both chords (SupersetBridges) and
+// "P_A·S·P_B" bridged triples (SubsetBridges); both render as placement progressions. CompositeBridges
+// are the composite-scale hosts ("↑{Short}@{Anchor}" / "↑P_A·S·P_B"), populated only for the Composite
+// tier (when no placement progression exists). Any list may be empty.
 public readonly record struct ProgressionTarget(
     IReadOnlyList<int> Keys,
     TriadQuality Quality,
     int Root,
-    ProgressionCategory Category,
+    ProgressionReach Reach,
     IReadOnlyList<string> SupersetBridges,
-    IReadOnlyList<string> SubsetBridges);
+    IReadOnlyList<string> SubsetBridges,
+    IReadOnlyList<string> CompositeBridges);
 
 public static class ChordProgressions
 {
@@ -192,9 +211,54 @@ public static class ChordProgressions
         return (superset, subset);
     }
 
-    // Every candidate next chord for the given source chord keys, each tagged superset / subset /
-    // both / neither per the two principles above. Sorted by root, then quality. Bridge lists are raw
-    // unless collapseIsomorphic / poolMaximal declutter them.
+    // The reachability tier for one ordered chord pair, plus its placement-progression triplets and
+    // (Composite tier only) the composite-scale hosts. The standard-form entry point: ComputePair gives
+    // the placement progressions; when none exist the pair escalates to a composite placement
+    // progression (CompositeProgressions.Escalation), classified Composite if any composite hosts the
+    // move, else Unreachable. Pass a prebuilt compositeCatalog to share it across many calls.
+    public static (ProgressionReach Reach, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges) ComputePairReach(
+        IReadOnlyCollection<int> origin,
+        IReadOnlyCollection<int> target,
+        IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic = false,
+        bool poolMaximal = false,
+        CollapseFilter dropCollapsed = CollapseFilter.None,
+        int ktet = 12,
+        IReadOnlyList<CompositeScale>? compositeCatalog = null)
+    {
+        var (category, triplets) = ComputePair(
+            origin, target, families, minSubsetNotes, collapseIsomorphic, poolMaximal, dropCollapsed, ktet);
+        var catalog = compositeCatalog
+            ?? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var (reach, composites) = Classify(category, origin, target, catalog, ktet);
+        return (reach, triplets, composites);
+    }
+
+    // Map a placement-progression category to a reachability tier, escalating to composites when the
+    // placement graph connects nothing. Any placement progression (superset / subset / both) is
+    // Placement; otherwise a non-empty composite host list is Composite, and nothing is Unreachable.
+    private static (ProgressionReach Reach, IReadOnlyList<string> CompositeBridges) Classify(
+        ProgressionCategory category,
+        IReadOnlyCollection<int> origin,
+        IReadOnlyCollection<int> target,
+        IReadOnlyList<CompositeScale> compositeCatalog,
+        int ktet)
+    {
+        if (category != ProgressionCategory.Neither)
+            return (ProgressionReach.Placement, Array.Empty<string>());
+
+        var hosts = CompositeProgressions.Escalation(
+            origin.ToList(), target.ToList(), compositeCatalog, ktet);
+        return hosts.Count > 0
+            ? (ProgressionReach.Composite, hosts)
+            : (ProgressionReach.Unreachable, Array.Empty<string>());
+    }
+
+    // Every candidate next chord for the given source chord keys, each tagged by reachability tier
+    // (placement / composite / unreachable). Sorted by root, then quality. Placement-progression bridge
+    // lists are raw unless collapseIsomorphic / poolMaximal declutter them; composite hosts populate
+    // only the Composite tier. The composite catalog is built once and shared across all candidates.
     public static IReadOnlyList<ProgressionTarget> Compute(
         IReadOnlyCollection<int> chordKeys,
         IReadOnlyList<LcmFamily> families,
@@ -211,6 +275,8 @@ public static class ChordProgressions
         var supA = OriginSupersets(chordKeys, families, dropOrigin, ktet);
         var subsetCandidates = SubsetCandidates(families, minSubsetNotes, ktet);
         var canonical = collapseIsomorphic ? BuildCanonicalMap(families, ktet) : null;
+        var compositeCatalog = CompositeProgressions.Catalog(
+            families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
 
         var results = new List<ProgressionTarget>();
         foreach (var (keys, quality, root) in Candidates(includeDim, ktet))
@@ -220,8 +286,10 @@ public static class ChordProgressions
                 dropTarget, collapseIsomorphic, poolMaximal, canonical, ktet);
 
             var (supersetBridges, subsetBridges) = BridgeLabels(triplets);
+            var (reach, compositeBridges) = Classify(category, chordKeys, keys, compositeCatalog, ktet);
 
-            results.Add(new ProgressionTarget(keys, quality, root, category, supersetBridges, subsetBridges));
+            results.Add(new ProgressionTarget(
+                keys, quality, root, reach, supersetBridges, subsetBridges, compositeBridges));
         }
 
         return results
