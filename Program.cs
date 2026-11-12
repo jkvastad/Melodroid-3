@@ -858,7 +858,8 @@ class Program
 
         var progressionTargetKeysOption = new Option<int[]>("--target-keys")
         {
-            Description = "Target-chord key indices (each in [0, 11]), space-separated. When given, print every origin→target progression as explicit origin/bridge/target triplet rows. When omitted, enumerate all major/minor (+ --include-dim) triads as candidate targets and print the per-target table.",
+            Description = "Target-chord key indices (each in [0, 11]), space-separated. Required. Prints the origin→target progression as unified origin/bridge/target rows (placement reach) or its composite-scale hosts (composite reach).",
+            Required = true,
             AllowMultipleArgumentsPerToken = true,
         };
 
@@ -866,12 +867,6 @@ class Program
         {
             Description = "Minimum number of keys a good-LCM family placement must have to serve as the shared bridge S of a bridged placement progression (and of a composite scale's constituents). Default 2 (dyads allowed); raise to restrict to larger bridging families.",
             DefaultValueFactory = _ => 2,
-        };
-
-        var progressionIncludeDimOption = new Option<bool>("--include-dim")
-        {
-            Description = "Convenience form only (no --target-keys): also include the 12 diminished triads as candidate targets (36 rows instead of 24). Default false (major/minor only).",
-            DefaultValueFactory = _ => false,
         };
 
         var progressionCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
@@ -886,12 +881,6 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
-        var progressionAllBridgesOption = new Option<bool>("--all-bridges")
-        {
-            Description = "Convenience form only: show every bridge in each Via cell instead of capping at 6 and summarising the rest as …(+M). Cells grow taller (wrapped across lines) as needed.",
-            DefaultValueFactory = _ => false,
-        };
-
         var progressionDropCollapsedOption = new Option<string>("--drop-collapsed")
         {
             Description = "Disqualify unstable placements collapsed by their respective chord (collapsing key is a chord key) — lcm-15 (key (At+8) mod 12) and lcm-20 (key (At+3) mod 12) — so they no longer count toward reachability or appear as bridges: 'none' (default), 'origin' (origin-chord side), 'target' (target side), or 'both'. 12-tet only.",
@@ -900,17 +889,15 @@ class Program
 
         var progressionCommand = new Command(
             "progression",
-            "Placement progressions and composite placement progressions for 12-tet chords. A placement progression connects two chords through a triplet of LCM-family placements (origin placement → bridge → target placement), in two shapes: one placement holds both chords (origin = bridge = target), or two placements P_A ⊇ origin, P_B ⊇ target are bridged by a shared subset family S of ≥ --min-subset-notes keys (P_A·S·P_B). When no placement progression exists, a composite placement progression may still host the move — a composite scale (the key-union of two bridged placements) containing it. With --target-keys: print the pair's placement-progression triplets as unified origin/bridge/target rows, or its composite-scale hosts. Without --target-keys: enumerate every major/minor (+ --include-dim) triad as a candidate target and tag each by reachability — placement / composite / unreachable. Bridge lists are raw by default; --collapse-isomorphic and --pool-maximal declutter them without changing reachability. 12-tet only.");
+            "Placement progressions and composite placement progressions between two 12-tet chords. A placement progression connects the chords through a triplet of LCM-family placements (origin placement → bridge → target placement), in two shapes: one placement holds both chords (origin = bridge = target), or two placements P_A ⊇ origin, P_B ⊇ target are bridged by a shared subset family S of ≥ --min-subset-notes keys (P_A·S·P_B). When no placement progression exists, a composite placement progression may still host the move — a composite scale (the key-union of two bridged placements) containing it. Prints the required origin→target pair's placement-progression triplets as unified origin/bridge/target rows (placement reach), or its composite-scale hosts (composite reach), or reports it unreachable. Bridge lists are raw by default; --collapse-isomorphic and --pool-maximal declutter them without changing reachability. 12-tet only.");
         progressionCommand.Add(maxSizeOption);
         progressionCommand.Add(maxPrimeOption);
         progressionCommand.Add(maxLcmOption);
         progressionCommand.Add(progressionOriginKeysOption);
         progressionCommand.Add(progressionTargetKeysOption);
         progressionCommand.Add(progressionMinSubsetNotesOption);
-        progressionCommand.Add(progressionIncludeDimOption);
         progressionCommand.Add(progressionCollapseIsomorphicOption);
         progressionCommand.Add(progressionPoolMaximalOption);
-        progressionCommand.Add(progressionAllBridgesOption);
         progressionCommand.Add(progressionDropCollapsedOption);
         progressionCommand.SetAction(parse =>
         {
@@ -920,10 +907,8 @@ class Program
             var originKeys = parse.GetValue(progressionOriginKeysOption) ?? Array.Empty<int>();
             var targetKeys = parse.GetValue(progressionTargetKeysOption) ?? Array.Empty<int>();
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
-            var includeDim = parse.GetValue(progressionIncludeDimOption);
             var collapseIsomorphic = parse.GetValue(progressionCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(progressionPoolMaximalOption);
-            var allBridges = parse.GetValue(progressionAllBridgesOption);
             var dropCollapsedString = parse.GetValue(progressionDropCollapsedOption) ?? "none";
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
@@ -931,6 +916,7 @@ class Program
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
             if (originKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--origin-keys must contain at least one value.[/]"); return 1; }
+            if (targetKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--target-keys must contain at least one value.[/]"); return 1; }
             foreach (var key in originKeys)
             {
                 if (key < 0 || key >= 12)
@@ -963,27 +949,16 @@ class Program
             }
 
             var dedupOrigin = originKeys.Distinct().OrderBy(x => x).ToList();
+            var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
-            if (targetKeys.Length > 0)
-            {
-                var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
-                var (reach, triplets, compositeBridges) = ChordProgressions.ComputePairReach(
-                    dedupOrigin, dedupTarget, families, minSubsetNotes,
-                    collapseIsomorphic, poolMaximal, dropCollapsed.Value);
-                ProgressionTableRenderer.RenderPair(
-                    dedupOrigin, dedupTarget, minSubsetNotes, collapseIsomorphic, poolMaximal,
-                    dropCollapsed.Value, reach, triplets, compositeBridges);
-                return 0;
-            }
-
-            var targets = ChordProgressions.Compute(
-                dedupOrigin, families, minSubsetNotes, includeDim,
+            var (reach, triplets, compositeBridges) = ChordProgressions.ComputePairReach(
+                dedupOrigin, dedupTarget, families, minSubsetNotes,
                 collapseIsomorphic, poolMaximal, dropCollapsed.Value);
-            ProgressionTableRenderer.Render(
-                dedupOrigin, minSubsetNotes, collapseIsomorphic, poolMaximal,
-                dropCollapsed.Value, targets, allBridges);
+            ProgressionTableRenderer.RenderPair(
+                dedupOrigin, dedupTarget, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                dropCollapsed.Value, reach, triplets, compositeBridges);
             return 0;
         });
 

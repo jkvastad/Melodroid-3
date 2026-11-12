@@ -5,10 +5,7 @@ namespace Melodroid_3.Output;
 
 public static class ProgressionTableRenderer
 {
-    // Cap the convenience-table bridge lists so a "Via" cell stays readable; overflow is …(+M).
-    private const int MaxBridges = 6;
-
-    // Standard form: one ordered chord pair rendered as its placement-progression triplets (unified
+    // One ordered chord pair rendered as its placement-progression triplets (unified
     // origin/bridge/target rows — single-placement progressions first, then bridged, each sorted by
     // bridge/origin/target), or — when no placement progression exists — its composite-scale hosts.
     public static void RenderPair(
@@ -99,84 +96,6 @@ public static class ProgressionTableRenderer
         IEnumerable<ProgressionTriplet> triplets, Func<ProgressionTriplet, Placement> slot) =>
         CompressAnchors(triplets.Select(t => Label(slot(t))).Distinct().ToList());
 
-    // Convenience form: one table per triad quality, a row per candidate target root.
-    public static void Render(
-        IReadOnlyCollection<int> chordKeys,
-        int minSubsetNotes,
-        bool collapseIsomorphic,
-        bool poolMaximal,
-        CollapseFilter dropCollapsed,
-        IReadOnlyList<ProgressionTarget> targets,
-        bool allBridges = false,
-        IAnsiConsole? console = null)
-    {
-        console ??= AnsiConsole.Console;
-
-        // One table per triad quality: the quality is the title, so root alone identifies the chord.
-        var qualityOrder = new[] { TriadQuality.Major, TriadQuality.Minor, TriadQuality.Diminished };
-        foreach (var quality in qualityOrder)
-        {
-            var group = targets.Where(t => t.Quality == quality).OrderBy(t => t.Root).ToList();
-            if (group.Count == 0) continue;
-
-            var table = new Table()
-                .Title(QualityName(quality))
-                .AddColumn(new TableColumn("Root").RightAligned())
-                .AddColumn(new TableColumn("Reach"))
-                .AddColumn(new TableColumn("Via"));
-
-            foreach (var target in group)
-            {
-                // Placement progressions (single-placement + bridged) render together as the walk; the
-                // Composite tier instead lists the composite-scale hosts.
-                var via = new List<string>();
-                if (target.SupersetBridges.Count > 0) via.Add(CapBraced(target.SupersetBridges, allBridges));
-                if (target.SubsetBridges.Count > 0) via.Add(Cap(GroupSubsetTriples(target.SubsetBridges), allBridges));
-                if (target.CompositeBridges.Count > 0) via.Add(Cap(target.CompositeBridges, allBridges));
-
-                table.AddRow(
-                    target.Root.ToString(),
-                    ReachMarkup(target.Reach),
-                    string.Join(" · ", via));
-            }
-
-            console.Write(table);
-        }
-
-        console.MarkupLine(
-            $"[grey]progression: chord={KeySet(chordKeys)} · minSubsetNotes={minSubsetNotes} · " +
-            $"bridges: {BridgeMode(collapseIsomorphic, poolMaximal)}{(allBridges ? ", all" : "")} · " +
-            $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · " +
-            $"{targets.Count} target{(targets.Count == 1 ? "" : "s")} · 12-tet[/]");
-    }
-
-    // Factor a flat list of "P_A·S·P_B" subset triples by their shared "P_A·S" prefix, brace-listing
-    // the varying P_B. Purely visual — triples sharing a source placement and shared subset collapse
-    // to "P_A·S·{P_B, …}" (or "P_A·S·P_B" when a single target). Applies to raw and pooled lists alike.
-    private static List<string> GroupSubsetTriples(IReadOnlyList<string> triples)
-    {
-        var order = new List<string>();
-        var byPrefix = new Dictionary<string, List<string>>();
-        foreach (var triple in triples)
-        {
-            var parts = triple.Split('·');
-            var prefix = parts[0] + "·" + parts[1];
-            if (!byPrefix.TryGetValue(prefix, out var pbs))
-            {
-                pbs = new List<string>();
-                byPrefix[prefix] = pbs;
-                order.Add(prefix);
-            }
-            if (!pbs.Contains(parts[2])) pbs.Add(parts[2]);
-        }
-
-        return order
-            .OrderBy(prefix => SortKey(prefix.Split('·')[0]))
-            .ThenBy(prefix => SortKey(prefix.Split('·')[1]))
-            .Select(prefix => $"{prefix}·{CompressAnchors(byPrefix[prefix])}")
-            .ToList();
-    }
-
     // Factor subset triplets for the standard (--target-keys) table two ways around a shared bridge S:
     // group origins that share the same bridge *and* the identical set of targets, then brace-list
     // both the origins and the targets. Each emitted row is a full Origins × {Bridge} × Targets
@@ -260,33 +179,4 @@ public static class ProgressionTableRenderer
         var parts = label.Split('@');
         return (int.Parse(parts[0]), int.Parse(parts[1]));
     }
-
-    private static string Cap(IReadOnlyList<string> bridges, bool showAll) =>
-        showAll || bridges.Count <= MaxBridges
-            ? string.Join(" ", bridges)
-            : string.Join(" ", bridges.Take(MaxBridges)) + $" …(+{bridges.Count - MaxBridges})";
-
-    // Cap a superset bridge list, then render the kept labels as one anchor-compressed brace list
-    // (CompressAnchors leaves a lone label bare). Overflow …(+M) trails outside the brace.
-    private static string CapBraced(IReadOnlyList<string> bridges, bool showAll)
-    {
-        var overflow = !showAll && bridges.Count > MaxBridges;
-        var kept = overflow ? bridges.Take(MaxBridges).ToList() : bridges;
-        var body = CompressAnchors(kept);
-        return overflow ? $"{body} …(+{bridges.Count - MaxBridges})" : body;
-    }
-
-    private static string ReachMarkup(ProgressionReach reach) => reach switch
-    {
-        ProgressionReach.Placement => "[green]placement[/]",
-        ProgressionReach.Composite => "[yellow]composite[/]",
-        _ => "[grey]unreachable[/]",
-    };
-
-    private static string QualityName(TriadQuality quality) => quality switch
-    {
-        TriadQuality.Major => "major",
-        TriadQuality.Minor => "minor",
-        _ => "dim",
-    };
 }

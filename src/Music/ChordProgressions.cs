@@ -20,9 +20,8 @@ namespace Melodroid_3.Music;
 // composite placement progression does), or Unreachable (neither).
 //
 // ComputePair(origin, target, …) yields the placement-progression category and triplet list for one
-// ordered pair; ComputePairReach adds the reachability tier + composite hosts (the standard form).
-// Compute(origin, …) enumerates every major/minor (+ optional dim) triad as a candidate target and
-// returns a ProgressionTarget per row (the convenience form).
+// ordered pair; ComputePairReach adds the reachability tier + composite hosts — the single entry point
+// `table progression` renders for an explicit origin→target pair.
 //
 // Modeling note — the two containing placements in the bridged shape must be *distinct*. If P_A = P_B
 // were allowed, that single placement already contains both chords (the single-placement shape) and a
@@ -39,9 +38,7 @@ namespace Melodroid_3.Music;
 //     power-of-2 LCM (4 over 3, 8 over 9/10/12), then lowest LCM, then anchor, and dedupe. Isomorphic
 //     (and any keyboard-coincident) placements share a key set and so collapse to one label.
 //
-// 12-tet by construction (the triad shapes are defined mod 12).
-
-public enum TriadQuality { Major, Minor, Diminished }
+// 12-tet by construction (chords are folded mod 12).
 
 // Internal reachability discriminator used to build the user-facing ProgressionReach and to classify
 // `analyze midi` bridges. Not surfaced by `table progression` (which presents ProgressionReach).
@@ -72,62 +69,14 @@ public enum CollapseFilter { None, Origin, Target, Both }
 public readonly record struct ProgressionTriplet(
     Placement Origin, Placement Bridge, Placement Target, ProgressionPrinciple Principle);
 
-// One candidate next chord and how it is (or is not) reachable: the absolute folded key set +
-// quality/root, the reachability tier, and the bridging labels. The placement-progression bridges come
-// in two shapes — single-placement labels ("{Lcm}@{At}") holding both chords (SupersetBridges) and
-// "P_A·S·P_B" bridged triples (SubsetBridges); both render as placement progressions. CompositeBridges
-// are the composite-scale hosts ("↑{Short}@{Anchor}" / "↑P_A·S·P_B"), populated only for the Composite
-// tier (when no placement progression exists). Any list may be empty.
-public readonly record struct ProgressionTarget(
-    IReadOnlyList<int> Keys,
-    TriadQuality Quality,
-    int Root,
-    ProgressionReach Reach,
-    IReadOnlyList<string> SupersetBridges,
-    IReadOnlyList<string> SubsetBridges,
-    IReadOnlyList<string> CompositeBridges);
-
 public static class ChordProgressions
 {
-    // Root-relative triad shapes (folded pitch classes) — the next-chord candidate universe.
-    private static readonly IReadOnlyList<int> MajorShape = new[] { 0, 4, 7 };
-    private static readonly IReadOnlyList<int> MinorShape = new[] { 0, 3, 7 };
-    private static readonly IReadOnlyList<int> DimShape = new[] { 0, 3, 6 };
-
-    private static int Fold(int key, int ktet) => ((key % ktet) + ktet) % ktet;
-
-    private static IReadOnlyList<int> FoldSet(IEnumerable<int> keys, int ktet) =>
-        keys.Select(k => Fold(k, ktet)).Distinct().OrderBy(k => k).ToList();
-
     private static string Label(Placement p) => $"{p.Lcm}@{p.At}";
 
     private static bool IsPowerOf2(int n) => n > 0 && (n & (n - 1)) == 0;
 
     private static string Signature(IReadOnlyCollection<int> keys) =>
         string.Join(",", keys.OrderBy(k => k));
-
-    private static IReadOnlyList<int> Shape(TriadQuality quality) => quality switch
-    {
-        TriadQuality.Major => MajorShape,
-        TriadQuality.Minor => MinorShape,
-        _ => DimShape,
-    };
-
-    // Major + minor triads over all roots, plus dim when includeDim; each folded and absolute.
-    private static IEnumerable<(IReadOnlyList<int> Keys, TriadQuality Quality, int Root)> Candidates(
-        bool includeDim, int ktet)
-    {
-        var qualities = includeDim
-            ? new[] { TriadQuality.Major, TriadQuality.Minor, TriadQuality.Diminished }
-            : new[] { TriadQuality.Major, TriadQuality.Minor };
-
-        foreach (var quality in qualities)
-        {
-            var shape = Shape(quality);
-            for (var root = 0; root < ktet; root++)
-                yield return (FoldSet(shape.Select(k => k + root), ktet), quality, root);
-        }
-    }
 
     private readonly record struct P(Placement Placement, IReadOnlySet<int> Keys);
 
@@ -253,49 +202,6 @@ public static class ChordProgressions
         return hosts.Count > 0
             ? (ProgressionReach.Composite, hosts)
             : (ProgressionReach.Unreachable, Array.Empty<string>());
-    }
-
-    // Every candidate next chord for the given source chord keys, each tagged by reachability tier
-    // (placement / composite / unreachable). Sorted by root, then quality. Placement-progression bridge
-    // lists are raw unless collapseIsomorphic / poolMaximal declutter them; composite hosts populate
-    // only the Composite tier. The composite catalog is built once and shared across all candidates.
-    public static IReadOnlyList<ProgressionTarget> Compute(
-        IReadOnlyCollection<int> chordKeys,
-        IReadOnlyList<LcmFamily> families,
-        int minSubsetNotes,
-        bool includeDim,
-        bool collapseIsomorphic = false,
-        bool poolMaximal = false,
-        CollapseFilter dropCollapsed = CollapseFilter.None,
-        int ktet = 12)
-    {
-        var dropOrigin = dropCollapsed is CollapseFilter.Origin or CollapseFilter.Both;
-        var dropTarget = dropCollapsed is CollapseFilter.Target or CollapseFilter.Both;
-
-        var supA = OriginSupersets(chordKeys, families, dropOrigin, ktet);
-        var subsetCandidates = SubsetCandidates(families, minSubsetNotes, ktet);
-        var canonical = collapseIsomorphic ? BuildCanonicalMap(families, ktet) : null;
-        var compositeCatalog = CompositeProgressions.Catalog(
-            families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
-
-        var results = new List<ProgressionTarget>();
-        foreach (var (keys, quality, root) in Candidates(includeDim, ktet))
-        {
-            var (category, triplets) = BuildPair(
-                supA, keys, families, subsetCandidates, minSubsetNotes,
-                dropTarget, collapseIsomorphic, poolMaximal, canonical, ktet);
-
-            var (supersetBridges, subsetBridges) = BridgeLabels(triplets);
-            var (reach, compositeBridges) = Classify(category, chordKeys, keys, compositeCatalog, ktet);
-
-            results.Add(new ProgressionTarget(
-                keys, quality, root, reach, supersetBridges, subsetBridges, compositeBridges));
-        }
-
-        return results
-            .OrderBy(t => t.Root)
-            .ThenBy(t => t.Quality)
-            .ToList();
     }
 
     // Every (P_A, S, P_B) subset-principle triplet over the *whole* placement universe, with no chord

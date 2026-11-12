@@ -297,10 +297,9 @@ generated for the Placements column (and the `--lcm-only` filter).
 ### `progression`
 
 ```bash
-melodroid table progression --origin-keys 0 4 7 \
-  [--target-keys 3 7 10] \
-  [--min-subset-notes 2] [--include-dim] \
-  [--collapse-isomorphic] [--pool-maximal] [--all-bridges] \
+melodroid table progression --origin-keys 0 4 7 --target-keys 3 7 10 \
+  [--min-subset-notes 2] \
+  [--collapse-isomorphic] [--pool-maximal] \
   [--drop-collapsed none|origin|target|both] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -325,36 +324,27 @@ it. Each chord pair is therefore tagged by a single **reachability** axis:
 - **composite** — no placement progression, but a composite scale hosts the move.
 - **unreachable** — neither.
 
-The command has two forms (12-tet only):
+Both `--origin-keys` and `--target-keys` are **required** — the command always analyses one explicit
+origin→target pair (12-tet only). The all-targets enumeration form was removed: under the composite
+paradigm almost every target is reachable, so a per-target reachability table carries no signal.
 
-**Standard form** (`--target-keys` given) — when the pair is **placement**-reachable, prints its
-placement-progression triplets as unified **Origin | Bridge | Target** rows — single-placement rows
-first (the one holding placement repeated across all three columns), then bridged rows. Bridged rows
-are factored **both ways** around their shared bridge `S`: every row collapses all origins that share
-the same bridge *and* the identical target set, brace-listing both (`{P_A, …} | S | {P_B, …}`). Each
-row is thus a full `Origins × {S} × Targets` rectangle; it is lossless because the two containing
-placements are always distinct (no origin can equal one of its own targets). Inside any brace list,
-placements that share an LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a
-**placement summary** gives a quick read of the topology — one anchor-compressed set of the
-single-placement holders, and the bridged progressions split by slot into **origins** (`P_A`),
-**bridges** (`S`), and **targets** (`P_B`); a shape's line is omitted when it has no triplets. When
-the pair is **composite**-reachable instead, prints the hosting composite scales (`↑{Short}@{Anchor}`
-for named scales, `↑P_A·S·P_B` otherwise); when **unreachable**, says so. The footer reports the reach.
-
-**Convenience form** (`--target-keys` omitted) — enumerates every major/minor target triad rooted
-at each of the 12 keys (add `--include-dim` for the 12 diminished triads too) and tags each with its
-**Reach**, split into **one table per triad quality**; **unreachable** targets are still listed. The
-**Via** column shows the bridges: placement progressions as an anchor-compressed brace list of
-`{Lcm}@{At}` labels (single-placement) and `P_A·S·P_B` triples (bridged); composite hosts as
-`↑{Short}@{Anchor}` / `↑P_A·S·P_B` for the composite tier (capped at 6 per list, overflowing to
-`…(+M)`; `--all-bridges` disables the cap). Bridged triples sharing a source placement `P_A` and
-shared subset `S` are factored by that prefix, brace-listing the varying target placements —
-`P_A·S·{P_B, …}` (a single target shows plainly as `P_A·S·P_B`); within the brace list, same-LCM
-placements compress their anchors (`24@0, 24@5` → `24@0,5`).
+When the pair is **placement**-reachable, it prints the placement-progression triplets as unified
+**Origin | Bridge | Target** rows — single-placement rows first (the one holding placement repeated
+across all three columns), then bridged rows. Bridged rows are factored **both ways** around their
+shared bridge `S`: every row collapses all origins that share the same bridge *and* the identical
+target set, brace-listing both (`{P_A, …} | S | {P_B, …}`). Each row is thus a full
+`Origins × {S} × Targets` rectangle; it is lossless because the two containing placements are always
+distinct (no origin can equal one of its own targets). Inside any brace list, placements that share an
+LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a **placement summary** gives a
+quick read of the topology — one anchor-compressed set of the single-placement holders, and the bridged
+progressions split by slot into **origins** (`P_A`), **bridges** (`S`), and **targets** (`P_B`); a
+shape's line is omitted when it has no triplets. When the pair is **composite**-reachable instead, it
+prints the hosting composite scales (`↑{Short}@{Anchor}` for named scales, `↑P_A·S·P_B` otherwise);
+when **unreachable**, it says so. The footer reports the reach.
 
 Bridge/triplet lists are **raw by default** — plain `{Lcm}@{At}` labels, every containing placement
-and every triple. By default output is truncated, use option `--all-bridges` to show all progressions.
-Two independent, opt-in declutters shrink them **without changing reachability**, exploiting the LCM-family lattice:
+and every triple. Two independent, opt-in declutters shrink them **without changing reachability**,
+exploiting the LCM-family lattice:
 
 - `--collapse-isomorphic` — isomorphic families share a key set at shifted anchors (`3@7` and `4@0`
   are both `{0 4 7}`), so every placement is relabelled to its key set's representative, preferring a
