@@ -377,3 +377,23 @@ Single-placement — the D major scale 24@2 holds both (ii→V in D):
 />
 
 ### C C#dim D B
+C#dim and D both fit 24@2, so C#dim→D is single-placement in D major (matching the traditional vii°→I). C enters from its home 24@0, D→B steps out through the 18@9 hexad to B in 15@6, and B→C closes the loop back to 24@0:
+
+* C→C#dim: 24@0 · 5@11 · 24@2
+* C#dim→D: 24@2
+* D→B: 24@2 · 18@9 · 15@6
+* B→C: 15@6 · 5@11 · 24@0
+
+C#dim also sits in the composite scale harm@2 (D harmonic minor). The player voices its melody from there, showing the diminished chord as a member of the composite-scale.
+
+<RhythmPatternPlayer
+  meter="4 4 4 4"
+  subdivisions="4"
+  bpm={100}
+  script={[
+    {chord: [0, 4, 7], lcm: 24, at: 0},                                // C     · 24@0
+    {chord: [1, 4, 7], keys: [1, 2, 4, 5, 7, 9, 10], label: 'harm@2'}, // C#dim · harm@2
+    {chord: [2, 6, 9], lcm: 24, at: 2},                            // D     · 24@2
+    {chord: [3, 6, 11], keys: [3, 4, 6, 7, 9, 11], label: '15s@6'}, // B     · 15s@6  
+  ]}
+/>
