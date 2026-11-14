@@ -606,7 +606,7 @@ can host the move, marked with a leading `↑`, drawn from the **same** composit
 as `↑{Short}@{Anchor}`, unnamed ones as `↑P_A·S·P_B` (plus the non-composite named scales `major` /
 `major blues` via the catalog) — over the whole origin ∪ target, falling back to hosts over the
 arrival when nothing hosts both. The `↑` marks that no placement bridges the move, so it is carried by
-the scale layer. See the [tiling chapter](/docs/music/tiling) for the two-layer reading.
+the scale layer.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
 bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
@@ -624,6 +624,5 @@ top-to-bottom surfaces a cross-*segment* loop the per-chunk bridges table hides.
 `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-composites` flags and
 compute the segmentation even when `--segments` is off.
 
-Melody-movement / modulation tracking (how the melody walks the scale fingerprint to move between
-placements) is developed in the [tiling chapter](/docs/music/tiling); this per-chunk mapping plus the
-segment bridges above are the current cut.
+This per-chunk mapping plus the segment bridges above are the current cut of melody-movement /
+modulation tracking (how the melody walks the scale fingerprint to move between placements).
