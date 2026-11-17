@@ -214,27 +214,6 @@ public class PlacementsTests
         common.Should().NotBeEmpty();
     }
 
-    [Fact]
-    public void FindMaximalContaining_triad_returns_15_18_20_24_placements()
-    {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
-
-        placements
-            .Select(p => (p.Lcm, p.At))
-            .Should().Equal(new[]
-            {
-                (15, 4), (15, 7), (15, 11),
-                (18, 2), (18, 7),
-                (20, 0), (20, 4), (20, 9),
-                (24, 0), (24, 5), (24, 7),
-            });
-    }
-
     [Theory]
     [InlineData(15, 7, 12, 3)]
     [InlineData(15, 11, 12, 7)]
@@ -271,14 +250,16 @@ public class PlacementsTests
     [Fact]
     public void DropCollapsed_major_triad_keeps_15at7_and_all_24()
     {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
         var chord = new[] { 0, 4, 7 };
 
-        var placements = Placements.FindMaximalContaining(
-            chord, families, relations, ktet: 12, dropRenormalizedSubsets: true);
+        // DropCollapsed reads only Lcm/At (via CollapsingKey), so the key sets here are immaterial.
+        // The three lcm-15 placements containing the triad are 15@4 / 15@7 / 15@11; the three lcm-24
+        // ones are 24@0 / 24@5 / 24@7.
+        var placements = new List<Placement>
+        {
+            new(15, 4, new[] { 0 }), new(15, 7, new[] { 0 }), new(15, 11, new[] { 0 }),
+            new(24, 0, new[] { 0 }), new(24, 5, new[] { 0 }), new(24, 7, new[] { 0 }),
+        };
         var kept = Placements.DropCollapsed(placements, chord, ktet: 12);
 
         // 15@4 (collapses on 0) and 15@11 (collapses on 7) are dropped; 15@7 (collapses on 3,
@@ -311,25 +292,26 @@ public class PlacementsTests
     [Fact]
     public void StableFifteen_drops_only_the_collapsing_key_of_lcm15_rows()
     {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-        var chord = new[] { 0, 3, 6 };
+        // 15@3's full key set is 0 1 3 4 6 8 11; a lcm-24 placement alongside it is left untouched.
+        var fifteenFull = new[] { 0, 1, 3, 4, 6, 8, 11 };
+        var twentyFourKeys = new[] { 0, 2, 4, 5, 7, 9, 11 };
+        var placements = new List<Placement>
+        {
+            new(15, 3, fifteenFull),
+            new(24, 0, twentyFourKeys),
+        };
 
-        var placements = Placements.FindMaximalContaining(chord, families, relations, ktet: 12);
         var stable = Placements.StableFifteen(placements, ktet: 12);
 
         // 15@3's collapsing key is (3+8) mod 12 = 11: the full 0 1 3 4 6 8 11 becomes the stable
-        // 0 1 3 4 6 8. The chord keys 0 3 6 stay put.
+        // 0 1 3 4 6 8.
         var fifteen = stable.Single(p => p.Lcm == 15);
         fifteen.At.Should().Be(3);
         fifteen.Keys.Should().BeEquivalentTo(new[] { 0, 1, 3, 4, 6, 8 });
         fifteen.Keys.Should().NotContain(11);
 
-        // Non-lcm-15 placements are untouched (same key sets as before).
-        foreach (var p in placements.Where(p => p.Lcm != 15))
-            stable.Single(s => s.Lcm == p.Lcm && s.At == p.At).Keys.Should().Equal(p.Keys);
+        // The non-lcm-15 placement is untouched (same key set as before).
+        stable.Single(p => p.Lcm == 24).Keys.Should().Equal(twentyFourKeys);
     }
 
     [Fact]
@@ -348,139 +330,6 @@ public class PlacementsTests
         var placements = new List<Placement> { new(15, 7, new[] { 0, 3, 7 }) };
 
         Placements.StableFifteen(placements, ktet: 19)[0].Keys.Should().Equal(0, 3, 7);
-    }
-
-    [Fact]
-    public void FindMaximalContaining_full_C_major_scale_returns_only_24_at_0()
-    {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        var placements = Placements.FindMaximalContaining(
-            new[] { 0, 2, 4, 5, 7, 9, 11 }, families, relations, ktet: 12);
-
-        placements.Should().HaveCount(1);
-        placements[0].Lcm.Should().Be(24);
-        placements[0].At.Should().Be(0);
-    }
-
-    [Fact]
-    public void FindMaximalContaining_dim7_returns_empty()
-    {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        // Dim7 {0, 3, 6, 9} is the symmetric 12/4 cycle and per the README is
-        // not present in any LCM family — must yield zero maximal placements.
-        var placements = Placements.FindMaximalContaining(new[] { 0, 3, 6, 9 }, families, relations, ktet: 12);
-
-        placements.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void FindMaximalContaining_rows_sorted_by_lcm_then_at()
-    {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
-
-        for (var i = 1; i < placements.Count; i++)
-        {
-            var prev = (placements[i - 1].Lcm, placements[i - 1].At);
-            var cur = (placements[i].Lcm, placements[i].At);
-            Comparer<(int, int)>.Default.Compare(cur, prev).Should().BeGreaterThanOrEqualTo(0);
-        }
-    }
-
-    [Fact]
-    public void MaximalLcms_with_default_params_yields_15_18_20_24()
-    {
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        // Independent oracle: an LCM is maximal iff no other family literally contains it as a
-        // subset. Renormalized-subset domination is intentionally NOT applied. Isomorphism collapse
-        // removes nothing further at these params: the isomorphic small families 8/9/10/12 are all
-        // already literal subsets of 24/18/20, so none reach the collapse step.
-        var familyByLcm = families.ToDictionary(f => f.Lcm);
-        bool IsDominated(int lcm)
-        {
-            var a = familyByLcm[lcm];
-            foreach (var b in families)
-            {
-                if (b.Lcm == lcm) continue;
-                if (a.Fractions.Count < b.Fractions.Count)
-                {
-                    var bSet = new HashSet<Fraction>(b.Fractions);
-                    if (a.Fractions.All(bSet.Contains)) return true;
-                }
-            }
-            return false;
-        }
-        var expected = families
-            .Select(f => f.Lcm)
-            .Where(lcm => !IsDominated(lcm))
-            .OrderBy(lcm => lcm)
-            .ToList();
-
-        var actual = Placements.MaximalLcms(families, relations);
-
-        actual.Should().Equal(expected);
-        expected.Should().Equal(new[] { 15, 18, 20, 24 });
-    }
-
-    [Fact]
-    public void MaximalLcms_collapses_isomorphic_families_to_lowest_lcm()
-    {
-        // At max-lcm 15 the families 8/9/10/12 form one isomorphism class (renormalizations of one
-        // another). None is a literal subset of a surviving family, so all four are candidates;
-        // isomorphism collapse keeps only the lowest LCM (8). lcm 15 is unrelated and survives.
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 15);
-        var relations = FamilyRelations.Compute(families);
-
-        Placements.MaximalLcms(families, relations).Should().Equal(new[] { 8, 15 });
-    }
-
-    [Fact]
-    public void MaximalLcms_drop_renormalized_subsets_restores_15_and_24()
-    {
-        // With dropRenormalizedSubsets, a renormalized subset of a larger family is dominated too,
-        // reproducing the stricter pre-collapse view: only 15 and 24 survive at default params.
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 24);
-        var relations = FamilyRelations.Compute(families);
-
-        Placements.MaximalLcms(families, relations, dropRenormalizedSubsets: true)
-            .Should().Equal(new[] { 15, 24 });
-    }
-
-    [Fact]
-    public void FindMaximalContaining_triad_at_max_lcm_15_collapses_isomorphic_placements()
-    {
-        // 8@0 / 9@2 / 10@4 / 12@7 are the identical key set {0,2,4,7,11}; only the lcm-8
-        // representative survives (likewise 8@5 for {0,4,5,7,9}), alongside the lcm-15 rows.
-        var families = LcmFamilies.Compute(
-            GoodFractions.Enumerate(maxSize: 24, maxPrime: 5),
-            maxLcm: 15);
-        var relations = FamilyRelations.Compute(families);
-
-        var placements = Placements.FindMaximalContaining(new[] { 0, 4, 7 }, families, relations, ktet: 12);
-
-        placements
-            .Select(p => (p.Lcm, p.At))
-            .Should().Equal(new[] { (8, 0), (8, 5), (15, 4), (15, 7), (15, 11) });
     }
 
     private static LcmFamily FamilyFor(int lcm)

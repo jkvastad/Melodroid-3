@@ -117,55 +117,6 @@ public static class Placements
         return result;
     }
 
-    public static IReadOnlyList<int> MaximalLcms(
-        IReadOnlyList<LcmFamily> families,
-        IReadOnlyList<FamilyRelation> relations,
-        bool dropRenormalizedSubsets = false)
-    {
-        // Literal subsets always count as domination. Renormalized subsets are kept as their own
-        // rows by default (their keys are merely subsumed by a larger family's placement), but
-        // dropRenormalizedSubsets folds them into domination too — the stricter, pre-collapse view.
-        // (RenormalizedSubset relations are always produced by FamilyRelations and used by the
-        // graph renderer regardless of this flag.)
-        var dominated = new HashSet<int>(relations
-            .Where(r => r.Kind is RelationKind.LiteralSubset
-                || (dropRenormalizedSubsets && r.Kind is RelationKind.RenormalizedSubset))
-            .Select(r => r.FromLcm));
-
-        var candidates = families
-            .Select(f => f.Lcm)
-            .Where(lcm => !dominated.Contains(lcm))
-            .ToList();
-
-        // Collapse each isomorphism class to its lowest-LCM representative: isomorphic families are
-        // renormalizations (keyboard transpositions) of one another, so their placements coincide
-        // across the anchor sweep and only the lowest LCM is kept as the canonical row.
-        var parent = new Dictionary<int, int>();
-        int Find(int x)
-        {
-            if (!parent.TryGetValue(x, out _)) parent[x] = x;
-            while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
-            return x;
-        }
-        foreach (var r in relations.Where(r => r.Kind is RelationKind.Isomorphism))
-        {
-            parent[Find(r.FromLcm)] = Find(r.ToLcm);
-        }
-
-        var lowestByRoot = new Dictionary<int, int>();
-        foreach (var lcm in candidates)
-        {
-            var root = Find(lcm);
-            if (!lowestByRoot.TryGetValue(root, out var cur) || lcm < cur) lowestByRoot[root] = lcm;
-        }
-        var representatives = new HashSet<int>(lowestByRoot.Values);
-
-        return candidates
-            .Where(representatives.Contains)
-            .OrderBy(lcm => lcm)
-            .ToList();
-    }
-
     // The collapsing key of an unstable placement: the key whose presence reinterprets it as a
     // smaller/simpler pattern under preference.
     //   - lcm-15: playing (At+8) mod 12 reinterprets 15@At as the adjacent lcm-24 placements
@@ -211,33 +162,5 @@ public static class Placements
                 result.Add(p);
         }
         return result;
-    }
-
-    public static IReadOnlyList<Placement> FindMaximalContaining(
-        IReadOnlyCollection<int> chordKeys,
-        IReadOnlyList<LcmFamily> families,
-        IReadOnlyList<FamilyRelation> relations,
-        int ktet,
-        bool dropRenormalizedSubsets = false)
-    {
-        var maximalSet = new HashSet<int>(MaximalLcms(families, relations, dropRenormalizedSubsets));
-        var chord = new HashSet<int>(chordKeys);
-        var rows = new List<Placement>();
-
-        foreach (var family in families)
-        {
-            if (!maximalSet.Contains(family.Lcm)) continue;
-            for (var at = 0; at < ktet; at++)
-            {
-                var placement = Compute(family, at, ktet);
-                if (!chord.IsSubsetOf(placement.Keys)) continue;
-                rows.Add(placement);
-            }
-        }
-
-        return rows
-            .OrderBy(p => p.Lcm)
-            .ThenBy(p => p.At)
-            .ToList();
     }
 }

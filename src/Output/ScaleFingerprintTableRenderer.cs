@@ -58,13 +58,12 @@ public static class ScaleFingerprintTableRenderer
     // (the same · form `table composite-scales` prints). The concrete keys are read off the bullet grid.
     private static string Label(FingerprintRow row, int ktet, bool nameComposites)
     {
-        var isComposite = row.S is not null && row.PB is not null;
-        if (!isComposite)
-            return P(row.PA);
+        if (row.S is not { } s || row.PB is not { } pb)
+            return P(row.PA);   // single placement: always {Lcm}@{At}
 
         if (nameComposites && NamedScales.Match(row.Keys, ktet) is { } m)
             return $"{NamedScales.Shorthand(m.Name)}@{m.Anchor}";
-        return $"{P(row.PA)}·{P(row.S.Value)}·{P(row.PB.Value)}";
+        return $"{P(row.PA)}·{P(s)}·{P(pb)}";
     }
 
     private static string P(Placement p) => $"{p.Lcm}@{p.At}";

@@ -355,8 +355,8 @@ public static class SongAnalysis
     // collapsed to lowest-LCM representatives. Shared with the per-chunk table's Placements column.
     // With `stable`: (1) drop unstable placements (lcm-15 / lcm-20) whose collapsing key is sounding
     // in the chunk — they have collapsed onto a simpler lcm-24 pattern (the DropCollapsed rule used by
-    // `chord-melody` / `progression`); and (2) relabel the surviving collapsing-key placements into
-    // stable form "{Lcm}s@{At}" (15s@ / 20s@, the `chord-melody --stable-15` marker) — step 1 has
+    // `progression`); and (2) relabel the surviving collapsing-key placements into
+    // stable form "{Lcm}s@{At}" (15s@ / 20s@, the stable-form marker) — step 1 has
     // already removed those whose collapsing key sounds, so every survivor with a collapsing key is
     // legitimately the stable sub-pattern. Reuses Placements.CollapsingKey as the single source.
     public static IReadOnlyList<string> PlacementLabels(ChunkAnalysis a, bool stable, int ktet)

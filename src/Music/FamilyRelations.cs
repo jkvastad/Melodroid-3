@@ -21,7 +21,7 @@ public static class FamilyRelations
 {
     // Each surviving renormalized-subset pair emits one relation per valid base — a family can embed
     // into a larger one at several renormalizations, and the graph renderer (the only consumer of
-    // Base) shows them all. Placements/ChordProgressions/chord-melody read only Kind/FromLcm, so the
+    // Base) shows them all. Placements/ChordProgressions read only Kind/FromLcm, so the
     // extra records collapse harmlessly for them.
     // clusterTolerance > 0 (with goodFractions supplied) additionally emits ApproximateRenormalizedSubset
     // edges: renormalizations that only embed once each image is snapped to its nearest good fraction
