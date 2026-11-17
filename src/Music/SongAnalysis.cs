@@ -139,9 +139,10 @@ public static class SongAnalysis
         bool collapseIsomorphic,
         bool poolMaximal,
         bool nameComposites,
+        bool escalate,
         int ktet)
     {
-        var catalog = CompositeCatalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(escalate, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var result = new List<ChunkBridge>(Math.Max(0, chunks.Count - 1));
         for (var i = 0; i + 1 < chunks.Count; i++)
         {
@@ -149,7 +150,7 @@ public static class SongAnalysis
             var to = chunks[i + 1];
             result.Add(Pair(
                 from.Index, to.Index, from.Keys, to.Keys,
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, catalog, ktet));
         }
         return result;
     }
@@ -169,15 +170,16 @@ public static class SongAnalysis
         bool collapseIsomorphic,
         bool poolMaximal,
         bool nameComposites,
+        bool escalate,
         int ktet)
     {
-        var catalog = CompositeCatalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(escalate, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
         for (var i = 0; i + 1 < segments.Count; i++)
             result.Add(Pair(
                 i, i + 1, unions[i], unions[i + 1],
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
+                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, catalog, ktet));
         return result;
     }
 
@@ -198,9 +200,10 @@ public static class SongAnalysis
         bool collapseIsomorphic,
         bool poolMaximal,
         bool nameComposites,
+        bool escalate,
         int ktet)
     {
-        var catalog = CompositeCatalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var catalog = CompositeCatalog(escalate, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
         var constituents = unions.Select(u => Constituents(u, families, ktet)).ToList();
 
@@ -213,7 +216,7 @@ public static class SongAnalysis
             {
                 result.Add(Pair(
                     i, i + 1, unions[i], unions[i + 1],
-                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, catalog, ktet));
+                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, catalog, ktet));
                 continue;
             }
 
@@ -308,6 +311,7 @@ public static class SongAnalysis
         bool collapseIsomorphic,
         bool poolMaximal,
         bool nameComposites,
+        bool escalate,
         IReadOnlyList<CompositeScale> compositeCatalog,
         int ktet)
     {
@@ -316,26 +320,30 @@ public static class SongAnalysis
             CollapseFilter.None, ktet);
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
         if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
-        // Escalation: when the placement graph has no edge (Neither) the move is carried by a composite
-        // scale, not a placement — fill the (empty) Composite column with the hosting scales so the gap
-        // is explicit while the category stays Neither. Always computed (escalation ≠ naming); the
-        // nameComposites flag only chooses the label form — shorthand scale names vs raw P_A·S·P_B.
-        if (category == ProgressionCategory.Neither)
+        // Escalation (opt-in via escalate): when the placement graph has no edge (Neither) the move is
+        // carried by a composite scale, not a placement — fill the (empty) Composite column with the
+        // hosting scales so the gap is explicit while the category stays Neither. Escalation presence is
+        // escalate's concern; the nameComposites flag only chooses the label form — shorthand scale
+        // names vs raw P_A·S·P_B constituents.
+        if (escalate && category == ProgressionCategory.Neither)
             subset = CompositeProgressions.Escalation(
                 fromKeys, toKeys, compositeCatalog, families, named: nameComposites, ktet);
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
-    // The anchored composite catalog used for escalation, computed once per bridges table. Always built
-    // (escalation runs regardless of nameComposites). Delegates to CompositeProgressions.Catalog so the
-    // Enumerate parameters stay single-sourced with `table progression`.
+    // The anchored composite catalog used for escalation, computed once per bridges table. Only the
+    // escalation path consumes it, so it is built only when escalate is on. Delegates to
+    // CompositeProgressions.Catalog so the Enumerate parameters stay single-sourced with `table progression`.
     private static IReadOnlyList<CompositeScale> CompositeCatalog(
+        bool escalate,
         IReadOnlyList<LcmFamily> families,
         int minSubsetNotes,
         bool collapseIsomorphic,
         bool poolMaximal,
         int ktet)
-        => CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        => escalate
+            ? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet)
+            : Array.Empty<CompositeScale>();
 
     // The named-scale labels ("{Shorthand}@{Anchor}") containing a chunk's key-set, in
     // ContainingChord order. Shared with the per-chunk table so both views label scales identically.

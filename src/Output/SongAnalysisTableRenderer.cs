@@ -72,6 +72,7 @@ public static class SongAnalysisTableRenderer
         IReadOnlyList<ChunkBridge> bridges,
         int minSubsetNotes,
         bool nameComposites = false,
+        bool escalate = false,
         string title = "chunk bridges",
         string indexPrefix = "",
         IAnsiConsole? console = null)
@@ -95,12 +96,15 @@ public static class SongAnalysisTableRenderer
 
         var namingNote = nameComposites ? ", composites named" : ", raw constituents";
         var legend = nameComposites ? $"\nscales: {NamedScales.Legend()}" : "";
-        // Escalation is always computed (independent of naming); nameComposites only chooses whether the
-        // ↑ hosts read as shorthand scale names or raw P_A·S·P_B constituents.
-        var escalation = "\n↑ = escalation: carried by the scale layer when no placement bridges the move";
+        // Escalation rows (↑) only appear under --escalate, so explain them only then; nameComposites
+        // chooses whether those ↑ hosts read as shorthand scale names or raw P_A·S·P_B constituents.
+        var escalationState = escalate ? " · ↑escalation" : "";
+        var escalation = escalate
+            ? "\n↑ = escalation: carried by the scale layer when no placement bridges the move"
+            : "";
         table.Caption(
             $"{title}: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
-            $"bridge state — placement · composite · ↑escalation · " +
+            $"bridge state — placement · composite{escalationState} · " +
             $"shared-subset ≥ {minSubsetNotes} note{(minSubsetNotes == 1 ? "" : "s")}{namingNote}{legend}{escalation}");
         console.Write(table);
     }

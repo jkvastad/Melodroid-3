@@ -1748,7 +1748,7 @@ class Program
         };
         var analyzeNameCompositesOption = new Option<bool>("--name-composites")
         {
-            Description = "Bridges only (--bridges / --segment-bridges): label *form* only — it does not change which bridges or escalations appear. On: subset bridges are named by the composite scale of each bridge (the stable union P_A ∪ P_B matched against the named-scale catalog as {Name}@{Anchor}, collapsing the dyad explosion since the union ignores which S was chosen), and ↑ escalation hosts read as shorthand scale names. Off (default): subset bridges keep their raw P_A·S·P_B triplets and ↑ escalation hosts read as raw constituents. Escalation itself (↑ rows where no placement bridges a Neither move) is always shown either way.",
+            Description = "Bridges only (--bridges / --segment-bridges): label *form* only — it does not change which bridges appear. On: subset bridges are named by the composite scale of each bridge (the stable union P_A ∪ P_B matched against the named-scale catalog as {Name}@{Anchor}, collapsing the dyad explosion since the union ignores which S was chosen), and (when --escalate) the ↑ escalation hosts read as shorthand scale names. Off (default): subset bridges keep their raw P_A·S·P_B triplets and ↑ escalation hosts (if shown) read as raw constituents. Whether ↑ escalation rows appear at all is controlled by --escalate, not this flag.",
             DefaultValueFactory = _ => false,
         };
         var analyzePlacementsOption = new Option<bool>("--placements")
@@ -1773,7 +1773,12 @@ class Program
         };
         var analyzeSegmentBridgesOption = new Option<bool>("--segment-bridges")
         {
-            Description = "Also emit two segment-bridges tables (scale and placement): like --bridges but between consecutive segments, using each segment's union of sounding keys as its chord. Surfaces cross-segment loops a per-chunk list hides (e.g. an 8@4-segment ↔ 15@11-segment alternation). Honours --min-subset-notes / --collapse-isomorphic / --pool-maximal / --name-composites. Default off.",
+            Description = "Also emit two segment-bridges tables (scale and placement): like --bridges but between consecutive segments, using each segment's union of sounding keys as its chord. Surfaces cross-segment loops a per-chunk list hides (e.g. an 8@4-segment ↔ 15@11-segment alternation). Honours --min-subset-notes / --collapse-isomorphic / --pool-maximal / --name-composites / --escalate. Default off.",
+            DefaultValueFactory = _ => false,
+        };
+        var analyzeEscalateOption = new Option<bool>("--escalate")
+        {
+            Description = "Bridges only (--bridges / --segment-bridges): show ↑ escalation rows for a Neither move that no placement bridges — the hosting composite / named scales that carry it one layer up. Default off (Neither renders —). --name-composites then only chooses how the ↑ hosts read: shorthand scale names vs raw P_A·S·P_B constituents.",
             DefaultValueFactory = _ => false,
         };
 
@@ -1796,6 +1801,7 @@ class Program
         analyzeMidiCommand.Add(analyzeSegmentsOption);
         analyzeMidiCommand.Add(analyzeReaperOption);
         analyzeMidiCommand.Add(analyzeSegmentBridgesOption);
+        analyzeMidiCommand.Add(analyzeEscalateOption);
         analyzeMidiCommand.Add(maxSizeOption);
         analyzeMidiCommand.Add(maxPrimeOption);
         analyzeMidiCommand.Add(maxLcmOption);
@@ -1813,6 +1819,7 @@ class Program
             var collapseIsomorphic = parse.GetValue(analyzeCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(analyzePoolMaximalOption);
             var nameComposites = parse.GetValue(analyzeNameCompositesOption);
+            var escalate = parse.GetValue(analyzeEscalateOption);
             var showPlacements = parse.GetValue(analyzePlacementsOption);
             var stablePlacements = parse.GetValue(analyzeStablePlacementsOption);
             var showSegments = parse.GetValue(analyzeSegmentsOption);
@@ -1902,21 +1909,21 @@ class Program
                 if (showSegmentBridges)
                 {
                     var scaleSegBridges = SongAnalysis.ScaleSegmentBridges(
-                        chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
+                        chunks, scaleSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, k);
                     var placeSegBridges = SongAnalysis.SegmentBridges(
-                        chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
+                        chunks, placementSegments, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, k);
                     SongAnalysisTableRenderer.RenderBridges(
-                        scaleSegBridges, minSubsetNotes, nameComposites, title: "scale segment bridges", indexPrefix: "seg");
+                        scaleSegBridges, minSubsetNotes, nameComposites, escalate, title: "scale segment bridges", indexPrefix: "seg");
                     SongAnalysisTableRenderer.RenderBridges(
-                        placeSegBridges, minSubsetNotes, nameComposites, title: "placement segment bridges", indexPrefix: "seg");
+                        placeSegBridges, minSubsetNotes, nameComposites, escalate, title: "placement segment bridges", indexPrefix: "seg");
                 }
             }
 
             if (bridges)
             {
                 var chunkBridges = SongAnalysis.Bridges(
-                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, k);
-                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes, nameComposites);
+                    chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, k);
+                SongAnalysisTableRenderer.RenderBridges(chunkBridges, minSubsetNotes, nameComposites, escalate);
             }
 
             return 0;

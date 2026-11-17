@@ -125,7 +125,7 @@ public class SongAnalysisTests
 
         var bridges = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: false, Ktet);
+            nameComposites: false, escalate: false, Ktet);
 
         bridges.Should().HaveCount(3);
         bridges[0].SupersetBridges.Should().Contain("8@5");   // C → F
@@ -142,7 +142,7 @@ public class SongAnalysisTests
 
         SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: false, Ktet)
+            nameComposites: false, escalate: false, Ktet)
             .Should().BeEmpty();
     }
 
@@ -164,10 +164,10 @@ public class SongAnalysisTests
 
         var raw = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: false, Ktet)[0];
+            nameComposites: false, escalate: false, Ktet)[0];
         var named = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: true, Ktet)[0];
+            nameComposites: true, escalate: false, Ktet)[0];
 
         named.Category.Should().Be(raw.Category);                 // naming never reclassifies
         named.SupersetBridges.Should().Equal(raw.SupersetBridges); // superset column untouched
@@ -209,7 +209,7 @@ public class SongAnalysisTests
 
         var bridges = SongAnalysis.SegmentBridges(
             chunks, segments, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet);
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet);
 
         bridges.Should().ContainSingle();
         bridges[0].FromIndex.Should().Be(0);   // segment ordinal, not chunk index
@@ -236,10 +236,10 @@ public class SongAnalysisTests
 
         var segBridges = SongAnalysis.SegmentBridges(
             chunks, singletons, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet);
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet);
         var chunkBridges = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 2, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: false, Ktet);
+            nameComposites: false, escalate: false, Ktet);
 
         segBridges.Select(b => b.Category).Should().Equal(chunkBridges.Select(b => b.Category));
         segBridges.Select(b => b.SupersetBridges).Should().BeEquivalentTo(
@@ -253,7 +253,7 @@ public class SongAnalysisTests
 
         SongAnalysis.SegmentBridges(
             chunks, new[] { Seg(0, 0) }, Families(), minSubsetNotes: 2, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet)
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet)
             .Should().BeEmpty();
     }
 
@@ -274,10 +274,10 @@ public class SongAnalysisTests
 
         var union = SongAnalysis.SegmentBridges(
             chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet)[0];
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet)[0];
         var cons = SongAnalysis.ScaleSegmentBridges(
             chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet)[0];
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet)[0];
 
         union.Category.Should().Be(ProgressionCategory.Neither, "hm@9 sits in no single placement");
         cons.Category.Should().BeOneOf(ProgressionCategory.Superset, ProgressionCategory.Both);
@@ -298,10 +298,10 @@ public class SongAnalysisTests
 
         var cons = SongAnalysis.ScaleSegmentBridges(
             chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet)[0];
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet)[0];
         var union = SongAnalysis.SegmentBridges(
             chunks, segments, Families(), minSubsetNotes: 4, collapseIsomorphic: false,
-            poolMaximal: false, nameComposites: false, Ktet)[0];
+            poolMaximal: false, nameComposites: false, escalate: false, Ktet)[0];
 
         cons.Category.Should().Be(union.Category);
         cons.SupersetBridges.Should().Equal(union.SupersetBridges);
@@ -324,10 +324,10 @@ public class SongAnalysisTests
 
         var raw = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: false, Ktet)[0];
+            nameComposites: false, escalate: true, Ktet)[0];
         var named = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: true, Ktet)[0];
+            nameComposites: true, escalate: true, Ktet)[0];
 
         raw.Category.Should().Be(ProgressionCategory.Neither);     // the placement graph has no edge
         named.Category.Should().Be(ProgressionCategory.Neither);   // escalation never reclassifies
@@ -344,6 +344,31 @@ public class SongAnalysisTests
         raw.SubsetBridges.Should().OnlyContain(s => s.Length > 1 && char.IsDigit(s[1]));
     }
 
+    // Escalation is opt-in via `escalate`: the same Neither move shows no ↑ rows when off and the
+    // hosting scales when on. Independent of naming (off here, so the on-form is raw constituents).
+    [Fact]
+    public void Bridges_NeitherMove_EscalatesOnlyWhenEscalateIsOn()
+    {
+        var chunks = new[]
+        {
+            new SongChunk(0, 0, 1, new[] { 0, 3, 6, 9 }),   // dim7, in no placement
+            new SongChunk(1, 1, 2, new[] { 0, 3, 9 }),      // a diminished-triad face of it
+        };
+
+        var off = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameComposites: false, escalate: false, Ktet)[0];
+        var on = SongAnalysis.Bridges(
+            chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
+            nameComposites: false, escalate: true, Ktet)[0];
+
+        off.Category.Should().Be(ProgressionCategory.Neither);
+        on.Category.Should().Be(ProgressionCategory.Neither);   // escalate changes display, not category
+        off.SubsetBridges.Should().BeEmpty();                   // no escalation without the flag
+        on.SubsetBridges.Should().NotBeEmpty();
+        on.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
+    }
+
     // Escalation only fills Neither bridges — a genuine subset move (C → G, real composites) must carry
     // no ↑ marker.
     [Fact]
@@ -357,7 +382,7 @@ public class SongAnalysisTests
 
         var named = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: true, Ktet)[0];
+            nameComposites: true, escalate: true, Ktet)[0];
 
         named.Category.Should().NotBe(ProgressionCategory.Neither);
         named.SubsetBridges.Should().OnlyContain(s => !s.StartsWith("↑"));
@@ -377,7 +402,7 @@ public class SongAnalysisTests
 
         var named = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: true, Ktet)[0];
+            nameComposites: true, escalate: false, Ktet)[0];
 
         named.Category.Should().NotBe(ProgressionCategory.Neither);
         named.SubsetBridges.Should().Contain(s => s.Contains('·')); // an unnamed composite, shown raw
@@ -398,7 +423,7 @@ public class SongAnalysisTests
 
         var named = SongAnalysis.Bridges(
             chunks, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false,
-            nameComposites: true, Ktet)[0];
+            nameComposites: true, escalate: true, Ktet)[0];
 
         named.Category.Should().Be(ProgressionCategory.Neither);
         named.SubsetBridges.Should().Contain(s => s.StartsWith("↑") && s.Contains('·'));
