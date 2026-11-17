@@ -241,16 +241,22 @@ Rows with identical key sets collapse to one representative (single placement pr
 lowest-LCM constituents); rows sort by key count then keys ascending.
 
 Rows are labelled by their placement constituents (`{lcm}@{at}` for a single placement, `P_A·S·P_B`
-for a composite) by default. `--name-composites` relabels a row with its traditional scale name
-(`{Short}@{Anchor}` via the named-scale catalog, legend in the caption) when its key set matches one
-— single placements name too (`24@0 → M@0`). These names are empirical labels on the
+for a composite) by default. `--name-composites` relabels a **composite** row with its traditional
+scale name (`{Short}@{Anchor}` via the named-scale catalog, legend in the caption) when its key set
+matches one; single-placement rows always keep `{lcm}@{at}` (so the major-scale placement reads
+`24@0`, not `M@0`), mirroring [`analyze midi`](#midi). These names are empirical labels on the
 subset-principle results, not the derivation
 ([composite scales](/docs/music/progression-principles#composite-scales)): the four minor/bebop/harmonic
 scales are composite-scale outputs, major is the `lcm-24` placement `24@k`.
 
 `--min-subset-notes` (default 4) is the composite bridge floor — raising it only drops composite
-rows, never single-placement rows. `--collapse-isomorphic` / `--pool-maximal` declutter the composite
-constituent labels (as in [`composite-scales`](#composite-scales)).
+rows, never single-placement rows. `--pool-maximal` keeps only the **per-category maximal** rows:
+it drops a single-placement row whose key set is a strict subset of another single-placement row, and
+a composite row whose key set is a strict subset of another composite row — the two categories are
+filtered independently, so a composite never absorbs a single placement. `--collapse-isomorphic`
+relabels every row's placement(s) — single-placement rows and composite constituents alike — to the
+power-of-2-preferred representative of its key set (`4` over `3`, `8` over `9/10/12`), then lowest LCM,
+then anchor.
 
 12-tet only; `--chord-keys` is required. Chord keys are highlighted green; `●` marks membership.
 

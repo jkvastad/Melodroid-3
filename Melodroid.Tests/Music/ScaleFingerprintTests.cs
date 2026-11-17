@@ -14,6 +14,12 @@ public class ScaleFingerprintTests
     private static IReadOnlyList<FingerprintRow> Rows(int[] chord, int minSubsetNotes) =>
         ScaleFingerprint.ContainingChord(chord, Families(), minSubsetNotes, false, false, Ktet);
 
+    private static IReadOnlyList<FingerprintRow> Rows(
+        int[] chord, int minSubsetNotes, bool collapseIsomorphic, bool poolMaximal) =>
+        ScaleFingerprint.ContainingChord(chord, Families(), minSubsetNotes, collapseIsomorphic, poolMaximal, Ktet);
+
+    private static bool IsSingle(FingerprintRow r) => r.PB is null;
+
     [Theory]
     [InlineData(new[] { 0, 4, 7 })]
     [InlineData(new[] { 0, 3, 7 })]
@@ -67,8 +73,6 @@ public class ScaleFingerprintTests
         var loose = Rows(chord, 2);
         var tight = Rows(chord, 6);
 
-        bool IsSingle(FingerprintRow r) => r.PB is null;
-
         // Single-placement rows are independent of the bridge floor — identical across both runs.
         var looseSingles = loose.Where(IsSingle).Select(r => string.Join(",", r.Keys)).OrderBy(s => s).ToList();
         var tightSingles = tight.Where(IsSingle).Select(r => string.Join(",", r.Keys)).OrderBy(s => s).ToList();
@@ -78,5 +82,54 @@ public class ScaleFingerprintTests
         var looseKeys = loose.Select(r => string.Join(",", r.Keys)).ToHashSet();
         foreach (var r in tight.Where(r => !IsSingle(r)))
             looseKeys.Should().Contain(string.Join(",", r.Keys));
+    }
+
+    [Fact]
+    public void PoolMaximalKeepsAnAntichainWithinEachCategory()
+    {
+        var rows = Rows(new[] { 0, 4, 7 }, 4, collapseIsomorphic: false, poolMaximal: true);
+
+        void AssertAntichain(IReadOnlyList<FingerprintRow> partition)
+        {
+            // b.Keys.Count > a.Keys.Count already excludes a == b (equal key sets are deduped away).
+            foreach (var a in partition)
+                foreach (var b in partition)
+                    if (b.Keys.Count > a.Keys.Count)
+                        new HashSet<int>(a.Keys).IsSubsetOf(b.Keys).Should().BeFalse(
+                            $"{string.Join(",", a.Keys)} must not be a subset of same-category {string.Join(",", b.Keys)}");
+        }
+
+        AssertAntichain(rows.Where(IsSingle).ToList());
+        AssertAntichain(rows.Where(r => !IsSingle(r)).ToList());
+    }
+
+    [Fact]
+    public void PoolMaximalDropsTheChordExactSinglePlacement()
+    {
+        var chord = new[] { 0, 4, 7 };
+
+        // Without the filter the chord itself appears as a single placement (keys == the chord).
+        Rows(chord, 4).Should().Contain(r => IsSingle(r) && r.Keys.SequenceEqual(chord));
+
+        // A larger single placement contains it, so per-category maximal drops it.
+        Rows(chord, 4, collapseIsomorphic: false, poolMaximal: true)
+            .Should().NotContain(r => r.Keys.SequenceEqual(chord));
+    }
+
+    [Fact]
+    public void CollapseIsomorphicRelabelsSinglePlacementsToTheCanonicalRepresentative()
+    {
+        var families = Families();
+        var canonical = ChordProgressions.CanonicalPlacements(families, Ktet);
+        var rows = ScaleFingerprint.ContainingChord(
+            new[] { 0, 4, 7 }, families, 4, collapseIsomorphic: true, poolMaximal: false, Ktet);
+
+        // Compare by (Lcm, At): Placement is a record struct whose Keys list compares by reference, so
+        // the fresh canonical map here holds different list instances than the one inside ContainingChord.
+        foreach (var row in rows.Where(IsSingle))
+        {
+            var rep = ChordProgressions.CanonicalRepresentative(canonical, row.Keys);
+            (row.PA.Lcm, row.PA.At).Should().Be((rep.Lcm, rep.At));
+        }
     }
 }

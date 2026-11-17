@@ -52,17 +52,18 @@ public static class ScaleFingerprintTableRenderer
         console.Write(table);
     }
 
-    // Row label. With --name-composites, a row whose key set exactly matches a catalog scale reads as
-    // its shorthand "{Short}@{Anchor}" (single placements can name too, e.g. 24@0 → M@0); otherwise the
-    // placement constituents — "{Lcm}@{At}" for a single placement, "{PA}·{S}·{PB}" for a composite
+    // Row label. Single placements always read "{Lcm}@{At}" — a pure LCM placement is never renamed
+    // (so the major-scale placement stays 24@0, not M@0). A composite reads "{PA}·{S}·{PB}", or, with
+    // --name-composites, its shorthand "{Short}@{Anchor}" when its key set matches a catalog scale
     // (the same · form `table composite-scales` prints). The concrete keys are read off the bullet grid.
     private static string Label(FingerprintRow row, int ktet, bool nameComposites)
     {
+        var isComposite = row.S is not null && row.PB is not null;
+        if (!isComposite)
+            return P(row.PA);
+
         if (nameComposites && NamedScales.Match(row.Keys, ktet) is { } m)
             return $"{NamedScales.Shorthand(m.Name)}@{m.Anchor}";
-
-        if (row.S is null || row.PB is null)
-            return P(row.PA);
         return $"{P(row.PA)}·{P(row.S.Value)}·{P(row.PB.Value)}";
     }
 

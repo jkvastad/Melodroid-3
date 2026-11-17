@@ -112,6 +112,18 @@ public static class ChordProgressions
     private static Placement Rep(IReadOnlyDictionary<string, Placement> canonical, P p) =>
         canonical[Signature(p.Keys)];
 
+    // Public access to the canonical-representative rule for callers that relabel their own placements
+    // (table scale-fingerprint's --collapse-isomorphic on single-placement rows). Reuses the one
+    // power-of-2-preferred rule rather than re-deriving it.
+    public static IReadOnlyDictionary<string, Placement> CanonicalPlacements(
+        IReadOnlyList<LcmFamily> families, int ktet) => BuildCanonicalMap(families, ktet);
+
+    // The canonical representative placement for a key set, via a map from CanonicalPlacements. Keys
+    // are matched by the shared sorted-signature, so pass a distinct key set.
+    public static Placement CanonicalRepresentative(
+        IReadOnlyDictionary<string, Placement> canonical, IReadOnlyCollection<int> keys) =>
+        canonical[Signature(keys)];
+
     // Every progression (origin/bridge/target triplet) for one ordered chord pair, plus the derived
     // category. Triplet lists are raw unless collapseIsomorphic / poolMaximal declutter them; neither
     // flag changes the category. --drop-collapsed is applied to the raw placements (it is semantic).

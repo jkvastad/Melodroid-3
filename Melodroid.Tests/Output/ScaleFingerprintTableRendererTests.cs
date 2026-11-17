@@ -69,8 +69,11 @@ public class ScaleFingerprintTableRendererTests
         ScaleFingerprintTableRenderer.Render(chord, 12, rows, nameComposites: true, console);
 
         var output = writer.ToString();
-        output.Should().Contain("M@0");            // major as a named single placement
         output.Should().Contain("bb@0");           // bebop dominant composite named
+        output.Should().Contain("24@0");           // single-placement major row keeps its LCM label
+        // Single placements are never renamed, so the major scale is not shown as a standalone "M@0"
+        // row. The leading space distinguishes it from "hM@0" (harmonic major), whose M is preceded by h.
+        output.Should().NotContain(" M@0");
         output.Should().Contain("M=major");        // legend present
     }
 }

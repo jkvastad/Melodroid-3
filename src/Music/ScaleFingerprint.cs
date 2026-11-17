@@ -32,11 +32,18 @@ public static class ScaleFingerprint
 
         var candidates = new List<FingerprintRow>();
 
+        // --collapse-isomorphic relabels each single placement to the power-of-2-preferred
+        // representative of its key set (composites are already canonicalised inside Enumerate).
+        var canonical = collapseIsomorphic ? ChordProgressions.CanonicalPlacements(families, ktet) : null;
+
         // Single LCM-family placements containing the chord.
         foreach (var row in Placements.FindSupersets(chord, families, ktet))
         {
             var keys = row.Placement.Keys.Distinct().OrderBy(k => k).ToList();
-            candidates.Add(new FingerprintRow(keys, row.Placement, null, null));
+            var placement = canonical is null
+                ? row.Placement
+                : ChordProgressions.CanonicalRepresentative(canonical, keys);
+            candidates.Add(new FingerprintRow(keys, placement, null, null));
         }
 
         // Composite scales containing the chord. dedupeTransposition:false keeps every anchor whose
@@ -60,10 +67,43 @@ public static class ScaleFingerprint
                 best[sig] = row;
         }
 
-        return best.Values
-            .OrderBy(r => r.Keys.Count)
+        var rows = (IEnumerable<FingerprintRow>)best.Values;
+
+        // --pool-maximal keeps only the maximal rows by key-set inclusion, filtered PER CATEGORY: a
+        // single placement competes only against other single placements, a composite only against
+        // composites (so a composite never absorbs a single placement). Key sets within a category are
+        // distinct after the dedupe above, so "strict subset" is unambiguous. Mirrors the antichain
+        // predicate in ChordProgressions.Maximal.
+        if (poolMaximal)
+        {
+            bool IsSingle(FingerprintRow r) => r.PB is null;
+            var singleRows = best.Values.Where(IsSingle).ToList();
+            var compositeRows = best.Values.Where(r => !IsSingle(r)).ToList();
+            rows = Maximal(singleRows).Concat(Maximal(compositeRows));
+        }
+
+        // Single placements first, then composites; within each, by key count then keys ascending.
+        return rows
+            .OrderBy(r => r.PB is null ? 0 : 1)
+            .ThenBy(r => r.Keys.Count)
             .ThenBy(r => string.Join(",", r.Keys.Select(k => k.ToString("D2"))))
             .ToList();
+    }
+
+    // The rows whose key set is not a proper subset of another row's in the same list — the antichain
+    // by inclusion (as ChordProgressions.Maximal does for placements).
+    private static IReadOnlyList<FingerprintRow> Maximal(IReadOnlyList<FingerprintRow> rows)
+    {
+        var sets = rows.Select(r => new HashSet<int>(r.Keys)).ToList();
+        var result = new List<FingerprintRow>();
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var contained = false;
+            for (var j = 0; j < rows.Count && !contained; j++)
+                contained = sets[j].Count > sets[i].Count && sets[i].IsSubsetOf(sets[j]);
+            if (!contained) result.Add(rows[i]);
+        }
+        return result;
     }
 
     // Representative rank within one key set: prefer a single placement (IsComposite 0 < 1), then the
