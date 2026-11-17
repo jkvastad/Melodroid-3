@@ -8,7 +8,8 @@ public static class ScaleFingerprintTableRenderer
     public static void Render(
         IReadOnlyCollection<int> chordKeys,
         int ktet,
-        IReadOnlyList<ScaleRow> rows,
+        IReadOnlyList<FingerprintRow> rows,
+        bool nameComposites,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -27,7 +28,7 @@ public static class ScaleFingerprintTableRenderer
         {
             var keySet = new HashSet<int>(row.Keys);
             var cells = new string[ktet + 1];
-            cells[0] = Label(row);
+            cells[0] = Label(row, ktet, nameComposites);
             // Chord keys read green, every other scale member a plain bullet. (A per-column
             // "distinguishing key" highlight — marking member keys unique to this row within a
             // column — would sharpen the implied-scale reading but needs cross-row state; left as a
@@ -43,14 +44,27 @@ public static class ScaleFingerprintTableRenderer
         }
 
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
-        table.Caption(
-            $"scale-fingerprint: chord={chordStr} · {rows.Count} scale row{(rows.Count == 1 ? "" : "s")} · " +
-            $"{NamedScales.Catalog.Count} scales · {ktet}-tet");
+        var caption =
+            $"scale-fingerprint: chord={chordStr} · {rows.Count} scale row{(rows.Count == 1 ? "" : "s")} · {ktet}-tet";
+        if (nameComposites)
+            caption += $"\n{NamedScales.Legend()}";
+        table.Caption(caption);
         console.Write(table);
     }
 
-    // Row label: "{Name} @{Anchor}", e.g. "harmonic minor @9". The concrete keys are read off the
-    // bullet grid, so the label stays on one line.
-    private static string Label(ScaleRow row) =>
-        $"{Markup.Escape(row.Name)} @{row.Anchor}";
+    // Row label. With --name-composites, a row whose key set exactly matches a catalog scale reads as
+    // its shorthand "{Short}@{Anchor}" (single placements can name too, e.g. 24@0 → M@0); otherwise the
+    // placement constituents — "{Lcm}@{At}" for a single placement, "{PA}·{S}·{PB}" for a composite
+    // (the same · form `table composite-scales` prints). The concrete keys are read off the bullet grid.
+    private static string Label(FingerprintRow row, int ktet, bool nameComposites)
+    {
+        if (nameComposites && NamedScales.Match(row.Keys, ktet) is { } m)
+            return $"{NamedScales.Shorthand(m.Name)}@{m.Anchor}";
+
+        if (row.S is null || row.PB is null)
+            return P(row.PA);
+        return $"{P(row.PA)}·{P(row.S.Value)}·{P(row.PB.Value)}";
+    }
+
+    private static string P(Placement p) => $"{p.Lcm}@{p.At}";
 }
