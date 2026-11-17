@@ -309,11 +309,12 @@ public class SongAnalysisTests
     }
 
     // Escalation: a dim7 {0,3,6,9} is contained by no placement, so a dim7→face move is Neither — the
-    // placement graph has no edge. With --name-composites the (otherwise empty) Composite column is
-    // filled with the scales that host the move, marked ↑ and leaving the category Neither. dim7 is the
-    // core of harmonic minor / major, so those are what it escalates to.
+    // placement graph has no edge. The (otherwise empty) Composite column is filled with the scales that
+    // host the move, marked ↑ and leaving the category Neither. dim7 is the core of harmonic minor /
+    // major, so those are what it escalates to. Escalation is shown regardless of --name-composites;
+    // the flag only chooses the label form — shorthand scale names vs raw placement constituents.
     [Fact]
-    public void Bridges_NeitherDim7_EscalatesToItsCoreHarmonicScales_WhenNamed()
+    public void Bridges_NeitherDim7_EscalatesToItsCoreHarmonicScales_RegardlessOfNaming()
     {
         var chunks = new[]
         {
@@ -330,11 +331,17 @@ public class SongAnalysisTests
 
         raw.Category.Should().Be(ProgressionCategory.Neither);     // the placement graph has no edge
         named.Category.Should().Be(ProgressionCategory.Neither);   // escalation never reclassifies
-        raw.SubsetBridges.Should().BeEmpty();                      // nothing to show without naming
 
-        named.SubsetBridges.Should().NotBeEmpty();
-        named.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
+        // Both modes escalate (same hosts), differing only in label form.
+        raw.SubsetBridges.Should().NotBeEmpty();
+        raw.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
+        raw.SubsetBridges.Count.Should().Be(named.SubsetBridges.Count);
+
+        // Named mode shows the shorthand scale name; raw mode decomposes it to placement constituents,
+        // so every raw label is digit-led after ↑ (e.g. ↑15@11·18@2·24@0) — never a scale name.
         named.SubsetBridges.Should().Contain(s => s.StartsWith("↑hm@"));
+        raw.SubsetBridges.Should().NotContain(s => s.StartsWith("↑hm@"));
+        raw.SubsetBridges.Should().OnlyContain(s => s.Length > 1 && char.IsDigit(s[1]));
     }
 
     // Escalation only fills Neither bridges — a genuine subset move (C → G, real composites) must carry

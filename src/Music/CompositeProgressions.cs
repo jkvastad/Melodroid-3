@@ -73,23 +73,35 @@ public static class CompositeProgressions
     // both chords. Prefer hosts over the whole origin ∪ target; if nothing hosts both, fall back to
     // hosts over the target (the arrival). Labels carry a leading "↑" to mark the escalation beyond the
     // plain placement graph. Empty iff no composite scale (and no catalog scale) hosts the move.
+    // `named` controls only the label *form*, not which hosts are found: true keeps named scales as
+    // "↑{Short}@{Anchor}" shorthand; false renders every host as raw placement constituents
+    // "↑P_A·S·P_B" (decomposing the named scales too), so escalation reads the same whether or not the
+    // caller is naming composites. Scales with no placement decomposition (e.g. major blues) keep their
+    // shorthand in both modes.
     public static IReadOnlyList<string> Escalation(
         IReadOnlyList<int> fromKeys,
         IReadOnlyList<int> toKeys,
         IReadOnlyList<CompositeScale> compositeCatalog,
+        IReadOnlyList<LcmFamily> families,
+        bool named,
         int ktet)
     {
         var union = fromKeys.Concat(toKeys).Distinct().OrderBy(k => k).ToList();
-        var hosts = Hosts(union, compositeCatalog, ktet);
-        if (hosts.Count == 0) hosts = Hosts(toKeys, compositeCatalog, ktet);
+        var hosts = Hosts(union, compositeCatalog, families, named, ktet);
+        if (hosts.Count == 0) hosts = Hosts(toKeys, compositeCatalog, families, named, ktet);
         return hosts;
     }
 
     // Named-and-unnamed composite hosts of a key set: named scales containing it (via the catalog, so
     // non-composite scales like major / major blues are included) plus unnamed composites whose keys
-    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed.
+    // contain it. Labelled with a leading "↑" and sorted named-first then unnamed. When `named` is false
+    // the named-scale hosts are emitted as their raw placement constituents instead of a shorthand name.
     private static IReadOnlyList<string> Hosts(
-        IReadOnlyList<int> keys, IReadOnlyList<CompositeScale> compositeCatalog, int ktet)
+        IReadOnlyList<int> keys,
+        IReadOnlyList<CompositeScale> compositeCatalog,
+        IReadOnlyList<LcmFamily> families,
+        bool named,
+        int ktet)
     {
         var catalogOrder = NamedScales.Catalog
             .Select((s, i) => (s.Name, i))
@@ -99,7 +111,9 @@ public static class CompositeProgressions
         var labels = new Dictionary<string, (int Rank, int A, int B, int C, int D, string Label)>();
         foreach (var r in NamedScales.ContainingChord(keys, ktet))
         {
-            var label = $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}";
+            var label = !named && NamedScales.Decompose(r.Name, r.Anchor, families, ktet) is { } c
+                ? "↑" + ConstituentsLabel(c)
+                : $"↑{NamedScales.Shorthand(r.Name)}@{r.Anchor}";
             labels[label] = (catalogOrder[r.Name], r.Anchor, 0, 0, 0, label);
         }
         foreach (var j in compositeCatalog)
@@ -123,4 +137,11 @@ public static class CompositeProgressions
     // "P_A·S·P_B" for a subset triplet, matching `table composite-scales`' constituent column.
     private static string TripletLabel(ProgressionTriplet t) =>
         $"{t.Origin.Lcm}@{t.Origin.At}·{t.Bridge.Lcm}@{t.Bridge.At}·{t.Target.Lcm}@{t.Target.At}";
+
+    // "P_A·S·P_B" for a named scale's decomposition, joining its non-null constituent slots (some
+    // scales decompose to fewer than three placements).
+    private static string ConstituentsLabel(ScaleConstituents c) =>
+        string.Join("·", new[] { c.PA, c.S, c.PB }
+            .Where(p => p is not null)
+            .Select(p => $"{p!.Value.Lcm}@{p.Value.At}"));
 }

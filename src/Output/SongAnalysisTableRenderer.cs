@@ -95,9 +95,9 @@ public static class SongAnalysisTableRenderer
 
         var namingNote = nameComposites ? ", composites named" : ", raw constituents";
         var legend = nameComposites ? $"\nscales: {NamedScales.Legend()}" : "";
-        var escalation = nameComposites
-            ? "\n↑ = escalation: carried by the scale layer when no placement bridges the move"
-            : "";
+        // Escalation is always computed (independent of naming); nameComposites only chooses whether the
+        // ↑ hosts read as shorthand scale names or raw P_A·S·P_B constituents.
+        var escalation = "\n↑ = escalation: carried by the scale layer when no placement bridges the move";
         table.Caption(
             $"{title}: {bridges.Count} pair{(bridges.Count == 1 ? "" : "s")} · " +
             $"bridge state — placement · composite · ↑escalation · " +

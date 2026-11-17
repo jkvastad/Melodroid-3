@@ -1748,7 +1748,7 @@ class Program
         };
         var analyzeNameCompositesOption = new Option<bool>("--name-composites")
         {
-            Description = "Bridges only (--bridges): replace the raw P_A·S·P_B triplets in the Composite column with the named composite scale of each bridge — the stable union P_A ∪ P_B matched against the named-scale catalog ({Name}@{Anchor}), or its raw {keys} when unnamed. Collapses the dyad explosion (the union ignores which S was chosen). Default off (raw triplets).",
+            Description = "Bridges only (--bridges / --segment-bridges): label *form* only — it does not change which bridges or escalations appear. On: subset bridges are named by the composite scale of each bridge (the stable union P_A ∪ P_B matched against the named-scale catalog as {Name}@{Anchor}, collapsing the dyad explosion since the union ignores which S was chosen), and ↑ escalation hosts read as shorthand scale names. Off (default): subset bridges keep their raw P_A·S·P_B triplets and ↑ escalation hosts read as raw constituents. Escalation itself (↑ rows where no placement bridges a Neither move) is always shown either way.",
             DefaultValueFactory = _ => false,
         };
         var analyzePlacementsOption = new Option<bool>("--placements")

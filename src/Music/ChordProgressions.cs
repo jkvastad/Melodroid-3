@@ -180,7 +180,7 @@ public static class ChordProgressions
             origin, target, families, minSubsetNotes, collapseIsomorphic, poolMaximal, dropCollapsed, ktet);
         var catalog = compositeCatalog
             ?? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
-        var (reach, composites) = Classify(category, origin, target, catalog, ktet);
+        var (reach, composites) = Classify(category, origin, target, catalog, families, ktet);
         return (reach, triplets, composites);
     }
 
@@ -192,13 +192,14 @@ public static class ChordProgressions
         IReadOnlyCollection<int> origin,
         IReadOnlyCollection<int> target,
         IReadOnlyList<CompositeScale> compositeCatalog,
+        IReadOnlyList<LcmFamily> families,
         int ktet)
     {
         if (category != ProgressionCategory.Neither)
             return (ProgressionReach.Placement, Array.Empty<string>());
 
         var hosts = CompositeProgressions.Escalation(
-            origin.ToList(), target.ToList(), compositeCatalog, ktet);
+            origin.ToList(), target.ToList(), compositeCatalog, families, named: true, ktet);
         return hosts.Count > 0
             ? (ProgressionReach.Composite, hosts)
             : (ProgressionReach.Unreachable, Array.Empty<string>());

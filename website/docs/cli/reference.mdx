@@ -592,21 +592,26 @@ substantial 18/8 parent as in [`composite-scales`](#composite-scales); lower to 
 is the composite shared-subset floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the
 bridge labels losslessly.
 
-`--name-composites` (default off) names the **composite-scale** bridges in the Bridge column: a
-composite bridge `P_A·S·P_B` *is* a [composite scale](#composite-scales) — the stable union
-`P_A ∪ P_B` — so each shows the named scale of that union (`{Short}@{Anchor}` — the shorthand above,
-e.g. `hm@9` — via the named-scale catalog) when the union lands on a catalog scale. Because the union
-ignores *which* `S` was chosen, the many raw triplets per pair collapse to a handful of named
-composites — the intended reading when the raw `P_A·S·P_B` list explodes. When the union matches **no**
-catalog scale the composite keeps its full `P_A·S·P_B` constituents (as
-[`composite-scales`](#composite-scales) prints them), never a bare `{keys}` set. It also names the
-**escalation**: when no placement bridges the move (the canonical case is dim7 `{0 3 6 9}`, in no
-placement but the core of harmonic minor / major), the Bridge column names the composite scales that
-can host the move, marked with a leading `↑`, drawn from the **same** composite universe — named hosts
-as `↑{Short}@{Anchor}`, unnamed ones as `↑P_A·S·P_B` (plus the non-composite named scales `major` /
-`major blues` via the catalog) — over the whole origin ∪ target, falling back to hosts over the
-arrival when nothing hosts both. The `↑` marks that no placement bridges the move, so it is carried by
-the scale layer.
+`--name-composites` (default off) controls the Bridge-column label **form** only — it does not change
+which bridges or escalations appear. A composite bridge `P_A·S·P_B` *is* a
+[composite scale](#composite-scales) — the stable union `P_A ∪ P_B` — so with the flag **on** each
+shows the named scale of that union (`{Short}@{Anchor}` — the shorthand above, e.g. `hm@9` — via the
+named-scale catalog) when the union lands on a catalog scale. Because the union ignores *which* `S` was
+chosen, the many raw triplets per pair collapse to a handful of named composites — the intended reading
+when the raw `P_A·S·P_B` list explodes. When the union matches **no** catalog scale the composite keeps
+its full `P_A·S·P_B` constituents (as [`composite-scales`](#composite-scales) prints them), never a
+bare `{keys}` set. With the flag **off** every bridge keeps its raw `P_A·S·P_B` constituents.
+
+The **escalation** rows are **always shown** regardless of the flag: when no placement bridges the move
+(the canonical case is dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major), the
+Bridge column lists the composite scales that can host the move, marked with a leading `↑`, drawn from
+the **same** composite universe (plus the non-composite named scales `major` / `major blues` via the
+catalog) — over the whole origin ∪ target, falling back to hosts over the arrival when nothing hosts
+both. `--name-composites` only chooses how those `↑` hosts read: **on** → shorthand names
+`↑{Short}@{Anchor}` (unnamed composites as `↑P_A·S·P_B`); **off** → raw placement constituents
+`↑P_A·S·P_B`, decomposing the named scales too (a scale with no decomposition, e.g. `major blues`,
+keeps its shorthand). The `↑` marks that no placement bridges the move, so it is carried by the scale
+layer.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
 bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
