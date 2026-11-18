@@ -2,22 +2,15 @@ namespace Melodroid_3.Music;
 
 // A named scale as a root-oriented necklace: the pitch classes of the scale rooted on key 0, sorted
 // ascending. "Rooted on 0" (not music-set-theory normal order) so that transposing by an anchor a
-// yields the scale rooted on key a — i.e. a ScaleRow at anchor a reads as "{Name} @a", matching the
+// yields the scale rooted on key a — i.e. a match at anchor a reads as "{Name} @a", matching the
 // progression-principles doc convention (harm@9 = harmonic minor rooted on 9 = {0 2 4 5 8 9 11}).
 public readonly record struct NamedScale(string Name, IReadOnlyList<int> Necklace);
 
-// One qualifying scale placed at a concrete anchor (= its root). Keys are the transposed necklace,
-// sorted ascending in [0, ktet).
-public readonly record struct ScaleRow(string Name, int Anchor, IReadOnlyList<int> Keys);
-
-// The subset-principle decomposition of a catalog scale into its constituent LCM-family placements,
-// transposed to a concrete anchor. For a composite scale PA/S/PB are the P_A · S · P_B of the subset
-// bridge whose stable union is the scale (NamedScales.Decompose). `major` has a single placement
-// (24@anchor) with S/PB null; scales with no clean composite (`major blues`) are not decomposable.
-public readonly record struct ScaleConstituents(string Name, Placement? PA, Placement? S, Placement? PB);
-
-// The fixed catalog of named scales used by `table chord-melody`, and the row-builder that
-// transposes them to every anchor containing a chord.
+// The catalog of traditional scale names used *cosmetically* across the CLI (table chord-melody,
+// analyze midi, table progression). The scales themselves are derived from first principles (the subset
+// principle / CompositeScales) — this catalog is only a lookup from a concrete key set to its empirical
+// traditional name, never a source of scales. `Match` maps a key set to its name; everything derivational
+// lives elsewhere.
 //
 // The names are empirical labels on results derived from the subset principle, NOT the derivation
 // (per the "first principles, not tradition" anchor). Provenance of each necklace:
@@ -43,8 +36,8 @@ public static class NamedScales
     };
 
     // Compact display codes for the catalog scales, case-sensitive (hm ≠ hM). Keyed by catalog Name.
-    // Used to keep the `analyze midi` Scales / Composite columns readable; the full names stay the
-    // source of truth (ScaleRow.Name, table chord-melody) — this is a display concern only.
+    // Used to keep the cosmetic Scales / Composite labels readable; the full names stay the source of
+    // truth (table chord-melody) — this is a display concern only.
     private static readonly IReadOnlyDictionary<string, string> Shorthands = new Dictionary<string, string>
     {
         ["major"] = "M", ["harmonic minor"] = "hm", ["melodic minor"] = "mm",
@@ -58,36 +51,11 @@ public static class NamedScales
     public static string Legend() =>
         string.Join(", ", Catalog.Select(s => $"{Shorthand(s.Name)}={s.Name}"));
 
-    // One row per (scale, anchor) whose transposed key set fully contains chordKeys. Each catalog
-    // necklace is shifted to all `ktet` anchors (necklace + anchor mod ktet); an anchor qualifies
-    // iff its key set ⊇ the chord. Rows keep catalog order, then ascending anchor, for stable display.
-    public static IReadOnlyList<ScaleRow> ContainingChord(
-        IReadOnlyCollection<int> chordKeys, int ktet = 12)
-    {
-        var chord = new HashSet<int>(chordKeys.Select(k => ((k % ktet) + ktet) % ktet));
-        var rows = new List<ScaleRow>();
-
-        foreach (var scale in Catalog)
-        {
-            for (var anchor = 0; anchor < ktet; anchor++)
-            {
-                var keys = scale.Necklace
-                    .Select(k => (k + anchor) % ktet)
-                    .OrderBy(k => k)
-                    .ToList();
-                if (chord.IsSubsetOf(keys))
-                    rows.Add(new ScaleRow(scale.Name, anchor, keys));
-            }
-        }
-
-        return rows;
-    }
-
     // The (Name, Anchor) of the catalog scale whose transposed necklace EXACTLY equals keys, or
     // null when no catalog scale matches. Anchor is the root, per the "{Name} @anchor" convention.
-    // Distinct from ContainingChord, which tests subset containment; here the key set must coincide
-    // with the whole scale. Used to name a composite scale (the stable union of a subset bridge's two
-    // placements) when it lands on a known scale; the caller falls back to the raw key set otherwise.
+    // The key set must coincide with the whole scale. Used to name a composite scale (the stable union
+    // of a subset bridge's two placements) when it lands on a known scale; callers fall back to the raw
+    // constituents otherwise. This is the only cosmetic-naming entry point.
     public static (string Name, int Anchor)? Match(IReadOnlyCollection<int> keys, int ktet = 12)
     {
         var set = new HashSet<int>(keys.Select(k => ((k % ktet) + ktet) % ktet));
@@ -103,54 +71,5 @@ public static class NamedScales
         }
 
         return null;
-    }
-
-    // Subset-principle provenance of each catalog scale as (Lcm, At) per constituent slot (P_A, S, P_B)
-    // — the composite decompositions documented in the catalog comments above, at *some* base rooting
-    // (the stable union need not sit on root 0: 15@11·18@2·24@0 is harmonic minor rooted on 9).
-    // Decompose finds the actual root via Match and re-anchors, so these base values only have to
-    // define the right scale, not a specific root. `major` is a lone 24@0 placement (S/P_B absent);
-    // `major blues` has no clean composite and is omitted, so Decompose returns null for it.
-    // NamedScalesTests asserts each decomposition's stable union (CompositeScales.UnionKeys) equals the
-    // catalog necklace at the requested anchor, pinning this table to first principles.
-    private static readonly IReadOnlyDictionary<string, (int Lcm, int At)?[]> Provenance =
-        new Dictionary<string, (int Lcm, int At)?[]>
-        {
-            ["major"]          = new (int Lcm, int At)?[] { (24, 0), null, null },
-            ["harmonic minor"] = new (int Lcm, int At)?[] { (15, 11), (18, 2), (24, 0) },
-            ["melodic minor"]  = new (int Lcm, int At)?[] { (15, 11), (18, 2), (24, 7) },
-            ["bebop dominant"] = new (int Lcm, int At)?[] { (24, 0), (18, 7), (24, 5) },
-            ["harmonic major"] = new (int Lcm, int At)?[] { (15, 11), (5, 4), (15, 4) },
-        };
-
-    // The constituent placements of the named scale rooted on `anchor`, or null when the scale has no
-    // decomposition (unknown name, or `major blues`). The provenance triple defines the scale at some
-    // base root; we recover that root from its stable union via Match, then re-anchor every slot by
-    // (anchor - root) so the decomposition is rooted on `anchor`. Placements are built through the one
-    // key-construction path (Placements.Compute); a missing LCM family yields a null slot. 12-tet only.
-    public static ScaleConstituents? Decompose(
-        string name, int anchor, IReadOnlyList<LcmFamily> families, int ktet)
-    {
-        if (!Provenance.TryGetValue(name, out var slots)) return null;
-
-        Placement? Build((int Lcm, int At)? slot, int shift)
-        {
-            if (slot is null) return null;
-            var (lcm, at) = slot.Value;
-            var family = families.FirstOrDefault(f => f.Lcm == lcm);
-            if (family.Fractions is null || family.Fractions.Count == 0) return null;
-            return Placements.Compute(family, (((at + shift) % ktet) + ktet) % ktet, ktet);
-        }
-
-        var pa0 = Build(slots[0], 0);
-        if (pa0 is null) return null;
-        var pb0 = Build(slots[2], 0);
-        var union0 = pb0 is { } b0
-            ? CompositeScales.UnionKeys(pa0.Value, b0, stable: true, ktet)
-            : pa0.Value.Keys;
-        if (Match(union0, ktet) is not { } m) return null;
-        var shift = (((anchor - m.Anchor) % ktet) + ktet) % ktet;
-
-        return new ScaleConstituents(name, Build(slots[0], shift), Build(slots[1], shift), Build(slots[2], shift));
     }
 }

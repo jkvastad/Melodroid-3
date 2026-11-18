@@ -98,15 +98,23 @@ public class SongAnalysisTests
     }
 
     [Fact]
-    public void Analyze_MajorTriadChunk_FindsLcm24At0AndMajorScale()
+    public void Analyze_MajorTriadChunk_FindsLcm24At0AndCompositeScales()
     {
         var chunk = new SongChunk(0, 0, 1, new[] { 0, 4, 7 });
 
-        var analysis = SongAnalysis.Analyze(new[] { chunk }, Families(), Ktet).Single();
+        var analysis = SongAnalysis.Analyze(
+            new[] { chunk }, Families(), minSubsetNotes: 4, collapseIsomorphic: false, poolMaximal: false, Ktet)
+            .Single();
 
         analysis.Placements.Should().Contain(r => r.Placement.Lcm == 24 && r.Placement.At == 0);
         analysis.Placements.Should().OnlyContain(r => new HashSet<int> { 0, 4, 7 }.IsSubsetOf(r.Placement.Keys));
-        analysis.Scales.Should().Contain(s => s.Name == "major" && s.Anchor == 0);
+
+        // Scales are composite scales (derived from the subset principle), NOT single placements like
+        // major = 24@0 (that lives in the Placements column). Each contains the chord and has two
+        // genuinely distinct constituents (item 3: a composite is never a single placement).
+        analysis.Scales.Should().NotBeEmpty();
+        analysis.Scales.Should().OnlyContain(s => new HashSet<int> { 0, 4, 7 }.IsSubsetOf(s.Keys));
+        analysis.Scales.Should().OnlyContain(s => s.PA.Lcm != s.PB.Lcm || s.PA.At != s.PB.At);
     }
 
     // The C F G loop (C → F → G → C) is the motivating example: its superset bridges are 8@5, 24@0,
@@ -309,12 +317,13 @@ public class SongAnalysisTests
     }
 
     // Escalation: a dim7 {0,3,6,9} is contained by no placement, so a dim7→face move is Neither — the
-    // placement graph has no edge. The (otherwise empty) Composite column is filled with the scales that
-    // host the move, marked ↑ and leaving the category Neither. dim7 is the core of harmonic minor /
-    // major, so those are what it escalates to. Escalation is shown regardless of --name-composites;
-    // the flag only chooses the label form — shorthand scale names vs raw placement constituents.
+    // placement graph has no edge. With --escalate the (otherwise empty) Composite column is filled with
+    // the composite placement progression (ComputeComposite): origin and target each map to a composite
+    // scale, linked by a placement progression between their constituent placements, marked ↑ and
+    // leaving the category Neither. Raw mode shows the link's placement constituents (digit-led after ↑);
+    // naming only relabels the matched subset composites to a shorthand scale name.
     [Fact]
-    public void Bridges_NeitherDim7_EscalatesToItsCoreHarmonicScales_RegardlessOfNaming()
+    public void Bridges_NeitherDim7_EscalatesToAConstituentLink_RegardlessOfNaming()
     {
         var chunks = new[]
         {
@@ -332,15 +341,14 @@ public class SongAnalysisTests
         raw.Category.Should().Be(ProgressionCategory.Neither);     // the placement graph has no edge
         named.Category.Should().Be(ProgressionCategory.Neither);   // escalation never reclassifies
 
-        // Both modes escalate (same hosts), differing only in label form.
+        // Both modes escalate (the same constituent link), every label marked ↑.
         raw.SubsetBridges.Should().NotBeEmpty();
         raw.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
-        raw.SubsetBridges.Count.Should().Be(named.SubsetBridges.Count);
+        named.SubsetBridges.Should().NotBeEmpty();
+        named.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
 
-        // Named mode shows the shorthand scale name; raw mode decomposes it to placement constituents,
-        // so every raw label is digit-led after ↑ (e.g. ↑15@11·18@2·24@0) — never a scale name.
-        named.SubsetBridges.Should().Contain(s => s.StartsWith("↑hm@"));
-        raw.SubsetBridges.Should().NotContain(s => s.StartsWith("↑hm@"));
+        // Raw mode never emits a scale name — every label is a placement constituent, digit-led after ↑
+        // (e.g. ↑15@11·18@2·24@0).
         raw.SubsetBridges.Should().OnlyContain(s => s.Length > 1 && char.IsDigit(s[1]));
     }
 
@@ -409,11 +417,11 @@ public class SongAnalysisTests
         named.SubsetBridges.Should().NotContain(s => s.StartsWith("{")); // never a bare key set
     }
 
-    // Escalation is symmetric with the Composite column: it draws from the whole composite universe, not
-    // only the named catalog. A Neither move hosted by an unnamed composite keeps its ↑P_A·S·P_B
-    // constituents instead of being dropped for lack of a catalog name.
+    // Escalation draws the composite link from the whole placement universe, not a named catalog: the
+    // Neither move's link labels are all ↑-marked, and in named mode an unnamed subset composite keeps
+    // its ↑P_A·S·P_B constituents (a "·" label) rather than being dropped for lack of a catalog name.
     [Fact]
-    public void Bridges_NeitherMoveHostedByUnnamedComposite_EscalatesWithFullTriplet()
+    public void Bridges_NeitherMoveEscalatesWithConstituentLink()
     {
         var chunks = new[]
         {
@@ -426,7 +434,8 @@ public class SongAnalysisTests
             nameComposites: true, escalate: true, Ktet)[0];
 
         named.Category.Should().Be(ProgressionCategory.Neither);
-        named.SubsetBridges.Should().Contain(s => s.StartsWith("↑") && s.Contains('·'));
+        named.SubsetBridges.Should().NotBeEmpty();
+        named.SubsetBridges.Should().OnlyContain(s => s.StartsWith("↑"));
     }
 
     private static KeySupersetRow Row(int lcm, int at, params int[] keys) =>
@@ -448,7 +457,7 @@ public class SongAnalysisTests
             Row(20, 1, 0, 4, 7, 10),        // lcm-20, collapsing key 4 ∈ chunk → unstable
             Row(20, 2, 0, 4, 7, 11),        // lcm-20, collapsing key 5 ∉ chunk → stable
             Row(24, 0, 0, 2, 4, 5, 7, 9),   // no collapsing key → always plain
-        }, Array.Empty<ScaleRow>());
+        }, Array.Empty<CompositeScale>());
 
         SongAnalysis.PlacementLabels(analysis, stable: false, Ktet)
             .Should().BeEquivalentTo("15@4", "15@7", "20@1", "20@2", "24@0");

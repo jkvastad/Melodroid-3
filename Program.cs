@@ -792,7 +792,7 @@ class Program
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
-            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (the named-scale catalog is a 12-tet concept).[/]"); return 1; }
+            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (composite scales are a 12-tet concept).[/]"); return 1; }
             if (chordKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--chord-keys must contain at least one value.[/]"); return 1; }
             foreach (var key in chordKeys)
             {
@@ -940,14 +940,14 @@ class Program
                 var shape = Chords.Canonicalize(shapeKeys.Distinct().ToList(), 12).Keys;
                 var catalog = CompositeProgressions.Catalog(
                     families, minSubsetNotes, collapseIsomorphic, poolMaximal, 12);
-                var rows = new List<(int Root, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges)>(12);
+                var rows = new List<(int Root, ProgressionReach Reach, IReadOnlyList<ProgressionTriplet> Triplets)>(12);
                 for (var root = 0; root < 12; root++)
                 {
                     var target = shape.Select(k => (k + root) % 12).OrderBy(k => k).ToList();
-                    var (_, rootTriplets, rootComposites) = ChordProgressions.ComputePairReach(
+                    var (rootReach, rootTriplets) = ChordProgressions.ComputePairReach(
                         dedupOrigin, target, families, minSubsetNotes,
                         collapseIsomorphic, poolMaximal, dropCollapsed.Value, 12, catalog);
-                    rows.Add((root, rootTriplets, rootComposites));
+                    rows.Add((root, rootReach, rootTriplets));
                 }
                 ProgressionTableRenderer.RenderShape(
                     dedupOrigin, shape, minSubsetNotes, collapseIsomorphic, poolMaximal,
@@ -956,12 +956,12 @@ class Program
             }
 
             var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
-            var (reach, triplets, compositeBridges) = ChordProgressions.ComputePairReach(
+            var (reach, triplets) = ChordProgressions.ComputePairReach(
                 dedupOrigin, dedupTarget, families, minSubsetNotes,
                 collapseIsomorphic, poolMaximal, dropCollapsed.Value);
             ProgressionTableRenderer.RenderPair(
                 dedupOrigin, dedupTarget, minSubsetNotes, collapseIsomorphic, poolMaximal,
-                dropCollapsed.Value, reach, triplets, compositeBridges);
+                dropCollapsed.Value, reach, triplets);
             return 0;
         });
 
@@ -1841,7 +1841,7 @@ class Program
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
-            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (the named-scale catalog is a 12-tet concept).[/]"); return 1; }
+            if (k != 12) { AnsiConsole.MarkupLine("[red]--ktet must be 12 (composite scales are a 12-tet concept).[/]"); return 1; }
 
             IReadOnlyList<NoteEvent> events;
             int ticksPerQuarter;
@@ -1882,13 +1882,13 @@ class Program
 
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var analyses = SongAnalysis.Analyze(chunks, families, k);
+            var analyses = SongAnalysis.Analyze(chunks, families, minSubsetNotes, collapseIsomorphic, poolMaximal, k);
 
-            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements, stablePlacements);
+            SongAnalysisTableRenderer.Render(analyses, k, subdivision, mergeRepeats, showPlacements, stablePlacements, nameComposites);
 
             if (showSegments || writeReaper || showSegmentBridges)
             {
-                var scaleLabels = analyses.Select(SongAnalysis.ScaleLabels).ToList();
+                var scaleLabels = analyses.Select(a => SongAnalysis.ScaleLabels(a, nameComposites, k)).ToList();
                 var placementLabels = analyses.Select(a => SongAnalysis.PlacementLabels(a, stablePlacements, k)).ToList();
                 var scaleSegments = SongAnalysis.GreedySegments(chunks, scaleLabels);
                 var placementSegments = SongAnalysis.GreedySegments(chunks, placementLabels);

@@ -5,9 +5,10 @@ namespace Melodroid_3.Output;
 
 public static class ProgressionTableRenderer
 {
-    // One ordered chord pair rendered as its placement-progression triplets (unified
-    // origin/bridge/target rows — single-placement progressions first, then bridged, each sorted by
-    // bridge/origin/target), or — when no placement progression exists — its composite-scale hosts.
+    // One ordered chord pair rendered as its progression triplets (unified origin/bridge/target rows —
+    // single-placement progressions first, then bridged, each sorted by bridge/origin/target). In the
+    // composite tier (reach = Composite) the same triplets are the placement progression between the two
+    // key sets' constituent placements; only the heading announces that. Unreachable prints a note.
     public static void RenderPair(
         IReadOnlyCollection<int> origin,
         IReadOnlyCollection<int> target,
@@ -17,7 +18,6 @@ public static class ProgressionTableRenderer
         CollapseFilter dropCollapsed,
         ProgressionReach reach,
         IReadOnlyList<ProgressionTriplet> triplets,
-        IReadOnlyList<string> compositeBridges,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -27,6 +27,11 @@ public static class ProgressionTableRenderer
 
         if (triplets.Count > 0)
         {
+            if (reach == ProgressionReach.Composite)
+                console.MarkupLine(
+                    $"{originStr} → {targetStr}: [yellow]composite placement progression[/] " +
+                    "(between the constituent placements of each side's composite scales)");
+
             var table = new Table()
                 .Title($"{originStr} → {targetStr}")
                 .AddColumn("Origin")
@@ -54,12 +59,7 @@ public static class ProgressionTableRenderer
 
             console.Write(table);
 
-            RenderSummary(triplets, console);
-        }
-        else if (compositeBridges.Count > 0)
-        {
-            console.MarkupLine(
-                $"{originStr} → {targetStr}: [yellow]composite[/] — hosted by {string.Join(", ", compositeBridges)}");
+            RenderSummary(triplets, reach, console);
         }
         else
         {
@@ -85,7 +85,7 @@ public static class ProgressionTableRenderer
         bool collapseIsomorphic,
         bool poolMaximal,
         CollapseFilter dropCollapsed,
-        IReadOnlyList<(int Root, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges)> rows,
+        IReadOnlyList<(int Root, ProgressionReach Reach, IReadOnlyList<ProgressionTriplet> Triplets)> rows,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -95,7 +95,7 @@ public static class ProgressionTableRenderer
             .AddColumn("Root")
             .AddColumn("Progressions");
         foreach (var row in rows)
-            table.AddRow(row.Root.ToString(), ProgressionCell(row.Triplets, row.CompositeBridges));
+            table.AddRow(row.Root.ToString(), ProgressionCell(row.Reach, row.Triplets));
         console.Write(table);
 
         console.MarkupLine(
@@ -106,41 +106,45 @@ public static class ProgressionTableRenderer
 
     // One root's progressions compacted into a multi-line cell string, reusing the same compaction as
     // RenderPair: single-placement triplets (Origin = Bridge = Target) as the bare placement label,
-    // then bridged triplets factored around their shared bridge S ({origins}·S·{targets}). When no
-    // placement progression exists, the composite hosts (each prefixed "↑"); otherwise "—".
+    // then bridged triplets factored around their shared bridge S ({origins}·S·{targets}). In the
+    // composite tier (reach = Composite) the triplets link the two sides' constituent placements; each
+    // line is prefixed "↑" so the cell shape still reads the reach (bare/·  = placement, ↑ = composite,
+    // — = unreachable).
     private static string ProgressionCell(
-        IReadOnlyList<ProgressionTriplet> triplets, IReadOnlyList<string> compositeBridges)
+        ProgressionReach reach, IReadOnlyList<ProgressionTriplet> triplets)
     {
-        if (triplets.Count > 0)
-        {
-            var lines = triplets
-                .Where(t => t.Principle == ProgressionPrinciple.Superset)
-                .Select(t => Label(t.Bridge))
-                .Distinct()
-                .OrderBy(SortKey)
-                .ToList();
-            foreach (var (origins, bridge, targets) in
-                GroupSubsetPairs(triplets.Where(t => t.Principle == ProgressionPrinciple.Subset)))
-                lines.Add($"{origins}·{bridge}·{targets}");
-            return string.Join("\n", lines);
-        }
-        if (compositeBridges.Count > 0)
-            return string.Join("\n", compositeBridges.Select(h => $"↑{h}"));
-        return "—";
+        if (triplets.Count == 0) return "—";
+
+        var lines = triplets
+            .Where(t => t.Principle == ProgressionPrinciple.Superset)
+            .Select(t => Label(t.Bridge))
+            .Distinct()
+            .OrderBy(SortKey)
+            .ToList();
+        foreach (var (origins, bridge, targets) in
+            GroupSubsetPairs(triplets.Where(t => t.Principle == ProgressionPrinciple.Subset)))
+            lines.Add($"{origins}·{bridge}·{targets}");
+
+        var prefix = reach == ProgressionReach.Composite ? "↑" : "";
+        return string.Join("\n", lines.Select(l => prefix + l));
     }
 
     // Placement summary beneath the triplet table: a quick read of which placements participate overall.
     // Single-placement progressions collapse to one set (Origin = Bridge = Target); bridged progressions
     // split by slot into origins (P_A) / bridges (S) / targets (P_B). Each set is deduped and
-    // anchor-compressed. A shape's line is omitted when it has no triplets.
-    private static void RenderSummary(IReadOnlyList<ProgressionTriplet> triplets, IAnsiConsole console)
+    // anchor-compressed. A shape's line is omitted when it has no triplets. In the composite tier the
+    // superset rows are shared constituents (pivots), not placements holding both chords, so the label
+    // reflects that.
+    private static void RenderSummary(
+        IReadOnlyList<ProgressionTriplet> triplets, ProgressionReach reach, IAnsiConsole console)
     {
         var single = triplets.Where(t => t.Principle == ProgressionPrinciple.Superset).ToList();
         var bridged = triplets.Where(t => t.Principle == ProgressionPrinciple.Subset).ToList();
+        var pivotLabel = reach == ProgressionReach.Composite ? "shared pivot" : "holds both";
 
         console.MarkupLine("[grey]summary[/]");
         if (single.Count > 0)
-            console.MarkupLine($"  [green]holds both[/]  {SummarizeSlot(single, t => t.Bridge)}");
+            console.MarkupLine($"  [green]{pivotLabel}[/]  {SummarizeSlot(single, t => t.Bridge)}");
         if (bridged.Count > 0)
             console.MarkupLine(
                 $"  [yellow]bridged[/]     origins {SummarizeSlot(bridged, t => t.Origin)} · " +

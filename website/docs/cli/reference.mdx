@@ -305,12 +305,16 @@ placement graph. It has two structural shapes:
   subset family `S` of ≥ `--min-subset-notes` keys, giving the triplet `P_A·S·P_B` (e.g. C→Db: `15@7`
   and `24@8` both contain `18@10`).
 
-When no placement progression connects two chords, a composite placement progression may still host the move:
-a composite scale (the key-union of two bridged placements — see [`composite-scales`](#composite-scales)) that contains
-it. Each chord pair is therefore tagged by a single **reachability** axis:
+When no placement progression connects two chords, a **composite placement progression** may still
+carry the move: origin and target each map to a composite scale (see
+[`composite-scales`](#composite-scales)), linked by a placement progression between their
+**constituent placements** (`CompositeProgressions.ComputeComposite` — the *same* calculation
+[`analyze midi`](#midi)'s bridges use). Each chord pair is therefore tagged by a single **reachability**
+axis:
 
-- **placement** — a placement progression exists.
-- **composite** — no placement progression, but a composite scale hosts the move.
+- **placement** — a plain placement progression exists.
+- **composite** — no plain placement progression, but the constituent-linking composite placement
+  progression does.
 - **unreachable** — neither.
 
 `--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` (mutually
@@ -322,7 +326,7 @@ this origin and then *this chord at some root*, how does the choice of root chan
 The result is a **roots-as-rows** table (columns `Root | Progressions`): one row per root `0..11`,
 each row's `Progressions` cell listing that root's compacted progressions, one entry per line — a
 bare `{Lcm}@{At}` label (a single placement holds both chords), a factored `{P_A, …}·S·{P_B, …}` line
-(bridged), `↑{host}` (composite host), or `—` (unreachable). Because `Progressions` is the only wide
+(bridged), `↑`-prefixed lines (the composite-tier constituent link), or `—` (unreachable). Because `Progressions` is the only wide
 column it spans the terminal, so bridged labels never wrap mid-token. The target key set and reach
 tier are omitted as redundant: the shape is in the title (so `target = shape + root`) and the reach
 is read from the cell shape. All other options
@@ -342,8 +346,9 @@ LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a **pl
 quick read of the topology — one anchor-compressed set of the single-placement holders, and the bridged
 progressions split by slot into **origins** (`P_A`), **bridges** (`S`), and **targets** (`P_B`); a
 shape's line is omitted when it has no triplets. When the pair is **composite**-reachable instead, it
-prints the hosting composite scales (`↑{Short}@{Anchor}` for named scales, `↑P_A·S·P_B` otherwise);
-when **unreachable**, it says so. The footer reports the reach.
+prints the composite placement progression — the same **Origin | Bridge | Target** triplet table, now
+linking the two sides' composite-scale **constituent placements** (a heading announces the composite
+tier); when **unreachable**, it says so. The footer reports the reach.
 
 Bridge/triplet lists are **raw by default** — plain `{Lcm}@{At}` labels, every containing placement
 and every triple. Two independent, opt-in declutters shrink them **without changing reachability**,
@@ -405,6 +410,12 @@ The command sweeps every distinct placement pair over all anchors that share a s
 - **Scale** — the concrete key-index set to play, e.g. `{0, 2, 4, 5, 8, 9, 11}`.
 - **Size** — number of keys.
 - **P_A·S·P_B** — the constituents the scale was generated from.
+
+A composite is emitted only when it is **genuinely composite**: pairs whose (stable) union coincides
+with a single LCM-family placement's key set are dropped — such a union is "effectively a single
+placement" and is that placement, not a composite (the whole point of the concept is key sets *not*
+expressible as one placement). This drops the degenerate rows (`15@0·18@3·18@3 = 15@0`,
+`18@0·18@0·24@5 = 24@5`) and any that collapse there under `--stable`.
 
 **Stable form (`--stable`, default off).** The base case emits the **raw union** `P_A ∪ P_B` of every
 composite scale, dropping nothing. Pass `--stable` to stabilize: each collapsing (prime-5:
@@ -525,7 +536,12 @@ time-adjacent slots sharing an identical key-set into a single chunk (light "whe
 changes" preprocessing). For every chunk the table lists:
 
 - the sorted pitch-class **key-set** and its size,
-- the named [scales](#chord-melody) containing it, and
+- the **composite scales** containing it, derived from first principles (the subset principle /
+  [`composite-scales`](#composite-scales), parameterised by `--min-subset-notes`), not a curated
+  catalog — single placements already live in the Placements column, so the **Scales** column is
+  composites only. Each reads as its raw `P_A·S·P_B` constituents by default; `--name-composites`
+  relabels a composite whose key set lands on a catalog scale to its cosmetic name (`{Short}@{Anchor}`)
+  — names are purely cosmetic, never the source,
 - (with `--placements`, default off) a **Placements** column listing the
   [LCM-family placements](#placement) containing it ([`FindSupersets`](#supersets),
   isomorphic-collapsed, capped).
@@ -574,8 +590,8 @@ it via Reaper's **Region/Marker Manager** → right-click → *Import region/mar
 the MIDI into an empty project (so the project adopts the file's tempo). `--reaper` computes the
 segments even when `--segments` is off.
 
-Scale names in the **Scales** column (and the `--name-composites` **Bridge** column below) are
-rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
+Cosmetic scale names (the `--name-composites` relabel in the **Scales** column and the **Bridge** column
+below) are rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
 
 | `M` | `hm` | `mm` | `hM` | `bb` | `b` |
 | --- | --- | --- | --- | --- | --- |
@@ -607,27 +623,29 @@ bare `{keys}` set. With the flag **off** every bridge keeps its raw `P_A·S·P_B
 
 `--escalate` (default off) controls whether **escalation** rows appear. When no placement bridges the
 move (the canonical case is dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major)
-the pair is `Neither` and renders `—` by default; with `--escalate` the Bridge column instead lists the
-composite scales that can host the move, marked with a leading `↑`, drawn from the composite universe
-(plus the non-composite named scales `major` / `major blues` via the catalog) — over the whole
-origin ∪ target, falling back to hosts over the arrival when nothing hosts both. `--name-composites`
-then chooses only how those `↑` hosts read: **on** → shorthand names `↑{Short}@{Anchor}` (unnamed
-composites as `↑P_A·S·P_B`); **off** → raw placement constituents `↑P_A·S·P_B`, decomposing the named
-scales too (a scale with no decomposition, e.g. `major blues`, keeps its shorthand). The `↑` marks that
-no placement bridges the move, so it is carried by the scale layer.
+the pair is `Neither` and renders `—` by default; with `--escalate` the Bridge column instead shows the
+**composite placement progression** carrying the move — the same `CompositeProgressions.ComputeComposite`
+[`progression`](#progression)'s composite tier uses: origin and target each map to a composite scale,
+linked by a placement progression between their **constituent placements**. Each link label is marked
+with a leading `↑`. `--name-composites` chooses only the subset labels' form: **off** → raw placement
+constituents `↑P_A·S·P_B`; **on** → the matched subset composites relabelled to shorthand scale names
+`↑{Short}@{Anchor}`. The `↑` marks that no placement bridges the move, so it is carried by the
+composite layer. This is the **same bridge calculation** `progression` performs — the underlying theory
+is one.
 
 `--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
 bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
 table takes a segment's chord to be the **union of its chunks' sounding keys** (a one-chunk segment
 reduces to that chunk's key-set, so this generalizes `--bridges`) and runs the pair through
-`ChordProgressions.ComputePair`. The **scale** table instead reads each segment through the
-**constituent placements** of its witness scales (a scale witnesses a segment iff it contains the
-chunk-union, so `ContainingChord` recovers the witnesses; each is decomposed as `hm@9 =
-15@11·18@2·24@0`), and bridges adjacent segments by a placement-graph relation between the two pooled
-constituent sets — a shared **pivot** placement and/or a subset-`S` join, both surfaced in the
-**Bridge** column — rather than re-deriving supersets of the pooled chromatic union (which pools a long
-scale segment's melody into a key-set no placement contains, so nothing bridges it). A side whose union
-lands on no named scale falls back to the placement table's union path. Reading the **Bridge** column
+`ChordProgressions.ComputePair`. The **scale** table instead reads each segment through its
+**constituent pool** (`CompositeProgressions.ConstituentPool` — the single placements and
+composite-scale constituents, e.g. `hm@9 = 15@11·18@2·24@0`, containing the segment's chunk-union), and
+bridges adjacent segments by the composite placement progression between the two pools
+(`CompositeProgressions.LinkPools` — the same link `progression`'s composite tier uses) — a shared
+**pivot** placement and/or a subset-`S` join, both surfaced in the **Bridge** column — rather than
+re-deriving supersets of the pooled chromatic union (which pools a long scale segment's melody into a
+key-set no placement contains, so nothing bridges it). A side with no constituents falls back to the
+placement table's union path. Reading the **Bridge** column
 top-to-bottom surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
 `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-composites` / `--escalate`
 flags and compute the segmentation even when `--segments` is off.

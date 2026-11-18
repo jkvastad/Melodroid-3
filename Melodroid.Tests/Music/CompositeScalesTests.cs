@@ -166,6 +166,44 @@ public class CompositeScalesTests
         stable.Should().NotContain(8); // --stable subtracts 15@0's collapse key from the whole union
     }
 
+    // Genuinely composite only: no emitted composite's key set may coincide with any single LCM-family
+    // placement's key set — such a union is "effectively a single placement" and is excluded (the
+    // degenerate 15@0·18@3·18@3 = 15@0 and 18@0·18@0·24@5 = 24@5 rows the doc drops). Independent oracle
+    // builds the set of all placement key signatures by sweeping every family at every anchor.
+    [Fact]
+    public void NoEmittedComposite_EqualsASingleLcmFamilyPlacement()
+    {
+        var families = Families();
+        var placementSigs = new HashSet<string>();
+        foreach (var family in families)
+            for (var at = 0; at < Ktet; at++)
+                placementSigs.Add(string.Join(
+                    ",", Placements.Compute(family, at, Ktet).Keys.OrderBy(k => k)));
+
+        var scales = CompositeScales.Enumerate(
+            families, minSubsetNotes: 2, dedupeTransposition: false);
+
+        foreach (var s in scales)
+        {
+            var sig = string.Join(",", s.Keys.OrderBy(k => k));
+            placementSigs.Should().NotContain(sig);
+        }
+    }
+
+    // The specific degenerate pairs the doc excludes (15@0·18@3 and 18@0·24@5, where one constituent is
+    // a subset of the other) must not appear as composites.
+    [Fact]
+    public void DegenerateNestedPairs_AreNotEmitted()
+    {
+        var scales = CompositeScales.Enumerate(
+            Families(), minSubsetNotes: 6, stable: true, dedupeTransposition: false);
+
+        scales.Should().NotContain(s =>
+            s.PA.Lcm == 15 && s.PA.At == 0 && s.PB.Lcm == 18 && s.PB.At == 3);
+        scales.Should().NotContain(s =>
+            s.PA.Lcm == 18 && s.PA.At == 0 && s.PB.Lcm == 24 && s.PB.At == 5);
+    }
+
     [Fact]
     public void Declutters_ShrinkTheLabelSpace_WithoutRemovingTheHarmScale()
     {

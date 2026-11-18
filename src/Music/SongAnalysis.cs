@@ -9,11 +9,13 @@ public readonly record struct NoteEvent(long StartTicks, long LengthTicks, int N
 // EndBeat). Keys are distinct pitch classes in [0, ktet), sorted ascending.
 public readonly record struct SongChunk(int Index, double StartBeat, double EndBeat, IReadOnlyList<int> Keys);
 
-// A chunk together with every LCM-family placement and named scale that contains its key-set.
+// A chunk together with every LCM-family placement and composite scale that contains its key-set. The
+// Scales are derived from first principles (CompositeScales — the subset principle), not a curated
+// catalog; traditional names are an optional cosmetic relabel at render time (NamedScales.Match).
 public readonly record struct ChunkAnalysis(
     SongChunk Chunk,
     IReadOnlyList<KeySupersetRow> Placements,
-    IReadOnlyList<ScaleRow> Scales);
+    IReadOnlyList<CompositeScale> Scales);
 
 // A maximal run of consecutive chunks sharing ≥1 common label (scale or placement). The common
 // labels are the Witnesses; Length is the chain length in chunks. Empty Witnesses = a chunk no
@@ -105,20 +107,48 @@ public static class SongAnalysis
     }
 
     // For each chunk, the LCM-family placements (FindSupersets, exhaustive and sorted by extra→lcm→at)
-    // and named-scale anchors (ContainingChord) that contain its key-set.
+    // and the composite scales (CompositeScales — the subset principle, |S| ≥ minSubsetNotes) that
+    // contain its key-set. Single placements already live in the Placements column, so Scales lists
+    // composites only. The composite catalog is deduped to one representative per key set first, so the
+    // same scale carries the same label in every chunk (segments compare labels across chunks).
     public static IReadOnlyList<ChunkAnalysis> Analyze(
         IReadOnlyList<SongChunk> chunks,
         IReadOnlyList<LcmFamily> families,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
         int ktet)
     {
+        var composites = DedupeByKeySet(CompositeScales.Enumerate(
+            families, minSubsetNotes, stable: true, collapseIsomorphic, poolMaximal,
+            dedupeTransposition: false, ktet));
+
         var result = new List<ChunkAnalysis>(chunks.Count);
         foreach (var chunk in chunks)
         {
             var placements = Placements.FindSupersets(chunk.Keys, families, ktet);
-            var scales = NamedScales.ContainingChord(chunk.Keys, ktet);
+            var chord = new HashSet<int>(chunk.Keys);
+            var scales = composites.Where(c => chord.IsSubsetOf(c.Keys)).ToList();
             result.Add(new ChunkAnalysis(chunk, placements, scales));
         }
         return result;
+    }
+
+    // One composite scale per distinct key set (CompositeScales.Enumerate can emit several decompositions
+    // of the same key set across anchors), chosen by lowest constituent LCMs/anchors, then largest
+    // bridge — so a given scale always labels identically. Mirrors CompositeScales' RepRank ordering.
+    private static IReadOnlyList<CompositeScale> DedupeByKeySet(IReadOnlyList<CompositeScale> scales)
+    {
+        (int, int, int, int, int) Rank(CompositeScale s) =>
+            (s.PA.Lcm, s.PA.At, s.PB.Lcm, s.PB.At, -s.S.Keys.Count);
+        var best = new Dictionary<string, CompositeScale>();
+        foreach (var s in scales)
+        {
+            var sig = string.Join(",", s.Keys);
+            if (!best.TryGetValue(sig, out var current) || Rank(s).CompareTo(Rank(current)) < 0)
+                best[sig] = s;
+        }
+        return best.Values.OrderBy(s => s.Keys.Count).ThenBy(s => string.Join(",", s.Keys)).ToList();
     }
 
     // For each consecutive chunk pair, the progression bridge between their key-sets. Reuses
@@ -186,12 +216,12 @@ public static class SongAnalysis
     // Bridges between consecutive *scale* segments, read through constituents rather than a pooled
     // union. A scale segment is long, so unioning its chunks (SegmentBridges) pools a whole phrase of
     // melody into a chromatic key-set no placement contains, collapsing almost every pair to Neither.
-    // Instead each segment's witness scales (a named scale witnesses the segment iff it contains the
-    // chunk-union, so ContainingChord recovers them) are decomposed into their constituent placements;
-    // the bridge is then a placement-graph relation between the two pooled constituent sets — a shared
-    // placement (pivot → superset) and/or a subset-S join (→ P_A·S·P_B) — the dual of a placement
-    // bridge. A side with no decomposable witness (empty-witness singleton, or a `major blues`-only
-    // segment) falls back to the SegmentBridges union→ComputePair path so output is never incoherent.
+    // Instead each segment's union is mapped to its constituent pool (CompositeProgressions.ConstituentPool
+    // — the single placements and composite-scale constituents containing the union); the bridge is the
+    // composite placement progression between the two pools (CompositeProgressions.LinkPools — the SAME
+    // calculation `table progression`'s composite tier uses): a shared placement (pivot → superset)
+    // and/or a subset-S join (→ P_A·S·P_B). A side with no constituents (empty-witness singleton) falls
+    // back to the SegmentBridges union→ComputePair path so output is never incoherent.
     public static IReadOnlyList<ChunkBridge> ScaleSegmentBridges(
         IReadOnlyList<SongChunk> chunks,
         IReadOnlyList<LabelSegment> segments,
@@ -203,88 +233,38 @@ public static class SongAnalysis
         bool escalate,
         int ktet)
     {
-        var catalog = CompositeCatalog(escalate, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        // The shared composite catalog, used both to pool each segment's constituents and (when
+        // escalate) for the union-path fallback below. Built once.
+        var catalog = CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
         var unions = segments.Select(s => SegmentUnion(chunks, s)).ToList();
-        var constituents = unions.Select(u => Constituents(u, families, ktet)).ToList();
+        var pools = unions
+            .Select(u => CompositeProgressions.ConstituentPool(u, families, minSubsetNotes, ktet, catalog))
+            .ToList();
 
         var result = new List<ChunkBridge>(Math.Max(0, segments.Count - 1));
         for (var i = 0; i + 1 < segments.Count; i++)
         {
-            var lset = constituents[i];
-            var rset = constituents[i + 1];
+            var lset = pools[i];
+            var rset = pools[i + 1];
             if (lset.Count == 0 || rset.Count == 0)
             {
+                // A side has no constituents (empty-witness singleton) — fall back to the plain
+                // union→ComputePair bridge so output is never incoherent.
                 result.Add(Pair(
                     i, i + 1, unions[i], unions[i + 1],
                     families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, escalate, catalog, ktet));
                 continue;
             }
 
-            result.Add(ConstituentBridge(
-                i, i + 1, unions[i], unions[i + 1], lset, rset,
-                families, minSubsetNotes, collapseIsomorphic, poolMaximal, nameComposites, ktet));
+            // The composite placement progression between the two segments' constituent placements —
+            // the SAME CompositeProgressions.LinkPools `table progression` uses for its composite tier.
+            var (category, triplets) = CompositeProgressions.LinkPools(
+                lset, rset, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+            var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+            if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
+            result.Add(new ChunkBridge(i, i + 1, unions[i], unions[i + 1], category, superset, subset));
         }
         return result;
-    }
-
-    // The pooled constituent placements of every named scale witnessing a segment, deduped by
-    // (Lcm, At). Witnesses are recovered by containment on the union (a scale is common to the whole
-    // run iff it contains the union), so no LabelSegment.Witnesses string parsing is needed.
-    private static IReadOnlyList<Placement> Constituents(
-        IReadOnlyList<int> union, IReadOnlyList<LcmFamily> families, int ktet)
-    {
-        var pooled = new Dictionary<(int Lcm, int At), Placement>();
-        foreach (var witness in NamedScales.ContainingChord(union, ktet))
-        {
-            if (NamedScales.Decompose(witness.Name, witness.Anchor, families, ktet) is not { } c) continue;
-            foreach (var slot in new[] { c.PA, c.S, c.PB })
-                if (slot is { } placement) pooled[(placement.Lcm, placement.At)] = placement;
-        }
-        return pooled.Values.ToList();
-    }
-
-    // Classify a scale-segment pair by the placement-graph relation between the two pooled constituent
-    // sets: pivots are placements shared by both (a "stay" within a constituent → superset); subset
-    // triplets are distinct constituents joined by a shared subset S (→ P_A·S·P_B). Category follows
-    // the same (hasSuperset, hasSubset) → Neither/Superset/Subset/Both grid as ChordProgressions, and
-    // the subset labels honour nameComposites exactly as the chunk/placement bridges do.
-    private static ChunkBridge ConstituentBridge(
-        int fromIdx,
-        int toIdx,
-        IReadOnlyList<int> fromKeys,
-        IReadOnlyList<int> toKeys,
-        IReadOnlyList<Placement> lset,
-        IReadOnlyList<Placement> rset,
-        IReadOnlyList<LcmFamily> families,
-        int minSubsetNotes,
-        bool collapseIsomorphic,
-        bool poolMaximal,
-        bool nameComposites,
-        int ktet)
-    {
-        var rkeys = new HashSet<(int Lcm, int At)>(rset.Select(p => (p.Lcm, p.At)));
-        var pivots = lset
-            .Where(p => rkeys.Contains((p.Lcm, p.At)))
-            .OrderBy(p => p.Lcm)
-            .ThenBy(p => p.At)
-            .Select(p => $"{p.Lcm}@{p.At}")
-            .Distinct()
-            .ToList();
-
-        var triplets = ChordProgressions.SubsetTripletsBetween(
-            lset, rset, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
-        var (_, subset) = ChordProgressions.BridgeLabels(triplets);
-        if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
-
-        var category = (pivots.Count > 0, triplets.Count > 0) switch
-        {
-            (true, true) => ProgressionCategory.Both,
-            (true, false) => ProgressionCategory.Superset,
-            (false, true) => ProgressionCategory.Subset,
-            _ => ProgressionCategory.Neither,
-        };
-
-        return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, pivots, subset);
     }
 
     // The union of sounding keys across a segment's chunks — distinct pitch classes, sorted ascending.
@@ -321,13 +301,21 @@ public static class SongAnalysis
         var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
         if (nameComposites) subset = CompositeProgressions.CompositeLabels(triplets, ktet);
         // Escalation (opt-in via escalate): when the placement graph has no edge (Neither) the move is
-        // carried by a composite scale, not a placement — fill the (empty) Composite column with the
-        // hosting scales so the gap is explicit while the category stays Neither. Escalation presence is
-        // escalate's concern; the nameComposites flag only chooses the label form — shorthand scale
-        // names vs raw P_A·S·P_B constituents.
+        // carried by a composite placement progression — origin and target each map to a composite
+        // scale, linked by a placement progression between their constituent placements
+        // (CompositeProgressions.ComputeComposite, the same calculation `table progression`'s composite
+        // tier uses). The link's superset/subset labels are prefixed "↑" to mark the escalation beyond
+        // the plain placement graph; the category stays Neither. nameComposites only chooses the subset
+        // label form (shorthand scale name vs raw P_A·S·P_B).
         if (escalate && category == ProgressionCategory.Neither)
-            subset = CompositeProgressions.Escalation(
-                fromKeys, toKeys, compositeCatalog, families, named: nameComposites, ktet);
+        {
+            var (_, link) = CompositeProgressions.ComputeComposite(
+                fromKeys, toKeys, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet, compositeCatalog);
+            var (linkSuperset, linkSubset) = ChordProgressions.BridgeLabels(link);
+            if (nameComposites) linkSubset = CompositeProgressions.CompositeLabels(link, ktet);
+            superset = linkSuperset.Select(s => $"↑{s}").ToList();
+            subset = linkSubset.Select(s => $"↑{s}").ToList();
+        }
         return new ChunkBridge(fromIdx, toIdx, fromKeys, toKeys, category, superset, subset);
     }
 
@@ -345,11 +333,20 @@ public static class SongAnalysis
             ? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet)
             : Array.Empty<CompositeScale>();
 
-    // The named-scale labels ("{Shorthand}@{Anchor}") containing a chunk's key-set, in
-    // ContainingChord order. Shared with the per-chunk table so both views label scales identically.
-    public static IReadOnlyList<string> ScaleLabels(ChunkAnalysis a) => a.Scales
-        .Select(s => $"{NamedScales.Shorthand(s.Name)}@{s.Anchor}")
+    // The composite-scale labels containing a chunk's key-set. Default form is the raw constituents
+    // "P_A·S·P_B" (as `table composite-scales` / `chord-melody` print); with nameComposites a composite
+    // whose key set lands on a catalog scale is relabelled "{Shorthand}@{Anchor}" (cosmetic only, via
+    // NamedScales.Match). Shared with the per-chunk table so both views label scales identically.
+    public static IReadOnlyList<string> ScaleLabels(ChunkAnalysis a, bool nameComposites, int ktet) => a.Scales
+        .Select(s => CompositeLabel(s, nameComposites, ktet))
         .ToList();
+
+    // One composite scale's label: its cosmetic catalog name when nameComposites and the key set matches
+    // one, else the raw "P_A·S·P_B" constituents.
+    private static string CompositeLabel(CompositeScale s, bool nameComposites, int ktet) =>
+        nameComposites && NamedScales.Match(s.Keys, ktet) is { } m
+            ? $"{NamedScales.Shorthand(m.Name)}@{m.Anchor}"
+            : $"{s.PA.Lcm}@{s.PA.At}·{s.S.Lcm}@{s.S.At}·{s.PB.Lcm}@{s.PB.At}";
 
     // The LCM-family placement labels ("{Lcm}@{At}") containing a chunk's key-set, isomorphic-
     // collapsed to lowest-LCM representatives. Shared with the per-chunk table's Placements column.

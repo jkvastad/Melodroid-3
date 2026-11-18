@@ -18,6 +18,7 @@ public static class SongAnalysisTableRenderer
         bool mergeRepeats,
         bool showPlacements = false,
         bool stablePlacements = false,
+        bool nameComposites = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -36,7 +37,7 @@ public static class SongAnalysisTableRenderer
             var keys = string.Join(" ", chunk.Keys);
             var beats = $"{Beat(chunk.StartBeat)}–{Beat(chunk.EndBeat)}";
 
-            var scaleLabels = SongAnalysis.ScaleLabels(a);
+            var scaleLabels = SongAnalysis.ScaleLabels(a, nameComposites, ktet);
 
             var cells = new List<string>
             {
@@ -53,10 +54,14 @@ public static class SongAnalysisTableRenderer
 
         var mergeNote = mergeRepeats ? ", repeats merged" : "";
         var stableNote = showPlacements && stablePlacements ? ", stable placements only" : "";
+        // Scales are composite scales (P_A·S·P_B constituents) derived from the subset principle; the
+        // legend only applies when --name-composites relabels matched ones to their cosmetic catalog name.
+        var scalesNote = nameComposites
+            ? $"\nscales: composites, named where matched ({NamedScales.Legend()})"
+            : "\nscales: composite P_A·S·P_B constituents (--name-composites for cosmetic names)";
         table.Caption(
             $"analyze midi: {analyses.Count} chunk{(analyses.Count == 1 ? "" : "s")} · " +
-            $"{subdivisionsPerQuarter}/quarter grid{mergeNote}{stableNote} · {ktet}-tet\n" +
-            $"scales: {NamedScales.Legend()}");
+            $"{subdivisionsPerQuarter}/quarter grid{mergeNote}{stableNote} · {ktet}-tet{scalesNote}");
         console.Write(table);
     }
 

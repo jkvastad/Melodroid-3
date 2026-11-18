@@ -14,14 +14,15 @@ namespace Melodroid_3.Music;
 // discriminator between them (it is no longer surfaced to the user).
 //
 // When no placement progression connects A and B, the move may still be carried by a **composite
-// placement progression** — a composite scale (the union of two bridged placements, CompositeScales)
-// that hosts the move (CompositeProgressions.Escalation). `table progression` reports this as a single
-// reachability axis (ProgressionReach): Placement (a placement progression exists), Composite (only a
-// composite placement progression does), or Unreachable (neither).
+// placement progression** — origin and target each map to a composite scale (CompositeScales), linked
+// by a placement progression between their constituent placements (CompositeProgressions.ComputeComposite).
+// `table progression` reports this as a single reachability axis (ProgressionReach): Placement (a plain
+// placement progression exists), Composite (only the constituent-linking one does), or Unreachable.
 //
 // ComputePair(origin, target, …) yields the placement-progression category and triplet list for one
-// ordered pair; ComputePairReach adds the reachability tier + composite hosts — the single entry point
-// `table progression` renders for an explicit origin→target pair.
+// ordered pair; ComputePairReach adds the reachability tier and, in the composite tier, the
+// constituent-linking triplets — the single entry point `table progression` renders for an explicit
+// origin→target pair.
 //
 // Modeling note — the two containing placements in the bridged shape must be *distinct*. If P_A = P_B
 // were allowed, that single placement already contains both chords (the single-placement shape) and a
@@ -172,12 +173,14 @@ public static class ChordProgressions
         return (superset, subset);
     }
 
-    // The reachability tier for one ordered chord pair, plus its placement-progression triplets and
-    // (Composite tier only) the composite-scale hosts. The standard-form entry point: ComputePair gives
-    // the placement progressions; when none exist the pair escalates to a composite placement
-    // progression (CompositeProgressions.Escalation), classified Composite if any composite hosts the
-    // move, else Unreachable. Pass a prebuilt compositeCatalog to share it across many calls.
-    public static (ProgressionReach Reach, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges) ComputePairReach(
+    // The reachability tier for one ordered chord pair, plus the triplets that realise it. The standard-
+    // form entry point: ComputePair gives the plain placement progressions; when none exist the pair
+    // escalates to a composite placement progression (CompositeProgressions.ComputeComposite), which
+    // links the two key sets' constituent placements. Reach is Placement when a plain progression exists,
+    // Composite when only the constituent-linking one does, else Unreachable. In every tier the returned
+    // triplets ARE the progression (pivots as superset, P_A·S·P_B as bridged), so a single renderer path
+    // handles both. Pass a prebuilt compositeCatalog to share it across many calls.
+    public static (ProgressionReach Reach, IReadOnlyList<ProgressionTriplet> Triplets) ComputePairReach(
         IReadOnlyCollection<int> origin,
         IReadOnlyCollection<int> target,
         IReadOnlyList<LcmFamily> families,
@@ -190,31 +193,16 @@ public static class ChordProgressions
     {
         var (category, triplets) = ComputePair(
             origin, target, families, minSubsetNotes, collapseIsomorphic, poolMaximal, dropCollapsed, ktet);
+        if (category != ProgressionCategory.Neither)
+            return (ProgressionReach.Placement, triplets);
+
         var catalog = compositeCatalog
             ?? CompositeProgressions.Catalog(families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
-        var (reach, composites) = Classify(category, origin, target, catalog, families, ktet);
-        return (reach, triplets, composites);
-    }
-
-    // Map a placement-progression category to a reachability tier, escalating to composites when the
-    // placement graph connects nothing. Any placement progression (superset / subset / both) is
-    // Placement; otherwise a non-empty composite host list is Composite, and nothing is Unreachable.
-    private static (ProgressionReach Reach, IReadOnlyList<string> CompositeBridges) Classify(
-        ProgressionCategory category,
-        IReadOnlyCollection<int> origin,
-        IReadOnlyCollection<int> target,
-        IReadOnlyList<CompositeScale> compositeCatalog,
-        IReadOnlyList<LcmFamily> families,
-        int ktet)
-    {
-        if (category != ProgressionCategory.Neither)
-            return (ProgressionReach.Placement, Array.Empty<string>());
-
-        var hosts = CompositeProgressions.Escalation(
-            origin.ToList(), target.ToList(), compositeCatalog, families, named: true, ktet);
-        return hosts.Count > 0
-            ? (ProgressionReach.Composite, hosts)
-            : (ProgressionReach.Unreachable, Array.Empty<string>());
+        var (_, compositeTriplets) = CompositeProgressions.ComputeComposite(
+            origin, target, families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet, catalog);
+        return compositeTriplets.Count > 0
+            ? (ProgressionReach.Composite, compositeTriplets)
+            : (ProgressionReach.Unreachable, Array.Empty<ProgressionTriplet>());
     }
 
     // Every (P_A, S, P_B) subset-principle triplet over the *whole* placement universe, with no chord

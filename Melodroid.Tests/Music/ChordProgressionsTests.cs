@@ -47,9 +47,17 @@ public class ChordProgressionsTests
         var rows = new List<Row>();
         foreach (var keys in CandidateTriads(includeDim))
         {
-            var (reach, triplets, composites) = ChordProgressions.ComputePairReach(
+            var (reach, triplets) = ChordProgressions.ComputePairReach(
                 chordKeys, keys, families, minSubsetNotes, collapseIsomorphic, poolMaximal, dropCollapsed);
             var (superset, subset) = ChordProgressions.BridgeLabels(triplets);
+            // ComputePairReach returns the realising triplets in every tier. In the Placement tier they
+            // are the plain placement progression (superset / subset bridges); in the Composite tier they
+            // are the constituent-linking composite placement progression — split them out as
+            // CompositeBridges so the placement-tier fields stay empty there (the pre-unification shape).
+            IReadOnlyList<string> composites = reach == ProgressionReach.Composite
+                ? superset.Concat(subset).ToList()
+                : Array.Empty<string>();
+            if (reach == ProgressionReach.Composite) { superset = Array.Empty<string>(); subset = Array.Empty<string>(); }
             rows.Add(new Row(keys, reach, superset, subset, composites));
         }
         return rows;
@@ -440,43 +448,60 @@ public class ChordProgressionsTests
         }
     }
 
-    // When a placement progression exists, ComputePairReach reports Placement with its triplets and no
-    // composite hosts (composites are the no-placement-progression fallback). C → F at the default
-    // minimum is placement-reachable.
+    // When a placement progression exists, ComputePairReach reports Placement with its triplets. C → F
+    // at the default minimum is placement-reachable.
     [Fact]
-    public void ComputePairReach_placement_tier_has_triplets_and_no_composites()
+    public void ComputePairReach_placement_tier_has_triplets()
     {
-        var (reach, triplets, composites) = ChordProgressions.ComputePairReach(
+        var (reach, triplets) = ChordProgressions.ComputePairReach(
             new[] { 0, 4, 7 }, new[] { 0, 5, 9 }, Families(), minSubsetNotes: 2);
 
         reach.Should().Be(ProgressionReach.Placement);
         triplets.Should().NotBeEmpty();
-        composites.Should().BeEmpty();
     }
 
     // Starving placement progressions (a large shared-bridge floor) escalates a reachable move to a
-    // composite placement progression: C → C#m = {1 4 8} has no size-6 bridged placement progression,
-    // so it is hosted by composite scales (harmonic minor at anchor 5 among them). Independent oracle:
-    // no placement progression exists (ComputePair is Neither), yet a named scale hosts the move.
+    // composite placement progression: C → C#m = {1 4 8} has no size-6 bridged placement progression
+    // (ComputePair is Neither), yet the move is carried by a composite placement progression — origin
+    // and target each map to a composite scale, linked by a placement progression between their
+    // constituent placements (ComputeComposite yields that link). Independent oracle: no plain
+    // placement progression exists, yet the composite-tier link is non-empty.
     [Fact]
-    public void ComputePairReach_escalates_to_composite_hosts_when_no_placement_progression()
+    public void ComputePairReach_escalates_to_composite_link_when_no_placement_progression()
     {
         var origin = new[] { 0, 4, 7 };
         var target = new[] { 1, 4, 8 };
 
         var (category, _) = ComputePair(origin, target, minSubsetNotes: 6);
         category.Should().Be(ProgressionCategory.Neither);
-        NamedScales.ContainingChord(origin.Concat(target).Distinct().ToArray(), Ktet)
-            .Should().NotBeEmpty(); // a scale hosts the move → Composite, not Unreachable
 
-        var (reach, triplets, composites) = ChordProgressions.ComputePairReach(
+        var (reach, triplets) = ChordProgressions.ComputePairReach(
             origin, target, Families(), minSubsetNotes: 6);
 
         reach.Should().Be(ProgressionReach.Composite);
-        triplets.Should().BeEmpty();
-        composites.Should().NotBeEmpty();
-        composites.Should().OnlyContain(c => c.StartsWith("↑"));
-        composites.Should().Contain("↑hm@5"); // the harmonic-minor host from the doc's C→minor discussion
+        triplets.Should().NotBeEmpty(); // the constituent-linking composite placement progression
+    }
+
+    // Item 2 — one calculation for both commands: `table progression`'s composite tier and `analyze
+    // midi`'s bridges both bridge two key sets via CompositeProgressions.ComputeComposite. So the
+    // composite-tier triplets ComputePairReach returns are exactly those of a direct ComputeComposite
+    // call for the same pair — there is no second, divergent code path. Checked on the dim7 move, which
+    // is Neither (no plain placement progression) and so lands in the composite tier.
+    [Fact]
+    public void CompositeTier_UsesTheSameComputeComposite_AsAnalyzeBridges()
+    {
+        var families = Families();
+        var origin = new[] { 0, 4, 7 };
+        var target = new[] { 0, 3, 6, 9 }; // dim7 — in no placement, so ComputePair is Neither
+
+        var (reach, tierTriplets) = ChordProgressions.ComputePairReach(
+            origin, target, families, minSubsetNotes: 4);
+        var (_, direct) = CompositeProgressions.ComputeComposite(
+            origin, target, families, minSubsetNotes: 4,
+            collapseIsomorphic: false, poolMaximal: false, Ktet);
+
+        reach.Should().Be(ProgressionReach.Composite);
+        tierTriplets.Should().BeEquivalentTo(direct);
     }
 
     private static Placement Place(int lcm, int at) =>

@@ -4,7 +4,12 @@ namespace Melodroid_3.Music;
 // of a bridged placement walk (website/docs/music/progression-principles.mdx). Two distinct
 // placements P_A, P_B that share a common LCM-family subset S (|S| ≥ minSubsetNotes) are unioned
 // into a playable key set. Keys is the concrete 12-tet key set to play; PA, S, PB are the
-// constituent placements it is composed of.
+// constituent (proper, single-LCM-family) placements it is composed of.
+//
+// Genuinely composite by construction: Enumerate skips any pair whose (stable) union coincides with a
+// single LCM-family placement's key set. A composite's key set is therefore never expressible as a
+// single placement — that being the whole point of the concept (such degenerate unions, including the
+// nested-constituent case and ones that collapse there under --stable, are the single placement instead).
 //
 // The union uses the *stable* form of any collapsing (prime-5: lcm-15/20) constituent and then drops
 // every collapsing constituent's collapse key from the union — not merely from that constituent's
@@ -40,6 +45,16 @@ public static class CompositeScales
         var triplets = ChordProgressions.SubsetPairs(
             families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
 
+        // Every single LCM-family placement's key signature, over all anchors — in both raw and stable
+        // form, since a collapsing placement displays in its stable form (15s@ / 20s@). The
+        // "effectively a single placement" test below checks a composite's union against this set.
+        var placementSigs = new HashSet<string>();
+        foreach (var p in families.SelectMany(f => Placements.Sweep(f, ktet)))
+        {
+            placementSigs.Add(KeySig(p.Keys.OrderBy(k => k).ToList()));
+            placementSigs.Add(KeySig(StableKeys(p, ktet).OrderBy(k => k).ToList()));
+        }
+
         var scales = new List<CompositeScale>();
         var seen = new HashSet<string>();
         foreach (var t in triplets)
@@ -47,6 +62,14 @@ public static class CompositeScales
             // (P_A,S,P_B) and (P_B,S,P_A) are the same composite; order the outer pair so they dedupe.
             var (pa, pb) = Order(t.Origin, t.Target);
             var keys = UnionKeys(pa, pb, stable, ktet);
+
+            // Genuinely composite only: if the (stable) union coincides with a single LCM-family
+            // placement's key set, the composite is "effectively a single placement" and must be treated
+            // as that placement, not emitted as a composite — the whole point of composites is key sets
+            // not expressible as a single placement. Drops the degenerate rows the doc excludes
+            // (15@0·18@3·18@3 = 15@0, 18@0·18@0·24@5 = 24@5) and any that collapse there under --stable.
+            if (placementSigs.Contains(KeySig(keys))) continue;
+
             var signature = $"{KeySig(keys)}|{Label(pa)}|{Label(t.Bridge)}|{Label(pb)}";
             if (seen.Add(signature))
                 scales.Add(new CompositeScale(keys, pa, t.Bridge, pb));
