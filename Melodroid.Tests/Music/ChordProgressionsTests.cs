@@ -158,6 +158,30 @@ public class ChordProgressionsTests
         }
     }
 
+    // `table progression --target-shape` parses its keys as a transposition class: both 0 4 7 and
+    // 5 9 0 canonicalise to the major necklace, and sweeping that necklace over the 12 roots
+    // reproduces exactly the 12 major triads (the independent CandidateTriads oracle, filtered to the
+    // major class). This is the enumeration done before classifying each root with ComputePairReach.
+    [Theory]
+    [InlineData(0, 4, 7)]
+    [InlineData(5, 9, 0)]
+    public void Target_shape_canonicalises_and_sweeps_all_12_roots(int k0, int k1, int k2)
+    {
+        var shape = Chords.Canonicalize(new[] { k0, k1, k2 }, Ktet).Keys;
+        shape.Should().Equal(0, 4, 7); // the major necklace, whichever rotation was given
+
+        var swept = Enumerable.Range(0, Ktet)
+            .Select(root => shape.Select(k => (k + root) % Ktet).OrderBy(k => k).ToArray())
+            .ToList();
+
+        var majorTriads = CandidateTriads(includeDim: false)
+            .Where(t => Chords.Canonicalize(t, Ktet).Keys.SequenceEqual(new[] { 0, 4, 7 }))
+            .Select(t => t.OrderBy(k => k).ToArray())
+            .ToList();
+
+        swept.Should().BeEquivalentTo(majorTriads);
+    }
+
     // Reach is derived from the raw placements, so it must be identical whether the displayed bridges
     // are the raw triples or the decluttered (isomorphism-collapsed + pooled) default.
     [Fact]

@@ -286,7 +286,7 @@ generated for the Placements column (and the `--lcm-only` filter).
 ### `progression`
 
 ```bash
-melodroid table progression --origin-keys 0 4 7 --target-keys 3 7 10 \
+melodroid table progression --origin-keys 0 4 7 (--target-keys 3 7 10 | --target-shape 0 4 7) \
   [--min-subset-notes 2] \
   [--collapse-isomorphic] [--pool-maximal] \
   [--drop-collapsed none|origin|target|both] \
@@ -313,9 +313,23 @@ it. Each chord pair is therefore tagged by a single **reachability** axis:
 - **composite** — no placement progression, but a composite scale hosts the move.
 - **unreachable** — neither.
 
-Both `--origin-keys` and `--target-keys` are **required** — the command always analyses one explicit
-origin→target pair (12-tet only). The all-targets enumeration form was removed: under the composite
-paradigm almost every target is reachable, so a per-target reachability table carries no signal.
+`--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` (mutually
+exclusive; 12-tet only). With `--target-keys` the command analyses one explicit origin→target pair
+(the standard form described below). With `--target-shape` it instead parses the keys as a **shape**
+(transposition class / necklace) — canonicalised so `0 4 7` and `5 9 0` both give the major shape —
+and sweeps all **12 root positions** of that shape against the fixed origin, answering "if I play
+this origin and then *this chord at some root*, how does the choice of root change the progression?".
+The result is a **roots-as-rows** table (columns `Root | Progressions`): one row per root `0..11`,
+each row's `Progressions` cell listing that root's compacted progressions, one entry per line — a
+bare `{Lcm}@{At}` label (a single placement holds both chords), a factored `{P_A, …}·S·{P_B, …}` line
+(bridged), `↑{host}` (composite host), or `—` (unreachable). Because `Progressions` is the only wide
+column it spans the terminal, so bridged labels never wrap mid-token. The target key set and reach
+tier are omitted as redundant: the shape is in the title (so `target = shape + root`) and the reach
+is read from the cell shape. All other options
+apply unchanged to every root. (The old all-targets enumeration form was removed — under the composite
+paradigm almost every target is reachable, so a per-target reachability table carried no signal;
+`--target-shape` is its focused successor, fixing both the origin and the target *shape* and varying
+only the root.) The remainder of this section describes the `--target-keys` single-pair output.
 
 When the pair is **placement**-reachable, it prints the placement-progression triplets as unified
 **Origin | Bridge | Target** rows — single-placement rows first (the one holding placement repeated

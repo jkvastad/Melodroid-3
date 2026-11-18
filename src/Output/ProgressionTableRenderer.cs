@@ -72,6 +72,63 @@ public static class ProgressionTableRenderer
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
     }
 
+    // A target *shape* swept across all 12 root positions against a fixed origin: roots are rows
+    // (0..11), each row's Progressions cell listing that root's compacted progressions (one entry per
+    // line). The Progressions column is the only wide one, so it spans the terminal and bridged labels
+    // never wrap mid-token. The target key set and reach tier are omitted as redundant — the shape is
+    // fixed (in the title, so target = shape + root) and the reach is read from the cell shape (bare
+    // label = a single placement holds both; "·" = bridged P_A·S·P_B; "↑" = composite host; "—" = none).
+    public static void RenderShape(
+        IReadOnlyCollection<int> origin,
+        IReadOnlyList<int> shape,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        CollapseFilter dropCollapsed,
+        IReadOnlyList<(int Root, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges)> rows,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var table = new Table()
+            .Title($"{KeySet(origin)} → {KeySet(shape)} shape · all roots")
+            .AddColumn("Root")
+            .AddColumn("Progressions");
+        foreach (var row in rows)
+            table.AddRow(row.Root.ToString(), ProgressionCell(row.Triplets, row.CompositeBridges));
+        console.Write(table);
+
+        console.MarkupLine(
+            $"[grey]progression: {KeySet(origin)} → {KeySet(shape)} shape · all roots · " +
+            $"minSubsetNotes={minSubsetNotes} · bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
+            $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
+    }
+
+    // One root's progressions compacted into a multi-line cell string, reusing the same compaction as
+    // RenderPair: single-placement triplets (Origin = Bridge = Target) as the bare placement label,
+    // then bridged triplets factored around their shared bridge S ({origins}·S·{targets}). When no
+    // placement progression exists, the composite hosts (each prefixed "↑"); otherwise "—".
+    private static string ProgressionCell(
+        IReadOnlyList<ProgressionTriplet> triplets, IReadOnlyList<string> compositeBridges)
+    {
+        if (triplets.Count > 0)
+        {
+            var lines = triplets
+                .Where(t => t.Principle == ProgressionPrinciple.Superset)
+                .Select(t => Label(t.Bridge))
+                .Distinct()
+                .OrderBy(SortKey)
+                .ToList();
+            foreach (var (origins, bridge, targets) in
+                GroupSubsetPairs(triplets.Where(t => t.Principle == ProgressionPrinciple.Subset)))
+                lines.Add($"{origins}·{bridge}·{targets}");
+            return string.Join("\n", lines);
+        }
+        if (compositeBridges.Count > 0)
+            return string.Join("\n", compositeBridges.Select(h => $"↑{h}"));
+        return "—";
+    }
+
     // Placement summary beneath the triplet table: a quick read of which placements participate overall.
     // Single-placement progressions collapse to one set (Origin = Bridge = Target); bridged progressions
     // split by slot into origins (P_A) / bridges (S) / targets (P_B). Each set is deduped and

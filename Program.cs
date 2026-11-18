@@ -821,8 +821,13 @@ class Program
 
         var progressionTargetKeysOption = new Option<int[]>("--target-keys")
         {
-            Description = "Target-chord key indices (each in [0, 11]), space-separated. Required. Prints the origin→target progression as unified origin/bridge/target rows (placement reach) or its composite-scale hosts (composite reach).",
-            Required = true,
+            Description = "Target-chord key indices (each in [0, 11]), space-separated. Mutually exclusive with --target-shape; exactly one is required. Prints the origin→target progression as unified origin/bridge/target rows (placement reach) or its composite-scale hosts (composite reach).",
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        var progressionTargetShapeOption = new Option<int[]>("--target-shape")
+        {
+            Description = "Target-chord keys parsed as a *shape* (transposition class / necklace), space-separated. Mutually exclusive with --target-keys; exactly one is required. Canonicalises the keys to their necklace (so 0 4 7 and 5 9 0 both give the major shape) and sweeps all 12 root positions against the fixed origin, rendering one column per root.",
             AllowMultipleArgumentsPerToken = true,
         };
 
@@ -858,6 +863,7 @@ class Program
         progressionCommand.Add(maxLcmOption);
         progressionCommand.Add(progressionOriginKeysOption);
         progressionCommand.Add(progressionTargetKeysOption);
+        progressionCommand.Add(progressionTargetShapeOption);
         progressionCommand.Add(progressionMinSubsetNotesOption);
         progressionCommand.Add(progressionCollapseIsomorphicOption);
         progressionCommand.Add(progressionPoolMaximalOption);
@@ -869,6 +875,7 @@ class Program
             var maxLcm = parse.GetValue(maxLcmOption);
             var originKeys = parse.GetValue(progressionOriginKeysOption) ?? Array.Empty<int>();
             var targetKeys = parse.GetValue(progressionTargetKeysOption) ?? Array.Empty<int>();
+            var shapeKeys = parse.GetValue(progressionTargetShapeOption) ?? Array.Empty<int>();
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
             var collapseIsomorphic = parse.GetValue(progressionCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(progressionPoolMaximalOption);
@@ -879,7 +886,17 @@ class Program
             if (maxLcm < 1) { AnsiConsole.MarkupLine("[red]--max-lcm must be ≥ 1.[/]"); return 1; }
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
             if (originKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--origin-keys must contain at least one value.[/]"); return 1; }
-            if (targetKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--target-keys must contain at least one value.[/]"); return 1; }
+            var useShape = shapeKeys.Length > 0;
+            if (targetKeys.Length > 0 && useShape)
+            {
+                AnsiConsole.MarkupLine("[red]--target-keys and --target-shape are mutually exclusive — give exactly one.[/]");
+                return 1;
+            }
+            if (targetKeys.Length == 0 && !useShape)
+            {
+                AnsiConsole.MarkupLine("[red]exactly one of --target-keys or --target-shape is required.[/]");
+                return 1;
+            }
             foreach (var key in originKeys)
             {
                 if (key < 0 || key >= 12)
@@ -888,11 +905,12 @@ class Program
                     return 1;
                 }
             }
-            foreach (var key in targetKeys)
+            var targetOption = useShape ? "--target-shape" : "--target-keys";
+            foreach (var key in useShape ? shapeKeys : targetKeys)
             {
                 if (key < 0 || key >= 12)
                 {
-                    AnsiConsole.MarkupLine($"[red]--target-keys value {key} is outside [[0, 11]].[/]");
+                    AnsiConsole.MarkupLine($"[red]{targetOption} value {key} is outside [[0, 11]].[/]");
                     return 1;
                 }
             }
@@ -912,10 +930,32 @@ class Program
             }
 
             var dedupOrigin = originKeys.Distinct().OrderBy(x => x).ToList();
-            var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
 
+            if (useShape)
+            {
+                // Parse the keys as a transposition class and sweep all 12 root positions against the
+                // fixed origin. Build the composite catalog once and share it across the 12 calls.
+                var shape = Chords.Canonicalize(shapeKeys.Distinct().ToList(), 12).Keys;
+                var catalog = CompositeProgressions.Catalog(
+                    families, minSubsetNotes, collapseIsomorphic, poolMaximal, 12);
+                var rows = new List<(int Root, IReadOnlyList<ProgressionTriplet> Triplets, IReadOnlyList<string> CompositeBridges)>(12);
+                for (var root = 0; root < 12; root++)
+                {
+                    var target = shape.Select(k => (k + root) % 12).OrderBy(k => k).ToList();
+                    var (_, rootTriplets, rootComposites) = ChordProgressions.ComputePairReach(
+                        dedupOrigin, target, families, minSubsetNotes,
+                        collapseIsomorphic, poolMaximal, dropCollapsed.Value, 12, catalog);
+                    rows.Add((root, rootTriplets, rootComposites));
+                }
+                ProgressionTableRenderer.RenderShape(
+                    dedupOrigin, shape, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                    dropCollapsed.Value, rows);
+                return 0;
+            }
+
+            var dedupTarget = targetKeys.Distinct().OrderBy(x => x).ToList();
             var (reach, triplets, compositeBridges) = ChordProgressions.ComputePairReach(
                 dedupOrigin, dedupTarget, families, minSubsetNotes,
                 collapseIsomorphic, poolMaximal, dropCollapsed.Value);
