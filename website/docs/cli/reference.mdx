@@ -195,10 +195,10 @@ how many candidate LCMs each ambiguous cell lists, ascending best-fit (shortest 
 length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` caps the number of subset rows. Exactly one of
 `--lcm` / `--keys`. `--bin-radius` defaults to the `c_k` cutoff (as in `key-sweep`).
 
-### `scale-fingerprint`
+### `chord-melody`
 
 ```bash
-melodroid table scale-fingerprint --chord-keys 0 4 7 \
+melodroid table chord-melody --chord-keys 0 4 7 \
   [--min-subset-notes 4] [--name-composites] [--collapse-isomorphic] [--pool-maximal] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
@@ -511,7 +511,7 @@ time-adjacent slots sharing an identical key-set into a single chunk (light "whe
 changes" preprocessing). For every chunk the table lists:
 
 - the sorted pitch-class **key-set** and its size,
-- the named [scales](#scale-fingerprint) containing it, and
+- the named [scales](#chord-melody) containing it, and
 - (with `--placements`, default off) a **Placements** column listing the
   [LCM-family placements](#placement) containing it ([`FindSupersets`](#supersets),
   isomorphic-collapsed, capped).

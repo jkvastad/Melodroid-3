@@ -5,13 +5,13 @@ using Spectre.Console;
 
 namespace Melodroid_3.Tests.Output;
 
-public class ScaleFingerprintTableRendererTests
+public class ChordMelodyTableRendererTests
 {
     private static IReadOnlyList<LcmFamily> Families() =>
         LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
 
-    private static IReadOnlyList<FingerprintRow> Rows(int[] chord) =>
-        ScaleFingerprint.ContainingChord(chord, Families(), 4, false, false, 12);
+    private static IReadOnlyList<ChordMelodyRow> Rows(int[] chord) =>
+        ChordMelody.ContainingChord(chord, Families(), 4, false, false, 12);
 
     // A plain-text (color-stripped) console over a StringWriter, wide enough that the table/caption
     // do not wrap and break substring assertions.
@@ -35,10 +35,10 @@ public class ScaleFingerprintTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ScaleFingerprintTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
 
         var output = writer.ToString();
-        output.Should().Contain("scale-fingerprint: chord={0, 4, 7}");
+        output.Should().Contain("chord-melody: chord={0, 4, 7}");
         output.Should().Contain($"{rows.Count} scale rows");
         output.Should().Contain("12-tet");
     }
@@ -50,7 +50,7 @@ public class ScaleFingerprintTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ScaleFingerprintTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
 
         var output = writer.ToString();
         output.Should().Contain("24@0");    // major as its single-placement constituent label
@@ -66,7 +66,7 @@ public class ScaleFingerprintTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ScaleFingerprintTableRenderer.Render(chord, 12, rows, nameComposites: true, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: true, console);
 
         var output = writer.ToString();
         output.Should().Contain("bb@0");           // bebop dominant composite named

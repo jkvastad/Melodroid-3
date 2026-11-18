@@ -16,7 +16,7 @@ public readonly record struct ScaleRow(string Name, int Anchor, IReadOnlyList<in
 // (24@anchor) with S/PB null; scales with no clean composite (`major blues`) are not decomposable.
 public readonly record struct ScaleConstituents(string Name, Placement? PA, Placement? S, Placement? PB);
 
-// The fixed catalog of named scales used by `table scale-fingerprint`, and the row-builder that
+// The fixed catalog of named scales used by `table chord-melody`, and the row-builder that
 // transposes them to every anchor containing a chord.
 //
 // The names are empirical labels on results derived from the subset principle, NOT the derivation
@@ -44,7 +44,7 @@ public static class NamedScales
 
     // Compact display codes for the catalog scales, case-sensitive (hm ≠ hM). Keyed by catalog Name.
     // Used to keep the `analyze midi` Scales / Composite columns readable; the full names stay the
-    // source of truth (ScaleRow.Name, table scale-fingerprint) — this is a display concern only.
+    // source of truth (ScaleRow.Name, table chord-melody) — this is a display concern only.
     private static readonly IReadOnlyDictionary<string, string> Shorthands = new Dictionary<string, string>
     {
         ["major"] = "M", ["harmonic minor"] = "hm", ["melodic minor"] = "mm",

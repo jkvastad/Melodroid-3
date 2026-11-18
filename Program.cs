@@ -733,60 +733,60 @@ class Program
             return 0;
         });
 
-        var scaleFingerprintChordKeysOption = new Option<int[]>("--chord-keys")
+        var chordMelodyChordKeysOption = new Option<int[]>("--chord-keys")
         {
             Description = "Chord key indices on a 12-tet keyboard (each in [0, 11]), space-separated. Duplicates are folded.",
             Required = true,
             AllowMultipleArgumentsPerToken = true,
         };
 
-        var scaleFingerprintMinSubsetNotesOption = new Option<int>("--min-subset-notes")
+        var chordMelodyMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
             Description = "Minimum number of keys the shared subset S bridging a composite scale's placement pair must have (as in `table composite-scales`). Default 4; lower to admit smaller bridges and more composite rows. Single-placement rows are unaffected.",
             DefaultValueFactory = _ => 4,
         };
 
-        var scaleFingerprintNameCompositesOption = new Option<bool>("--name-composites")
+        var chordMelodyNameCompositesOption = new Option<bool>("--name-composites")
         {
             Description = "Relabel a row with its traditional scale name ({Short}@{Anchor} via the named-scale catalog) when its key set lands on one (single placements can name too, e.g. 24@0 → M@0); otherwise the row keeps its placement constituents. Default off (constituents only).",
             DefaultValueFactory = _ => false,
         };
 
-        var scaleFingerprintCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
+        var chordMelodyCollapseIsomorphicOption = new Option<bool>("--collapse-isomorphic")
         {
             Description = "Declutter: relabel each composite constituent to the representative of its key set (power-of-2 LCM preferred, then lowest LCM, then anchor) and dedupe. Default off (raw labels).",
             DefaultValueFactory = _ => false,
         };
 
-        var scaleFingerprintPoolMaximalOption = new Option<bool>("--pool-maximal")
+        var chordMelodyPoolMaximalOption = new Option<bool>("--pool-maximal")
         {
             Description = "Declutter: keep only the maximal containing placements P_A/P_B and the maximal shared subsets S in composite constituent labels. Default off (raw).",
             DefaultValueFactory = _ => false,
         };
 
-        var scaleFingerprintCommand = new Command(
-            "scale-fingerprint",
+        var chordMelodyCommand = new Command(
+            "chord-melody",
             "Matrix view for playing melody with chords: rows are the placements and composite scales (each a bridged placement pair sharing a subset of ≥ --min-subset-notes keys, as in `table composite-scales`) whose key set contains the chord; columns are the 12 keys. Reading column K shows which scale rows survive playing key K as melody — i.e. which scale that note implies. Rows show placement constituents by default; --name-composites relabels a row with its traditional scale name when its key set matches one. 12-tet only.");
-        scaleFingerprintCommand.Add(maxSizeOption);
-        scaleFingerprintCommand.Add(maxPrimeOption);
-        scaleFingerprintCommand.Add(maxLcmOption);
-        scaleFingerprintCommand.Add(scaleFingerprintChordKeysOption);
-        scaleFingerprintCommand.Add(ktetOption);
-        scaleFingerprintCommand.Add(scaleFingerprintMinSubsetNotesOption);
-        scaleFingerprintCommand.Add(scaleFingerprintNameCompositesOption);
-        scaleFingerprintCommand.Add(scaleFingerprintCollapseIsomorphicOption);
-        scaleFingerprintCommand.Add(scaleFingerprintPoolMaximalOption);
-        scaleFingerprintCommand.SetAction(parse =>
+        chordMelodyCommand.Add(maxSizeOption);
+        chordMelodyCommand.Add(maxPrimeOption);
+        chordMelodyCommand.Add(maxLcmOption);
+        chordMelodyCommand.Add(chordMelodyChordKeysOption);
+        chordMelodyCommand.Add(ktetOption);
+        chordMelodyCommand.Add(chordMelodyMinSubsetNotesOption);
+        chordMelodyCommand.Add(chordMelodyNameCompositesOption);
+        chordMelodyCommand.Add(chordMelodyCollapseIsomorphicOption);
+        chordMelodyCommand.Add(chordMelodyPoolMaximalOption);
+        chordMelodyCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
             var maxPrime = parse.GetValue(maxPrimeOption);
             var maxLcm = parse.GetValue(maxLcmOption);
-            var chordKeys = parse.GetValue(scaleFingerprintChordKeysOption) ?? Array.Empty<int>();
+            var chordKeys = parse.GetValue(chordMelodyChordKeysOption) ?? Array.Empty<int>();
             var k = parse.GetValue(ktetOption);
-            var minSubsetNotes = parse.GetValue(scaleFingerprintMinSubsetNotesOption);
-            var nameComposites = parse.GetValue(scaleFingerprintNameCompositesOption);
-            var collapseIsomorphic = parse.GetValue(scaleFingerprintCollapseIsomorphicOption);
-            var poolMaximal = parse.GetValue(scaleFingerprintPoolMaximalOption);
+            var minSubsetNotes = parse.GetValue(chordMelodyMinSubsetNotesOption);
+            var nameComposites = parse.GetValue(chordMelodyNameCompositesOption);
+            var collapseIsomorphic = parse.GetValue(chordMelodyCollapseIsomorphicOption);
+            var poolMaximal = parse.GetValue(chordMelodyPoolMaximalOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -806,9 +806,9 @@ class Program
             var dedupChord = chordKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
-            var rows = ScaleFingerprint.ContainingChord(
+            var rows = ChordMelody.ContainingChord(
                 dedupChord, families, minSubsetNotes, collapseIsomorphic, poolMaximal, k);
-            ScaleFingerprintTableRenderer.Render(dedupChord, k, rows, nameComposites);
+            ChordMelodyTableRenderer.Render(dedupChord, k, rows, nameComposites);
             return 0;
         });
 
@@ -1324,7 +1324,7 @@ class Program
         tableCommand.Add(familyOverlapCommand);
         tableCommand.Add(supersetsCommand);
         tableCommand.Add(superpositionsCommand);
-        tableCommand.Add(scaleFingerprintCommand);
+        tableCommand.Add(chordMelodyCommand);
         tableCommand.Add(progressionCommand);
         tableCommand.Add(compositeScalesCommand);
         tableCommand.Add(voicingsCommand);

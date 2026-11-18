@@ -3,12 +3,12 @@ using Spectre.Console;
 
 namespace Melodroid_3.Output;
 
-public static class ScaleFingerprintTableRenderer
+public static class ChordMelodyTableRenderer
 {
     public static void Render(
         IReadOnlyCollection<int> chordKeys,
         int ktet,
-        IReadOnlyList<FingerprintRow> rows,
+        IReadOnlyList<ChordMelodyRow> rows,
         bool nameComposites,
         IAnsiConsole? console = null)
     {
@@ -45,7 +45,7 @@ public static class ScaleFingerprintTableRenderer
 
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         var caption =
-            $"scale-fingerprint: chord={chordStr} · {rows.Count} scale row{(rows.Count == 1 ? "" : "s")} · {ktet}-tet";
+            $"chord-melody: chord={chordStr} · {rows.Count} scale row{(rows.Count == 1 ? "" : "s")} · {ktet}-tet";
         if (nameComposites)
             caption += $"\n{NamedScales.Legend()}";
         table.Caption(caption);
@@ -56,7 +56,7 @@ public static class ScaleFingerprintTableRenderer
     // (so the major-scale placement stays 24@0, not M@0). A composite reads "{PA}·{S}·{PB}", or, with
     // --name-composites, its shorthand "{Short}@{Anchor}" when its key set matches a catalog scale
     // (the same · form `table composite-scales` prints). The concrete keys are read off the bullet grid.
-    private static string Label(FingerprintRow row, int ktet, bool nameComposites)
+    private static string Label(ChordMelodyRow row, int ktet, bool nameComposites)
     {
         if (row.S is not { } s || row.PB is not { } pb)
             return P(row.PA);   // single placement: always {Lcm}@{At}

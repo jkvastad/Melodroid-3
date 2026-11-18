@@ -3,7 +3,7 @@ using Melodroid_3.Music;
 
 namespace Melodroid_3.Tests.Music;
 
-public class ScaleFingerprintTests
+public class ChordMelodyTests
 {
     private const int Ktet = 12;
 
@@ -11,14 +11,14 @@ public class ScaleFingerprintTests
     private static IReadOnlyList<LcmFamily> Families() =>
         LcmFamilies.Compute(GoodFractions.Enumerate(24, 5), 24);
 
-    private static IReadOnlyList<FingerprintRow> Rows(int[] chord, int minSubsetNotes) =>
-        ScaleFingerprint.ContainingChord(chord, Families(), minSubsetNotes, false, false, Ktet);
+    private static IReadOnlyList<ChordMelodyRow> Rows(int[] chord, int minSubsetNotes) =>
+        ChordMelody.ContainingChord(chord, Families(), minSubsetNotes, false, false, Ktet);
 
-    private static IReadOnlyList<FingerprintRow> Rows(
+    private static IReadOnlyList<ChordMelodyRow> Rows(
         int[] chord, int minSubsetNotes, bool collapseIsomorphic, bool poolMaximal) =>
-        ScaleFingerprint.ContainingChord(chord, Families(), minSubsetNotes, collapseIsomorphic, poolMaximal, Ktet);
+        ChordMelody.ContainingChord(chord, Families(), minSubsetNotes, collapseIsomorphic, poolMaximal, Ktet);
 
-    private static bool IsSingle(FingerprintRow r) => r.PB is null;
+    private static bool IsSingle(ChordMelodyRow r) => r.PB is null;
 
     [Theory]
     [InlineData(new[] { 0, 4, 7 })]
@@ -89,7 +89,7 @@ public class ScaleFingerprintTests
     {
         var rows = Rows(new[] { 0, 4, 7 }, 4, collapseIsomorphic: false, poolMaximal: true);
 
-        void AssertAntichain(IReadOnlyList<FingerprintRow> partition)
+        void AssertAntichain(IReadOnlyList<ChordMelodyRow> partition)
         {
             // b.Keys.Count > a.Keys.Count already excludes a == b (equal key sets are deduped away).
             foreach (var a in partition)
@@ -121,7 +121,7 @@ public class ScaleFingerprintTests
     {
         var families = Families();
         var canonical = ChordProgressions.CanonicalPlacements(families, Ktet);
-        var rows = ScaleFingerprint.ContainingChord(
+        var rows = ChordMelody.ContainingChord(
             new[] { 0, 4, 7 }, families, 4, collapseIsomorphic: true, poolMaximal: false, Ktet);
 
         // Compare by (Lcm, At): Placement is a record struct whose Keys list compares by reference, so

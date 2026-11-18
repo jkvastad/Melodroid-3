@@ -113,7 +113,7 @@ public static class ChordProgressions
         canonical[Signature(p.Keys)];
 
     // Public access to the canonical-representative rule for callers that relabel their own placements
-    // (table scale-fingerprint's --collapse-isomorphic on single-placement rows). Reuses the one
+    // (table chord-melody's --collapse-isomorphic on single-placement rows). Reuses the one
     // power-of-2-preferred rule rather than re-deriving it.
     public static IReadOnlyDictionary<string, Placement> CanonicalPlacements(
         IReadOnlyList<LcmFamily> families, int ktet) => BuildCanonicalMap(families, ktet);
