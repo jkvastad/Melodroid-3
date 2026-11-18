@@ -560,4 +560,42 @@ public class ChordProgressionsTests
         var p = new[] { Place(15, 11) };
         ChordProgressions.SubsetTripletsBetween(p, p, Families(), minSubsetNotes: 4).Should().BeEmpty();
     }
+
+    [Fact]
+    public void EnumerateUnreachableTargets_EveryListedTarget_IsIndependentlyUnreachable()
+    {
+        // Every concrete target the complement reports must independently come back Unreachable from the
+        // production pair API under the same knobs — re-checking each one through ComputePairReach.
+        var origin = new[] { 0, 4, 7 };
+        var rows = ChordProgressions.EnumerateUnreachableTargets(
+            origin, Families(), minNotes: 2, maxNotes: 7, minSubsetNotes: 4);
+
+        rows.Should().NotBeEmpty();
+        foreach (var (_, targets) in rows)
+            foreach (var target in targets)
+            {
+                var (reach, _) = ChordProgressions.ComputePairReach(
+                    origin, target, Families(), minSubsetNotes: 4);
+                reach.Should().Be(ProgressionReach.Unreachable);
+            }
+    }
+
+    [Fact]
+    public void EnumerateUnreachableTargets_OmitsAReachableTarget()
+    {
+        // {0,2,4,5,7,9,11} (the major scale on 0) is reachable from {0,4,7}, so it must never appear in
+        // the complement — independently confirm it is not Unreachable, then confirm its absence.
+        var origin = new[] { 0, 4, 7 };
+        var reachable = new[] { 0, 2, 4, 5, 7, 9, 11 };
+        var (reach, _) = ChordProgressions.ComputePairReach(
+            origin, reachable, Families(), minSubsetNotes: 4);
+        reach.Should().NotBe(ProgressionReach.Unreachable);
+
+        var rows = ChordProgressions.EnumerateUnreachableTargets(
+            origin, Families(), minNotes: 2, maxNotes: 7, minSubsetNotes: 4);
+
+        var want = reachable.OrderBy(k => k).ToArray();
+        rows.SelectMany(r => r.UnreachableTargets)
+            .Should().NotContain(t => t.OrderBy(k => k).SequenceEqual(want));
+    }
 }

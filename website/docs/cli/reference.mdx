@@ -286,7 +286,8 @@ generated for the Placements column (and the `--lcm-only` filter).
 ### `progression`
 
 ```bash
-melodroid table progression --origin-keys 0 4 7 (--target-keys 3 7 10 | --target-shape 0 4 7) \
+melodroid table progression --origin-keys 0 4 7 (--target-keys 3 7 10 | --target-shape 0 4 7 | --complement) \
+  [--min-notes 2] [--max-notes 7] [--shapes-only] \
   [--min-subset-notes 2] \
   [--collapse-isomorphic] [--pool-maximal] \
   [--drop-collapsed none|origin|target|both] \
@@ -317,9 +318,22 @@ axis:
   progression does.
 - **unreachable** — neither.
 
-`--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` (mutually
-exclusive; 12-tet only). With `--target-keys` the command analyses one explicit origin→target pair
-(the standard form described below). With `--target-shape` it instead parses the keys as a **shape**
+`--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` / `--complement`
+(mutually exclusive; 12-tet only). With `--target-keys` the command analyses one explicit origin→target
+pair (the standard form described below). `--complement` is the **inverse question** — given the fixed
+origin, which targets have *no* progression at all. It enumerates every target shape (necklace) over a
+`--min-notes`..`--max-notes` range (defaults `2`..`7`), sweeps all 12 roots of each against the origin,
+and lists the concrete target key sets that come out **unreachable** (neither a placement nor a composite
+progression connects them — the same tier `--target-shape` renders as `—`), grouped one row per shape
+(`Shape | Unreachable targets`); shapes reachable at every root are omitted, and when nothing is
+unreachable it prints a note that every shape in the range is reachable. `--shapes-only` collapses each
+row to just the shape and a **count** of its unreachable concrete targets (`Shape | Unreachable roots`)
+for a high-level overview — the count also surfaces the shape's symmetry (e.g. the augmented triad and
+whole-tone scale report few roots because their small orbits repeat the same concrete set). The reachability knobs below
+(`--min-subset-notes`, `--collapse-isomorphic`, `--pool-maximal`, `--drop-collapsed`) still apply and
+change which targets are unreachable — in particular, at the default `--min-subset-notes 2` almost
+everything is reachable, so raise it to surface dead ends. With `--target-shape` it instead parses the
+keys as a **shape**
 (transposition class / necklace) — canonicalised so `0 4 7` and `5 9 0` both give the major shape —
 and sweeps all **12 root positions** of that shape against the fixed origin, answering "if I play
 this origin and then *this chord at some root*, how does the choice of root change the progression?".

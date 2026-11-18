@@ -205,6 +205,54 @@ public static class ChordProgressions
             : (ProgressionReach.Unreachable, Array.Empty<ProgressionTriplet>());
     }
 
+    // The complement of the progression relation for a fixed origin: every target chord shape (necklace)
+    // over [minNotes, maxNotes], swept across all 12 roots, whose concrete key set has NO progression from
+    // the origin (ProgressionReach.Unreachable — neither a placement progression nor a composite one). One
+    // row per shape that has ≥ 1 unreachable root, carrying the shape's canonical key set and the sorted,
+    // de-duplicated concrete unreachable target key sets (a shape with a non-trivial stabiliser repeats the
+    // same concrete set across roots — e.g. dim7 {0,3,6,9}, orbit 3 — so concrete sets are deduped). The
+    // composite catalog is built once and shared across every ComputePairReach call. Preserves Enumerate's
+    // order (size, then keys lexicographically); shapes fully reachable from the origin are omitted.
+    public static IReadOnlyList<(IReadOnlyList<int> Shape, IReadOnlyList<IReadOnlyList<int>> UnreachableTargets)>
+        EnumerateUnreachableTargets(
+            IReadOnlyCollection<int> origin,
+            IReadOnlyList<LcmFamily> families,
+            int minNotes,
+            int maxNotes,
+            int minSubsetNotes,
+            bool collapseIsomorphic = false,
+            bool poolMaximal = false,
+            CollapseFilter dropCollapsed = CollapseFilter.None,
+            int ktet = 12)
+    {
+        var catalog = CompositeProgressions.Catalog(
+            families, minSubsetNotes, collapseIsomorphic, poolMaximal, ktet);
+        var (shapes, _) = Chords.Enumerate(ktet, minNotes, Math.Min(maxNotes, ktet), int.MaxValue);
+
+        var rows = new List<(IReadOnlyList<int>, IReadOnlyList<IReadOnlyList<int>>)>();
+        foreach (var chord in shapes)
+        {
+            var seen = new HashSet<string>();
+            var unreachable = new List<IReadOnlyList<int>>();
+            for (var root = 0; root < ktet; root++)
+            {
+                var target = chord.Keys.Select(k => (k + root) % ktet).OrderBy(k => k).ToList();
+                var signature = string.Join(",", target);
+                if (!seen.Add(signature)) continue; // concrete set repeats under the shape's stabiliser
+
+                var (reach, _) = ComputePairReach(
+                    origin, target, families, minSubsetNotes,
+                    collapseIsomorphic, poolMaximal, dropCollapsed, ktet, catalog);
+                if (reach == ProgressionReach.Unreachable) unreachable.Add(target);
+            }
+
+            if (unreachable.Count > 0)
+                rows.Add((chord.Keys, unreachable));
+        }
+
+        return rows;
+    }
+
     // Every (P_A, S, P_B) subset-principle triplet over the *whole* placement universe, with no chord
     // anchoring: distinct placements P_A, P_B sharing a subset S ⊆ P_A ∩ P_B (|S| ≥ minSubsetNotes).
     // Reuses the chord-anchored SubsetTriplets by passing every family placement as both sides — that

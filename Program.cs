@@ -831,6 +831,30 @@ class Program
             AllowMultipleArgumentsPerToken = true,
         };
 
+        var progressionComplementOption = new Option<bool>("--complement")
+        {
+            Description = "Sweep every target shape over a --min-notes..--max-notes range across all 12 roots against the fixed origin and list the concrete target key sets with NO progression (Unreachable — neither placement nor composite), grouped by shape. Mutually exclusive with --target-keys / --target-shape.",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionShapesOnlyOption = new Option<bool>("--shapes-only")
+        {
+            Description = "With --complement, collapse each row to just the unreachable shape and a count of its unreachable concrete targets (a high-level overview), omitting the per-root key sets. Ignored without --complement.",
+            DefaultValueFactory = _ => false,
+        };
+
+        var progressionMinNotesOption = new Option<int>("--min-notes")
+        {
+            Description = "Minimum number of notes per target shape (--complement only). Default 2.",
+            DefaultValueFactory = _ => 2,
+        };
+
+        var progressionMaxNotesOption = new Option<int>("--max-notes")
+        {
+            Description = "Maximum number of notes per target shape (--complement only). Default 7.",
+            DefaultValueFactory = _ => 7,
+        };
+
         var progressionMinSubsetNotesOption = new Option<int>("--min-subset-notes")
         {
             Description = "Minimum number of keys a good-LCM family placement must have to serve as the shared bridge S of a bridged placement progression (and of a composite scale's constituents). Default 2 (dyads allowed); raise to restrict to larger bridging families.",
@@ -864,6 +888,10 @@ class Program
         progressionCommand.Add(progressionOriginKeysOption);
         progressionCommand.Add(progressionTargetKeysOption);
         progressionCommand.Add(progressionTargetShapeOption);
+        progressionCommand.Add(progressionComplementOption);
+        progressionCommand.Add(progressionShapesOnlyOption);
+        progressionCommand.Add(progressionMinNotesOption);
+        progressionCommand.Add(progressionMaxNotesOption);
         progressionCommand.Add(progressionMinSubsetNotesOption);
         progressionCommand.Add(progressionCollapseIsomorphicOption);
         progressionCommand.Add(progressionPoolMaximalOption);
@@ -876,6 +904,10 @@ class Program
             var originKeys = parse.GetValue(progressionOriginKeysOption) ?? Array.Empty<int>();
             var targetKeys = parse.GetValue(progressionTargetKeysOption) ?? Array.Empty<int>();
             var shapeKeys = parse.GetValue(progressionTargetShapeOption) ?? Array.Empty<int>();
+            var complement = parse.GetValue(progressionComplementOption);
+            var shapesOnly = parse.GetValue(progressionShapesOnlyOption);
+            var minNotes = parse.GetValue(progressionMinNotesOption);
+            var maxNotes = parse.GetValue(progressionMaxNotesOption);
             var minSubsetNotes = parse.GetValue(progressionMinSubsetNotesOption);
             var collapseIsomorphic = parse.GetValue(progressionCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(progressionPoolMaximalOption);
@@ -887,15 +919,21 @@ class Program
             if (minSubsetNotes < 1) { AnsiConsole.MarkupLine("[red]--min-subset-notes must be ≥ 1.[/]"); return 1; }
             if (originKeys.Length == 0) { AnsiConsole.MarkupLine("[red]--origin-keys must contain at least one value.[/]"); return 1; }
             var useShape = shapeKeys.Length > 0;
-            if (targetKeys.Length > 0 && useShape)
+            var modeCount = (targetKeys.Length > 0 ? 1 : 0) + (useShape ? 1 : 0) + (complement ? 1 : 0);
+            if (modeCount > 1)
             {
-                AnsiConsole.MarkupLine("[red]--target-keys and --target-shape are mutually exclusive — give exactly one.[/]");
+                AnsiConsole.MarkupLine("[red]--target-keys, --target-shape and --complement are mutually exclusive — give exactly one.[/]");
                 return 1;
             }
-            if (targetKeys.Length == 0 && !useShape)
+            if (modeCount == 0)
             {
-                AnsiConsole.MarkupLine("[red]exactly one of --target-keys or --target-shape is required.[/]");
+                AnsiConsole.MarkupLine("[red]exactly one of --target-keys, --target-shape or --complement is required.[/]");
                 return 1;
+            }
+            if (complement)
+            {
+                if (minNotes < 1) { AnsiConsole.MarkupLine("[red]--min-notes must be ≥ 1.[/]"); return 1; }
+                if (maxNotes < minNotes) { AnsiConsole.MarkupLine("[red]--max-notes must be ≥ --min-notes.[/]"); return 1; }
             }
             foreach (var key in originKeys)
             {
@@ -932,6 +970,17 @@ class Program
             var dedupOrigin = originKeys.Distinct().OrderBy(x => x).ToList();
             var fractions = GoodFractions.Enumerate(maxSize, maxPrime);
             var families = LcmFamilies.Compute(fractions, maxLcm);
+
+            if (complement)
+            {
+                var complementRows = ChordProgressions.EnumerateUnreachableTargets(
+                    dedupOrigin, families, minNotes, maxNotes, minSubsetNotes,
+                    collapseIsomorphic, poolMaximal, dropCollapsed.Value, 12);
+                ProgressionTableRenderer.RenderComplement(
+                    dedupOrigin, minNotes, maxNotes, minSubsetNotes, collapseIsomorphic, poolMaximal,
+                    dropCollapsed.Value, complementRows, shapesOnly);
+                return 0;
+            }
 
             if (useShape)
             {

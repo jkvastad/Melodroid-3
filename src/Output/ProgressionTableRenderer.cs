@@ -104,6 +104,58 @@ public static class ProgressionTableRenderer
             $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
     }
 
+    // The complement of the progression relation for a fixed origin: every target shape (necklace) over a
+    // --min-notes..--max-notes range that has ≥ 1 root with NO progression from the origin, rendered one
+    // row per shape — the shape's canonical key set and a newline-joined list of its concrete unreachable
+    // target key sets. An empty result means every target shape in the range is reachable.
+    public static void RenderComplement(
+        IReadOnlyCollection<int> origin,
+        int minNotes,
+        int maxNotes,
+        int minSubsetNotes,
+        bool collapseIsomorphic,
+        bool poolMaximal,
+        CollapseFilter dropCollapsed,
+        IReadOnlyList<(IReadOnlyList<int> Shape, IReadOnlyList<IReadOnlyList<int>> UnreachableTargets)> rows,
+        bool shapesOnly = false,
+        IAnsiConsole? console = null)
+    {
+        console ??= AnsiConsole.Console;
+
+        var originStr = KeySet(origin);
+
+        if (rows.Count > 0)
+        {
+            var table = new Table()
+                .Title($"{originStr} → unreachable targets");
+            if (shapesOnly)
+            {
+                // High-level overview: just the shape and how many of its roots are unreachable.
+                table.AddColumn("Shape").AddColumn("Unreachable roots");
+                foreach (var (shape, targets) in rows)
+                    table.AddRow(KeySet(shape), targets.Count.ToString());
+            }
+            else
+            {
+                table.AddColumn("Shape").AddColumn("Unreachable targets");
+                foreach (var (shape, targets) in rows)
+                    table.AddRow(KeySet(shape), string.Join("\n", targets.Select(KeySet)));
+            }
+            console.Write(table);
+        }
+        else
+        {
+            console.MarkupLine(
+                $"{originStr}: [grey]no unreachable targets — every shape in notes " +
+                $"{minNotes}..{maxNotes} is reachable from the origin[/]");
+        }
+
+        console.MarkupLine(
+            $"[grey]progression: {originStr} → complement · notes {minNotes}..{maxNotes} · " +
+            $"minSubsetNotes={minSubsetNotes} · bridges: {BridgeMode(collapseIsomorphic, poolMaximal)} · " +
+            $"drop-collapsed: {dropCollapsed.ToString().ToLowerInvariant()} · 12-tet[/]");
+    }
+
     // One root's progressions compacted into a multi-line cell string, reusing the same compaction as
     // RenderPair: single-placement triplets (Origin = Bridge = Target) as the bare placement label,
     // then bridged triplets factored around their shared bridge S ({origins}·S·{targets}). In the
