@@ -1,76 +1,31 @@
-# Analyze MIDI
-## Fur Elise segment analysis POC
-Mostly alternating between 8@4 and 15@11, sometimes moving into 24@0 and 24@5, tricky parts with dim7
-
-### Underlying theory
-
-### Segment faults
-* placements 18->19 has no composite (chunk 74.75-75). 
-Semingly plays on the F7 chord, likely some sort of blues@0 going on with key 3 and 24@5 going into 24@0.
-
-* placements 29->45 mostly lack composites.
-Heavy use of dim7, which along with aug is not yet covered. 
-Likely som sort of superposition similar to composite scales. Perhaps composed of more than two placements, or simply close to several placements e.g. via first order subset analysis.
+# General
+* chord-melody could perhaps be used with a programmable LED keyboard to show which scales are available from pressed keys. 
+As a POC we could have a virtual programmable LED keyboard which shows a piano roll on the screen, reads midi input and lights up keys, so the player can watch the screen while playing if there is no physical LED keyboard.
 
 # Docs
 * Note that there is a high severity vulnerability in serialize-javascript <=7.0.4 which is a false alarm because the only input which could be rce is on build side. Just wait for docusaurus to patch it out. Do not npm audit fix --force, which would attempt a breaking major upgrade.
 
-* TODO: Are full matches every used in the docs? Seems like it's mostly clustering and renormalisations?
-
 * Does preference for small primes tie in with musical neurodynamics?
 
-* Go through fur elise, investigate unclassified parts, e.g. scale region 23-24 where dim7 is active.
-
-* chord-melody could perhaps be used with a programmable LED keyboard to show which scales are available from pressed keys. 
-As a POC we could have a virtual programmable LED keyboard which shows a piano roll on the screen, reads midi input and lights up keys, so the player can watch the screen while playing if there is no physical LED keyboard.
-
-* section on scale fingerprints for pragmatic music, what keys imply what perceptions based on current chord? Deprecate chord melody or subsume its name (scale fingerprints is a bit opaque)
-
-* subset/superset principle deprecated in favor of placement progressions and composite progressions. Update relevant commands e.g. analyze midi and table progression.
-
-* Rename Progressions Principles chapter to Progressions?
+* section on pragmatic music i.e. 
+ * chord melody - what keys imply what perceptions based on current chord?
+ * Tiling and recreation - can we find the patterns of a song and then randomly draw from that pattern to produce a similar feel?
 
 * Update backlog Docs headers
 
-* Redo Tiling chapter (currently is slop)
-
-## Intro (intro.mdx)
-
-## Theory
-### Good Fractions (theory/good-fractions.mdx)
-### LCM Families (theory/lcm-families.mdx)
-### Cluster Ranges (theory/cluster-ranges.mdx)
-### Playing Fractions (theory/playing-fractions.mdx)
-## The Keyboard
-### A Good Keyboard (keyboard/a-good-keyboard.mdx)
-### Key Sweep (keyboard/key-sweep.mdx)
-
-## The Sound of Music
-
-### Placements (music/placements.mdx)
-### Voicings (music/voicings.mdx)
-### Listening to LCM Families (music/listening-to-lcm-families.mdx)
-
-### On a Sour Note (music/on-a-sour-note.mdx)
-
-## Related Research
-### Consonance (related-research/consonance.mdx)
+## Related Research - Consonance (related-research/consonance.mdx)
 TODO: Triad experiment from ""Timbral effects on consonance disentangle psychoacoustic mechanisms and suggest perceptual origins for musical scales"" with a slider for overtone stretch and a two-dimensional surface where the user can move a mouse to adjust intervals (as in their study 5). This way a user can listen to triad chord consonance.
-#### Stretched overtones and intervals
-#### Mixed timbres with a bonang
 
-## CLI Reference
-### Installation (cli/installation.mdx)
-### CLI Reference (cli/reference.mdx)
-### Wave Pattern Plots (cli/wave-pattern-plots.mdx)
+## CLI Reference (cli/reference.mdx)
+Mostly slop docs, needs a human touch to be truly understandable
 
 # Claude
 Claude MD probably needs an update
 
-# General
-Cleanup program for hints, e.g. collection initializations can be simplified (lots of oververbose calls)
-
 # Octave sweep
 ## Animated octave sweep
-Animated plot with play button and slider (for choosing sweep position) which shows the octave being swept, moving the reference point along good fractions with surrounding bins and noting when full matches occur
-* Possibly interactive input of bin radius, updating the sweep
+Animated which shows the octave being swept, moving the reference point along the octave showing good fractions with surrounding bins and noting when full matches occur
+* Interactive input of bin radius, updating the sweep
+* sweep button for left to right 
+* grabable slider for choosing sweep position
+* fixed octave perspective, showing the reference move against the good fractions, v.s. reference perspective, showing the good fractions moving while the reference is visually fixed.
