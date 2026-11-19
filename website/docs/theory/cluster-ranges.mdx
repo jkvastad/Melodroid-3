@@ -3,6 +3,8 @@ sidebar_position: 3
 description: Binning real frequency ratios onto ideal fractions.
 ---
 
+import OctaveSweepPlot from '@site/src/components/OctaveSweepPlot';
+
 # Cluster Ranges
 
 So far we have treated sound as sets of perfect fractions. Real sound does not consist of
@@ -184,11 +186,20 @@ is required (space-separated decimals on $[1, 2)$). See the
 
 Each row shows the reference ratio, one cell per good-fraction column (signed % distance when
 the renormalised ratio fell in that bin), the LCM of the matched denominators, and a `Full?`
-marker. The star marker notes a particularly good full match, called a **centered full match**.
+marker (the star marker notes a particularly good full match, called a **centered full match**).
+
+Below is an interactive octave sweeper. The top axis is the octave $[1, 2)$ with the
+good fractions as shaded bins; the input ratios (the major triad by default) renormalise onto it
+as you drag the **reference** slider — green when a ratio lands in a bin, grey when it misses. When
+all frequencies bin to good fractions, it is a full match and the LCM is shown. Press **Sweep** to
+animate, widen the **bin radius** to see bins overlap, or switch between fixed octave/reference perspective
+to move inputs or reference.
+
+<OctaveSweepPlot ratios={[1, 1.25, 1.5]} />
 
 ### Centered Full Matches
 
-Finding full matches is like tuning a radio: matches appear in contiguous blocks of sweep steps
+As we saw in the interactive example above, finding full matches is like tuning a radio: matches appear in contiguous blocks of sweep steps
 that renormalise the inputs into the same set of good fractions. A **centered full match** is
 the single best step in such a block — the one with the smallest worst-cell distance ($\min$
 over the block of $\max$ over cells of $\lvert\text{signed }\%\text{ distance}\rvert$), ties

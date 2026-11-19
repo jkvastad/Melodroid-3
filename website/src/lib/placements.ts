@@ -10,6 +10,13 @@ import {fractionValue, lcmFamily, type Fraction} from './lcmFamilies';
 
 // --- RatioMath.cs ----------------------------------------------------------
 
+// Fold a ratio into the octave [1, 2) by doubling/halving. Mirrors RatioMath.OctaveNormalize.
+export function octaveNormalize(r: number): number {
+  while (r < 1.0) r *= 2.0;
+  while (r >= 2.0) r *= 0.5;
+  return r;
+}
+
 // The octave [1, 2) is cyclic — 1.0 and 2.0 identify. For v, g both in [1, 2) pick the
 // representative of v across the wrap closest to g, then return the signed relative
 // offset to g ("v above g" → positive).

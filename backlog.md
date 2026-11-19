@@ -21,11 +21,3 @@ Mostly slop docs, needs a human touch to be truly understandable
 
 # Claude
 Claude MD probably needs an update
-
-# Octave sweep
-## Animated octave sweep
-Animated which shows the octave being swept, moving the reference point along the octave showing good fractions with surrounding bins and noting when full matches occur
-* Interactive input of bin radius, updating the sweep
-* sweep button for left to right 
-* grabable slider for choosing sweep position
-* fixed octave perspective, showing the reference move against the good fractions, v.s. reference perspective, showing the good fractions moving while the reference is visually fixed.
