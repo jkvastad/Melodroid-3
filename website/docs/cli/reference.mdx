@@ -319,15 +319,17 @@ axis:
 - **unreachable** — neither.
 
 `--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` / `--complement`
-(mutually exclusive; 12-tet only). With `--target-keys` the command analyses one explicit origin→target
-pair (the standard form described below). `--complement` is the **inverse question** — given the fixed
-origin, which targets have *no* progression at all. It enumerates every target shape (necklace) over a
-`--min-notes`..`--max-notes` range (defaults `2`..`7`), sweeps all 12 roots of each against the origin,
-and lists the concrete target key sets that come out **unreachable** (neither a placement nor a composite
-progression connects them — the same tier `--target-shape` renders as `—`), grouped one row per shape
-(`Shape | Unreachable targets`); shapes reachable at every root are omitted, and when nothing is
-unreachable it prints a note that every shape in the range is reachable. `--shapes-only` collapses each
-row to just the shape and a **count** of its unreachable concrete targets (`Shape | Unreachable roots`)
+(mutually exclusive; 12-tet only). 
+
+`--target-keys` analyses one explicit origin→target pair (the standard form described below).
+
+`--complement` is the **inverse question** — given the fixed origin, which targets have *no* progression at all. 
+It enumerates every target shape (necklace) over a `--min-notes`..`--max-notes` range (defaults `2`..`7`), sweeps all 12 roots of each against the origin,
+and lists the concrete target key sets that come out **unreachable** 
+(neither a placement nor a composite progression connects them — the same tier `--target-shape` renders as `—`), 
+grouped one row per shape (`Shape | Unreachable targets`); shapes reachable at every root are omitted, and when nothing is
+unreachable it prints a note that every shape in the range is reachable. 
+`--shapes-only` collapses each row to just the shape and a **count** of its unreachable concrete targets (`Shape | Unreachable roots`)
 for a high-level overview — the count also surfaces the shape's symmetry (e.g. the augmented triad and
 whole-tone scale report few roots because their small orbits repeat the same concrete set). The reachability knobs below
 (`--min-subset-notes`, `--collapse-isomorphic`, `--pool-maximal`, `--drop-collapsed`) still apply and

@@ -10,6 +10,7 @@ As a POC we could have a virtual programmable LED keyboard which shows a piano r
 * section on pragmatic music i.e. 
  * chord melody - what keys imply what perceptions based on current chord?
  * Tiling and recreation - can we find the patterns of a song and then randomly draw from that pattern to produce a similar feel?
+ * Preference and improv - e.g. running chord-melody for 0 4 7 there are multiple options for parsing key 3 but it seems to be the bebop@5 (24@5,10) which dominates with its blues subset?
 
 * Update backlog Docs headers
 
