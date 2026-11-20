@@ -35,7 +35,7 @@ public class ChordMelodyTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console: console);
 
         var output = writer.ToString();
         output.Should().Contain("chord-melody: chord={0, 4, 7}");
@@ -50,7 +50,7 @@ public class ChordMelodyTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, console: console);
 
         var output = writer.ToString();
         output.Should().Contain("24@0");    // major as its single-placement constituent label
@@ -66,7 +66,7 @@ public class ChordMelodyTableRendererTests
         var rows = Rows(chord);
         var (console, writer) = PlainConsole();
 
-        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: true, console);
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: true, console: console);
 
         var output = writer.ToString();
         output.Should().Contain("bb@0");           // bebop dominant composite named
@@ -75,5 +75,20 @@ public class ChordMelodyTableRendererTests
         // row. The leading space distinguishes it from "hM@0" (harmonic major), whose M is preceded by h.
         output.Should().NotContain(" M@0");
         output.Should().Contain("M=major");        // legend present
+    }
+
+    [Fact]
+    public void Render_FlagCollapseEmitsLegendOnlyWhenEnabled()
+    {
+        var chord = new[] { 0, 4, 7 };
+        var rows = Rows(chord);
+
+        var (onConsole, onWriter) = PlainConsole();
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, flagCollapse: true, console: onConsole);
+        onWriter.ToString().Should().Contain("collapses the placement under preference");
+
+        var (offConsole, offWriter) = PlainConsole();
+        ChordMelodyTableRenderer.Render(chord, 12, rows, nameComposites: false, flagCollapse: false, console: offConsole);
+        offWriter.ToString().Should().NotContain("collapses the placement under preference");
     }
 }

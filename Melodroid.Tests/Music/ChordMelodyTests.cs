@@ -116,6 +116,59 @@ public class ChordMelodyTests
             .Should().NotContain(r => r.Keys.SequenceEqual(chord));
     }
 
+    // --flag-collapse marks the single melody key that collapses a single lcm-15 / lcm-20 placement
+    // under preference (CollapsingKey): (At+8) mod 12 for lcm-15, (At+3) mod 12 for lcm-20.
+    [Fact]
+    public void CollapseFlagKeyReturnsTheCollapsingKeyOfASingleFifteenPlacement()
+    {
+        // 15@7 keys {0,3,4,5,7,8,10}; collapsing key (7+8) mod 12 = 3, which is a member.
+        var row = new ChordMelodyRow(
+            new[] { 0, 3, 4, 5, 7, 8, 10 }, new Placement(15, 7, new[] { 0, 3, 4, 5, 7, 8, 10 }), null, null);
+        ChordMelody.CollapseFlagKey(row, Ktet).Should().Be(3);
+    }
+
+    [Fact]
+    public void CollapseFlagKeyIsNullForAStableLcm24Placement()
+    {
+        var row = new ChordMelodyRow(
+            new[] { 0, 2, 4, 5, 7, 9, 11 }, new Placement(24, 0, new[] { 0, 2, 4, 5, 7, 9, 11 }), null, null);
+        ChordMelody.CollapseFlagKey(row, Ktet).Should().BeNull();
+    }
+
+    [Fact]
+    public void CollapseFlagKeyHonoursLcm20AndTheMembershipGuard()
+    {
+        // 20@0 collapsing key (0+3) mod 12 = 3. Flagged only when 3 is actually a member cell.
+        var member = new ChordMelodyRow(
+            new[] { 0, 3, 7 }, new Placement(20, 0, new[] { 0, 3, 7 }), null, null);
+        ChordMelody.CollapseFlagKey(member, Ktet).Should().Be(3);
+
+        var nonMember = new ChordMelodyRow(
+            new[] { 0, 7 }, new Placement(20, 0, new[] { 0, 7 }), null, null);
+        ChordMelody.CollapseFlagKey(nonMember, Ktet).Should().BeNull();
+    }
+
+    [Fact]
+    public void CollapseFlagKeyIsNullForCompositeRows()
+    {
+        // Even with an lcm-15 PA constituent, a composite (PB non-null) is never flagged — composite
+        // rows already carry the stable union, so their collapse keys are gone.
+        var row = new ChordMelodyRow(
+            new[] { 0, 3, 4, 5, 7, 8, 10 },
+            new Placement(15, 7, new[] { 0, 3, 4, 5, 7, 8, 10 }),
+            new Placement(18, 3, new[] { 0, 3, 5, 8 }),
+            new Placement(24, 0, new[] { 0, 2, 4, 5, 7, 9, 11 }));
+        ChordMelody.CollapseFlagKey(row, Ktet).Should().BeNull();
+    }
+
+    [Fact]
+    public void CollapseFlagKeyIsNullOutside12Tet()
+    {
+        var row = new ChordMelodyRow(
+            new[] { 0, 3, 4, 5, 7, 8, 10 }, new Placement(15, 7, new[] { 0, 3, 4, 5, 7, 8, 10 }), null, null);
+        ChordMelody.CollapseFlagKey(row, ktet: 19).Should().BeNull();
+    }
+
     [Fact]
     public void CollapseIsomorphicRelabelsSinglePlacementsToTheCanonicalRepresentative()
     {

@@ -199,7 +199,7 @@ length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` ca
 
 ```bash
 melodroid table chord-melody --chord-keys 0 4 7 \
-  [--min-subset-notes 4] [--name-composites] [--collapse-isomorphic] [--pool-maximal] \
+  [--min-subset-notes 4] [--name-composites] [--collapse-isomorphic] [--pool-maximal] [--flag-collapse] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
@@ -230,6 +230,15 @@ filtered independently, so a composite never absorbs a single placement. `--coll
 relabels every row's placement(s) — single-placement rows and composite constituents alike — to the
 power-of-2-preferred representative of its key set (`4` over `3`, `8` over `9/10/12`), then lowest LCM,
 then anchor.
+
+`--flag-collapse` (off) colours the single melody-note cell that **collapses** a single `lcm-15` /
+`lcm-20` placement under the [preference principle](/docs/music/preference) — the key `(At+8) mod 12`
+for `lcm-15`, `(At+3) mod 12` for `lcm-20` — reinterpreting the prime-5 placement as a prime-5-free
+`lcm-24` pattern. The cell reads yellow (overriding the green chord highlight when they coincide,
+since the collapse is the more specific signal); rows and all other cells are unchanged. Composite
+rows already carry the stable union, so only single-placement rows are ever flagged. For chord
+`0 4 7`, this flags key 3 on the `15@7` row — playing melody note 3 collapses it — while its
+prime-5-unique keys (e.g. 8) stay plain.
 
 12-tet only; `--chord-keys` is required. Chord keys are highlighted green; `●` marks membership.
 
@@ -294,11 +303,78 @@ melodroid table progression --origin-keys 0 4 7 (--target-keys 3 7 10 | --target
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-A command for the **placement progressions** and **composite placement progressions** from the
-[progression principles doc](/docs/music/progression-principles). A placement progression connects
-two chords through a triplet of placements — an origin placement (contains the origin chord), a
-bridge placement, and a target placement (contains the target chord), read as a walk in the global
-placement graph. It has two structural shapes:
+Finds the **placement progressions** and **composite placement progressions** between two 12-tet
+chords, from the [progression principles doc](/docs/music/progression-principles) — the placement
+walk(s) that connect an origin chord to a target.
+
+#### Quick start
+
+```bash
+# one explicit origin → target pair
+melodroid table progression --origin-keys 0 4 7 --target-keys 3 7 10
+
+# sweep one target shape across all 12 roots against the origin
+melodroid table progression --origin-keys 0 4 7 --target-shape 0 4 7
+
+# dead ends: which targets have no progression from the origin at all?
+melodroid table progression --origin-keys 0 4 7 --complement --min-subset-notes 4
+```
+
+#### Example
+
+```bash
+melodroid table progression --origin-keys 0 4 7 --target-keys 3 7 10 \
+  --collapse-isomorphic --pool-maximal
+```
+
+```text
+               {0, 4, 7} → {3, 7, 10}
+┌─────────────────────┬────────┬───────────────────┐
+│ Origin              │ Bridge │ Target            │
+├─────────────────────┼────────┼───────────────────┤
+│ 15@7                │ 15@7   │ 15@7              │
+│ {15@4, 24@0,5}      │ 2@0    │ {15@2, 24@3,8}    │
+│ {15@11, 24@7}       │ 2@0    │ {15@2, 24@3,8,10} │
+│ …                   │ …      │ …                 │
+│ 15@7                │ 18@10  │ {24@3,8}          │
+└─────────────────────┴────────┴───────────────────┘
+progression: {0, 4, 7} → {3, 7, 10} · placement · minSubsetNotes=2 · 12-tet
+```
+
+Single-placement rows come first (one placement across all three columns), then bridged
+`{P_A, …} | S | {P_B, …}` rows (origins and targets sharing the bridge `S` are brace-listed); the
+footer reports the reach (`placement` here). A `--target-shape` sweep instead prints a
+`Root | Progressions` table, one row per root `0..11`.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--origin-keys` | **required** | origin chord pitch classes (12-tet) |
+| `--target-keys` | *one of these three required* | analyse one explicit origin→target pair |
+| `--target-shape` | *one of these three required* | sweep all 12 roots of a target shape against the origin |
+| `--complement` | *one of these three required* | list the targets with **no** progression (dead ends) |
+| `--min-notes` | `2` | `--complement` only — smallest target shape size to enumerate |
+| `--max-notes` | `7` | `--complement` only — largest target shape size |
+| `--shapes-only` | off | `--complement` only — collapse each shape row to a count of unreachable roots |
+| `--min-subset-notes` | `2` | minimum size of a bridging subset `S`; raise to surface dead ends |
+| `--collapse-isomorphic` | off | relabel each placement to its power-of-2 representative, then dedupe |
+| `--pool-maximal` | off | keep only the maximal `P_A` / `P_B` / `S` |
+| `--drop-collapsed` | `none` | drop unstable collapsed placements: `none` / `origin` / `target` / `both` |
+| `--max-size` | `24` | good-fraction size limit (which families are generated) |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | largest LCM family generated |
+
+:::note
+At the default `--min-subset-notes 2` dyads are allowed as bridges, so almost every target is
+placement-reachable. Raise it to surface genuine dead ends — this is what `--complement` is for.
+:::
+
+#### Placement progressions
+
+A placement progression connects two chords through a triplet of placements — an origin placement
+(contains the origin chord), a bridge placement, and a target placement (contains the target chord),
+read as a walk in the global placement graph. It has two structural shapes:
 
 - **single-placement** — one LCM family placement contains both chords, so origin = bridge = target
   (e.g. C→Eb: both sit under `15@7`).
@@ -318,91 +394,27 @@ axis:
   progression does.
 - **unreachable** — neither.
 
-`--origin-keys` is **required**, plus exactly one of `--target-keys` / `--target-shape` / `--complement`
-(mutually exclusive; 12-tet only). 
+#### Option details
 
-`--target-keys` analyses one explicit origin→target pair (the standard form described below).
-
-`--complement` is the **inverse question** — given the fixed origin, which targets have *no* progression at all. 
-It enumerates every target shape (necklace) over a `--min-notes`..`--max-notes` range (defaults `2`..`7`), sweeps all 12 roots of each against the origin,
-and lists the concrete target key sets that come out **unreachable** 
-(neither a placement nor a composite progression connects them — the same tier `--target-shape` renders as `—`), 
-grouped one row per shape (`Shape | Unreachable targets`); shapes reachable at every root are omitted, and when nothing is
-unreachable it prints a note that every shape in the range is reachable. 
-`--shapes-only` collapses each row to just the shape and a **count** of its unreachable concrete targets (`Shape | Unreachable roots`)
-for a high-level overview — the count also surfaces the shape's symmetry (e.g. the augmented triad and
-whole-tone scale report few roots because their small orbits repeat the same concrete set). The reachability knobs below
-(`--min-subset-notes`, `--collapse-isomorphic`, `--pool-maximal`, `--drop-collapsed`) still apply and
-change which targets are unreachable — in particular, at the default `--min-subset-notes 2` almost
-everything is reachable, so raise it to surface dead ends. With `--target-shape` it instead parses the
-keys as a **shape**
-(transposition class / necklace) — canonicalised so `0 4 7` and `5 9 0` both give the major shape —
-and sweeps all **12 root positions** of that shape against the fixed origin, answering "if I play
-this origin and then *this chord at some root*, how does the choice of root change the progression?".
-The result is a **roots-as-rows** table (columns `Root | Progressions`): one row per root `0..11`,
-each row's `Progressions` cell listing that root's compacted progressions, one entry per line — a
-bare `{Lcm}@{At}` label (a single placement holds both chords), a factored `{P_A, …}·S·{P_B, …}` line
-(bridged), `↑`-prefixed lines (the composite-tier constituent link), or `—` (unreachable). Because `Progressions` is the only wide
-column it spans the terminal, so bridged labels never wrap mid-token. The target key set and reach
-tier are omitted as redundant: the shape is in the title (so `target = shape + root`) and the reach
-is read from the cell shape. All other options
-apply unchanged to every root. (The old all-targets enumeration form was removed — under the composite
-paradigm almost every target is reachable, so a per-target reachability table carried no signal;
-`--target-shape` is its focused successor, fixing both the origin and the target *shape* and varying
-only the root.) The remainder of this section describes the `--target-keys` single-pair output.
-
-When the pair is **placement**-reachable, it prints the placement-progression triplets as unified
-**Origin | Bridge | Target** rows — single-placement rows first (the one holding placement repeated
-across all three columns), then bridged rows. Bridged rows are factored **both ways** around their
-shared bridge `S`: every row collapses all origins that share the same bridge *and* the identical
-target set, brace-listing both (`{P_A, …} | S | {P_B, …}`). Each row is thus a full
-`Origins × {S} × Targets` rectangle; it is lossless because the two containing placements are always
-distinct (no origin can equal one of its own targets). Inside any brace list, placements that share an
-LCM compress their anchors (`24@0, 24@5` → `24@0,5`). Beneath the table a **placement summary** gives a
-quick read of the topology — one anchor-compressed set of the single-placement holders, and the bridged
-progressions split by slot into **origins** (`P_A`), **bridges** (`S`), and **targets** (`P_B`); a
-shape's line is omitted when it has no triplets. When the pair is **composite**-reachable instead, it
-prints the composite placement progression — the same **Origin | Bridge | Target** triplet table, now
-linking the two sides' composite-scale **constituent placements** (a heading announces the composite
-tier); when **unreachable**, it says so. The footer reports the reach.
-
-Bridge/triplet lists are **raw by default** — plain `{Lcm}@{At}` labels, every containing placement
-and every triple. Two independent, opt-in declutters shrink them **without changing reachability**,
-exploiting the LCM-family lattice:
-
-- `--collapse-isomorphic` — isomorphic families share a key set at shifted anchors (`3@7` and `4@0`
-  are both `{0 4 7}`), so every placement is relabelled to its key set's representative, preferring a
-  power-of-2 LCM (`3@k`→`4@k`, `9/10/12@k`→`8@k`), and deduped;
-- `--pool-maximal` — only *maximal* containing placements `P_A`/`P_B` and *maximal* shared subsets
-  `S` are kept (a placement whose keys are contained in another's is dropped). A chord's containing
-  placement is kept as *all* of its incomparable maximal parents (e.g. `4@0` = `{0 4 7}` sits in both
-  `24@0` and `15@7`, which are incomparable, so both are retained and `4@0` is dropped); a single
-  underlying bridge can thus appear under more than one parent context (`24@0·S·P_B` *and*
-  `15@7·S·P_B`) — intentional and lossless.
-
-Pooling is lossless for reachability (if `S ⊆ P_A ∩ P_B` and `P_A ⊆ P_A'` then `S ⊆ P_A' ∩ P_B'`),
-and the reach is computed from the **raw** placements regardless, so it is identical with or without
-decluttering.
-
-`--min-subset-notes` (default `2`, dyads allowed) sets the minimum size of a bridging family `S` (and
-of a composite scale's shared subset) — raise it to tame the "lots of dyads bridge everything" effect
-the doc warns about (at the default almost every target is placement-reachable). As the floor rises and
-placement progressions vanish, previously-reachable moves **escalate** to the composite tier. The two
-containing placements in the bridged shape must be **distinct**: a single placement holding both chords
-is the single-placement shape, so the bridged shape fires only for chords in different placements.
-
-`--drop-collapsed` (default `none`) disqualifies an unstable placement whose collapsing key is one
-of the keys of the chord it contains — under the [preference principle](/docs/music/preference) such
-a placement has already collapsed onto a smaller pattern and is not a valid bridge. Two families are
-unstable: `lcm-15` (collapsing key `(At+8) mod 12`, collapsing onto an adjacent `lcm-24`) and
-`lcm-20` (collapsing key `(At+3) mod 12`, since `20@At` is the subset of `15@(At+7)` and collapses to
-it). `origin` applies the filter to the origin chord's containing placements `P_A`, `target` to the
-target side `P_B`, and `both` to both sides. Because the reach and the triplets both derive from
-these placements, a disqualified placement is removed from each. 12-tet only; other families are
-untouched.
-
-The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
-generated.
+- **`--target-keys`** — prints the **Origin | Bridge | Target** table above; which of the three
+  reach tiers appears (placement / composite / unreachable) is how you read the connection.
+- **`--target-shape`** — a *shape* is a transposition class (necklace): `0 4 7` and `5 9 0` are the
+  same shape. Sweeps all 12 roots into a `Root | Progressions` table.
+- **`--complement`** — lists only the targets that stay **unreachable**; shapes reachable at every
+  root are omitted (an empty result means the whole `--min-notes`..`--max-notes` range is reachable).
+- **`--min-subset-notes`** — `S` is the subset shared by `P_A` and `P_B` that bridges them (and a
+  composite scale's shared subset). Raising it removes dyad bridges, so placement progressions
+  vanish and moves **escalate to the composite tier**.
+- **`--collapse-isomorphic`** — isomorphic families share a key set at shifted anchors (`3@7` and
+  `4@0` are both `{0 4 7}`); relabels each placement to its power-of-2 representative and dedupes.
+  Decluttering only — never changes reach.
+- **`--pool-maximal`** — drops any `P_A` / `P_B` / `S` contained in another, keeping only the
+  maximal ones; a chord's placement is kept as *all* its incomparable maximal parents, so one bridge
+  can appear under more than one parent. Decluttering only — never changes reach.
+- **`--drop-collapsed`** — `lcm-15` / `lcm-20` placements are *unstable*: when their collapse key is
+  a chord tone the placement has already collapsed to a smaller pattern (the
+  [preference principle](/docs/music/preference)), so it is not a valid bridge. `origin` / `target`
+  / `both` pick which side is filtered.
 
 ### `composite-scales`
 

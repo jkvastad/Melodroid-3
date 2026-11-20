@@ -764,6 +764,12 @@ class Program
             DefaultValueFactory = _ => false,
         };
 
+        var chordMelodyFlagCollapseOption = new Option<bool>("--flag-collapse")
+        {
+            Description = "Flag (yellow) the melody-note cell that collapses a single lcm-15 / lcm-20 placement under the preference principle — the key (At+8) mod 12 for lcm-15, (At+3) mod 12 for lcm-20 — reinterpreting it as a prime-5-free lcm-24 pattern. Rows and other cells are unchanged. Default off.",
+            DefaultValueFactory = _ => false,
+        };
+
         var chordMelodyCommand = new Command(
             "chord-melody",
             "Matrix view for playing melody with chords: rows are the placements and composite scales (each a bridged placement pair sharing a subset of ≥ --min-subset-notes keys, as in `table composite-scales`) whose key set contains the chord; columns are the 12 keys. Reading column K shows which scale rows survive playing key K as melody — i.e. which scale that note implies. Rows show placement constituents by default; --name-composites relabels a row with its traditional scale name when its key set matches one. 12-tet only.");
@@ -776,6 +782,7 @@ class Program
         chordMelodyCommand.Add(chordMelodyNameCompositesOption);
         chordMelodyCommand.Add(chordMelodyCollapseIsomorphicOption);
         chordMelodyCommand.Add(chordMelodyPoolMaximalOption);
+        chordMelodyCommand.Add(chordMelodyFlagCollapseOption);
         chordMelodyCommand.SetAction(parse =>
         {
             var maxSize = parse.GetValue(maxSizeOption);
@@ -787,6 +794,7 @@ class Program
             var nameComposites = parse.GetValue(chordMelodyNameCompositesOption);
             var collapseIsomorphic = parse.GetValue(chordMelodyCollapseIsomorphicOption);
             var poolMaximal = parse.GetValue(chordMelodyPoolMaximalOption);
+            var flagCollapse = parse.GetValue(chordMelodyFlagCollapseOption);
 
             if (maxSize < 1) { AnsiConsole.MarkupLine("[red]--max-size must be ≥ 1.[/]"); return 1; }
             if (maxPrime < 2) { AnsiConsole.MarkupLine("[red]--max-prime must be ≥ 2.[/]"); return 1; }
@@ -808,7 +816,7 @@ class Program
             var families = LcmFamilies.Compute(fractions, maxLcm);
             var rows = ChordMelody.ContainingChord(
                 dedupChord, families, minSubsetNotes, collapseIsomorphic, poolMaximal, k);
-            ChordMelodyTableRenderer.Render(dedupChord, k, rows, nameComposites);
+            ChordMelodyTableRenderer.Render(dedupChord, k, rows, nameComposites, flagCollapse);
             return 0;
         });
 

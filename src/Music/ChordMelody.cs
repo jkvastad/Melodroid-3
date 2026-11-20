@@ -90,6 +90,14 @@ public static class ChordMelody
             .ToList();
     }
 
+    // The melody key that collapses this row's placement under the preference principle (prime-5 →
+    // lcm-24), or null. Single-placement rows only (composites are already in stable union form); the
+    // collapsing key must be a member cell. Used by `table chord-melody --flag-collapse` to colour
+    // that cell. Reuses Placements.CollapsingKey as the single source.
+    public static int? CollapseFlagKey(ChordMelodyRow row, int ktet) =>
+        row.PB is null && Placements.CollapsingKey(row.PA, ktet) is int ck && row.Keys.Contains(ck)
+            ? ck : null;
+
     // The rows whose key set is not a proper subset of another row's in the same list — the antichain
     // by inclusion (as ChordProgressions.Maximal does for placements).
     private static IReadOnlyList<ChordMelodyRow> Maximal(IReadOnlyList<ChordMelodyRow> rows)

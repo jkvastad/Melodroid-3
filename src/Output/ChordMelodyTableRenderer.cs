@@ -10,6 +10,7 @@ public static class ChordMelodyTableRenderer
         int ktet,
         IReadOnlyList<ChordMelodyRow> rows,
         bool nameComposites,
+        bool flagCollapse = false,
         IAnsiConsole? console = null)
     {
         console ??= AnsiConsole.Console;
@@ -32,11 +33,15 @@ public static class ChordMelodyTableRenderer
             // Chord keys read green, every other scale member a plain bullet. (A per-column
             // "distinguishing key" highlight — marking member keys unique to this row within a
             // column — would sharpen the implied-scale reading but needs cross-row state; left as a
-            // possible follow-up.)
+            // possible follow-up.) With --flag-collapse, the one melody key that collapses this
+            // row's placement under preference (prime-5 → lcm-24) reads yellow, overriding green.
+            var flag = flagCollapse ? ChordMelody.CollapseFlagKey(row, ktet) : null;
             for (var k = 0; k < ktet; k++)
             {
                 if (!keySet.Contains(k))
                     cells[k + 1] = string.Empty;
+                else if (k == flag)
+                    cells[k + 1] = "[yellow]●[/]";
                 else
                     cells[k + 1] = chordSet.Contains(k) ? "[green]●[/]" : "●";
             }
@@ -46,6 +51,8 @@ public static class ChordMelodyTableRenderer
         var chordStr = "{" + string.Join(", ", chordKeys.OrderBy(k => k)) + "}";
         var caption =
             $"chord-melody: chord={chordStr} · {rows.Count} scale row{(rows.Count == 1 ? "" : "s")} · {ktet}-tet";
+        if (flagCollapse)
+            caption += "\n[yellow]●[/] = this melody note collapses the placement under preference (prime-5 → lcm-24)";
         if (nameComposites)
             caption += $"\n{NamedScales.Legend()}";
         table.Caption(caption);
