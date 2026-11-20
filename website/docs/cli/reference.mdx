@@ -45,19 +45,26 @@ melodroid table octave-sweep --ratios 1.0 1.25 1.5 \
   [--only-centered-full-matches] [--max-size 24] [--max-prime 5]
 ```
 
-Sweeps a reference ratio across $[1, 2)$, binning each input ratio against the good fractions;
-flags full matches and centered full matches. `--ratios` is required (space-separated decimals on
-$[1, 2)$).
+Sweeps a reference ratio across $[1, 2)$, binning each input ratio against the good fractions and
+flagging full matches. Some common reference sets: (LCM 4) `1.0 1.25 1.5`, (LCM 8)
+`1.0 1.125 1.25 1.5 1.875`.
 
-Strict full matches are highlighted green. When a ratio falls in two overlapping bins
-(only possible at radius $\geq 1/161$ for defaults), the row is flagged ambiguous: each competing column is
-filled with a `~` prefix and the row is highlighted yellow; its LCM cell shows the **minimum**
-LCM across candidate readings with a `?` suffix (e.g. `9?`).
+#### Options
 
-Some common reference sets:
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--ratios` | **required** | space-separated decimals on $[1, 2)$ to bin |
+| `--sweep-step` | `0.001` | reference-ratio step across $[1, 2)$ |
+| `--bin-radius` | `1/161` | JND bin radius for matching |
+| `--only-full-matches` | off | keep only rows with a strict full match |
+| `--only-centered-full-matches` | off | keep only centered full matches |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
 
-- (LCM 4) `1.0 1.25 1.5`
-- (LCM 8) `1.0 1.125 1.25 1.5 1.875`
+Strict full matches are highlighted green. When a ratio falls in two overlapping bins (only possible
+at radius $\geq 1/161$ for defaults) the row is flagged **ambiguous**: each competing column gets a
+`~` prefix and the row turns yellow, and its LCM cell shows the **minimum** LCM across candidate
+readings with a `?` suffix (e.g. `9?`).
 
 ### `ktet-cutoffs`
 
@@ -75,8 +82,20 @@ melodroid table key-sweep --ktet 12 (--keys 0 4 7 | --ratios 1.0 1.25 1.5) \
   [--bin-radius c_k] [--only-full-matches] [--max-size 24] [--max-prime 5]
 ```
 
-Like the octave sweep but stepping through the $k$ keys of the tuning. At least one of `--keys` /
-`--ratios` is required; both may be combined.
+Like [`octave-sweep`](#octave-sweep) but stepping through the $k$ keys of the tuning instead of
+sweeping a continuous reference ratio.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--keys` | *at least one of keys / ratios* | keys to bin against the good fractions |
+| `--ratios` | *at least one of keys / ratios* | decimals on $[1, 2)$ to bin (combinable with `--keys`) |
+| `--ktet` | `12` | keys in the equal-tempered tuning |
+| `--bin-radius` | `c_k` | JND bin radius (defaults to the $k$-tet covering cutoff) |
+| `--only-full-matches` | off | keep only rows with a strict full match |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
 
 ### `placement`
 
@@ -95,42 +114,68 @@ melodroid table renormalizations --lcm 24 \
   [--lcm-tradeoff] [--max-c 0.05] [--placements] [--ktet 12]
 ```
 
-Renormalizes one LCM family onto each of its member fractions, printing a row per base (the trivial `1/1` base reproduces the family). The `Count` column reveals which renormalizations collapse fractions together, exposing the family's isomorphism structure. The `LCM` column gives the wave pattern length (LCM of denominators) of each renormalized set — for non-unison bases this often exceeds the family's own LCM as images fall off the good-fraction grid. In `--approximate` mode an additional `LCM ✓` column reports the wave pattern length after snapping to nearest-good fractions (shown as `—` on rows that were already all-good).
+Renormalizes one LCM family onto each of its member fractions — one row per base — exposing the
+family's isomorphism structure (the trivial `1/1` base reproduces the family).
 
-Renormalization preserves prime smoothness but not size, so some bases produce fractions that
-exceed `--max-size` and are therefore *not* good fractions (e.g. `16/9 ÷ 9/8 = 128/81`).
-`--approximate` snaps each such image to its nearest good fraction (multiplicative
-[bin distance](../theory/cluster-ranges.mdx), `c = |b − a| / (b + a)`) and adds columns: the
-non-good images are highlighted, `→ good` shows the resulting all-good set, and `c` / `c %` give
-the smallest bin radius that makes the whole renormalization good — the largest snap it required —
-as an exact reduced fraction and a percentage to compare against the ~0.5–1 % pitch JND. Rows that
-are already all-good show `—`. For lcm 18, base `16/9` renormalizes into the lcm-24 major scale at
-`c = 1/161 ≈ 0.621 %` — exactly the syntonic comma the cluster-ranges page highlights.
-`--per-snap-c` (companion to `--approximate`) additionally annotates each snapped `→ good` value
-with the exact bin radius that individual snap required, as `fraction, %` in parentheses (e.g.
-`5/3 (1/161, 0.621 %)`); already-good values are left plain.
+#### Example
 
-`--lcm-tradeoff` (companion to `--approximate`) adds an `LCM↔c options` column exposing the tension
-between snap accuracy and wave pattern length. Nearest-good snapping lets each image chase its own
-closest good fraction, so denominators diverge and the LCM can balloon far past 24. Instead, for
-each candidate LCM cap `L` in `1..--max-lcm`, every image is snapped to the nearest good fraction
-whose denominator divides `L` — deliberately accepting a worse per-fraction snap so the chosen
-denominators share more factors and hold the overall LCM low. Each row lists the resulting Pareto
-frontier, one `LCM → c %` breakpoint per line (lowest LCM bolded): smaller LCM costs a larger
-radius. `--max-c` (default `0.05`, i.e. 5 % — intentionally above the ~0.5–1 % JND to leave the
-frontier room) caps how large a bin radius a snap may cost; caps no assignment can satisfy within it
-are omitted, and a row with no feasible option shows `—`. For lcm 24 renormalized onto `5/3`,
-nearest-good snapping balloons to an lcm-120 set at only `0.621 %`, but the frontier shows the same
-renormalization can be held to lcm ≤ 24 for about `2 %` — the price of a recognizable pattern.
+```bash
+melodroid table renormalizations --lcm 18 --approximate
+```
 
-`--placements` (companion to `--approximate`) adds a `Placement` column re-expressing each rotation
-as a `--ktet` (default 12) placement. Renormalising onto member fraction `b` re-roots the same keys
-on the key `k` where `b` sits, so the snapped set reads as another family `L'` there: `= L'@k` for an
-exact isomorphism, `⊆ L'@k` for a renormalised proper subset. Only rotations reaching a good LCM
-(`L' ≤ --max-lcm`) entirely within the syntonic comma (`c ≤ 1/161`) are placed; those that balloon
-past `--max-lcm` or overshoot the comma show `—`. See
-[renormalisation and isomorphism](../theory/lcm-families.mdx#renormalisation-and-isomorphism)
-for the underlying family relations.
+```text
+┌──────┬───────┬───────────────┬─────┬───────────────┬───────┬───────┬─────────┐
+│ Base │ Count │ Fractions     │ LCM │ → good        │ LCM ✓ │     c │     c % │
+├──────┼───────┼───────────────┼─────┼───────────────┼───────┼───────┼─────────┤
+│  1/1 │     6 │ 1/1, 10/9,    │  18 │ 1/1, 10/9,    │     — │     — │         │
+│      │       │ 4/3, 3/2,     │     │ 4/3, 3/2,     │       │       │         │
+│      │       │ 5/3, 16/9     │     │ 5/3, 16/9     │       │       │         │
+│    … │     … │ …             │   … │ …             │     … │     … │       … │
+│ 16/9 │     6 │ 1/1, 9/8,     │  16 │ 1/1, 9/8,     │    24 │ 1/161 │ 0.621 % │
+│      │       │ 5/4, 3/2,     │     │ 5/4, 3/2,     │       │       │         │
+│      │       │ 27/16, 15/8   │     │ 5/3, 15/8     │       │       │         │
+└──────┴───────┴───────────────┴─────┴───────────────┴───────┴───────┴─────────┘
+   lcm-18 · 6 members · worst required radius 1/161 (0.621 %) · JND ≈ 0.5–1 %
+```
+
+Base `1/1` reproduces the family; renormalising onto `16/9` re-roots the same keys onto the lcm-24
+major scale after snapping `27/16 → 5/3`, costing a bin radius `c = 1/161` (the syntonic comma). The
+`Count` column reveals which rotations collapse fractions together; `LCM` is the raw wave pattern
+length and `LCM ✓` the length after snapping.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--lcm` | **required** | the LCM family to renormalize |
+| `--approximate` | off | snap non-good images to nearest good fraction; adds `→ good` / `LCM ✓` / `c` / `c %` columns |
+| `--per-snap-c` | off | with `--approximate`: annotate each snapped value with its own bin radius |
+| `--lcm-tradeoff` | off | with `--approximate`: add the `LCM↔c options` Pareto-frontier column |
+| `--max-c` | `0.05` | with `--lcm-tradeoff`: max bin radius a snap may cost (5 %) |
+| `--placements` | off | with `--approximate`: add a `Placement` column (`= L'@k` / `⊆ L'@k`) |
+| `--ktet` | `12` | keyboard for the `Placement` column |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated (snap-denominator cap for `--lcm-tradeoff` / `--placements`) |
+
+#### Option details
+
+- **`--approximate`** — renormalisation preserves prime smoothness but not size, so some images
+  exceed `--max-size` and are *not* good (e.g. `16/9 ÷ 9/8 = 128/81`); this snaps each to its
+  nearest good fraction by [bin distance](../theory/cluster-ranges.mdx) `c = |b − a| / (b + a)`. The
+  `c` / `c %` columns report the largest snap the row required — compare against the ~0.5–1 % pitch
+  JND; already-good rows show `—`.
+- **`--per-snap-c`** — annotates each `→ good` value with the radius its own snap needed, as
+  `fraction, %` (e.g. `5/3 (1/161, 0.621 %)`); already-good values stay plain.
+- **`--lcm-tradeoff`** — nearest-good snapping lets each image chase its closest fraction, so the LCM
+  can balloon far past 24. Instead, for each LCM cap `L ≤ --max-lcm` every image snaps to the nearest
+  good fraction whose denominator divides `L`, trading snap accuracy for a shorter wave pattern. The
+  column lists the Pareto frontier, one `LCM → c %` per line (lowest LCM bolded).
+- **`--placements`** — re-expresses each rotation as a `--ktet` placement: renormalising onto `b`
+  re-roots the keys on the key where `b` sits, so the set reads as `= L'@k` (exact isomorphism) or
+  `⊆ L'@k` (renormalised subset). Only rotations reaching a good LCM within the syntonic comma are
+  placed; others show `—`. See
+  [renormalisation and isomorphism](../theory/lcm-families.mdx#renormalisation-and-isomorphism).
 
 ### `family-overlap`
 
@@ -148,7 +193,51 @@ melodroid table supersets --keys 0 4 7 [--compare 0 3 7] [--collapse] \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists every placement whose keys contain the requested set, tightest fits first. `--keys` accepts any integer and octave-normalizes it into `[0, ktet-1]` (e.g. `14 → 2`, `-1 → ktet-1`). Pass `--compare` with a second key set (normalized the same way) to split the supersets into three tables: **Common** — placements that are a superset of both sets (matched by `(lcm, at)` identity) — then those unique to `--keys` and unique to `--compare`. `--collapse` folds placements that cover the **same keys** (isomorphic families sweep out identical key patterns, so e.g. `3@7` and `4@0` both land on `0 4 7`) down to the lowest-LCM representative — handy for reading a single key's placement hierarchy without the isomorphic redundancy.
+Lists every placement whose keys contain the requested set, tightest fits first.
+
+#### Example
+
+```bash
+melodroid table supersets --keys 0 4 7
+```
+
+```text
+┌─────┬─────┬────────────────┬──────────┐
+│ LCM │ Key │ Keys (12-tet)  │ Extra    │
+├─────┼─────┼────────────────┼──────────┤
+│   3 │   7 │ 7 0 4          │          │
+│   4 │   0 │ 0 4 7          │          │
+│   5 │   4 │ 4 7 0 2        │ 2        │
+│   … │   … │ …              │ …        │
+│  24 │   0 │ 0 2 4 5 7 9 11 │ 2 5 9 11 │
+└─────┴─────┴────────────────┴──────────┘
+ supersets: {0, 4, 7} · 23 placements · 12-tet
+```
+
+Tightest fits first: `3@7` and `4@0` carry the triad with no `Extra` keys; larger families add the
+keys listed in `Extra`.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--keys` | **required** | key set to find supersets of (octave-normalized) |
+| `--compare` | — | second key set → split into Common / only-`--keys` / only-`--compare` tables |
+| `--collapse` | off | fold same-key (isomorphic) placements to the lowest-LCM representative |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **`--keys`** — accepts any integer and octave-normalizes into `[0, ktet-1]` (`14 → 2`,
+  `-1 → ktet-1`).
+- **`--compare`** — splits the supersets into three tables: **Common** (superset of both sets,
+  matched by `(lcm, at)` identity), then those unique to `--keys` and unique to `--compare`.
+- **`--collapse`** — isomorphic families sweep out identical key patterns (`3@7` and `4@0` both land
+  on `0 4 7`), so this folds them to the lowest-LCM representative — a single key's placement
+  hierarchy without the redundancy.
 
 ### `superpositions`
 
@@ -159,13 +248,66 @@ melodroid table superpositions --keys 0 2 4 5 7 9 11 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family placements, fewest pieces first. A building block may extend past the target; each row reports its extra keys (union minus target) and whether the pieces partition the target (`Disjoint?`). Every piece uniquely covers at least one target key. `--keys` octave-normalizes like `supersets`. Restrict the building blocks with `--min-block-lcm` / `--max-block-lcm` — e.g. `--min-block-lcm 8 --max-block-lcm 12` composes the target from the 8/9/10/12 families alone. `--max-results` caps the listing.
+Lists minimal/irredundant ways to cover `--keys` as a union (superposition) of LCM-family
+placements, fewest pieces first.
 
-By default only **unique-reference** decompositions are listed: every piece shares one reference key (anchor), shown in the `Ref` column. The reference of a placement `L@a` is its anchor `a` — the key where the family's fundamental (`1/1`) sits — so a unique-reference cover roots the whole sound on a single fundamental. Isomorphic families are handled as aliases: the same keyboard key-set reachable by different families at shifted anchors (e.g. `4@0` and `3@7`, or `8@0` and `12@7`) lets a piece join whichever reference its partners share. With `--min-block-lcm 8 --max-block-lcm 12` this exposes the major scale as `8@0 + 12@0` (rooted on key 0, no extras) — the shared-reference alias of the cross-anchor `8@0 + 8@5`. Because the pieces share a fundamental, the whole superposition's wave pattern length is the `lcm` of their family LCMs, shown in the `LCM` column: for `8@0 + 12@0` that is `lcm(8, 12) = 24` — the very pattern of the single-piece `24@0` cover.
+#### Example
 
-Pass `--any-reference` to drop the shared-reference requirement and list every minimal cover (pieces may sit at different anchors, the `Ref` column is omitted); that is where mixed-reference identities such as the major scale `= 8@0 + 8@5` and the natural minor `= 8@1 + 8@6` appear.
+```bash
+melodroid table superpositions --keys 0 2 4 5 7 9 11 \
+  --min-block-lcm 8 --max-block-lcm 12
+```
 
-Two flags cut the listing down to the interesting rows. `--collapse-aliases` folds together decompositions that produce the identical union at the same reference **with the same piece count** — the isomorphic/renormalisation aliases such as `5@0 + 8@0` = `8@0 + 10@0` = `8@0 + 20@0`, or `4@7 + 15@7` = `12@7 + 15@7` = `20@7 + 15@7` — keeping one lowest-LCM representative per group (piece count is part of the grouping, so a genuinely different cover with more, smaller pieces is never mistaken for an alias). `--reference 0 7 …` restricts the listing to unique-reference decompositions anchored on the given key(s) (octave-normalized like `--keys`); it is incompatible with `--any-reference`, which has no single anchor to filter on. Together they answer "what are the distinct ways to build this key set rooted on its tonic or dominant?" — e.g. `--keys 0 2 3 5 7 8 11 --collapse-aliases --reference 0 7 2` reduces the harmonic minor scale's 55 raw rows to its handful of tonic/dominant two-piece fits.
+```text
+┌───┬─────┬─────┬───────────────────┬─────────────────────┬────────┬───────────┐
+│ # │ Ref │ LCM │ Pieces            │ Union (12-tet)      │ Extra  │ Disjoint? │
+├───┼─────┼─────┼───────────────────┼─────────────────────┼────────┼───────────┤
+│ 2 │   0 │  24 │ 8@0 + 12@0        │ 0 2 4 5 7 9 11      │        │           │
+│ 2 │   7 │  36 │ 9@7 + 12@7        │ 0 2 4 5 7 9 11      │        │           │
+│ 2 │   0 │  72 │ 8@0 + 9@0         │ 0 2 4 5 7 9 10 11   │ 10     │           │
+│ … │   … │   … │ …                 │ …                   │ …      │           │
+└───┴─────┴─────┴───────────────────┴─────────────────────┴────────┴───────────┘
+superpositions (unique-reference): {0, 2, 4, 5, 7, 9, 11} · 9 decompositions ·
+                            blocks LCM 8–12 · 12-tet
+```
+
+The major scale decomposes as `8@0 + 12@0`, both rooted on key 0 (so `Ref = 0`); their shared
+fundamental gives wave pattern length `lcm(8, 12) = 24` — the very pattern of the single-piece
+`24@0`. `Extra` is the union minus the target; `Disjoint?` marks whether the pieces partition it.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--keys` | **required** | key set to cover (octave-normalized like [`supersets`](#supersets)) |
+| `--min-block-lcm` | `2` | smallest building-block family LCM |
+| `--max-block-lcm` | `24` | largest building-block family LCM |
+| `--max-results` | `200` | cap on listed decompositions |
+| `--any-reference` | off | allow pieces at different anchors (drops shared-reference + `Ref` column) |
+| `--collapse-aliases` | off | fold same-reference, same-count isomorphic aliases to one representative |
+| `--reference` | — | restrict to covers anchored on the given key(s); incompatible with `--any-reference` |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **unique-reference (default)** — every piece shares one anchor (the `Ref` key where its `1/1`
+  fundamental sits), so the cover roots on a single fundamental and the superposition's wave pattern
+  length is the `lcm` of the piece LCMs. Isomorphic aliases (`4@0` = `3@7`, `8@0` = `12@7`) let a
+  piece join whichever reference its partners share.
+- **`--any-reference`** — drops the shared-reference requirement (pieces may sit at different
+  anchors, `Ref` omitted); surfaces mixed-reference identities like major `= 8@0 + 8@5`, natural
+  minor `= 8@1 + 8@6`.
+- **`--collapse-aliases`** — folds decompositions giving the identical union at the same reference
+  **with the same piece count** (`5@0 + 8@0` = `8@0 + 10@0` = `8@0 + 20@0`), keeping one lowest-LCM
+  representative; a different cover with more, smaller pieces is never mistaken for an alias.
+- **`--reference`** — restricts to unique-reference covers anchored on the given key(s); with
+  `--collapse-aliases` it answers "the distinct ways to build this set rooted on its tonic/dominant"
+  (e.g. harmonic minor's 55 raw rows → a handful of tonic/dominant two-piece fits).
+- **`--min-block-lcm` / `--max-block-lcm`** — bound which family LCMs may serve as building blocks
+  (e.g. `8`–`12` composes from the 8/9/10/12 families alone).
 
 ### `voicings`
 
@@ -184,16 +326,54 @@ melodroid table subsets (--lcm 15 [--at 0] | --keys 0 4 7) \
   [--ambiguous-matches 1] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Enumerates every size-≥2 subset of the base key set (an `--lcm@--at` placement or a literal
-`--keys` set) and key-sweeps each one. Output is a matrix: one row per subset, one column per
-reference key `n`, with each cell holding the LCM the subset full-matches at that reference. This
-surfaces the renormalized-subset relations of the `graph lcm-families` output at the keyboard
-level — e.g. `--lcm 15` reveals subsets that full-match LCM 20. Ambiguous full matches (marked
-with a trailing `?`) are included by default; `--only-full-matches` restricts to strict matches.
-An ambiguous cell can full-match more than one LCM family; `--ambiguous-matches` (default 1) sets
-how many candidate LCMs each ambiguous cell lists, ascending best-fit (shortest wave pattern
-length) first — e.g. `--ambiguous-matches 2` shows `8? 9?`. `--max-results` caps the number of subset rows. Exactly one of
-`--lcm` / `--keys`. `--bin-radius` defaults to the `c_k` cutoff (as in `key-sweep`).
+Enumerates every size-≥2 subset of a base key set and key-sweeps each one into a matrix: one row per
+subset, one column per reference key, each cell the LCM the subset full-matches at that reference.
+
+#### Example
+
+```bash
+melodroid table subsets --keys 0 4 7
+```
+
+```text
+┌────────┬───┬────┬────┬────┬───┬────┬─────┬───┬────┬─────┬────┬────┐
+│ Subset │ 0 │  1 │  2 │  3 │ 4 │  5 │   6 │ 7 │  8 │   9 │ 10 │ 11 │
+├────────┼───┼────┼────┼────┼───┼────┼─────┼───┼────┼─────┼────┼────┤
+│ 0 4 7  │ 4 │    │ 9? │ 60 │ 5 │ 8? │     │ 3 │ 40 │ 10? │    │ 15 │
+│ 0 4    │ 4 │ 40 │ 9? │ 15 │ 5 │  8 │     │ 3 │ 20 │  10 │    │ 15 │
+│ 0 7    │ 2 │    │ 9? │ 12 │ 5 │ 8? │     │ 3 │  8 │  5? │ 9? │ 15 │
+│ 4 7    │ 4 │    │ 9? │ 60 │ 5 │ 8? │ 15? │ 3 │ 40 │ 10? │    │ 15 │
+└────────┴───┴────┴────┴────┴───┴────┴─────┴───┴────┴─────┴────┴────┘
+ subsets of {0 4 7}; base keys = {0 4 7}; k = 12-tet; bin radius =
+ 0.01022 (1.0216 %); 4 subsets, 39 matches (27 strict, 12 ambiguous)
+```
+
+Row `0 4 7` column 7 reads `3` — the triad full-matches the lcm-3 family a fifth up. A trailing `?`
+flags an ambiguous cell (it reads as more than one LCM); an empty cell is no full match there.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--lcm` | *one of lcm / keys required* | base key set = the `--lcm@--at` placement |
+| `--at` | `0` | anchor for `--lcm` |
+| `--keys` | *one of lcm / keys required* | base key set as literal keys |
+| `--bin-radius` | `c_k` | match radius (defaults to the $k$-tet covering cutoff, as in `key-sweep`) |
+| `--only-full-matches` | off | restrict to strict matches (drop ambiguous `?` cells) |
+| `--ambiguous-matches` | `1` | how many candidate LCMs each ambiguous cell lists |
+| `--max-results` | `200` | cap on subset rows |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **base key set (`--lcm@--at` or `--keys`)** — the matrix surfaces the renormalized-subset
+  relations of the `graph lcm-families` output at the keyboard level (e.g. `--lcm 15` reveals subsets
+  that full-match LCM 20).
+- **`--ambiguous-matches`** — an ambiguous cell can full-match more than one family; this sets how
+  many it lists, best-fit (shortest wave pattern length) first (e.g. `2` shows `8? 9?`).
 
 ### `chord-melody`
 
@@ -203,44 +383,65 @@ melodroid table chord-melody --chord-keys 0 4 7 \
   [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Matrix for **playing melody with chords**. Rows are the scales (key sets) that fully **contain** the
-chord, generated from the **subset principle** rather than a curated catalog: every single
-LCM-family placement ([`supersets`](#supersets)) and every **composite scale** (a bridged placement
-pair `P_A·S·P_B` sharing a subset `S` of `≥ --min-subset-notes` keys, as in
-[`composite-scales`](#composite-scales), stable union) whose key set contains the chord. Columns are
-the 12 keys; a cell marks whether the key is in that scale row. Reading column K shows which scale
-rows survive playing key K as melody over the chord — i.e. which scale that melody note implies.
-Rows with identical key sets collapse to one representative (single placement preferred, then
-lowest-LCM constituents); rows sort by key count then keys ascending.
+Matrix for **playing melody with chords**: rows are the scales (key sets) that fully **contain** the
+chord; reading a column shows which scales survive playing that key as melody.
 
-Rows are labelled by their placement constituents (`{lcm}@{at}` for a single placement, `P_A·S·P_B`
-for a composite) by default. `--name-composites` relabels a **composite** row with its traditional
-scale name (`{Short}@{Anchor}` via the named-scale catalog, legend in the caption) when its key set
-matches one; single-placement rows always keep `{lcm}@{at}` (so the major-scale placement reads
-`24@0`, not `M@0`), mirroring [`analyze midi`](#midi). These names are empirical labels on the
-subset-principle results, not the derivation
-([composite scales](/docs/music/progression-principles#composite-scales)): the four minor/bebop/harmonic
-scales are composite-scale outputs, major is the `lcm-24` placement `24@k`.
+#### Example
 
-`--min-subset-notes` (default 4) is the composite bridge floor — raising it only drops composite
-rows, never single-placement rows. `--pool-maximal` keeps only the **per-category maximal** rows:
-it drops a single-placement row whose key set is a strict subset of another single-placement row, and
-a composite row whose key set is a strict subset of another composite row — the two categories are
-filtered independently, so a composite never absorbs a single placement. `--collapse-isomorphic`
-relabels every row's placement(s) — single-placement rows and composite constituents alike — to the
-power-of-2-preferred representative of its key set (`4` over `3`, `8` over `9/10/12`), then lowest LCM,
-then anchor.
+```bash
+melodroid table chord-melody --chord-keys 0 4 7
+```
 
-`--flag-collapse` (off) colours the single melody-note cell that **collapses** a single `lcm-15` /
-`lcm-20` placement under the [preference principle](/docs/music/preference) — the key `(At+8) mod 12`
-for `lcm-15`, `(At+3) mod 12` for `lcm-20` — reinterpreting the prime-5 placement as a prime-5-free
-`lcm-24` pattern. The cell reads yellow (overriding the green chord highlight when they coincide,
-since the collapse is the more specific signal); rows and all other cells are unchanged. Composite
-rows already carry the stable union, so only single-placement rows are ever flagged. For chord
-`0 4 7`, this flags key 3 on the `15@7` row — playing melody note 3 collapses it — while its
-prime-5-unique keys (e.g. 8) stay plain.
+```text
+┌─────────────────┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬────┬────┐
+│           Scale │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 │ 11 │
+├─────────────────┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼────┼────┤
+│             3@7 │ ● │   │   │   │ ● │   │   │ ● │   │   │    │    │
+│             8@0 │ ● │   │ ● │   │ ● │   │   │ ● │   │   │    │ ●  │
+│            24@0 │ ● │   │ ● │   │ ● │ ● │   │ ● │   │ ● │    │ ●  │
+│               … │   │   │   │   │   │   │   │   │   │   │    │    │
+│   15@0·5@0·15@7 │ ● │ ● │   │   │ ● │ ● │   │ ● │   │ ● │ ●  │    │
+└─────────────────┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴────┴────┘
+```
 
-12-tet only; `--chord-keys` is required. Chord keys are highlighted green; `●` marks membership.
+Every row is a scale containing the chord `0 4 7` (chord keys highlighted green; `●` marks
+membership). Reading **column 2** keeps `8@0` / `24@0` but not `3@7` — playing melody note 2 implies
+the richer scale. Single placements (`3@7`, `24@0`) come first, then composites (`P_A·S·P_B`). 12-tet
+only.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--chord-keys` | **required** | the chord the scales must contain |
+| `--min-subset-notes` | `4` | composite bridge floor (raising drops only composite rows) |
+| `--name-composites` | off | relabel a composite row with its traditional scale name when its keys match |
+| `--collapse-isomorphic` | off | relabel placements to the power-of-2 representative |
+| `--pool-maximal` | off | keep only per-category maximal rows |
+| `--flag-collapse` | off | colour the melody cell that collapses a single lcm-15 / lcm-20 placement |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **rows** — every single LCM-family placement ([`supersets`](#supersets)) and every composite scale
+  ([`composite-scales`](#composite-scales), stable union) whose key set contains the chord; identical
+  key sets collapse to one representative (single placement preferred). Subset-principle results, not
+  a curated catalog.
+- **`--name-composites`** — relabels a composite row with its named scale (`{Short}@{Anchor}`, legend
+  in the caption) when its keys match; single-placement rows keep `{lcm}@{at}` (so major reads
+  `24@0`, not `M@0`), mirroring [`analyze midi`](#midi). Empirical labels, not the derivation.
+- **`--pool-maximal`** — drops a row whose key set is a strict subset of another in the **same**
+  category (single-placement / composite filtered independently, so a composite never absorbs a
+  single placement).
+- **`--collapse-isomorphic`** — relabels every row's placement(s) to the power-of-2-preferred
+  representative (`4` over `3`, `8` over `9/10/12`), then lowest LCM, then anchor.
+- **`--flag-collapse`** — colours yellow the single melody cell that collapses an lcm-15 / lcm-20
+  placement under the [preference principle](/docs/music/preference) (key `(At+8) mod 12` for
+  lcm-15, `(At+3) mod 12` for lcm-20), reinterpreting it as an lcm-24 pattern; only single-placement
+  rows are ever flagged.
 
 ### `chords`
 
@@ -250,47 +451,66 @@ melodroid table chords \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Enumerates the unique chords of a `--ktet` keyboard, deduplicated under **transposition**:
-a chord and all its transpositions count once, so `0 4 7`, `0 3 8` and `0 5 9` are one chord.
-Equivalently these are the binary *necklaces* of length `k` — for 12-tet there are 352 in
-all (including the empty set and singletons), or 280 across the default 2–7 notes. Each row
-lists the canonical key set (the most-compact rotation, transposed to start at 0 — the "normal
-order" of set theory, e.g. the major triad as `0 4 7`) and its orbit size (the number of distinct
-transpositions; symmetric chords like the augmented triad `0 4 8` have small orbits).
-`--min-notes` / `--max-notes` filter by
-note count; `--max-results` caps the rows. `--no-minor-seconds` (12-tet only) drops every chord
-with a minor second (any two notes a semitone apart) — including the bare semitone dyad and the
-whole major-seventh class, since on the chromatic circle a chord's seventh and root are adjacent.
-`--allow-maj7` (12-tet only, implies `--no-minor-seconds`) relaxes this for chords with exactly
-one semitone: the semitone is re-voiced to the octave boundary so the top note sits a semitone
-below the octave and reads as a major seventh — the dyad `0 1` → `0 11`, and the major-seventh
-chord `0 1 5 8` → `0 4 7 11`; chords with two or more semitones are still dropped.
-`--no-tritones` (12-tet only, combinable with `--no-minor-seconds`) drops every chord with any
-two notes six semitones apart, including tritone-stacked chords like the diminished seventh
-`0 3 6 9` whose tritones are not adjacent gaps; unlike the semitone filter it has no re-voicing
-relaxation, since a tritone survives every voicing.
-`--allow-dim` (12-tet only, implies `--no-tritones`) relaxes this for diminished chords: a chord is
-kept when every one of its tritones belongs to a diminished triad (`p, p+3, p+6`) present in the
-chord — the diminished triad `0 3 6`, the diminished seventh `0 3 6 9`, and the dominant seventh
-(shown in its compact necklace form `0 3 6 8`, which contains `0 3 6`); a chord with any
-unjustified tritone is still dropped. A final
-**Placements** column lists the LCM-family placements whose keys contain the chord — the inline
-form of feeding the chord's key set to [`supersets`](#supersets). They are shown tightest
-(fewest extra keys) first, each as `lcm@at` (the family LCM at the anchor key where its `1/1`
-fundamental sits); any keys a placement carries beyond the chord are left implicit — inspect them
-with `supersets`. By default, placements that cover the **same keys** (isomorphic families
-sweep out identical key patterns, so their matching placements coincide — e.g. the major triad's
-`3@7` and `4@0` both land on `0 4 7`) are collapsed to the lowest LCM; `--explicit-placements`
-restores the full list. The list is capped per row, overflowing to ` …(+M)`, and is blank when no
-family placement contains the chord.
-`--lcm-only` (the **LCM approach** to chords) keeps only the chords that are a subset of at least
-one available LCM family — i.e. it hides every row whose Placements column would be blank, leaving
-the chords Harmonic Pattern Theory actually predicts. `--max-lcm` bounds which families count as
-available: at the default 24 there are 102 such chords across 2–7 notes, collapsing to 20 when
-capped at `--max-lcm 12` (only the isomorphic ≤12 group), which is where the tritone dyad `0 6` — a
-subset of the lcm 15/20/24 families alone — drops out.
-The good-fraction options `--max-size` / `--max-prime` / `--max-lcm` drive which families are
-generated for the Placements column (and the `--lcm-only` filter).
+Enumerates the unique chords of a `--ktet` keyboard (deduplicated under transposition — the binary
+*necklaces*), each with the LCM-family placements that contain it.
+
+#### Example
+
+```bash
+melodroid table chords --lcm-only --max-notes 4
+```
+
+```text
+┌──────┬─────────┬───────┬───────────────────────────────────────────────┐
+│ Size │ Keys    │ Orbit │ Placements                                    │
+├──────┼─────────┼───────┼───────────────────────────────────────────────┤
+│    2 │ 0 6     │     6 │ 20@2 20@8 15@3 15@9 24@1 24@7                 │
+│    3 │ 0 4 7   │    12 │ 3@7 5@4 8@0 8@5 18@2 18@7 20@0 20@4 …(+7)     │
+│    3 │ 0 4 8   │     4 │ 20@0 20@4 20@8 15@3 15@7 15@11                │
+│    … │ …       │     … │ …                                             │
+└──────┴─────────┴───────┴───────────────────────────────────────────────┘
+```
+
+With `--lcm-only`, only chords contained in some LCM family appear, each with its containing
+placements (tightest first; `…(+N)` = more, collapsed isomorphs). The tritone dyad `0 6` sits only
+in the 15/20/24 families; the symmetric augmented triad `0 4 8` has a small **orbit** (4 distinct
+transpositions). 12-tet.
+
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--ktet` | `12` | keyboard |
+| `--min-notes` | `2` | minimum notes per chord |
+| `--max-notes` | `7` | maximum notes per chord |
+| `--max-results` | `1000` | cap on rows |
+| `--no-minor-seconds` | off | drop chords with any semitone (12-tet) |
+| `--allow-maj7` | off | implies `--no-minor-seconds`; keep single-semitone chords re-voiced as a major 7th |
+| `--no-tritones` | off | drop chords with any tritone (12-tet) |
+| `--allow-dim` | off | implies `--no-tritones`; keep diminished chords whose tritones sit in a diminished triad |
+| `--lcm-only` | off | keep only chords contained in ≥1 available LCM family |
+| `--explicit-placements` | off | show all placements, not just the lowest-LCM per same-key group |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated (which families are available) |
+
+#### Option details
+
+- **necklaces** — a chord and all its transpositions count once (`0 4 7`, `0 3 8`, `0 5 9` are one);
+  each row shows the canonical "normal order" key set and its **orbit** (distinct transpositions;
+  symmetric chords like `0 4 8` have small orbits). 352 necklaces for 12-tet, 280 across 2–7 notes.
+- **Placements column** — the LCM-family placements containing the chord, the inline form of
+  [`supersets`](#supersets): tightest first as `lcm@at`, extra keys implicit, capped with `…(+M)`,
+  collapsed to the lowest LCM per same-key group (`--explicit-placements` restores all).
+- **`--no-minor-seconds` / `--allow-maj7`** — drop any semitone (incl. the whole maj7 class, since
+  root and 7th are adjacent on the circle); `--allow-maj7` re-voices a single semitone to the octave
+  boundary so it reads as a major 7th (`0 1` → `0 11`), still dropping ≥2-semitone chords.
+- **`--no-tritones` / `--allow-dim`** — drop any tritone (incl. the dim7 `0 3 6 9`); `--allow-dim`
+  keeps chords whose every tritone belongs to a diminished triad `p, p+3, p+6` present (dim triad,
+  dim7, dominant 7th `0 3 6 8`).
+- **`--lcm-only`** (the **LCM approach**) — hides rows with a blank Placements column, leaving the
+  chords the theory predicts; `--max-lcm` bounds availability (102 chords at 24, 20 at `--max-lcm 12`,
+  where the tritone dyad `0 6` drops).
 
 ### `progression`
 
@@ -425,54 +645,60 @@ melodroid table composite-scales \
   [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-A **bridged placement walk read as a scale generator**. The
-[progression principles doc](/docs/music/progression-principles) defines a bridged walk between
-chords — two placements `P_A`, `P_B` joined by a shared LCM-family subset `S`. Freeze that same
-structure into a *scale* and you get a **composite scale**: the key-union `P_A ∪ P_B`, so named
-because it is composed of more than one placement. This recovers the useful non-LCM scales the
-[preference chapter](/docs/music/preference#blues-and-harmonic-minor) decomposes by hand.
+A **bridged placement walk read as a scale generator**: freeze a bridged pair into the key-union
+`P_A ∪ P_B` — a **composite scale** — recovering the useful non-LCM scales the
+[preference chapter](/docs/music/preference#blues-and-harmonic-minor) decomposes by hand. See the
+[progression principles doc](/docs/music/progression-principles).
 
-The command sweeps every distinct placement pair over all anchors that share a subset `S` of
-`≥ --min-subset-notes` keys and prints one row per scale (12-tet only):
+#### Example
 
-- **Scale** — the concrete key-index set to play, e.g. `{0, 2, 4, 5, 8, 9, 11}`.
-- **Size** — number of keys.
-- **P_A·S·P_B** — the constituents the scale was generated from.
+```bash
+melodroid table composite-scales --stable --pool-maximal
+```
 
-A composite is emitted only when it is **genuinely composite**: pairs whose (stable) union coincides
-with a single LCM-family placement's key set are dropped — such a union is "effectively a single
-placement" and is that placement, not a composite (the whole point of the concept is key sets *not*
-expressible as one placement). This drops the degenerate rows (`15@0·18@3·18@3 = 15@0`,
-`18@0·18@0·24@5 = 24@5`) and any that collapse there under `--stable`.
+```text
+┌──────────────────────────────┬──────┬────────────────┐
+│ Scale                        │ Size │ P_A·S·P_B      │
+├──────────────────────────────┼──────┼────────────────┤
+│ {0, 1, 3, 5, 6, 9, 10}       │    7 │ 15@0·18@3·24@1 │
+│ {0, 2, 3, 5, 6, 9, 10}       │    7 │ 15@0·5@5·15@5  │
+│ {0, 2, 4, 5, 7, 9, 10, 11}   │    8 │ 24@0·18@7·24@5 │
+│ …                            │    … │ …              │
+└──────────────────────────────┴──────┴────────────────┘
+```
 
-**Stable form (`--stable`, default off).** The base case emits the **raw union** `P_A ∪ P_B` of every
-composite scale, dropping nothing. Pass `--stable` to stabilize: each collapsing (prime-5:
-`lcm-15`/`lcm-20`) constituent contributes its *stable* key set (collapse key dropped), and every
-collapsing constituent's collapse key is then subtracted from the whole union. This is what makes
-**harmonic minor** fall out cleanly:
+Each row is a playable key set plus the `P_A·S·P_B` constituents it was generated from.
+`{0, 1, 3, 5, 6, 9, 10}` = `15@0·18@3·24@1` is a transposition of **harmonic minor**
+(`--dedupe-transposition` shows each necklace once). 12-tet only.
 
-- `15@11 = {0 2 4 7 8 9 11}` (collapse key `(11+8) mod 12 = 7`), stable form `{0 2 4 8 9 11}`.
-- `24@0 = {0 2 4 5 7 9 11}` — but `24@0` *independently* carries key 7, so it must be dropped from
-  the finished union, not merely from `15@11`.
-- Result `({0 2 4 8 9 11} ∪ {0 2 4 5 7 9 11}) \ {7} = {0 2 4 5 8 9 11}` = `harm@9`, generated as
-  `15@11·18@2·24@0`.
+#### Options
 
-Without `--stable` (the default) the raw unions are emitted and harmonic minor no longer appears (the
-union keeps key 7).
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--min-subset-notes` | `4` | minimum shared-subset `S` size (a substantial 18/8 parent) |
+| `--stable` | off | use collapsing constituents' stable form + drop their collapse keys (surfaces harmonic minor) |
+| `--collapse-isomorphic` | off | relabel `P_A·S·P_B` to power-of-2 representatives |
+| `--pool-maximal` | off | surface the maximal bridge in the labels |
+| `--dedupe-transposition` | on | fold the 12 transpositions of each scale to one representative |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
 
-**Blues is a looser member and is *not* a union output.** `24@9 ∪ 24@2 = {1 2 4 6 7 8 9 11}`, whereas
-`blues@4 = {1 4 6 7 8 11}` keeps strictly fewer keys — neither `lcm-24` collapses, so no rule drops
-keys 2 and 9. The command emits the full union (a superset of blues) and shows the `24@2·S·24@9`
-triplet; blues itself is a manual sub-selection of that union.
+#### Option details
 
-**Decluttering.** `--dedupe-transposition` (default on) folds the 12 transpositions of each scale to a
-single representative anchor (so harmonic minor shows once, as some transposition of
-`{0 2 4 5 8 9 11}`); turn it off to list every anchored instance. `--collapse-isomorphic` and
-`--pool-maximal` behave as in [`progression`](#progression), decluttering the `P_A·S·P_B` labels —
-`--pool-maximal` in particular surfaces the maximal bridge, so harmonic minor reads as the clean
-`15@·18@·24@` triplet rather than a small incidental subset. `--min-subset-notes` (default `4`) keeps
-`S` a substantial `18`/`8` parent (harmonic minor's `S = 18@2` has 6 keys); lower it to admit smaller
-bridges and many more scales.
+- **genuinely composite only** — a pair whose (stable) union equals a single placement's key set is
+  dropped (it *is* that placement, not a composite), e.g. `15@0·18@3·18@3 = 15@0`.
+- **`--stable`** — each collapsing (`lcm-15`/`lcm-20`) constituent contributes its stable key set and
+  its collapse key is subtracted from the whole union. This makes **harmonic minor** fall out:
+  `15@11·18@2·24@0` → `({0 2 4 8 9 11} ∪ {0 2 4 5 7 9 11}) \ {7} = {0 2 4 5 8 9 11}`. Without it the
+  raw unions keep key 7 and harmonic minor does not appear.
+- **blues is a looser member** — `24@9 ∪ 24@2 = {1 2 4 6 7 8 9 11}` is a *superset* of
+  `blues@4 = {1 4 6 7 8 11}`; neither lcm-24 collapses, so no rule drops keys 2/9. The command emits
+  the full union; blues is a manual sub-selection.
+- **`--pool-maximal`** — surfaces the maximal bridge, so harmonic minor reads as the clean
+  `15@·18@·24@` triplet rather than a small incidental subset.
+- **`--min-subset-notes`** — keeps `S` a substantial 18/8 parent (harmonic minor's `S = 18@2` has 6
+  keys); lower it to admit smaller bridges and many more scales.
 
 ## Graphs
 
@@ -483,21 +709,31 @@ melodroid graph lcm-families [--mode full|collapsed] \
   [--max-size 24] [--max-prime 5] [--max-lcm 24] [--cluster-tolerance 0]
 ```
 
-Writes a Mermaid relation graph to `output/graphs/`. `--mode collapsed` groups each isomorphism
-class into a single node. In full mode each renormalized-subset edge is labelled with **every**
-exact base at which the smaller family embeds into the larger — e.g. `9 → 24` lists both `4/3` and
-`16/9`. Note these are *exact* good-fraction embeddings; keyboard placements from `table subsets`
-can show extra anchors (e.g. `24@10` for LCM 18) that exist only under k-tet
-tempering and have no exact renormalization base here.
+Writes a Mermaid relation graph between LCM families to `output/graphs/` (`lcm-families.md`, or
+`lcm-families-clustered.md` when `--cluster-tolerance > 0`) and prints the path.
 
-`--cluster-tolerance c` (default `0` = exact only) additionally draws **clustering-tolerant**
-renormalized-subset edges (red dashed, `≈` label): a base whose renormalized images embed into the
-larger family only after each image is snapped to its nearest good fraction within bin radius `c`
-(the `c = (b−a)/(b+a)` metric of [Cluster Ranges](../theory/cluster-ranges)). When `c > 0` the file
-is written as `lcm-families-clustered.md` so it does not overwrite the exact graph. Setting
-`c ≥ 1/161 ≈ 0.00621` (the syntonic comma, = `MaxUniqueStandardBinRadius`) surfaces exactly one such
-edge in the default space: `18 → 24` via `16/9` (the `24@10` placement), where `27/16` clusters onto
-`5/3`. Remarkably, no other family gains a clustering-tolerant edge even at much larger `c`.
+#### Options
+
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--mode` | `full` | `full` labels each edge with every exact embedding base; `collapsed` groups each isomorphism class into one node |
+| `--cluster-tolerance` | `0` | draw clustering-tolerant edges up to bin radius `c` (`0` = exact only) |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **`--mode full`** — each renormalized-subset edge is labelled with **every** exact base at which
+  the smaller family embeds into the larger (e.g. `9 → 24` lists both `4/3` and `16/9`). These are
+  *exact* good-fraction embeddings; keyboard placements from [`subsets`](#subsets) can show extra
+  anchors (e.g. `24@10` for LCM 18) that exist only under k-tet tempering.
+- **`--cluster-tolerance`** — additionally draws clustering-tolerant edges (red dashed, `≈` label): a
+  base whose renormalized images embed only after each is snapped to the nearest good fraction within
+  bin radius `c` (the `c = (b−a)/(b+a)` metric of [Cluster Ranges](../theory/cluster-ranges)). `c > 0`
+  writes to `lcm-families-clustered.md`. Setting `c ≥ 1/161` (the syntonic comma) surfaces exactly one
+  such edge: `18 → 24` via `16/9`, where `27/16` clusters onto `5/3` — and remarkably no other, even
+  at much larger `c`.
 
 ### `placement`
 
@@ -506,29 +742,39 @@ melodroid graph placement [--mode placement|extended|shape] [--lcm 1] [--at 0] \
   [--show-isomorphisms] [--max-size 24] [--max-prime 5] [--max-lcm 24] [--ktet 12]
 ```
 
-Writes a Mermaid **placement graph** to `output/graphs/`, built from the key-set containment poset of
-every placement (each LCM family swept over all `--ktet` anchors). Two placements are *adjacent* when
-the larger key set contains the smaller, and *directly adjacent* (a **cover**) when no third placement
-lies strictly between them; the edge label `+keys` gives the **distinguishing keys** the superset
-adds. Keyboard-coincident placements (identical key sets, e.g. `3@3` and `4@8`) fold to one node,
-keeping the power-of-2-preferred, then lowest-LCM, then lowest-anchor placement as representative. By
-default each node shows just that representative `L@a`; `--show-isomorphisms` appends the folded-in
-isomorphic placements with `≅` (e.g. `4@8 ≅ 3@3`). This flag affects `placement` / `extended` modes
-only — the shape graph never lists aliases.
+Writes a Mermaid **placement graph** to `output/graphs/` (and prints the path), built from the
+key-set containment poset of every placement (each LCM family swept over all `--ktet` anchors).
 
-- `--mode placement` (default) — the `--lcm@--at` root (default `1@0`, the tonic) and its directly
-  adjacent supersets only. Reproduces the tonic/dyad placement graphs in
-  [Placements](../music/placements).
-- `--mode extended` — the root's full **up-set**: every placement containing it, with all cover edges
-  among them. `--lcm 4 --at 0` reproduces the extended triad placement graph.
-- `--mode shape` — collapses every placement to its transposition-class **shape** and emits all 9
-  shapes plus their 18 direct-adjacency relationships, each shown with one representative placement
-  pair (`--lcm`/`--at` are ignored).
+#### Options
 
-Because the graph is derived from the poset rather than hand-drawn, the extended triad graph includes
-every hexad→heptad cover (any 6-key ⊂ 7-key placement is a cover, since nothing fits between them);
-the figures in [Placements](../music/placements) are this command's verbatim output. 12-tet is the
-intended keyboard; other `--ktet` values are allowed for exploration.
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--mode` | `placement` | `placement` = root + direct supersets; `extended` = root's full up-set; `shape` = all 9 shapes + adjacencies |
+| `--lcm` | `1` | root family (ignored in `shape` mode) |
+| `--at` | `0` | root anchor (ignored in `shape` mode) |
+| `--show-isomorphisms` | off | list folded-in isomorphic placements with `≅` (placement / extended only) |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
+
+#### Option details
+
+- **poset / covers** — two placements are *adjacent* when the larger key set contains the smaller,
+  and *directly adjacent* (a **cover**) when no third lies strictly between them; the edge label
+  `+keys` gives the distinguishing keys. Keyboard-coincident placements (e.g. `3@3` and `4@8`) fold
+  to one node (power-of-2-preferred, then lowest-LCM, then lowest-anchor). Because it is derived from
+  the poset, the extended graph includes every hexad→heptad cover; the
+  [Placements](../music/placements) figures are this command's verbatim output.
+- **`--mode`** — `placement` (default): the `--lcm@--at` root (default `1@0`, the tonic) and its
+  direct supersets (the tonic/dyad graphs in [Placements](../music/placements)); `extended`: the
+  root's full up-set with all cover edges (`--lcm 4 --at 0` = the extended triad graph); `shape`:
+  collapses every placement to its transposition-class shape, emitting all 9 shapes + their 18
+  adjacencies (`--lcm` / `--at` ignored).
+- **`--show-isomorphisms`** — appends the folded-in isomorphic placements with `≅` (e.g.
+  `4@8 ≅ 3@3`); placement / extended modes only — the shape graph never lists aliases.
+
+12-tet is the intended keyboard; other `--ktet` values are allowed for exploration.
 
 ## Plots
 
@@ -557,126 +803,110 @@ melodroid analyze midi --input song.mid \
   [--escalate] [--ktet 12] [--max-size 24] [--max-prime 5] [--max-lcm 24]
 ```
 
-Reads a MIDI file and discretizes it onto an **onset-quantized grid** of `--subdivision` slots per
-quarter note (1 = quarters, 2 = eighths, 4 = sixteenths, …). Each non-empty slot's sounding notes are
-folded to pitch classes mod 12 into one key-set; `--merge-repeats` (default on) collapses runs of
-time-adjacent slots sharing an identical key-set into a single chunk (light "where the harmony
-changes" preprocessing). For every chunk the table lists:
+Reads a MIDI file, discretizes it onto an **onset-quantized grid**, and maps each chunk's sounding
+pitch-class key-set onto the composite scales (and, optionally, LCM-family placements) that contain
+it — a reference-free, first-principles read of the harmony with optional traditional chord names.
 
-- the sorted pitch-class **key-set** and its size,
-- the **composite scales** containing it, derived from first principles (the subset principle /
-  [`composite-scales`](#composite-scales), parameterised by `--min-subset-notes`), not a curated
-  catalog — single placements already live in the Placements column, so the **Scales** column is
-  composites only. Each reads as its raw `P_A·S·P_B` constituents by default; `--name-composites`
-  relabels a composite whose key set lands on a catalog scale to its cosmetic name (`{Short}@{Anchor}`)
-  — names are purely cosmetic, never the source,
-- (with `--placements`, default off) a **Placements** column listing the
-  [LCM-family placements](#placement) containing it ([`FindSupersets`](#supersets),
-  isomorphic-collapsed, capped).
+#### Example
 
-`--stable-placements` (default off) shows placements in **stable form**. It (1) drops an unstable
-lcm-15 / lcm-20 placement whenever its collapsing key is one of the chunk's sounding keys — the chunk
-plays the very key that reinterprets the placement as a simpler lcm-24 pattern (the same
-`DropCollapsed` rule [`progression`](#progression) uses) — and (2) labels the
-surviving lcm-15 / lcm-20 placements in stable form, `15s@` / `20s@` (the stable-form
-marker), so the label itself signals the stable sub-pattern rather than the full unstable family.
-For a `{0,4,7}` chunk, `15@4` (collapsing key 0, sounding) is dropped while `15@7` (collapsing key 3,
-not sounding) survives as `15s@7`. The filter applies to the Placements column, the placement
-segments (`--segments`), and the Reaper placement markers (`--reaper`); scales are unaffected.
+```bash
+melodroid analyze midi --input progression.mid --bridges --name-composites --pool-maximal
+```
 
-A chunk's harmonic identity is its key-set **plus these containments** — no traditional chord names
-(per the first-principles anchor). The analysis is reference-free (all anchors are swept), so no key
-or root need be supplied. `--max-chunks` aborts before rendering an oversized table; raise it, coarsen
-`--subdivision`, keep `--merge-repeats` on, or use a smaller file. 12-tet only.
+```text
+┌───┬───────┬────────┬───┬─────────────────────────────────────────────────────┐
+│ # │ Beats │ Keys   │ n │ Scales                                              │
+├───┼───────┼────────┼───┼─────────────────────────────────────────────────────┤
+│ 0 │   0–1 │ 0 4 7  │ 3 │ hM@8, hm@5, hM@5, mm@5, hM@0, mm@7, hm@4,           │
+│   │       │        │   │ 15@1·5@6·24@7 …(+14)                                │
+│ 1 │   1–2 │ 0 5 9  │ 3 │ hM@1, hm@10, mm@10, hM@5, hM@10, mm@0, hm@9,        │
+│   │       │        │   │ 15@0·6@3·24@3 …(+14)                                │
+│ 2 │   2–3 │ 2 7 11 │ 3 │ hm@0, mm@0, hM@7, hM@0, mm@2, hm@11, hM@3,          │
+│   │       │        │   │ 15@2·6@10·24@8 …(+14)                               │
+│ 3 │   3–4 │ 0 4 7  │ 3 │ hM@8, hm@5, hM@5, mm@5, hM@0, mm@7, hm@4,           │
+│   │       │        │   │ 15@1·5@6·24@7 …(+14)                                │
+└───┴───────┴────────┴───┴─────────────────────────────────────────────────────┘
+┌──────┬────────────────┬──────────────────────────────────────────────────────┐
+│ Pair │ Move           │ Bridge                                               │
+├──────┼────────────────┼──────────────────────────────────────────────────────┤
+│  0→1 │ 0 4 7 → 0 5 9  │ 15@4, 24@0, 24@5, hm@2, hm@9, mm@2, mm@7, bb@0       │
+│      │                │ …(+19)                                               │
+│  1→2 │ 0 5 9 → 2 7 11 │ 24@0, hm@9, mm@0, mm@2, bb@0, bb@7, hM@7, hM@9       │
+│      │                │ …(+16)                                               │
+│  2→3 │ 2 7 11 → 0 4 7 │ 15@11, 24@0, 24@7, hm@4, hm@9, mm@2, mm@9, bb@0      │
+│      │                │ …(+19)                                               │
+└──────┴────────────────┴──────────────────────────────────────────────────────┘
+```
 
-`--from` / `--to` window the output to an interval of chunks (0-based, inclusive, matching the `#`
-column; `--to -1`, the default, runs to the last chunk; values past the end clamp). Semantics are
-**window-local**: the chunk list is sliced first, so the main table, segments, and bridges are all
-computed over just chunks `--from…--to` (and `--max-chunks` is measured against the window, so a window
-of a huge file is viewable without raising it). Original chunk numbers are preserved, so `--from 100
---to 149` shows rows numbered `100…149` — windows compose and stay stable to reference.
+Each chunk's key-set is mapped to the composite **Scales** containing it (here named via
+`--name-composites`). `--bridges` adds the second table — the **Bridge** connecting each consecutive
+chord — so reading it top-to-bottom surfaces the C→F→G→C progression loop (every move passes through
+`24@0`) that the per-chunk lists hide. Scale shorthands: `M` major, `hm` harmonic minor, `mm` melodic
+minor, `hM` harmonic major, `bb` bebop dominant, `b` major blues.
 
-The per-chunk table lists *every* scale/placement containing a chunk, which for melody-heavy input
-grows wide and loses the temporal story. `--segments` (default off) answers the complementary
-question — how far a *single* label carries — with two **fewest-contiguous-segments** tables (one for
-scales, one for placements). It greedily partitions the chunk timeline into the fewest maximal runs
-each explainable by one shared label: starting a segment, it extends while the running intersection of
-the per-chunk label sets stays non-empty, then cuts. This minimizes the segment count, so each row is
-a maximal chain — the **longest row is the longest unbroken chain** of a single scale/placement (the
-`C→F→G→C` loop collapses to one placement segment whose witnesses include `24@0`) and the row count is
-the minimum segmentation. The **Witnesses** cell lists every label common to the whole run; an
-empty-witness row is a chunk no label contains. Independent of `--placements` (both segment tables
-always render under `--segments`).
+#### Options
 
-`--reaper` (default off) exports those two segmentations to a [Reaper](https://www.reaper.fm/)
-region/marker CSV so you can see them lined up against the actual notes in a DAW. Scale segments
-become **regions** (named colored bars spanning their beat range) and placement segments become
-**markers** at each segment's start — kept distinct so they don't contend for Reaper's single region
-lane. Segment beats are converted to wall-clock seconds through the MIDI file's tempo map and written
-as `M:SS.mmm`, and the file lands at `output/reaper/<stem>-segments.csv` (the path is printed). Import
-it via Reaper's **Region/Marker Manager** → right-click → *Import region/marker set…*, after dragging
-the MIDI into an empty project (so the project adopts the file's tempo). `--reaper` computes the
-segments even when `--segments` is off.
+| Option | Default | Notes |
+| --- | --- | --- |
+| `--input` | **required** | path to the MIDI file |
+| `--subdivision` | `4` | onset-grid slots per quarter note (1 = quarters, 2 = eighths, 4 = sixteenths) |
+| `--merge-repeats` | on | collapse time-adjacent slots with identical key-sets into one chunk |
+| `--from` | `0` | first chunk shown (0-based, inclusive) |
+| `--to` | `-1` | last chunk shown (`-1` = last) |
+| `--max-chunks` | `256` | abort before rendering a table larger than this (window-local) |
+| `--placements` | off | add a Placements column (LCM-family placements containing each chunk) |
+| `--stable-placements` | off | show placements in stable form (drop/label collapsed lcm-15 / lcm-20) |
+| `--segments` | off | add fewest-contiguous-segments tables (scales + placements) |
+| `--reaper` | off | export the segmentations as a Reaper region/marker CSV |
+| `--bridges` | off | add a chunk-bridges table (what connects each consecutive pair) |
+| `--segment-bridges` | off | add segment-level bridges tables (scale + placement) |
+| `--min-subset-notes` | `4` | composite shared-subset floor for Scales + bridges |
+| `--collapse-isomorphic` | off | declutter labels to power-of-2 representatives |
+| `--pool-maximal` | off | declutter labels to maximal constituents only |
+| `--name-composites` | off | relabel a matched composite with its catalog scale name (cosmetic) |
+| `--escalate` | off | show the composite placement progression (`↑`) when no placement bridges a move |
+| `--ktet` | `12` | keyboard |
+| `--max-size` | `24` | good-fraction size limit |
+| `--max-prime` | `5` | good-fraction prime limit |
+| `--max-lcm` | `24` | max LCM family generated |
 
-Cosmetic scale names (the `--name-composites` relabel in the **Scales** column and the **Bridge** column
-below) are rendered with compact, case-sensitive shorthands, decoded in a legend in the table caption:
+#### Option details
 
-| `M` | `hm` | `mm` | `hM` | `bb` | `b` |
-| --- | --- | --- | --- | --- | --- |
-| major | harmonic minor | melodic minor | harmonic major | bebop dominant | major blues |
-
-The per-chunk lists treat each chunk **in isolation**, so a chord *progression* — which lives in the
-relationship between consecutive chunks — stays hidden. `--bridges` (default off) adds a second
-**chunk-bridges** table: for each consecutive chunk pair it runs the pair through
-[`progression`](#progression)'s classifier (`ChordProgressions.ComputePair`) and prints a single
-**Bridge** column — the state of the bridge between the pair, i.e. what connects the two key-sets: a
-**placement** (`{Lcm}@{At}`, a single placement containing both — the degenerate one-constituent
-composite), a **composite scale** (`P_A·S·P_B`, bridging via a shared subset), or an **↑escalation**
-(the connection living one layer up, in a hosting composite scale). Reading the **Bridge** column
-top-to-bottom surfaces the progression loop the per-chunk lists cannot — e.g. a C→F→G→C loop reads
-`8@5`, `24@0`, `8@0`. The bridge-only flags mirror `progression`: `--min-subset-notes` (default `4`, a
-substantial 18/8 parent as in [`composite-scales`](#composite-scales); lower to `2` for dyad bridges)
-is the composite shared-subset floor, and `--collapse-isomorphic` / `--pool-maximal` declutter the
-bridge labels losslessly.
-
-`--name-composites` (default off) controls the Bridge-column label **form** only — it does not change
-which bridges or escalations appear. A composite bridge `P_A·S·P_B` *is* a
-[composite scale](#composite-scales) — the stable union `P_A ∪ P_B` — so with the flag **on** each
-shows the named scale of that union (`{Short}@{Anchor}` — the shorthand above, e.g. `hm@9` — via the
-named-scale catalog) when the union lands on a catalog scale. Because the union ignores *which* `S` was
-chosen, the many raw triplets per pair collapse to a handful of named composites — the intended reading
-when the raw `P_A·S·P_B` list explodes. When the union matches **no** catalog scale the composite keeps
-its full `P_A·S·P_B` constituents (as [`composite-scales`](#composite-scales) prints them), never a
-bare `{keys}` set. With the flag **off** every bridge keeps its raw `P_A·S·P_B` constituents.
-
-`--escalate` (default off) controls whether **escalation** rows appear. When no placement bridges the
-move (the canonical case is dim7 `{0 3 6 9}`, in no placement but the core of harmonic minor / major)
-the pair is `Neither` and renders `—` by default; with `--escalate` the Bridge column instead shows the
-**composite placement progression** carrying the move — the same `CompositeProgressions.ComputeComposite`
-[`progression`](#progression)'s composite tier uses: origin and target each map to a composite scale,
-linked by a placement progression between their **constituent placements**. Each link label is marked
-with a leading `↑`. `--name-composites` chooses only the subset labels' form: **off** → raw placement
-constituents `↑P_A·S·P_B`; **on** → the matched subset composites relabelled to shorthand scale names
-`↑{Short}@{Anchor}`. The `↑` marks that no placement bridges the move, so it is carried by the
-composite layer. This is the **same bridge calculation** `progression` performs — the underlying theory
-is one.
-
-`--segment-bridges` (default off) lifts `--bridges` from chunks to **segments**: it adds two further
-bridges tables (scale and placement) classifying each consecutive *segment* pair. The **placement**
-table takes a segment's chord to be the **union of its chunks' sounding keys** (a one-chunk segment
-reduces to that chunk's key-set, so this generalizes `--bridges`) and runs the pair through
-`ChordProgressions.ComputePair`. The **scale** table instead reads each segment through its
-**constituent pool** (`CompositeProgressions.ConstituentPool` — the single placements and
-composite-scale constituents, e.g. `hm@9 = 15@11·18@2·24@0`, containing the segment's chunk-union), and
-bridges adjacent segments by the composite placement progression between the two pools
-(`CompositeProgressions.LinkPools` — the same link `progression`'s composite tier uses) — a shared
-**pivot** placement and/or a subset-`S` join, both surfaced in the **Bridge** column — rather than
-re-deriving supersets of the pooled chromatic union (which pools a long scale segment's melody into a
-key-set no placement contains, so nothing bridges it). A side with no constituents falls back to the
-placement table's union path. Reading the **Bridge** column
-top-to-bottom surfaces a cross-*segment* loop the per-chunk bridges table hides. Both tables honour the same
-`--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal` / `--name-composites` / `--escalate`
-flags and compute the segmentation even when `--segments` is off.
-
-This per-chunk mapping plus the segment bridges above are the current cut of melody-movement /
-modulation tracking (how the melody walks the scale fingerprint to move between placements).
+- **chunks** — each non-empty grid slot's sounding notes fold to pitch classes mod 12 into one
+  key-set; `--merge-repeats` collapses time-adjacent identical key-sets. A chunk's harmonic identity
+  is its key-set **plus its containments** — reference-free (all anchors
+  swept). `--max-chunks` aborts oversized tables (raise it, coarsen `--subdivision`, or window).
+- **Scales column** — the composite scales ([`composite-scales`](#composite-scales), parameterised by
+  `--min-subset-notes`) containing the chunk; single placements live in the Placements column, so
+  Scales is composites only. Raw `P_A·S·P_B` by default; `--name-composites` relabels matched
+  composites to cosmetic names (shorthands above).
+- **`--placements` / `--stable-placements`** — Placements lists the LCM-family placements containing
+  the chunk ([`supersets`](#supersets), collapsed, capped). `--stable-placements` drops an unstable
+  lcm-15 / lcm-20 placement when its collapse key is sounding and labels survivors `15s@` / `20s@`
+  (the `DropCollapsed` rule, as in [`progression`](#progression)); applies to placements, segments,
+  and Reaper markers.
+- **`--from` / `--to`** — window to chunks `[from, to]` (0-based inclusive; `-1` = last). Window-local
+  — table, segments, and bridges compute over just the slice, and original chunk numbers are
+  preserved so windows compose.
+- **`--segments`** — two **fewest-contiguous-segments** tables (scales, placements): the greedy
+  partition into the fewest maximal runs each explainable by one shared label. The longest row is the
+  longest unbroken chain of a single label; a **Witnesses** cell lists the labels common to the whole
+  run (an empty-witness row is a chunk no label contains).
+- **`--reaper`** — exports those segmentations to `output/reaper/<stem>-segments.csv` (scale segments
+  → regions, placement segments → markers; beats → wall-clock via the tempo map). Import via Reaper's
+  **Region/Marker Manager → Import region/marker set…**. Computed even when `--segments` is off.
+- **`--bridges`** — a chunk-bridges table: for each consecutive pair, the **Bridge** connecting the
+  two key-sets ([`progression`](#progression)'s classifier) — a placement `{Lcm}@{At}`, a composite
+  `P_A·S·P_B`, or an **↑escalation**. `--min-subset-notes` / `--collapse-isomorphic` / `--pool-maximal`
+  declutter the labels losslessly.
+- **`--name-composites`** — Bridge/Scale label **form** only (never which appear): a composite whose
+  stable union `P_A ∪ P_B` lands on a catalog scale shows that scale's name (`hm@9`), else keeps its
+  `P_A·S·P_B` constituents — never a bare `{keys}` set.
+- **`--escalate`** — when no placement bridges a move (canonical case dim7 `{0 3 6 9}`), the pair is
+  `Neither` and shows `—` by default; `--escalate` instead shows the composite placement progression
+  carrying it, each link marked `↑` — the same calculation [`progression`](#progression)'s composite
+  tier uses.
+- **`--segment-bridges`** — lifts `--bridges` to **segments**: a placement table (segment chord =
+  union of its chunks' keys) and a scale table (bridges adjacent segments via their constituent pools
+  — a shared pivot placement and/or a subset-`S` join), surfacing cross-segment loops the per-chunk
+  bridges hide. Computed even when `--segments` is off.
